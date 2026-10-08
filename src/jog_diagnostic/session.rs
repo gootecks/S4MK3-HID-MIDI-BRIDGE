@@ -3,12 +3,12 @@
 use std::io::Write;
 
 use anyhow::{bail, ensure};
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::ControlArgs;
 use super::capture::{LogRecord, RawFrame, Summary, emit};
 use super::decode::{Decoder, FRESHNESS_US};
-use super::motor::{Controller, neutral_report};
+use super::motor::{Controller, FaderState, neutral_report};
 
 pub enum Event {
     Sample(RawFrame),
@@ -25,6 +25,7 @@ pub struct Session<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> {
     controller: Controller,
     summary: Summary,
     finished: bool,
+    last_fader: Option<FaderState>,
 }
 
 impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
@@ -36,6 +37,7 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
             controller: Controller::new(control),
             summary: Summary::default(),
             finished: false,
+            last_fader: None,
         };
         // The guard exists before even the startup neutral can fail.
         session.write_report(neutral_report(), "startup_neutral")?;
@@ -68,7 +70,24 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
                 )?;
                 let motion = self.decoder.decode(&frame)?;
                 self.summary.observe(&motion);
-                let decision = self.controller.decide(&motion);
+                let decision = self.controller.decide(&motion)?;
+                if let Some(level) = decision.fader {
+                    let percent = u32::from(level.raw) * 100 / 4095;
+                    if self.last_fader.is_none_or(|previous| {
+                        previous.armed != level.armed
+                            || (previous.selected_force == 0) != (level.selected_force == 0)
+                            || u32::from(previous.raw) * 100 / 4095 != percent
+                    }) {
+                        info!(
+                            percent,
+                            raw = level.raw,
+                            armed = level.armed,
+                            selected_force = level.selected_force,
+                            "DIAGNOSTIC_FADER: minimum arms; selected force applies only to motion"
+                        );
+                    }
+                    self.last_fader = Some(level);
+                }
                 emit(self.log, &LogRecord::Motion { motion, decision })?;
                 self.write_report(decision.report, "motion")?;
                 Ok(true)

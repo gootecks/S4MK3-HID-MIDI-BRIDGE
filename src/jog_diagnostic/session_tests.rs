@@ -1,5 +1,5 @@
 use super::*;
-use crate::jog_diagnostic::decode::tests::frame;
+use crate::jog_diagnostic::decode::tests::{frame, with_fader};
 use crate::jog_diagnostic::{Mode, Side};
 use anyhow::Context as _;
 
@@ -137,5 +137,116 @@ fn original_motor_failure_survives_simultaneous_log_failure() -> anyhow::Result<
         .context("startup must fail")?;
     // Then the original motor failure remains diagnosable.
     assert!(format!("{error:#}").contains("original motor fault"));
+    Ok(())
+}
+
+#[test]
+fn active_fader_braking_neutralizes_on_bad_analog_and_terminal_events() -> anyhow::Result<()> {
+    // Given accepted two-byte nonzero torque, then input faults or termination.
+    let mut short = with_fader(frame(4000, 3, [300, 0]), 4095);
+    short.analog.as_mut().context("analog missing")?.truncate(4);
+    let mut wrong_id = with_fader(frame(4000, 3, [300, 0]), 4095);
+    wrong_id.analog.as_mut().context("analog missing")?[0] = 1;
+    for (event, now) in [
+        (Event::Sample(frame(4000, 3, [300, 0])), 4000),
+        (Event::Sample(short), 4000),
+        (Event::Sample(wrong_id), 4000),
+        (
+            Event::Sample(with_fader(frame(4000, 3, [300, 0]), 4096)),
+            4000,
+        ),
+        (
+            Event::Sample(with_fader(frame(4000, 3, [300, 0]), 4095)),
+            54_001,
+        ),
+        (Event::Stop, 4000),
+        (Event::Deadline, 4000),
+        (Event::InputTimeout, 4000),
+        (
+            Event::ReaderError(anyhow::anyhow!("fader reader lost")),
+            4000,
+        ),
+    ] {
+        let mut writes = Vec::new();
+        let mut log = Vec::new();
+        {
+            let mut session = Session::new(
+                ControlArgs {
+                    mode: Mode::FaderBrake,
+                    side: Side::Left,
+                    gain: 1,
+                    max_force: 4096,
+                },
+                |report| {
+                    writes.push(report.to_vec());
+                    Ok(report.len())
+                },
+                &mut log,
+            )?;
+            session.handle(Event::Sample(with_fader(frame(0, 1, [0, 0]), 0)), 0)?;
+            session.handle(
+                Event::Sample(with_fader(frame(2000, 2, [200, 0]), 4095)),
+                2000,
+            )?;
+            // When the actual shared live session receives that event.
+            assert!(!matches!(session.handle(event, now), Ok(true)));
+        }
+        // Then this is cleanup after real encoded force, not an always-zero stub.
+        assert!(
+            writes
+                .iter()
+                .any(|report| report == &[49, 1, 224, 254, 0, 16, 1, 32, 1, 0, 0])
+        );
+        assert_eq!(writes.last(), Some(&neutral_report().to_vec()));
+    }
+    Ok(())
+}
+
+#[test]
+fn fader_transport_failure_checks_the_high_magnitude_byte() -> anyhow::Result<()> {
+    // Given a 4096-unit report whose low magnitude byte is zero.
+    for short in [false, true] {
+        let mut writes = Vec::new();
+        let mut log = Vec::new();
+        {
+            let mut session = Session::new(
+                ControlArgs {
+                    mode: Mode::FaderBrake,
+                    side: Side::Left,
+                    gain: 1,
+                    max_force: 4096,
+                },
+                |report| {
+                    writes.push(report.to_vec());
+                    if report[4] != 0 || report[5] != 0 {
+                        if short {
+                            Ok(5)
+                        } else {
+                            bail!("injected fader write failure")
+                        }
+                    } else {
+                        Ok(report.len())
+                    }
+                },
+                &mut log,
+            )?;
+            session.handle(Event::Sample(with_fader(frame(0, 1, [0, 0]), 0)), 0)?;
+            // When the encoded nonzero force fails or is only partially written.
+            let error = session
+                .handle(
+                    Event::Sample(with_fader(frame(2000, 2, [200, 0]), 4095)),
+                    2000,
+                )
+                .err()
+                .context("fader transport fault must fail")?;
+            // Then the original failure survives and neutral is attempted next.
+            assert!(error.to_string().contains(if short {
+                "short motor write"
+            } else {
+                "injected fader write failure"
+            }));
+        }
+        assert_eq!(writes.last(), Some(&neutral_report().to_vec()));
+    }
     Ok(())
 }

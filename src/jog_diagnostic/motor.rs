@@ -1,5 +1,6 @@
 //! Motion-only brake/assist proposals, never target-speed playback control.
 
+use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 
 use super::decode::{Motion, Status};
@@ -9,32 +10,72 @@ use super::{ControlArgs, Mode};
 pub struct Decision {
     pub torque: [i32; 2],
     pub report: [u8; 11],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fader: Option<FaderState>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct FaderState {
+    pub raw: u16,
+    pub armed: bool,
+    pub selected_force: u16,
 }
 
 pub struct Controller {
     control: ControlArgs,
+    fader_armed: bool,
 }
 
 impl Controller {
     pub const fn new(control: ControlArgs) -> Self {
-        Self { control }
+        Self {
+            control,
+            fader_armed: false,
+        }
     }
 
-    pub fn decide(&self, motion: &Motion) -> Decision {
+    pub fn decide(&mut self, motion: &Motion) -> anyhow::Result<Decision> {
         let mut torque = [0_i32; 2];
         let side = self.control.side.index();
+        let fader = match self.control.mode {
+            Mode::FaderBrake => {
+                let raw = motion
+                    .deck1_fader
+                    .context("fader-brake requires analog report 2; capture with --analog")?;
+                self.fader_armed |= raw <= 32;
+                let selected_force = if raw <= 32 {
+                    0
+                } else {
+                    u16::try_from(u32::from(raw) * u32::from(self.control.max_force) / 4095)?
+                };
+                Some(FaderState {
+                    raw,
+                    armed: self.fader_armed,
+                    selected_force,
+                })
+            }
+            Mode::Baseline | Mode::Brake | Mode::Assist => None,
+        };
         let sign = match self.control.mode {
             Mode::Baseline => 0,
-            Mode::Brake => -1,
+            Mode::Brake | Mode::FaderBrake => -1,
             Mode::Assist => 1,
         };
         match motion.status[side] {
             Status::Moving => {
-                let magnitude = (u64::from(motion.delta[side].unsigned_abs())
-                    * u64::from(self.control.gain)
-                    * 1000
-                    / motion.elapsed_us[side])
-                    .min(u64::from(self.control.max_force));
+                let magnitude = if let Some(level) = fader {
+                    if level.armed {
+                        u64::from(level.selected_force)
+                    } else {
+                        0
+                    }
+                } else {
+                    (u64::from(motion.delta[side].unsigned_abs())
+                        * u64::from(self.control.gain)
+                        * 1000
+                        / motion.elapsed_us[side])
+                        .min(u64::from(self.control.max_force))
+                };
                 // Magnitude is <= a u16 cap, so its low two bytes are lossless.
                 let bytes = magnitude.to_le_bytes();
                 torque[side] = sign
@@ -53,7 +94,11 @@ impl Controller {
             let bytes = value.unsigned_abs().to_le_bytes();
             report[offset + 3..offset + 5].copy_from_slice(&bytes[..2]);
         }
-        Decision { torque, report }
+        Ok(Decision {
+            torque,
+            report,
+            fader,
+        })
     }
 }
 

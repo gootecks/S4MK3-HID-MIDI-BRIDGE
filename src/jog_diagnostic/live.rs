@@ -65,7 +65,7 @@ fn capture_loop(
     Ok(())
 }
 
-pub fn trial(path: &Path, seconds: u64, control: ControlArgs) -> anyhow::Result<()> {
+pub fn trial(path: &Path, seconds: Option<u64>, control: ControlArgs) -> anyhow::Result<()> {
     ownership::check()?;
     let mut log = create_log(path)?;
     emit(
@@ -77,10 +77,11 @@ pub fn trial(path: &Path, seconds: u64, control: ControlArgs) -> anyhow::Result<
     let stop = stop_signal()?;
     let started = Instant::now();
     let mut session = Session::new(control, |report| Ok(writer.write(report)?), &mut log)?;
-    let mut reader = Reader::start(hid, started, false)?;
+    let mut reader = Reader::start(hid, started, control.mode.uses_fader())?;
     info!(
         ?control,
-        seconds, "DIAGNOSTIC_MOTOR_ENABLED: uncalibrated torque; Ctrl-C neutralizes"
+        ?seconds,
+        "DIAGNOSTIC_MOTOR_ENABLED: uncalibrated torque; Ctrl-C neutralizes"
     );
     let result = trial_loop(&mut session, &mut reader, (&stop, started, seconds));
     // Explicit neutral precedes cancellation/join, even when input is stuck.
@@ -94,11 +95,13 @@ pub fn trial(path: &Path, seconds: u64, control: ControlArgs) -> anyhow::Result<
 fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
     session: &mut Session<'_, F>,
     reader: &mut Reader,
-    timing: (&Receiver<()>, Instant, u64),
+    timing: (&Receiver<()>, Instant, Option<u64>),
 ) -> anyhow::Result<()> {
     loop {
         let elapsed = timing.1.elapsed();
-        let remaining = Duration::from_secs(timing.2).saturating_sub(elapsed);
+        let remaining = timing.2.map_or(Duration::MAX, |seconds| {
+            Duration::from_secs(seconds).saturating_sub(elapsed)
+        });
         let event = if remaining.is_zero() {
             Event::Deadline
         } else {
@@ -116,7 +119,7 @@ fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
                     Err(error) => Event::ReaderError(error.into()),
                 },
                 default(timeout) => {
-                    if timing.1.elapsed() >= Duration::from_secs(timing.2) {
+                    if timing.2.is_some_and(|seconds| timing.1.elapsed() >= Duration::from_secs(seconds)) {
                         Event::Deadline
                     } else {
                         Event::InputTimeout
@@ -125,7 +128,10 @@ fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
             }
         };
         // Check again after receiving: never apply a queued sample past duration.
-        let event = if timing.1.elapsed() >= Duration::from_secs(timing.2) {
+        let event = if timing
+            .2
+            .is_some_and(|seconds| timing.1.elapsed() >= Duration::from_secs(seconds))
+        {
             Event::Deadline
         } else {
             event

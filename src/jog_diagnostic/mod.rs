@@ -49,7 +49,7 @@ enum Command {
         #[arg(long)]
         input: PathBuf,
         #[command(flatten)]
-        control: ControlArgs,
+        control: ControlOptions,
     },
     /// Run a supervised trial; motor output requires explicit opt-in.
     #[command(visible_alias = "trial")]
@@ -60,8 +60,11 @@ enum Command {
         seconds: u64,
         #[arg(long)]
         enable_motor: bool,
+        /// Fader-brake only: run under supervision until Ctrl-C.
+        #[arg(long, conflicts_with = "seconds")]
+        until_stopped: bool,
         #[command(flatten)]
-        control: ControlArgs,
+        control: ControlOptions,
     },
 }
 
@@ -71,6 +74,16 @@ enum Mode {
     Baseline,
     Brake,
     Assist,
+    FaderBrake,
+}
+
+impl Mode {
+    const fn uses_fader(self) -> bool {
+        match self {
+            Self::FaderBrake => true,
+            Self::Baseline | Self::Brake | Self::Assist => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, ValueEnum)]
@@ -89,19 +102,56 @@ impl Side {
     }
 }
 
-#[derive(Clone, Copy, Debug, clap::Args, Deserialize, Serialize)]
-struct ControlArgs {
+#[derive(Debug, clap::Args)]
+struct ControlOptions {
     #[arg(long, value_enum)]
     mode: Mode,
     /// Physical wheel, not a logical A/B/C/D deck.
     #[arg(long, value_enum, default_value = "left")]
     side: Side,
-    /// Raw magnitude units per count/ms; not a Traktor tension value.
-    #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=100))]
+    /// Fixed modes only: raw units per count/ms (default 1).
+    #[arg(long, value_parser = clap::value_parser!(u32).range(1..=100))]
+    gain: Option<u32>,
+    /// Raw ceiling: default 100 fixed / 5000 fader; not a percentage.
+    #[arg(long, visible_alias = "force-cap", value_parser = clap::value_parser!(u16).range(1..=25000))]
+    max_force: Option<u16>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+struct ControlArgs {
+    mode: Mode,
+    side: Side,
     gain: u32,
-    /// Uncalibrated magnitude ceiling; live trials further limit this to 500.
-    #[arg(long, visible_alias = "force-cap", default_value_t = 100, value_parser = clap::value_parser!(u16).range(1..=1000))]
     max_force: u16,
+}
+
+impl ControlOptions {
+    fn resolve(self) -> anyhow::Result<ControlArgs> {
+        let max_force = match self.mode {
+            Mode::FaderBrake => {
+                ensure!(
+                    matches!(self.side, Side::Left),
+                    "fader-brake requires --side left and the physical deck1 fader"
+                );
+                ensure!(
+                    self.gain.is_none(),
+                    "fader-brake uses direct force; omit --gain"
+                );
+                self.max_force.unwrap_or(5000)
+            }
+            Mode::Baseline | Mode::Brake | Mode::Assist => {
+                let max_force = self.max_force.unwrap_or(100);
+                ensure!(max_force <= 1000, "fixed-mode --max-force must be <=1000");
+                max_force
+            }
+        };
+        Ok(ControlArgs {
+            mode: self.mode,
+            side: self.side,
+            gain: self.gain.unwrap_or(1),
+            max_force,
+        })
+    }
 }
 
 pub fn run(args: Args) -> anyhow::Result<()> {
@@ -111,19 +161,32 @@ pub fn run(args: Args) -> anyhow::Result<()> {
             seconds,
             analog,
         } => live::capture(&out, seconds, analog),
-        Command::Replay { input, control } => replay(&input, control),
+        Command::Replay { input, control } => replay(&input, control.resolve()?),
         Command::Live {
             out,
             seconds,
             enable_motor,
+            until_stopped,
             control,
         } => {
             ensure!(
                 enable_motor,
                 "live trials require --enable-motor, including baseline"
             );
-            ensure!(control.max_force <= 500, "live --max-force must be <=500");
-            live::trial(&out, seconds, control)
+            let control = control.resolve()?;
+            ensure!(
+                !until_stopped || control.mode.uses_fader(),
+                "--until-stopped requires --mode fader-brake"
+            );
+            ensure!(
+                control.mode.uses_fader() || control.max_force <= 500,
+                "fixed live --max-force must be <=500"
+            );
+            live::trial(
+                &out,
+                if until_stopped { None } else { Some(seconds) },
+                control,
+            )
         }
     }
 }
@@ -132,7 +195,7 @@ fn replay(path: &std::path::Path, control: ControlArgs) -> anyhow::Result<()> {
     let input = BufReader::new(File::open(path).context("open raw capture")?);
     let mut output = BufWriter::new(std::io::stdout().lock());
     let mut decoder = Decoder::default();
-    let controller = Controller::new(control);
+    let mut controller = Controller::new(control);
     let mut summary = Summary::default();
     emit(&mut output, &LogRecord::session("replay", Some(control)))?;
     for (index, line) in input.lines().enumerate() {
@@ -147,7 +210,7 @@ fn replay(path: &std::path::Path, control: ControlArgs) -> anyhow::Result<()> {
         if let LogRecord::Raw { frame } = record {
             let motion = decoder.decode(&frame)?;
             summary.observe(&motion);
-            let decision = controller.decide(&motion);
+            let decision = controller.decide(&motion)?;
             emit(&mut output, &LogRecord::Motion { motion, decision })?;
         }
     }
