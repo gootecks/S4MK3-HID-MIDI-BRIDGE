@@ -9,6 +9,7 @@ fn control() -> ControlArgs {
         side: Side::Left,
         gain: 1,
         max_force: 100,
+        assist_force: None,
     }
 }
 
@@ -176,6 +177,7 @@ fn active_fader_braking_neutralizes_on_bad_analog_and_terminal_events() -> anyho
                     side: Side::Left,
                     gain: 1,
                     max_force: 4096,
+                    assist_force: None,
                 },
                 |report| {
                     writes.push(report.to_vec());
@@ -215,6 +217,7 @@ fn fader_transport_failure_checks_the_high_magnitude_byte() -> anyhow::Result<()
                     side: Side::Left,
                     gain: 1,
                     max_force: 4096,
+                    assist_force: None,
                 },
                 |report| {
                     writes.push(report.to_vec());

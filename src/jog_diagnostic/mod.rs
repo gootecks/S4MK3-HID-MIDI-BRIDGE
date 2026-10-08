@@ -8,6 +8,8 @@ mod ownership;
 mod reader;
 mod session;
 #[cfg(test)]
+mod tension_tests;
+#[cfg(test)]
 mod tests;
 
 use std::fs::File;
@@ -60,7 +62,7 @@ enum Command {
         seconds: u64,
         #[arg(long)]
         enable_motor: bool,
-        /// Fader-brake only: run under supervision until Ctrl-C.
+        /// Fader modes only: run under supervision until Ctrl-C.
         #[arg(long, conflicts_with = "seconds")]
         until_stopped: bool,
         #[command(flatten)]
@@ -75,12 +77,13 @@ enum Mode {
     Brake,
     Assist,
     FaderBrake,
+    FaderTension,
 }
 
 impl Mode {
     const fn uses_fader(self) -> bool {
         match self {
-            Self::FaderBrake => true,
+            Self::FaderBrake | Self::FaderTension => true,
             Self::Baseline | Self::Brake | Self::Assist => false,
         }
     }
@@ -112,9 +115,12 @@ struct ControlOptions {
     /// Fixed modes only: raw units per count/ms (default 1).
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..=100))]
     gain: Option<u32>,
-    /// Raw ceiling: default 100 fixed / 5000 fader; not a percentage.
-    #[arg(long, visible_alias = "force-cap", value_parser = clap::value_parser!(u16).range(1..=25000))]
+    /// Braking ceiling: default 100 fixed / 5000 fader-brake / 30000 fader-tension.
+    #[arg(long, visible_alias = "force-cap", value_parser = clap::value_parser!(u16).range(1..=60000))]
     max_force: Option<u16>,
+    /// Fader-tension only: held-touch assistance ceiling, default 8000; zero disables.
+    #[arg(long, value_parser = clap::value_parser!(u16).range(0..=8000))]
+    assist_force: Option<u16>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -123,22 +129,33 @@ struct ControlArgs {
     side: Side,
     gain: u32,
     max_force: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    assist_force: Option<u16>,
 }
 
 impl ControlOptions {
     fn resolve(self) -> anyhow::Result<ControlArgs> {
+        ensure!(
+            matches!(self.mode, Mode::FaderTension) || self.assist_force.is_none(),
+            "--assist-force requires --mode fader-tension"
+        );
+        if self.mode.uses_fader() {
+            ensure!(
+                matches!(self.side, Side::Left),
+                "fader modes require --side left and the physical deck1 fader"
+            );
+            ensure!(
+                self.gain.is_none(),
+                "fader modes use direct force; omit --gain"
+            );
+        }
         let max_force = match self.mode {
             Mode::FaderBrake => {
-                ensure!(
-                    matches!(self.side, Side::Left),
-                    "fader-brake requires --side left and the physical deck1 fader"
-                );
-                ensure!(
-                    self.gain.is_none(),
-                    "fader-brake uses direct force; omit --gain"
-                );
-                self.max_force.unwrap_or(5000)
+                let force = self.max_force.unwrap_or(5000);
+                ensure!(force <= 25000, "fader-brake --max-force must be <=25000");
+                force
             }
+            Mode::FaderTension => self.max_force.unwrap_or(30000),
             Mode::Baseline | Mode::Brake | Mode::Assist => {
                 let max_force = self.max_force.unwrap_or(100);
                 ensure!(max_force <= 1000, "fixed-mode --max-force must be <=1000");
@@ -150,6 +167,10 @@ impl ControlOptions {
             side: self.side,
             gain: self.gain.unwrap_or(1),
             max_force,
+            assist_force: match self.mode {
+                Mode::FaderTension => Some(self.assist_force.unwrap_or(8000)),
+                Mode::Baseline | Mode::Brake | Mode::Assist | Mode::FaderBrake => None,
+            },
         })
     }
 }
@@ -176,7 +197,7 @@ pub fn run(args: Args) -> anyhow::Result<()> {
             let control = control.resolve()?;
             ensure!(
                 !until_stopped || control.mode.uses_fader(),
-                "--until-stopped requires --mode fader-brake"
+                "--until-stopped requires a fader mode"
             );
             ensure!(
                 control.mode.uses_fader() || control.max_force <= 500,

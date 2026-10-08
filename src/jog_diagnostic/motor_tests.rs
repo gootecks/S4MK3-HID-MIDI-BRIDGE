@@ -29,6 +29,7 @@ fn modes_reverse_or_follow_real_motion_and_isolate_side() -> anyhow::Result<()> 
             side,
             gain: 2,
             max_force: 100,
+            assist_force: None,
         })
         .decide(&motion)?;
         // Then direction, bounded magnitude, and the other wheel's neutral agree.
@@ -46,6 +47,7 @@ fn assist_is_neutral_at_rest_and_on_first_or_duplicate_samples() -> anyhow::Resu
         side: Side::Left,
         gain: 1,
         max_force: 100,
+        assist_force: None,
     });
     let mut decoder = Decoder::default();
     for input in [
@@ -73,6 +75,7 @@ fn magnitude_uses_host_elapsed_time_and_full_little_endian_cap() -> anyhow::Resu
         side: Side::Left,
         gain: 100,
         max_force: 1000,
+        assist_force: None,
     })
     .decide(&motion)?;
     // Then units and the little-endian encoding preserve the actual bound.
@@ -89,6 +92,7 @@ fn fader_brake_waits_for_minimum_before_arming() -> anyhow::Result<()> {
         side: Side::Left,
         gain: 1,
         max_force: 5000,
+        assist_force: None,
     });
     let mut decoder = Decoder::default();
     let mut trace = Vec::new();
@@ -130,6 +134,7 @@ fn fader_level_controls_force_independently_of_speed_and_reverses_only_to_brake(
         side: Side::Left,
         gain: 1,
         max_force: 5000,
+        assist_force: None,
     });
     let mut decoder = Decoder::default();
     let mut torques = Vec::new();
@@ -178,6 +183,7 @@ fn fader_mode_rejects_missing_analog_instead_of_inventing_a_level() -> anyhow::R
         side: Side::Left,
         gain: 1,
         max_force: 5000,
+        assist_force: None,
     });
     // When the operator requests fader-controlled braking.
     // Then absent analog evidence cannot arm or produce a decision.

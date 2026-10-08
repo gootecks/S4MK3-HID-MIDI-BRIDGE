@@ -1,8 +1,30 @@
-# Fader braking protocol comparison
+# Fader tension and legacy braking protocol comparison
 
 October 8, 2026. This is an offline source/packet check. No HID device was opened
 for this increment, and physical resistance, direction, and shutdown acceptance
-remain for the supervised morning run.
+remain unaccepted until a supervised physical run. The ordered commands,
+actions, and stop checks are in the suite's `README.md` (repository source:
+`docs/jog-tension-diagnostic.md`).
+
+## Settled bipolar mode
+
+`fader-tension` uses physical channel 1, second from the left. Raw 2016-2080
+inclusive selects zero and arms the session. Starting below or above that band
+can't arm it. Below center, selection rises to 8000 at raw 0 by default, but
+assistance applies only while the left wheel is touched and moving. Release
+gates assistance to zero. Above center, braking rises to 30000 at raw 4095 by
+default and can continue after release while moving. Rest, duplicate snapshots,
+unarmed motion, and the right wheel always propose zero.
+
+`--assist-force` accepts 0-8000 only in this mode; 0 disables assistance.
+`--max-force` accepts 1-60000 here, with 30000 as the default. A higher cap is a
+separate user-chosen experiment, never an automatic progression to 60000.
+Both fader modes reject `--gain` and `--side right`, and both support
+`--until-stopped`. The optional legacy `fader-brake` mode is unchanged:
+minimum raw 0-32 arms it, its default is 5000, and its ceiling remains 25000.
+
+Held-touch assistance is deliberately restricted compared with native free
+rotation. The piecewise fader policy is not a Traktor curve clone.
 
 ## Physical channel-1 input
 
@@ -24,7 +46,24 @@ this descriptor range in `src/main.rs`.
 Our capture stores numbered report 2, exactly 79 bytes including ID. It decodes
 numbered bytes 3-4 and rejects a short/wrong-ID report or a value above 4095.
 Historical captures without analog remain valid for fixed diagnostic modes;
-fader-brake rejects missing analog rather than inferring a level.
+both fader modes reject missing analog rather than inferring a level.
+
+## Native capture evidence and limits
+
+The native evidence has inferred phases, not calibrated torque settings:
+
+| Inferred native phase | Observed magnitude |
+| --- | --- |
+| 0, assistance | Median 5159, peak 7829 |
+| 127, braking | Median 22170, peak 30312 |
+| 255, braking | Median 41927, peak 60000 |
+
+These captures use the same 11-byte numbered `0x31` report structure described
+below. They motivate separate assistance and braking bounds, but don't prove
+the meaning of every native phase or reproduce its motion-dependent curve.
+The macOS wire effect and physical feel remain unverified. No TT-mode, ring
+initialization, screen traffic, or other new initialization traffic is added
+by this mode.
 
 ## Motor payload and HIDAPI boundary
 
@@ -63,14 +102,19 @@ Only Mixxx's engine/output boundary was captured, not its parser or encoder.
 For packet comparison, synthetic jog speeds were chosen inside each desired
 integer-magnitude floor bucket. This tests encoding and callback assembly,
 not whether Mixxx's tension algorithm equals our direct fader policy.
-All 33 packets from actual diagnostic replays at caps 3666, 5000, and 25000
+For the earlier legacy `fader-brake` implementation, all 33 packets from actual
+diagnostic replays at caps 3666, 5000, and 25000
 matched the original manager/callback output exactly, including neutral,
 negative and positive requests, and the right-wheel zero block.
 The original input parser and potentiometer also matched all 11 fader positions.
 
 Local evidence is in `.omo/evidence/jog-fader/protocol-oracle.json`,
 `replay.jsonl`, `cli-errors.json`, and archived upstream sources.
-These are local validation artifacts, not hardware captures.
+These are local validation artifacts, not hardware captures. This earlier
+oracle doesn't establish bipolar-policy correctness or acceptance at 30000
+or 60000. The new synthetic `jog-diagnostic-tension-replay.jsonl` fixture is
+packaged separately; the runbook checks zones, endpoints, zero gates, and
+completion without claiming a full expected trace.
 
 Protocol agreement does not establish firmware interpretation, physical torque,
 feel, or successful removal of drive. The diagnostic's raw values are not

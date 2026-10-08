@@ -19,6 +19,16 @@ pub struct FaderState {
     pub raw: u16,
     pub armed: bool,
     pub selected_force: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub zone: Option<FaderZone>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FaderZone {
+    Assist,
+    Neutral,
+    Brake,
 }
 
 pub struct Controller {
@@ -52,6 +62,36 @@ impl Controller {
                     raw,
                     armed: self.fader_armed,
                     selected_force,
+                    zone: None,
+                })
+            }
+            Mode::FaderTension => {
+                let raw = motion
+                    .deck1_fader
+                    .context("fader-tension requires analog report 2; capture with --analog")?;
+                self.fader_armed |= (2016..=2080).contains(&raw);
+                let (zone, force) = if raw < 2016 {
+                    let cap = self
+                        .control
+                        .assist_force
+                        .context("missing assistance ceiling")?;
+                    (
+                        FaderZone::Assist,
+                        u32::from(2016 - raw) * u32::from(cap) / 2016,
+                    )
+                } else if raw > 2080 {
+                    (
+                        FaderZone::Brake,
+                        u32::from(raw - 2080) * u32::from(self.control.max_force) / 2015,
+                    )
+                } else {
+                    (FaderZone::Neutral, 0)
+                };
+                Some(FaderState {
+                    raw,
+                    armed: self.fader_armed,
+                    selected_force: u16::try_from(force)?,
+                    zone: Some(zone),
                 })
             }
             Mode::Baseline | Mode::Brake | Mode::Assist => None,
@@ -60,11 +100,18 @@ impl Controller {
             Mode::Baseline => 0,
             Mode::Brake | Mode::FaderBrake => -1,
             Mode::Assist => 1,
+            Mode::FaderTension => match fader.context("missing tension selection")?.zone {
+                Some(FaderZone::Assist) => 1,
+                Some(FaderZone::Neutral) => 0,
+                Some(FaderZone::Brake) => -1,
+                None => anyhow::bail!("missing tension zone"),
+            },
         };
         match motion.status[side] {
             Status::Moving => {
                 let magnitude = if let Some(level) = fader {
-                    if level.armed {
+                    let held = level.zone != Some(FaderZone::Assist) || motion.touch[side];
+                    if level.armed && held {
                         u64::from(level.selected_force)
                     } else {
                         0

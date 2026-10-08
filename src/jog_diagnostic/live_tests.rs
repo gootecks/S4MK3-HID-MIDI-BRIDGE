@@ -9,6 +9,7 @@ fn control() -> ControlArgs {
         side: Side::Left,
         gain: 1,
         max_force: 100,
+        assist_force: None,
     }
 }
 
@@ -121,6 +122,7 @@ fn continuous_fader_stop_neutralizes_before_queued_input() -> anyhow::Result<()>
                 side: Side::Left,
                 gain: 1,
                 max_force: 5000,
+                assist_force: None,
             },
             |report| {
                 writes.push(report.to_vec());
@@ -145,5 +147,63 @@ fn continuous_fader_stop_neutralizes_before_queued_input() -> anyhow::Result<()>
     );
     assert_eq!(reader.frames.len(), 1);
     assert_eq!(writes.last(), Some(&neutral_report().to_vec()));
+    Ok(())
+}
+
+#[test]
+fn continuous_tension_stop_and_watchdog_neutralize_actual_force() -> anyhow::Result<()> {
+    // Given center-armed full braking and subscribed live-loop channels.
+    for trigger_stop in [true, false] {
+        let (mut reader, frames_tx, _done_tx) = Reader::channel_only();
+        let (stop_tx, stop) = bounded(1);
+        let mut writes = Vec::new();
+        let mut log = Vec::new();
+        {
+            let mut session = Session::new(
+                ControlArgs {
+                    mode: Mode::FaderTension,
+                    side: Side::Left,
+                    gain: 1,
+                    max_force: 60000,
+                    assist_force: Some(8000),
+                },
+                |report| {
+                    writes.push(report.to_vec());
+                    Ok(report.len())
+                },
+                &mut log,
+            )?;
+            session.handle(Event::Sample(with_fader(frame(0, 1, [0, 0]), 2048)), 0)?;
+            session.handle(
+                Event::Sample(with_fader(frame(2000, 2, [20, 0]), 4095)),
+                2000,
+            )?;
+            if trigger_stop {
+                frames_tx.send(with_fader(frame(4000, 3, [30, 0]), 0))?;
+                stop_tx.send(())?;
+            }
+            // When the production continuous loop receives Stop or silent-input timeout.
+            let result = trial_loop(&mut session, &mut reader, (&stop, Instant::now(), None));
+            if trigger_stop {
+                result?;
+                assert_eq!(reader.frames.len(), 1);
+            } else {
+                assert!(
+                    result
+                        .err()
+                        .context("watchdog must fail")?
+                        .to_string()
+                        .contains("no fresh input")
+                );
+            }
+        }
+        // Then accepted nonzero reports precede a real neutral write in both paths.
+        assert!(
+            writes
+                .iter()
+                .any(|r| r == &[49, 1, 224, 254, 96, 234, 1, 32, 1, 0, 0])
+        );
+        assert_eq!(writes.last(), Some(&neutral_report().to_vec()));
+    }
     Ok(())
 }

@@ -75,6 +75,7 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
                     let percent = u32::from(level.raw) * 100 / 4095;
                     if self.last_fader.is_none_or(|previous| {
                         previous.armed != level.armed
+                            || previous.zone != level.zone
                             || (previous.selected_force == 0) != (level.selected_force == 0)
                             || u32::from(previous.raw) * 100 / 4095 != percent
                     }) {
@@ -83,7 +84,8 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
                             raw = level.raw,
                             armed = level.armed,
                             selected_force = level.selected_force,
-                            "DIAGNOSTIC_FADER: minimum arms; selected force applies only to motion"
+                            zone = ?level.zone,
+                            "DIAGNOSTIC_FADER: zero-force position arms; selection applies only to motion"
                         );
                     }
                     self.last_fader = Some(level);

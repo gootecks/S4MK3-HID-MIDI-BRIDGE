@@ -29,7 +29,7 @@ fn cli_rejects_unbounded_and_invalid_control_values() {
         ("--gain", "0"),
         ("--gain", "101"),
         ("--max-force", "0"),
-        ("--max-force", "25001"),
+        ("--max-force", "60001"),
     ] {
         // When the standalone argument parser receives them.
         let result = Args::try_parse_from([
