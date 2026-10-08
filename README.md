@@ -210,4 +210,5 @@ for the S4 MK3 protocol documentation and controller support this bridge builds 
 - [Djay action reference](docs/djay-action-reference.md)
 - [Bridge function reference](docs/bridge-function-reference.md)
 - [LED feedback](docs/led-feedback.md)
+- [Standalone hardware research and board shortlist](docs/hardware-bridge-research.md)
 - [Design history](docs/design.md)

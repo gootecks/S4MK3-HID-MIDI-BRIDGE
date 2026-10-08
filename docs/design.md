@@ -9,6 +9,12 @@ The minimal macOS virtual MIDI stage was subsequently authorized; see
 [midi-test.md](midi-test.md). Broader MIDI mappings and standalone audio remain
 future stages.
 
+Update October 8: [standalone hardware research](hardware-bridge-research.md)
+records the USD 30/50 board search, full-duplex audio requirement, Rust/USB
+software findings, and dated Brooklyn Micro Center availability. S4 audio inputs
+are now required as well as playback; this supersedes the output-only research
+scope below. No board has been selected or latency measured.
+
 ## 1. Problem and priorities
 
 The Traktor Kontrol S4 MK3 provides its physical controls through HID rather than
