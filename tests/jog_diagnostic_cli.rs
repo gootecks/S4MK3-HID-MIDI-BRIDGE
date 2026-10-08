@@ -96,3 +96,43 @@ fn malformed_capture_and_unarmed_live_command_exit_nonzero() -> anyhow::Result<(
     }
     Ok(())
 }
+
+#[test]
+fn analog_evidence_replays_the_physical_channel1_field_without_motor_access() -> anyhow::Result<()>
+{
+    // Given a framed analog capture with independently changed mixer controls.
+    let output = run(&[
+        "replay",
+        "--input",
+        "examples/jog-diagnostic-fader-replay.jsonl",
+        "--mode",
+        "baseline",
+    ])?;
+    // When the actual executable decodes those snapshots offline.
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let rows: Vec<Value> = std::str::from_utf8(&output.stdout)?
+        .lines()
+        .map(serde_json::from_str)
+        .collect::<Result<_, _>>()?;
+    let motions: Vec<_> = rows.iter().filter(|row| row["kind"] == "motion").collect();
+    // Then only channel 1 supplies the levels and baseline remains neutral.
+    let levels: Vec<_> = motions
+        .iter()
+        .map(|row| &row["motion"]["deck1_fader"])
+        .collect();
+    assert_eq!(
+        json!(levels),
+        json!([4095, 4095, 0, 2048, 2048, 4095, 4095, 0, 32, 4095, 4095])
+    );
+    assert!(
+        motions
+            .iter()
+            .all(|row| row["decision"]["torque"] == json!([0, 0]))
+    );
+    assert!(!String::from_utf8_lossy(&output.stderr).contains("DIAGNOSTIC_HID_OPEN"));
+    Ok(())
+}

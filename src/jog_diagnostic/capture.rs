@@ -14,6 +14,8 @@ pub struct RawFrame {
     pub host_us: u64,
     pub buttons: Vec<u8>,
     pub jog: Vec<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analog: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]

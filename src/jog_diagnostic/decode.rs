@@ -19,6 +19,8 @@ pub enum Status {
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Motion {
     pub host_us: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deck1_fader: Option<u16>,
     pub touch: [bool; 2],
     pub counters: [u32; 2],
     pub timers: [u32; 2],
@@ -56,8 +58,20 @@ impl Decoder {
                 "host timestamps must strictly increase"
             );
         }
+        let deck1_fader = if let Some(analog) = &frame.analog {
+            ensure!(
+                analog.len() == 79 && analog[0] == 2,
+                "expected numbered 79-byte analog report"
+            );
+            let value = u16::from_le_bytes([analog[3], analog[4]]);
+            ensure!(value <= 4095, "deck1 fader exceeds 12-bit range 4095");
+            Some(value)
+        } else {
+            None
+        };
         let mut motion = Motion {
             host_us: frame.host_us,
+            deck1_fader,
             touch: [frame.buttons[17] & 0x10 != 0, frame.buttons[17] & 0x20 != 0],
             counters: [word(&frame.jog, 12), word(&frame.jog, 40)],
             timers: [word(&frame.jog, 8), word(&frame.jog, 36)],

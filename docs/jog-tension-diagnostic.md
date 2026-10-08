@@ -40,6 +40,11 @@ The packager disables Cargo release stripping to avoid the recorded Rust
 | `replay --input PATH --mode MODE` | Offline raw decoding and proposed reports on stdout. Never initializes HID or sends reports. |
 | `live --out PATH --mode MODE --enable-motor --seconds N` | Explicitly enabled motor trial. Default 10 seconds, maximum 30; Ctrl-C stops it. `trial` is an alias. |
 
+Add `--analog` to `capture` to include fresh 79-byte numbered mixer snapshots
+(report 2). The physical channel-1 volume fader is decoded from numbered bytes
+3-4, little-endian, range 0-4095. Analog capture still sends no output reports;
+historical captures without this optional report remain replayable.
+
 Every capture/trial creates a **new** file; existing captures are never
 overwritten. Live commands refuse known running bridge, diagnostic, Traktor,
 or Mixxx processes before opening HID. An idle menu-bar app is allowed.

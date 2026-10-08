@@ -40,6 +40,9 @@ enum Command {
         out: PathBuf,
         #[arg(long, default_value_t = 30, value_parser = clap::value_parser!(u64).range(1..=120))]
         seconds: u64,
+        /// Include fresh mixer/fader snapshots (numbered report 2).
+        #[arg(long)]
+        analog: bool,
     },
     /// Decode a capture and calculate torque offline; never opens HID.
     Replay {
@@ -103,7 +106,11 @@ struct ControlArgs {
 
 pub fn run(args: Args) -> anyhow::Result<()> {
     match args.command {
-        Command::Capture { out, seconds } => live::capture(&out, seconds),
+        Command::Capture {
+            out,
+            seconds,
+            analog,
+        } => live::capture(&out, seconds, analog),
         Command::Replay { input, control } => replay(&input, control),
         Command::Live {
             out,

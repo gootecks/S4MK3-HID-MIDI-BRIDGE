@@ -17,15 +17,18 @@ use super::ownership;
 use super::reader::Reader;
 use super::session::{Event, Session};
 
-pub fn capture(path: &Path, seconds: u64) -> anyhow::Result<()> {
+pub fn capture(path: &Path, seconds: u64, analog: bool) -> anyhow::Result<()> {
     ownership::check()?;
     let mut log = create_log(path)?;
     emit(&mut log, &LogRecord::session("capture_no_writes", None))?;
     let (hid, _) = open(false)?;
     let stop = stop_signal()?;
     let started = Instant::now();
-    let mut reader = Reader::start(hid, started)?;
-    info!("DIAGNOSTIC_CAPTURE: no output reports; Ctrl-C stops capture");
+    let mut reader = Reader::start(hid, started, analog)?;
+    info!(
+        analog,
+        "DIAGNOSTIC_CAPTURE: no output reports; Ctrl-C stops capture"
+    );
     let result = capture_loop(&mut reader, (&stop, started, seconds), &mut log);
     let cleanup = reader.stop();
     log.flush()?;
@@ -74,7 +77,7 @@ pub fn trial(path: &Path, seconds: u64, control: ControlArgs) -> anyhow::Result<
     let stop = stop_signal()?;
     let started = Instant::now();
     let mut session = Session::new(control, |report| Ok(writer.write(report)?), &mut log)?;
-    let mut reader = Reader::start(hid, started)?;
+    let mut reader = Reader::start(hid, started, false)?;
     info!(
         ?control,
         seconds, "DIAGNOSTIC_MOTOR_ENABLED: uncalibrated torque; Ctrl-C neutralizes"

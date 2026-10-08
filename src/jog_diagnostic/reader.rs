@@ -3,7 +3,7 @@
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context as _, bail};
+use anyhow::{Context as _, bail, ensure};
 use crossbeam_channel::{Receiver, Sender, TryRecvError, bounded};
 use hidapi::HidDevice;
 use tracing::warn;
@@ -37,14 +37,48 @@ impl Reader {
         )
     }
 
-    pub fn start(hid: HidDevice, started: Instant) -> anyhow::Result<Self> {
+    pub fn start(hid: HidDevice, started: Instant, include_analog: bool) -> anyhow::Result<Self> {
         let (frame_tx, frames) = bounded(32);
         let (done_tx, done) = bounded(1);
         let (cancel, cancel_rx) = bounded(1);
         let handle = std::thread::Builder::new()
             .name("jog-diagnostic-input".to_owned())
             .spawn(move || {
-                let result = read_frames(&hid, started, (&frame_tx, &cancel_rx));
+                let result = (|| {
+                    let mut buffers = [[0_u8; 128]; 3];
+                    let mut analog_buffer = [0_u8; 79];
+                    loop {
+                        match cancel_rx.try_recv() {
+                            Ok(()) | Err(TryRecvError::Disconnected) => return Ok(()),
+                            Err(TryRecvError::Empty) => {}
+                        }
+                        let analog = if include_analog {
+                            analog_buffer[0] = 2;
+                            let length = hid
+                                .get_input_report(&mut analog_buffer)
+                                .context("request S4 analog report 2")?;
+                            ensure!(
+                                length == 79 && analog_buffer[0] == 2,
+                                "unexpected S4 analog snapshot framing"
+                            );
+                            Some(analog_buffer.to_vec())
+                        } else {
+                            None
+                        };
+                        let lengths = crate::input::read_batch(&hid, true, &mut buffers)?;
+                        let frame = RawFrame {
+                            host_us: u64::try_from(started.elapsed().as_micros())?,
+                            buttons: buffers[0][..lengths[0]].to_vec(),
+                            jog: buffers[1][..lengths[1]].to_vec(),
+                            analog,
+                        };
+                        if !publish_frame(frame, (&frame_tx, &cancel_rx))? {
+                            return Ok(());
+                        }
+                    }
+                })();
+                // Completion means native handle teardown has also finished.
+                drop(hid);
                 if let Err(error) = done_tx.try_send(result) {
                     warn!(%error, "DIAGNOSTIC_READER_RESULT_UNDELIVERED");
                 }
@@ -89,29 +123,6 @@ impl Drop for Reader {
                 Ok(()) | Err(crossbeam_channel::TrySendError::Disconnected(())) => {}
                 Err(error) => warn!(%error, "DIAGNOSTIC_READER_CANCEL_FAILED"),
             }
-        }
-    }
-}
-
-fn read_frames(
-    hid: &HidDevice,
-    started: Instant,
-    channels: (&Sender<RawFrame>, &Receiver<()>),
-) -> anyhow::Result<()> {
-    let mut buffers = [[0_u8; 128]; 3];
-    loop {
-        match channels.1.try_recv() {
-            Ok(()) | Err(TryRecvError::Disconnected) => return Ok(()),
-            Err(TryRecvError::Empty) => {}
-        }
-        let lengths = crate::input::read_batch(hid, true, &mut buffers)?;
-        let frame = RawFrame {
-            host_us: u64::try_from(started.elapsed().as_micros())?,
-            buttons: buffers[0][..lengths[0]].to_vec(),
-            jog: buffers[1][..lengths[1]].to_vec(),
-        };
-        if !publish_frame(frame, channels)? {
-            return Ok(());
         }
     }
 }

@@ -1,4 +1,5 @@
 use super::*;
+use anyhow::Context as _;
 
 pub fn frame(host_us: u64, timer: u32, counters: [u32; 2]) -> RawFrame {
     let mut buttons = vec![0; 23];
@@ -18,7 +19,50 @@ pub fn frame(host_us: u64, timer: u32, counters: [u32; 2]) -> RawFrame {
         host_us,
         buttons,
         jog,
+        analog: None,
     }
+}
+
+pub fn with_fader(input: RawFrame, raw: u16) -> RawFrame {
+    let mut analog = vec![0; 79];
+    analog[0] = 2;
+    analog[3..5].copy_from_slice(&raw.to_le_bytes());
+    RawFrame {
+        analog: Some(analog),
+        ..input
+    }
+}
+
+#[test]
+fn deck1_fader_uses_its_little_endian_field_not_neighbors() -> anyhow::Result<()> {
+    // Given channel 1 at each meaningful position and distinct adjacent controls.
+    for raw in [0, 2048, 4095] {
+        let mut input = with_fader(frame(0, 1, [0, 0]), raw);
+        if let Some(analog) = &mut input.analog {
+            analog[1..3].copy_from_slice(&4095_u16.to_le_bytes());
+            analog[5..7].copy_from_slice(&1234_u16.to_le_bytes());
+        }
+        // When the real numbered analog report is decoded.
+        let motion = Decoder::default().decode(&input)?;
+        // Then only the physical channel-1 field controls its decoded level.
+        assert_eq!(motion.deck1_fader, Some(raw));
+    }
+    Ok(())
+}
+
+#[test]
+fn malformed_analog_framing_and_range_fail_before_motion() -> anyhow::Result<()> {
+    // Given a short report, another report ID, and an invalid 12-bit value.
+    for (length, id, raw) in [(5, 2, 1), (79, 1, 1), (79, 2, 4096)] {
+        let mut input = with_fader(frame(0, 1, [0, 0]), raw);
+        let analog = input.analog.as_mut().context("analog fixture missing")?;
+        analog.truncate(length);
+        analog[0] = id;
+        // When the real decoder sees invalid analog evidence.
+        // Then it rejects the frame rather than producing a usable fader level.
+        assert!(Decoder::default().decode(&input).is_err());
+    }
+    Ok(())
 }
 
 #[test]
