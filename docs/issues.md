@@ -1,6 +1,6 @@
 # S4 MK3 bridge issues
 
-Current checklist as of October 6, 2026. This is the source of truth for issue
+Current checklist as of October 8, 2026. This is the source of truth for issue
 status; [the mapping audit](mapping-audit.md) retains detailed findings and
 historical snapshots.
 
@@ -42,6 +42,13 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Open
 
+- [ ] **Wheel-tension control** - Immediate priority agreed October 8, 2026,
+  ahead of further jog tuning. A standalone
+  [diagnostic suite](jog-tension-diagnostic.md) prepares no-write capture,
+  offline replay, and explicitly enabled, bounded neutral/brake/assist trials.
+  Physical tension, force limits, direction, and neutral/Stop behavior still
+  require supervised verification; preparation sends no unattended motor
+  commands. App integration follows that evidence.
 - [ ] **Jog feel and backspin** - Reduce excessive slow-movement sensitivity
   while improving fast-backspin response. Measure raw counts,
   emitted MIDI, and Djay response before choosing tuning behavior.
@@ -73,11 +80,10 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Deferred ideas
 
-- [ ] **Haptic motor and wheel-tension control** - The user wants to address
-  this eventually. Investigate the S4's tension/motor protocol and match
-  configurable resistance independently of software jog sensitivity.
-  Motor-driven rotation and other haptic behavior need their own agreed
-  scope; the current jog investigation sends no motor commands.
+- [ ] **Powered platter rotation and other haptics** - Playback-driven
+  rotation, cue effects, and other haptic behavior need their own agreed scope.
+  Wheel-tension investigation is now open separately; the normal MIDI bridge
+  still sends no motor commands.
 
 On-device screens/pad legends and a controller settings-menu gesture remain
 deferred. Automatic Slip during REV is a separate design choice, not part of

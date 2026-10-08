@@ -5,6 +5,7 @@ edition = "2024"
 rust-version = "1.88"
 description = "Native Instruments S4 MK3 HID-to-MIDI bridge for Djay Pro on macOS"
 publish = false
+default-run = "s4mk3-hid-midi-bridge"
 
 [dependencies]
 anyhow = "1"
