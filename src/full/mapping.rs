@@ -542,11 +542,11 @@ mod tests {
     }
 
     #[test]
-    fn browse_polarity_is_flipped_once_on_both_layers() -> anyhow::Result<()> {
-        // Given the real generated mapping for both Browse actions.
+    fn browse_polarity_is_flipped_once_on_normal_layer() -> anyhow::Result<()> {
+        // Given the real generated mapping for ordinary browsing.
         let controls = generated_controls()?;
         // When every deck and modifier address is examined.
-        for channel in [0_u64, 1, 2, 3, 8, 9, 10, 11] {
+        for channel in [0_u64, 1, 2, 3] {
             let control = controls
                 .iter()
                 .find(|control| {
@@ -569,13 +569,14 @@ mod tests {
             );
             assert_eq!(
                 field(control, "keyPath").and_then(Value::as_string),
-                Some(if channel < 8 {
-                    "musicLibrary.libraryRotary"
-                } else {
-                    "musicLibrary.sectionRotary"
-                })
+                Some("musicLibrary.libraryRotary")
             );
         }
+        // Shift uses directional button pulses, never section-navigation CCs.
+        assert!(!controls.iter().any(|control| {
+            field(control, "keyPath").and_then(Value::as_string)
+                == Some("musicLibrary.sectionRotary")
+        }));
         Ok(())
     }
 

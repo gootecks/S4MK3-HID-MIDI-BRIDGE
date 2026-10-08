@@ -323,18 +323,19 @@ impl Translator {
     }
 
     fn encoder(&self, name: &str, delta: i32, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
-        if let Some((side, "move_encoder")) = side_name(name)
+        if let Some((side, suffix @ ("move_encoder" | "browse_encoder"))) = side_name(name)
             && self.shifted[side]
         {
-            let action = if delta < 0 {
-                "move_one_backward"
-            } else {
-                "move_one_forward"
+            let action = match (suffix, delta < 0) {
+                ("browse_encoder", true) => "preview_backward",
+                ("browse_encoder", false) => "preview_forward",
+                (_, true) => "move_one_backward",
+                (_, false) => "move_one_forward",
             };
             let binding = catalog::DECK_BINDINGS
                 .iter()
                 .find(|binding| binding.input == action)
-                .context("one-beat MOVE binding missing")?;
+                .context("shifted encoder pulse binding missing")?;
             for _ in 0..delta.unsigned_abs() {
                 pulse(
                     Address {
@@ -1248,6 +1249,96 @@ mod tests {
                 }
                 assert_eq!(state.move_selecting[usize::from(deck.channel())], selecting);
             }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_browse_emits_mapped_preview_pulses_without_navigation() -> anyhow::Result<()> {
+        // Given the generated mapping and either physical side on every deck.
+        let mapping = mapping::generate()?;
+        let controls = mapping
+            .as_dictionary()
+            .and_then(|root| root.get("controls"))
+            .and_then(plist::Value::as_array)
+            .context("mapping controls missing")?;
+        for side in 0..2 {
+            for deck in [Deck::A, Deck::B, Deck::C, Deck::D] {
+                let mut state = Translator::default();
+                state.decks[side] = deck;
+                state.shifted[side] = true;
+                let name = if side == 0 {
+                    "left_browse_encoder"
+                } else {
+                    "right_browse_encoder"
+                };
+                // When both directions turn, including multiple and zero detents.
+                for (delta, number, key) in [
+                    (2_i32, 23_u8, "musicLibrary.skipForwardPreview"),
+                    (-3, 24, "musicLibrary.skipBackwardPreview"),
+                    (0, 23, "musicLibrary.skipForwardPreview"),
+                ] {
+                    let output = run(&mut state, &[Control::Encoder(name, delta)])?;
+                    let address = Address {
+                        channel: deck.channel() + 8,
+                        number,
+                    };
+                    // Then each detent is a button pulse mapped to the correct action.
+                    assert_eq!(
+                        output,
+                        [address.press(), address.release()]
+                            .repeat(usize::try_from(delta.unsigned_abs())?)
+                    );
+                    assert!(controls.iter().any(|control| {
+                        let Some(row) = control.as_dictionary() else {
+                            return false;
+                        };
+                        row.get("keyPath").and_then(plist::Value::as_string) == Some(key)
+                            && row
+                                .get("midiChannel")
+                                .and_then(plist::Value::as_unsigned_integer)
+                                == Some(u64::from(address.channel))
+                            && row
+                                .get("midiData")
+                                .and_then(plist::Value::as_unsigned_integer)
+                                == Some(u64::from(number))
+                            && row
+                                .get("midiMessageType")
+                                .and_then(plist::Value::as_unsigned_integer)
+                                == Some(1)
+                    }));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn browse_uses_current_shift_and_restores_navigation_on_release() -> anyhow::Result<()> {
+        // Given either side, with Shift and rotation in one unordered snapshot.
+        for (name, shift, channel) in [
+            ("left_browse_encoder", "left_shift", 0_u8),
+            ("right_browse_encoder", "right_shift", 1),
+        ] {
+            let mut state = Translator::default();
+            // When Shift is pressed or released in the same snapshot as a turn.
+            let seek = run(
+                &mut state,
+                &[Control::Encoder(name, 1), Control::Button(shift, true)],
+            )?;
+            let browse = run(
+                &mut state,
+                &[Control::Encoder(name, -1), Control::Button(shift, false)],
+            )?;
+            // Then only seek pulses occur while shifted, and browsing returns immediately.
+            assert_eq!(
+                seek,
+                [
+                    [0x90 | (channel + 8), 23, 127],
+                    [0x80 | (channel + 8), 23, 0]
+                ]
+            );
+            assert_eq!(browse, [[0xb0 | channel, 3, 63]]);
         }
         Ok(())
     }

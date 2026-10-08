@@ -15,6 +15,15 @@ them; restart alone does not. Seek and released-touch routing are unchanged.
 
 ### Current encoder overlay
 
+Preview remains the native `musicLibrary.togglePreview` action. Normal BROWSER
+browses; Shift+BROWSER emits one directional preview-seek button pulse per
+detent, replacing section navigation. Notes 23/24 on channels 9-12 target
+`musicLibrary.skipForwardPreview` / `musicLibrary.skipBackwardPreview`.
+No preview state is guessed or cached. Djay ignores inactive-preview seeks;
+ordinary browsing cancels preview. LOOP and Shift+BROWSER press are unchanged.
+The native seek actions were user-verified; this encoder route needs a live
+check with a rebuilt bridge and newly installed mapping.
+
 The encoder increment is full-profile only. Descriptor normalization corrects
 all rotation names and only left press names. LOOP turn/press use native
 `autoLoopDurationRotary` / `autoLoopOnOff`; shifted LOOP retains

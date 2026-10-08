@@ -138,13 +138,20 @@ pub const DECK_BINDINGS: &[Binding] = &[
     relative("move_size", 7, "turntable{deck}.skipDurationRotary", None),
     Binding {
         flipped: true,
-        ..relative(
-            "browse_encoder",
-            3,
-            "musicLibrary.libraryRotary",
-            Some("musicLibrary.sectionRotary"),
-        )
+        ..relative("browse_encoder", 3, "musicLibrary.libraryRotary", None)
     },
+    note(
+        "preview_forward",
+        23,
+        "musicLibrary.skipForwardPreview",
+        Some("musicLibrary.skipForwardPreview"),
+    ),
+    note(
+        "preview_backward",
+        24,
+        "musicLibrary.skipBackwardPreview",
+        Some("musicLibrary.skipBackwardPreview"),
+    ),
     Binding {
         sensitivity: Some(jog::DEFAULT.pitch_bend_speed),
         acceleration: Some(jog::DEFAULT.pitch_bend_reaction),

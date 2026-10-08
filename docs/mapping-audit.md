@@ -52,6 +52,13 @@ See [configurable controls](configurable-controls.md) and
 
 ### Implemented LOOP/MOVE layout
 
+The October 8 preview increment keeps native Preview toggle and normal
+BROWSER navigation. Shift+BROWSER now emits native forward/backward preview
+seek button pulses instead of section navigation, without guessing playback
+state. LOOP is unchanged. Both seek actions are user-verified; physical
+direction and multi-detent response for this new route remain pending.
+The earlier preview-dependent/LOOP proposal below is superseded by this layout.
+
 The subsequent REV/Browse increment maps REV to native `reverseHold`,
 preserving press ownership through deck/Shift changes and shutdown. No
 automatic Slip/Flux behavior was added. Browse's normal and shifted rotary

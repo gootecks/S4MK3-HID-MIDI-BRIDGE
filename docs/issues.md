@@ -59,9 +59,11 @@ Keep completed items and add their completion date and a short evidence note.
   slot states.
 - [ ] **REC / Record Sample** - Establish the native action's recording
   source, destination/slot, and press/hold requirements.
-- [ ] **Preview encoder scrubbing** - Find a genuine preview-seek action and
-  establish the preview-state or held-modifier interaction before routing
-  the requested encoder to it.
+- [ ] **Preview encoder scrubbing** - Native forward/backward preview skips
+  are user-verified. The approved layout is implemented: Preview toggles
+  playback and Shift+BROWSER emits directional seek pulses, replacing section
+  navigation without requiring playback feedback. A rebuilt bridge and new
+  mapping still need a physical direction/multi-detent live check.
 - [ ] **MUTE/STEMS behavior** - Decide whether MUTE should become a held
   modifier instead of duplicating the STEMS layer, and settle pad actions.
 - [ ] **FX SELECT / Filter Reset** - Settle the intended behavior and verify

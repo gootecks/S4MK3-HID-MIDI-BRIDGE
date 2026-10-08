@@ -28,6 +28,14 @@ snapshot: MOVE uses CC 2 for `skipRotary`, selection uses CC 7 for
 REV now uses `turntableN.reverseHold` on note 3, channels 1-4. Browse CC 3
 has `flipped=true` on normal channels 1-4 and shifted channels 9-12.
 Shift+LOOP press uses `turntableN.reloop` on note 6, channels 9-12.
+
+The October 8 preview increment supersedes the shifted Browse assignment:
+normal Browse CC 3 remains flipped on channels 1-4; shifted section-navigation
+CC 3 is removed. Shift+BROWSER emits note 23/24 pulses on channels 9-12,
+mapped to `musicLibrary.skipForwardPreview` / `musicLibrary.skipBackwardPreview`.
+Base-channel aliases are generated but aren't runtime Shift destinations.
+Preview note 13 still targets `musicLibrary.togglePreview`; no preview-playing
+state output is declared.
 `loopIn`, `loopOut`, and `loopInOut` are now unmapped. Normal LOOP remains
 `autoLoopDurationRotary` / `autoLoopOnOff`; Shift+LOOP turn remains
 `autoLoopMoveRotary`. Reloop's declared enable gate is

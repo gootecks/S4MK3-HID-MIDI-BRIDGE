@@ -12,13 +12,13 @@ bash macos/build-app.sh
 
 The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-arm64.zip`, and the versioned release disk image
-`dist/S4 MK3 Bridge-0.1.0-beta.1-arm64.dmg`. The script compiles
+`dist/S4 MK3 Bridge-0.1.1-beta.1-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
 `examples/led-config.json` into the app resources, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
-`--generate-mapping`. Cargo identifies this release as `0.1.0-beta.1`;
-the bundle uses numeric version `0.1.0`, build `1`, and records the complete
+`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.1`;
+the bundle uses numeric version `0.1.1`, build `2`, and records the complete
 release in `S4BridgeReleaseVersion`. The script checks alignment with Cargo.
 It generates `AppIcon.icns` from `macos/Assets/AppIcon.png` and includes an
 Applications shortcut in the compressed read-only DMG.
@@ -73,8 +73,15 @@ preserving existing custom mappings.
 
 REV now uses native `reverseHold`: releasing it ends reverse, even after a
 deck or Shift change. It does not automatically enable or restore Slip.
-Browse direction is corrected once in the mapping on both normal and Shift
-layers. Reinstall the new mapping to apply these changes.
+Normal Browse direction is corrected once in the mapping. Preview remains
+a playback toggle; Shift+BROWSER now seeks preview instead of navigating
+sections. Each detent emits a native forward/backward preview button pulse,
+without tracking playback state. Seeking while preview is stopped is ignored
+by Djay; ordinary browsing cancels preview. Shift+BROWSER press still goes
+back, and LOOP is unchanged. Use a rebuilt bridge and install its newly
+generated mapping under a new name; old bridge binaries and mappings do not
+provide this route. Physical seek direction and multi-detent response still
+need a live check.
 
 Physical crossfader assignments and curve wait for raw Djay playback feedback
 before their initial application, then follow physical changes only. This

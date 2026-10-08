@@ -4,7 +4,7 @@ Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
 Djay sends audio directly to the S4. No development tools are needed.
 
-**Version 0.1.0-beta.1** is a beta with a custom Djay mapping, not a recreation
+**Version 0.1.1-beta.1** is a beta with a custom Djay mapping, not a recreation
 of every Traktor feature. Read the control differences and known limitations
 below before using it for a set.
 
@@ -17,8 +17,8 @@ below before using it for a set.
 
 ## Download and install
 
-1. Open [GitHub Releases](../../releases) and find **0.1.0-beta.1**.
-2. Download **`S4 MK3 Bridge-0.1.0-beta.1-arm64.dmg`**.
+1. Open [GitHub Releases](../../releases) and find **0.1.1-beta.1**.
+2. Download **`S4 MK3 Bridge-0.1.1-beta.1-arm64.dmg`**.
 3. Open the disk image, drag **S4 MK3 Bridge** to **Applications**, then eject
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
@@ -100,7 +100,7 @@ thing.
 | **Channel FX SELECT and mixer FX** | Select the deck for mixer instant FX. The mixer FX buttons and Filter Reset affect that selected deck, not all decks.                                                                                                                 |
 | **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
 | **REC**                            | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                         |
-| **Preview**                        | Toggle library preview on/off. It isn't Traktor's hold-to-preview interaction, and encoder preview seeking isn't implemented.                                                                                                         |
+| **Preview**                        | Toggle library preview on/off; Shift+BROWSER seeks forward/backward instead of navigating sections. Normal BROWSER keeps browsing. It isn't Traktor's hold-to-preview interaction. |
 
 HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
@@ -164,8 +164,9 @@ Open bugs and unresolved behavior:
   bypass that preserves individual slot states remains unresolved.
 - **REC:** recording source, destination/sample slot, and press/hold behavior
   aren't established.
-- **Preview scrubbing:** a suitable preview-seek action and interaction haven't
-  been established.
+- **Preview scrubbing:** native forward/backward skips are verified, and
+  Shift+BROWSER seeking is implemented. Physical encoder direction and
+  multi-detent response still need a live check with the new app and mapping.
 - **MUTE/STEMS:** the current alias works as described above, but a possible
   held modifier and final pad behavior are undecided.
 - **FX SELECT / Filter Reset:** reset currently targets only the selected deck.

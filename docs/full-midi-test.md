@@ -41,7 +41,7 @@ that an existing bundle has been rebuilt.
 | MOVE encoder | Native jump by chosen jump size (`skipRotary`), with or without an active loop; selection mode changes jump size immediately (`skipDurationRotary`) |
 | MOVE encoder press | Local per-logical-deck size-select toggle, no MIDI, no timeout; second press exits |
 | Shift+MOVE turn | Fixed one-beat jump per detent in either direction, even while selecting; preserves chosen jump size |
-| Browse encoder / press | Browse / load active deck; Shift selects a section / goes back; both rotation layers use one native mapping inversion to correct reported direction |
+| Browse encoder / press | Browse / load active deck; Shift turn seeks preview with directional button pulses, Shift press goes back; normal browsing retains its native mapping inversion |
 | Library buttons | Show library, queue, mark selection, and preview |
 | HOTCUE pads | Hotcues 1-8; Shift clears them |
 | SAMPLES pads | Play samples; Shift stops them |
@@ -138,9 +138,16 @@ CC 4-7; an older mapping without those outputs cannot initialize selectors.
 - Hold and release REV on every deck. Reverse must end on release and on
   bridge Stop, even if deck or Shift changes while held. Slip remains
   independent.
-- Check clockwise/down-list and counterclockwise/up-list Browse movement
-  on both sides, including Shift's section navigation. The mapping alone
-  inverts direction; physical counts and transmitted CC values are unchanged.
+- Check clockwise/down-list and counterclockwise/up-list normal Browse movement
+  on both sides. The mapping alone inverts ordinary browsing.
+- Toggle Preview on, then hold the corresponding Shift and turn BROWSER
+  on both sides and A/C/B/D: clockwise should seek forward, counterclockwise
+  backward, without changing the selected track. Each decoded detent sends
+  one press/release pair: note 23 forward, note 24 backward on channels 9-12.
+  Release Shift to restore browsing; ordinary navigation cancels preview.
+  With preview stopped, shifted turns should do nothing. Preview remains
+  Djay's native toggle, with no local playback-state flag. Both native seek
+  actions were user-verified; this new encoder route still needs a live check.
 - Preset all physical assignments and curve without moving them. Check
   Djay-first and bridge-first startup, including Through positions and
   empty/paused decks. Diagnostics should show `CROSSFADER_FEEDBACK_RECEIVED`;
