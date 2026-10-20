@@ -14,6 +14,11 @@ state for Neural Mix and zero for EQ on its own channel. This verifies live mode
 feedback, not the physical Filter/ON gestures or hardware lamp colors.
 Local capture evidence is `.omo/evidence/neural-eq/djay-feedback.log`.
 
+The user subsequently reported "Works good" for the physical workflow and
+"Lookin good" after the dim-cyan idle Filter refinement on October 20, 2026.
+This records general acceptance, not an instrumented pass of every edge case
+below. Broader DJ-laptop testing is still in progress.
+
 ## MIDI feedback first (no HID)
 
 Run from the repository root. This sequence creates MIDI ports, not a hardware

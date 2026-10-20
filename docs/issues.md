@@ -1,6 +1,6 @@
 # S4 MK3 bridge issues
 
-Current checklist as of October 8, 2026. This is the source of truth for issue
+Current checklist as of October 20, 2026. This is the source of truth for issue
 status; [the mapping audit](mapping-audit.md) retains detailed findings and
 historical snapshots.
 
@@ -10,6 +10,22 @@ software checks alone are insufficient: record live confirmation as well.
 Keep completed items and add their completion date and a short evidence note.
 
 ## Completed
+
+- [x] **Saved hardware wheel tension** - Jog > Hardware exposes a shared
+  Assist / Neutral / Brake setting with independent per-wheel motion/touch
+  response. User-confirmed assistance/braking, Djay/MIDI/LED coexistence,
+  Stop/Quit neutral, saved-setting restore while stopped, and explicit restart
+  after USB reconnect, October 20, 2026. See
+  [normal-app integration](jog-tension-integration.md).
+- [x] **Mixer ON / Neural Mix EQ selection** - Filter is now a one-shot
+  EQ deck-selection latch, not reset-to-neutral. The next ON toggles that deck's
+  native EQ mode without retargeting Instant FX; normal ON still selects the
+  FX target. White/cyan mode, armed brightness, active-effect color, and dim
+  cyan idle Filter replace the former deck colors/reset indication.
+  Live MIDI feedback was captured independently for A-D; the user accepted
+  the physical behavior and idle refinement on October 20, 2026.
+  The exhaustive [edge-case check](neural-mix-eq-check.md) remains available
+  and is not claimed complete.
 
 - [x] **Default Djay color-token correspondence** - All eight selectable
   hotcue colors physically matched the user's saved correspondence,
@@ -42,13 +58,6 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Open
 
-- [ ] **Wheel-tension control** - Immediate priority agreed October 8, 2026,
-  ahead of further jog tuning. A standalone
-  [diagnostic suite](jog-tension-diagnostic.md) prepares no-write capture,
-  offline replay, and explicitly enabled, bounded neutral/brake/assist trials.
-  Physical tension, force limits, direction, and neutral/Stop behavior still
-  require supervised verification; preparation sends no unattended motor
-  commands. App integration follows that evidence.
 - [ ] **Jog feel and backspin** - Reduce excessive slow-movement sensitivity
   while improving fast-backspin response. Measure raw counts,
   emitted MIDI, and Djay response before choosing tuning behavior.
@@ -58,9 +67,9 @@ Keep completed items and add their completion date and a short evidence note.
   Speed/Reaction to 2.7% / 150% and pitch bend to 2.7% / 17%; these are now
   configurable exported defaults in the app's Jog tab.
   Backspin still ends on touch release, especially at Reaction 50%.
-  Released-spin routing, final stop-response acceptance, and the reported
-  higher mechanical tension remain unresolved; equal-force flicks are not
-  equivalent across the two setups.
+  Released-spin routing and final stop-response acceptance remain unresolved;
+  the separate tension setting is now available, but equal-force flicks are
+  not equivalent across the two setups.
 - [ ] **Leftmost FX button duplicates slot 1** - Verify native bank-enable
   behavior and investigate a whole-bank bypass that preserves individual
   slot states.
@@ -73,8 +82,6 @@ Keep completed items and add their completion date and a short evidence note.
   mapping still need a physical direction/multi-detent live check.
 - [ ] **MUTE/STEMS behavior** - Decide whether MUTE should become a held
   modifier instead of duplicating the STEMS layer, and settle pad actions.
-- [ ] **FX SELECT / Filter Reset** - Settle the intended behavior and verify
-  reset-to-neutral and knob pickup. Currently resets only the selected deck.
 - [ ] **EXT / microphone / line inputs** - Establish S4 input channels and
   hardware source switching, then determine which routing Djay can support.
 
@@ -82,8 +89,21 @@ Keep completed items and add their completion date and a short evidence note.
 
 - [ ] **Powered platter rotation and other haptics** - Playback-driven
   rotation, cue effects, and other haptic behavior need their own agreed scope.
-  Wheel-tension investigation is now open separately; the normal MIDI bridge
-  still sends no motor commands.
+  The completed tension setting does not implement those behaviors.
+- [ ] **Jog-ring position polish** - Hold the current chase position on top
+  touch or playback stop, follow physical rotation, and resume smoothly.
+  Deferred by the user on October 20, 2026; not implemented. Physical rotation
+  scale still needs measurement; the LED's 2880-position encoding is not proof
+  of sensor counts per revolution.
+
+## DJ-laptop validation
+
+Broader testing of this session's changes on the actual DJ laptop is in
+progress. On October 20, 2026, an initial launch reported that
+`default-tension-config.json` could not be opened. The installed resource was
+present, signature verification reported no error, and the same app then
+launched normally without changes. The cause is unconfirmed; no code fix or
+rebuild was made for that report.
 
 On-device screens/pad legends and a controller settings-menu gesture remain
 deferred. Automatic Slip during REV is a separate design choice, not part of

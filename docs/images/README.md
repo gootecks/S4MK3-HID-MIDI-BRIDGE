@@ -21,8 +21,10 @@ Current images:
   Keep to retain the hardware switch assignments.
 - `bridge-settings.png`: cropped from local native QA evidence to show bridge
   controls and mapping installation without the private preferences path.
-- `jog-settings.png`: native QA evidence with example custom values, not the
-  beta's default values.
+- `jog-settings.png`: refreshed October 20, 2026 from the production native
+  settings view, showing Hardware > Jog Wheel Tension at Neutral (0) and
+  calibrated scratch/pitch-bend defaults. Captured with an isolated controller,
+  without starting the hardware bridge or changing saved user preferences.
 
 Original QA captures remain in `.omo/evidence/`; publish only selected,
 reader-facing copies here.

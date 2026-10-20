@@ -88,8 +88,9 @@ that deck's Neural Mix EQ via Note 20 on channels 1-4 without changing the
 Instant FX target. Normal ON still selects that target. ON uses confirmed
 white/cyan EQ mode and dim/bright FX arming; active Instant FX color overrides
 both. Unknown mode stays dark. MIDI-only capture verified initial states and
-independent mouse-driven mode transitions for A-D on October 20, 2026. Physical
-Filter/ON and lamp checks remain pending; see [the focused check](neural-mix-eq-check.md).
+independent mouse-driven mode transitions for A-D on October 20, 2026. The user
+subsequently accepted the physical workflow and dim-cyan idle Filter;
+exhaustive edge cases remain unverified. See [the focused check](neural-mix-eq-check.md).
 
 The table below retains the earlier snapshot and source line references.
 The encoder and selector-mode overlay above supplements it; it doesn't

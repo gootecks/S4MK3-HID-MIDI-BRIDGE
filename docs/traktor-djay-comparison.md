@@ -94,13 +94,30 @@ and start off on bridge restart.
 
 The selected deck selector pulses on a 1.2-second palette-brightness cycle
 with a dark trough while selecting. Hidden decks retain their mode without
-flashing inactive selectors. Screen and motor traffic remain excluded;
-the minimal profile is unchanged.
+flashing inactive selectors. This encoder increment adds no screen or motor
+traffic; the separate hardware-tension increment below does add motor output.
+The minimal profile is unchanged.
 
 The user mouse-verified beat jump moving an active loop, but fresh MIDI/native
 and physical LED checks remain pending. Reinstall a newly generated mapping
 under a new filename, preserving custom maps. See the focused
 [live checks](full-midi-test.md#encoder-layout-live-check).
+
+## Current hardware tension and mixer EQ overlay
+
+The normal full-profile bridge now supports saved hardware wheel tension:
+one Assist / Neutral / Brake setting, with independent per-wheel movement
+and touch response. The user confirmed the focused integration checks on
+October 20, 2026. This is not playback-driven TT rotation, haptic cue points,
+or full Traktor jog parity. See [the integration record](jog-tension-integration.md).
+
+Mixer Filter now arms/cancels a one-shot deck selection; the next channel ON
+toggles only that deck's native Neural Mix EQ without changing the Instant FX
+target. Outside selection, ON still targets Instant FX. ON reports EQ mode
+in white/cyan, brightens for the target deck, and temporarily shows an active
+effect's color. Idle Filter is dim cyan. This custom workflow replaces filter
+reset, not Traktor's mixer-FX selection model. Live MIDI feedback and general
+user acceptance are recorded in [the focused check](neural-mix-eq-check.md).
 
 ## Djay public support evidence
 

@@ -46,7 +46,8 @@ pitch-bend Speed 2.7% / Reaction 17%. Speed is exported as
 The app's Jog tab saves a separate jog configuration and generates customized
 mapping exports; selecting that new mapping in Djay is required.
 Runtime counts, touch ownership, seek, and MIDI addresses are unchanged.
-Released-backspin behavior and haptic tension remain open.
+Released-backspin behavior remains open. Saved hardware tension is now
+implemented separately; see [normal-app integration](jog-tension-integration.md).
 See [configurable controls](configurable-controls.md) and
 [the measured jog comparison](jog-wheel-investigation.md).
 

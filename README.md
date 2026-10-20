@@ -4,7 +4,7 @@ Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
 Djay sends audio directly to the S4. No development tools are needed.
 
-**Version 0.1.1-beta.1** is a beta with a custom Djay mapping, not a recreation
+**Version 0.1.1-beta.2** is a beta with a custom Djay mapping, not a recreation
 of every Traktor feature. Read the control differences and known limitations
 below before using it for a set.
 
@@ -17,11 +17,15 @@ below before using it for a set.
 
 ## Download and install
 
-1. Open [GitHub Releases](../../releases) and find **0.1.1-beta.1**.
-2. Download **`S4 MK3 Bridge-0.1.1-beta.1-arm64.dmg`**.
+1. Open [GitHub Releases](../../releases) and find **0.1.1-beta.2**.
+2. Download **`S4 MK3 Bridge-0.1.1-beta.2-arm64.dmg`**.
 3. Open the disk image, drag **S4 MK3 Bridge** to **Applications**, then eject
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
+
+The current portable build is **0.1.1-beta.2 (build 3)**. Its app, ZIP, and DMG
+have been rebuilt and verified. See the
+[release notes and validation status](docs/release-0.1.1-beta.2.md).
 
 The app is ad-hoc signed, not Developer ID signed or notarized. macOS may block
 the first launch because it can't verify the developer. After attempting to
@@ -97,7 +101,8 @@ thing.
 | **Sync / Shift+Sync**              | Normal Sync is deck-specific. Shift+Sync on either side cycles Djay's tempo-fader range **globally for all decks**, rather than locking one deck's tempo fader as in Traktor. Djay determines the ranges and their order.             |
 | **Channel FX1 / FX2**              | Choose the deck controlled by the left / right FX strip. These are per-deck control targets, not Traktor's shared FX buses or audio-routing assignments.                                                                              |
 | **FX strips**                      | Control three manual effects on the target deck; Shift with an effect button selects the next effect. See the bank-enable limitation below.                                                                                           |
-| **Channel FX SELECT and mixer FX** | Select the deck for mixer instant FX. The mixer FX buttons and Filter Reset affect that selected deck, not all decks.                                                                                                                 |
+| **Channel ON and mixer FX**        | ON selects the Instant FX target. ON is white for normal EQ, cyan for Neural Mix EQ, and brighter on the target deck. An active Instant FX overrides that deck's ON with its effect-button color. |
+| **Filter, then channel ON**        | Filter flashes cyan awaiting a deck; the next ON toggles only that deck's Neural Mix EQ without changing the Instant FX target. Filter again cancels. Idle Filter is dim cyan; it no longer resets a filter. |
 | **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
 | **REC**                            | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                         |
 | **Preview**                        | Toggle library preview on/off; Shift+BROWSER seeks forward/backward instead of navigating sections. Normal BROWSER keeps browsing. It isn't Traktor's hold-to-preview interaction. |
@@ -106,10 +111,11 @@ HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
 Neural Mix availability depends on the track and Djay support.
 
-**Screens and motors aren't supported.** JOG/TT select software wheel behavior,
-not powered platter rotation. There are no on-device pad legends, haptic cues,
-or wheel-tension controls. Jog-ring animation is decorative, not track-position
-or physical-platter-position tracking.
+**Screens, powered playback rotation, and haptic cues aren't supported.**
+JOG/TT select software wheel behavior, not powered platter rotation. The app
+does provide motor-assisted wheel tension in the full-controller profile,
+as described below. There are no on-device pad legends. Jog-ring animation
+remains decorative, not track-position or physical-platter-position tracking.
 
 ## App settings
 
@@ -125,10 +131,26 @@ All eight selectable Djay hotcue colors have been physically confirmed:
 red, orange, blue, yellow, green, azalea, cyan, and purple. White isn't offered
 in Djay's hotcue picker; its separate fallback hasn't been verified.
 
-### Jog feel
+### Jog wheels
 
-The **Jog** tab sets Speed and Reaction for all four decks. The calibrated
-defaults are:
+The **Jog > Hardware** section has a shared **Jog Wheel Tension** slider:
+
+- **Assist (-100 to -1):** assists each wheel's own movement while its metal
+  top is touched.
+- **Neutral (0):** the first-install default.
+- **Brake (1 to 100):** resists each wheel's movement, including after release.
+
+Both wheels share the saved setting but respond independently. Channel 1's
+fader remains a normal mixer control. This setting applies only to the
+full-controller profile: use **Save preferences** before starting, or
+**Save and restart** while running. It does **not** require a new Djay mapping.
+Stop and Quit clear force; reopening restores the saved value without starting
+the bridge. After a USB disconnect, reconnect and explicitly start the bridge.
+
+#### Djay scratch and pitch-bend response
+
+The separate scratch and pitch-bend sections set Speed and Reaction for all
+four decks. The calibrated defaults are:
 
 | Action                   | Speed | Reaction |
 | ------------------------ | ----: | -------: |
@@ -138,14 +160,17 @@ defaults are:
 Save your preferences, then use **Install Djay mapping…** to export a new
 mapping and select it in Djay. Export uses the current editor values and can
 run while the bridge is running. **Saving or restarting alone doesn't apply
-jog changes.** Keep existing custom mappings under their original names.
+jog mapping changes.** Keep existing custom mappings under their original names.
 
-These settings adjust Djay's response, not mechanical resistance, and don't
-resolve released-backspin behavior.
+Speed and Reaction adjust Djay's response, independently of hardware tension.
+Neither setting resolves released-backspin behavior.
 
-![Jog settings with separate scratch and pitch-bend Speed and Reaction controls](docs/images/jog-settings.png)
+![Jog settings showing Hardware Jog Wheel Tension and separate scratch and pitch-bend controls](docs/images/jog-settings.png)
 
-_Jog settings with example custom values; the beta defaults are listed above._
+_Jog settings at Neutral (0), with the calibrated scratch and pitch-bend defaults._
+
+The menu-bar icon turns green while the bridge is running. **Diagnostics**
+shows the app release and build number alongside the bridge log.
 
 ## Known issues and limitations
 
@@ -153,13 +178,16 @@ The [current issue checklist](docs/issues.md) is the source of truth. Older
 test records describe earlier builds and may still list completed work as
 pending. LOOP/MOVE, Reloop, momentary REV, Browse direction, crossfader startup,
 Shift+Sync, and the eight selectable hotcue colors have been confirmed in
-controller testing.
+controller testing. Focused hardware-tension checks passed for both wheels,
+Djay/LED coexistence, Stop/Quit, saved settings, and explicit restart after
+reconnection. The user also accepted the Mixer ON/Neural Mix EQ behavior;
+the exhaustive edge-case checklist and broader DJ-laptop testing remain open.
 
 Open bugs and unresolved behavior:
 
 - **Jog feel and backspin:** backspin still ends on touch release. Slow/fast
-  response, final stop behavior, and reported higher mechanical tension need
-  further work; calibrated settings aren't full Traktor jog parity.
+  response and final stop behavior need further work; the new tension setting
+  isn't full Traktor jog parity.
 - **FX bank enable:** the leftmost FX button duplicates slot 1. Whole-bank
   bypass that preserves individual slot states remains unresolved.
 - **REC:** recording source, destination/sample slot, and press/hold behavior
@@ -169,12 +197,13 @@ Open bugs and unresolved behavior:
   multi-detent response still need a live check with the new app and mapping.
 - **MUTE/STEMS:** the current alias works as described above, but a possible
   held modifier and final pad behavior are undecided.
-- **FX SELECT / Filter Reset:** reset currently targets only the selected deck.
-  Intended behavior, reset-to-neutral, and knob pickup still need validation.
 - **EXT, microphone, and line inputs:** S4 input channels, hardware source
   switching, and supported Djay routing remain unresolved.
 - **Mapping reconnect/reselection:** automatic detection isn't implemented.
   Stop and start the bridge after either event.
+- **Jog-ring position:** the decorative chase continues while a platter is held
+  and returns to 12 o'clock when playback stops. Touch/physical-rotation tracking
+  and holding the last position are deferred.
 
 Independent loop/jump sizes, global Shift+Sync, per-deck FX targeting, and REV
 without automatic Slip are design choices, not outstanding fixes.
@@ -183,8 +212,9 @@ without automatic Slip are design choices, not outstanding fixes.
 
 - Refine jog feel and released backspin, and resolve the open FX, recording,
   preview, pad, and external-input questions.
-- Investigate haptic motor and wheel-tension control separately. Screens,
-  pad legends, and an on-controller settings gesture remain deferred.
+- Consider jog-ring touch/rotation polish separately. Playback-driven motor
+  rotation, other haptics, screens, pad legends, and an on-controller settings
+  gesture remain deferred.
 - Explore a standalone hardware bridge longer term, along with other DJ
   applications and simpler guest setup. These aren't features of this beta.
 

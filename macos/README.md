@@ -13,15 +13,15 @@ bash macos/build-app.sh
 
 The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-arm64.zip`, and the versioned release disk image
-`dist/S4 MK3 Bridge-0.1.1-beta.1-arm64.dmg`. The script compiles
+`dist/S4 MK3 Bridge-0.1.1-beta.2-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
 `examples/led-config.json`, `examples/jog-config.json`, and
 `examples/tension-config.json` into the app resources as `default-led-config.json`,
 `default-jog-config.json`, and `default-tension-config.json`, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
-`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.1`;
-the bundle uses numeric version `0.1.1`, build `2`, and records the complete
+`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.2`;
+the bundle uses numeric version `0.1.1`, build `3`, and records the complete
 release in `S4BridgeReleaseVersion`. The script checks alignment with Cargo.
 It generates `AppIcon.icns` from `macos/Assets/AppIcon.png` and includes an
 Applications shortcut in the compressed read-only DMG.
@@ -141,7 +141,9 @@ Filter no longer resets the selected filter. Install the new mapping under a
 new filename and preserve any custom mappings. Follow the
 [live check](../docs/neural-mix-eq-check.md). MIDI-only capture verified initial
 states and independent mouse-driven mode transitions for all four decks;
-physical Filter/ON gestures and lamp colors still need confirmation.
+the user subsequently accepted the physical behavior and dim-cyan idle Filter
+refinement. This is general acceptance, not completion of every edge-case
+check in the runbook.
 
 ### Hardware jog tension
 
@@ -171,8 +173,9 @@ booleans), out-of-range values, and unknown fields are rejected. Invalid
 saved files are preserved until explicit reset and save; invalid editor
 values remain in the editor without replacing saved preferences.
 
-The integrated build passes 237 Rust and 17 Swift tests, strict Clippy, build
-and package integrity checks. On October 20, 2026, the user also confirmed
+The integrated tension build passed 237 Rust and 17 Swift tests; the subsequent
+Mixer ON/EQ and UI increments passed 248 Rust and 18 Swift tests, strict Clippy,
+build and package integrity checks. On October 20, 2026, the user also confirmed
 assistance/braking with Djay controls and LEDs, Stop/Quit clearing force,
 saved-setting restore while stopped, and explicit restart after USB reconnect.
 The [live integration check](../docs/jog-tension-integration.md) records that

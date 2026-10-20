@@ -1,7 +1,7 @@
 # Bridge settings and control-tuning candidates
 
-The menu-bar app exposes operating flags, LED preferences, and native Djay
-jog mapping preferences. Mapping preferences change exported parameters,
+The menu-bar app exposes operating flags, LED preferences, saved hardware
+wheel tension, and native Djay jog mapping preferences. Mapping preferences change exported parameters,
 not the bridge's HID counts, MIDI addresses, or touch ownership.
 
 ## Available now
@@ -13,6 +13,11 @@ not the bridge's HID counts, MIDI addresses, or touch ownership.
 - Jog-tab scratch and pitch-bend Speed/Reaction settings. Defaults are
   scratch 2.7% / 150% and pitch bend 2.7% / 17%, applied to decks A-D.
   Speed becomes `rotarySensitivity`; Reaction becomes `rotaryAcceleration`.
+- Jog > Hardware > Jog Wheel Tension: a saved integer from -100 to 100,
+  shared by both wheels with independent motion/touch response. Negative is
+  assistance, zero neutral, positive braking. Full profile only; save before
+  starting or Save and restart while running. No mapping export is needed.
+  See [hardware integration](jog-tension-integration.md).
 - Every setting in `examples/led-config.json`: deck/stem/hotcue palettes,
   cue-color policy, lamp/palette brightness, inactive display, mute meaning,
   quantize mixed state, calibrated tempo-center indicator, loop color/enabling,
@@ -40,8 +45,10 @@ only for mapping export, not live MIDI/probe commands. Speeds must be finite
 and positive; reactions are integers from 0 to 150. Shift-seek stays at its
 existing sensitivity 20 and is not exposed by this increment.
 
-These parameters do not implement released-platter scratch continuation or
-haptic tension control. See [the jog investigation](jog-wheel-investigation.md).
+These mapping parameters do not implement released-platter scratch continuation
+or change hardware tension; tension is a separate runtime preference stored in
+`~/Library/Application Support/S4 MK3 Bridge/tension-config.json`.
+See [the jog investigation](jog-wheel-investigation.md).
 
 ## Useful future control settings
 
@@ -70,5 +77,6 @@ restarting the bridge alone cannot apply them inside Djay.
 - Held-note ownership, release-before-selector ordering, fractional jog
   residuals, feedback queue bounds, and output pacing protect correctness and
   smooth input. They are not appearance or musical-control choices.
-- No screen, motor, audio-forwarding, guessed end-warning, or track-position
-  chase setting is exposed. Decorative chase does not claim actual position.
+- No screen, playback-driven platter rotation, audio-forwarding, guessed
+  end-warning, or track-position chase setting is exposed. The motor-backed
+  tension setting is separate; decorative chase does not claim actual position.
