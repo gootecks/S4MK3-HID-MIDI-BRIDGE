@@ -3,7 +3,15 @@
 use anyhow::ensure;
 use serde::{Deserialize, Serialize};
 
-use super::capture::RawFrame;
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawFrame {
+    pub host_us: u64,
+    pub buttons: Vec<u8>,
+    pub jog: Vec<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analog: Option<Vec<u8>>,
+}
 
 pub const FRESHNESS_US: u64 = 50_000;
 
@@ -43,22 +51,42 @@ pub struct Decoder {
 }
 
 impl Decoder {
+    /// Decode a recorded diagnostic frame.
+    ///
+    /// # Errors
+    /// Rejects malformed framing, nonmonotonic timestamps, and implausible motion.
     pub fn decode(&mut self, frame: &RawFrame) -> anyhow::Result<Motion> {
+        self.decode_snapshot(
+            &frame.buttons,
+            &frame.jog,
+            frame.analog.as_deref(),
+            frame.host_us,
+        )
+    }
+
+    /// Decode the shared numbered report fields without allocating.
+    ///
+    /// # Errors
+    /// Rejects malformed framing, nonmonotonic timestamps, and implausible motion.
+    pub fn decode_snapshot(
+        &mut self,
+        buttons: &[u8],
+        jog: &[u8],
+        analog: Option<&[u8]>,
+        host_us: u64,
+    ) -> anyhow::Result<Motion> {
         ensure!(
-            frame.buttons.len() == 23 && frame.buttons[0] == 1,
+            buttons.len() == 23 && buttons[0] == 1,
             "expected numbered 23-byte buttons report"
         );
         ensure!(
-            frame.jog.len() == 60 && frame.jog[0] == 3,
+            jog.len() == 60 && jog[0] == 3,
             "expected numbered 60-byte jog report"
         );
         if let Some(last) = self.last_host_us {
-            ensure!(
-                frame.host_us > last,
-                "host timestamps must strictly increase"
-            );
+            ensure!(host_us > last, "host timestamps must strictly increase");
         }
-        let deck1_fader = if let Some(analog) = &frame.analog {
+        let deck1_fader = if let Some(analog) = analog {
             ensure!(
                 analog.len() == 79 && analog[0] == 2,
                 "expected numbered 79-byte analog report"
@@ -70,18 +98,18 @@ impl Decoder {
             None
         };
         let mut motion = Motion {
-            host_us: frame.host_us,
+            host_us,
             deck1_fader,
-            touch: [frame.buttons[17] & 0x10 != 0, frame.buttons[17] & 0x20 != 0],
-            counters: [word(&frame.jog, 12), word(&frame.jog, 40)],
-            timers: [word(&frame.jog, 8), word(&frame.jog, 36)],
+            touch: [buttons[17] & 0x10 != 0, buttons[17] & 0x20 != 0],
+            counters: [word(jog, 12), word(jog, 40)],
+            timers: [word(jog, 8), word(jog, 36)],
             delta: [0; 2],
             elapsed_us: [0; 2],
             status: [Status::Baseline; 2],
         };
         for side in 0..2 {
             let current = Observation {
-                host_us: frame.host_us,
+                host_us,
                 timer: motion.timers[side],
                 counter: motion.counters[side],
             };
@@ -120,7 +148,7 @@ impl Decoder {
             }
             self.previous[side] = Some(current);
         }
-        self.last_host_us = Some(frame.host_us);
+        self.last_host_us = Some(host_us);
         Ok(motion)
     }
 }
@@ -133,7 +161,3 @@ fn word(report: &[u8], offset: usize) -> u32 {
         report[offset + 3],
     ])
 }
-
-#[cfg(test)]
-#[path = "decode_tests.rs"]
-pub(super) mod tests;

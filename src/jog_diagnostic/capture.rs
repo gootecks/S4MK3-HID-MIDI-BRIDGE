@@ -7,16 +7,7 @@ use serde::{Deserialize, Serialize};
 use super::ControlArgs;
 use super::decode::Motion;
 use super::motor::{Decision, neutral_report};
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct RawFrame {
-    pub host_us: u64,
-    pub buttons: Vec<u8>,
-    pub jog: Vec<u8>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub analog: Option<Vec<u8>>,
-}
+pub use s4mk3_hid_midi_bridge::jog::decode::RawFrame;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct Summary {
@@ -60,6 +51,36 @@ pub enum LogRecord {
         report: [u8; 11],
         written: Option<usize>,
         error: Option<String>,
+    },
+    Tick {
+        host_us: u64,
+        decision: Decision,
+    },
+    Initialization {
+        report: [u8; 28],
+        written: Option<usize>,
+        error: Option<String>,
+    },
+    Preparation {
+        seconds: Option<u64>,
+        neutral_hold_us: u64,
+    },
+    Ready {
+        host_us: u64,
+    },
+    Damping {
+        window_us: u64,
+        deadband_counts: u64,
+        full_scale_counts: u64,
+        qualification_us: u64,
+        qualification_counts: u32,
+        tail_us: u64,
+        output_interval_us: u64,
+    },
+    Smoothing {
+        time_constant_us: u64,
+        rest_cutoff_us: u64,
+        zero_sample_dedup: bool,
     },
     End {
         reason: String,

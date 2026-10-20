@@ -1,39 +1,20 @@
 //! Motion-only brake/assist proposals, never target-speed playback control.
 
 use anyhow::Context as _;
-use serde::{Deserialize, Serialize};
+pub use s4mk3_hid_midi_bridge::jog::{Decision, FaderState, FaderZone, neutral_report, report_for};
 
+use super::continuity::Continuity;
+use super::damped::Damping;
 use super::decode::{Motion, Status};
+use super::smooth_wheels::SmoothWheels;
 use super::{ControlArgs, Mode};
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Decision {
-    pub torque: [i32; 2],
-    pub report: [u8; 11],
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fader: Option<FaderState>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct FaderState {
-    pub raw: u16,
-    pub armed: bool,
-    pub selected_force: u16,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub zone: Option<FaderZone>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum FaderZone {
-    Assist,
-    Neutral,
-    Brake,
-}
 
 pub struct Controller {
     control: ControlArgs,
     fader_armed: bool,
+    continuity: Continuity,
+    damping: Damping,
+    smoothing: SmoothWheels,
 }
 
 impl Controller {
@@ -41,13 +22,41 @@ impl Controller {
         Self {
             control,
             fader_armed: false,
+            continuity: Continuity::new(),
+            damping: Damping::new(0),
+            smoothing: SmoothWheels::new(control.side.mask()),
         }
     }
 
     pub fn decide(&mut self, motion: &Motion) -> anyhow::Result<Decision> {
-        let mut torque = [0_i32; 2];
-        let side = self.control.side.index();
-        let fader = match self.control.mode {
+        let decision = self.decide_direct(motion)?;
+        Ok(match self.control.mode {
+            Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay => {
+                self.smoothing.observe(motion, decision)
+            }
+            Mode::FaderDamped => self.damping.observe(motion, decision),
+            Mode::FaderContinuity => self.continuity.observe(motion, decision),
+            Mode::Baseline | Mode::Brake | Mode::Assist | Mode::FaderBrake | Mode::FaderTension => {
+                decision
+            }
+        })
+    }
+
+    pub fn output_at(&mut self, now_us: u64) -> Option<Decision> {
+        match self.control.mode {
+            Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay => self.smoothing.at(now_us),
+            Mode::FaderDamped => self.damping.at(now_us),
+            Mode::Baseline
+            | Mode::Brake
+            | Mode::Assist
+            | Mode::FaderBrake
+            | Mode::FaderTension
+            | Mode::FaderContinuity => self.continuity.at(now_us),
+        }
+    }
+
+    fn select_fader(&mut self, motion: &Motion) -> anyhow::Result<Option<FaderState>> {
+        Ok(match self.control.mode {
             Mode::FaderBrake => {
                 let raw = motion
                     .deck1_fader
@@ -65,92 +74,83 @@ impl Controller {
                     zone: None,
                 })
             }
-            Mode::FaderTension => {
+            Mode::FaderTension
+            | Mode::FaderContinuity
+            | Mode::FaderDamped
+            | Mode::FaderSmooth
+            | Mode::FaderAssist
+            | Mode::FaderPlay => {
                 let raw = motion
                     .deck1_fader
                     .context("fader-tension requires analog report 2; capture with --analog")?;
                 self.fader_armed |= (2016..=2080).contains(&raw);
-                let (zone, force) = if raw < 2016 {
-                    let cap = self
-                        .control
-                        .assist_force
-                        .context("missing assistance ceiling")?;
-                    (
-                        FaderZone::Assist,
-                        u32::from(2016 - raw) * u32::from(cap) / 2016,
-                    )
-                } else if raw > 2080 {
-                    (
-                        FaderZone::Brake,
-                        u32::from(raw - 2080) * u32::from(self.control.max_force) / 2015,
-                    )
-                } else {
-                    (FaderZone::Neutral, 0)
-                };
-                Some(FaderState {
+                Some(FaderState::bipolar(
                     raw,
-                    armed: self.fader_armed,
-                    selected_force: u16::try_from(force)?,
-                    zone: Some(zone),
-                })
+                    self.fader_armed,
+                    self.control
+                        .assist_force
+                        .context("missing assistance ceiling")?,
+                    self.control.max_force,
+                ))
             }
             Mode::Baseline | Mode::Brake | Mode::Assist => None,
-        };
+        })
+    }
+
+    fn decide_direct(&mut self, motion: &Motion) -> anyhow::Result<Decision> {
+        let mut torque = [0_i32; 2];
+        let fader = self.select_fader(motion)?;
         let sign = match self.control.mode {
             Mode::Baseline => 0,
             Mode::Brake | Mode::FaderBrake => -1,
             Mode::Assist => 1,
-            Mode::FaderTension => match fader.context("missing tension selection")?.zone {
+            Mode::FaderTension
+            | Mode::FaderContinuity
+            | Mode::FaderDamped
+            | Mode::FaderSmooth
+            | Mode::FaderAssist
+            | Mode::FaderPlay => match fader.context("missing tension selection")?.zone {
                 Some(FaderZone::Assist) => 1,
                 Some(FaderZone::Neutral) => 0,
                 Some(FaderZone::Brake) => -1,
                 None => anyhow::bail!("missing tension zone"),
             },
         };
-        match motion.status[side] {
-            Status::Moving => {
-                let magnitude = if let Some(level) = fader {
-                    let held = level.zone != Some(FaderZone::Assist) || motion.touch[side];
-                    if level.armed && held {
-                        u64::from(level.selected_force)
+        for (side, selected) in self.control.side.mask().into_iter().enumerate() {
+            if !selected {
+                continue;
+            }
+            match motion.status[side] {
+                Status::Moving => {
+                    let magnitude = if let Some(level) = fader {
+                        let held = level.zone != Some(FaderZone::Assist) || motion.touch[side];
+                        if level.armed && held {
+                            u64::from(level.selected_force)
+                        } else {
+                            0
+                        }
                     } else {
-                        0
-                    }
-                } else {
-                    (u64::from(motion.delta[side].unsigned_abs())
-                        * u64::from(self.control.gain)
-                        * 1000
-                        / motion.elapsed_us[side])
-                        .min(u64::from(self.control.max_force))
-                };
-                // Magnitude is <= a u16 cap, so its low two bytes are lossless.
-                let bytes = magnitude.to_le_bytes();
-                torque[side] = sign
-                    * motion.delta[side].signum()
-                    * i32::from(u16::from_le_bytes([bytes[0], bytes[1]]));
+                        (u64::from(motion.delta[side].unsigned_abs())
+                            * u64::from(self.control.gain)
+                            * 1000
+                            / motion.elapsed_us[side])
+                            .min(u64::from(self.control.max_force))
+                    };
+                    // Magnitude is <= a u16 cap, so its low two bytes are lossless.
+                    let bytes = magnitude.to_le_bytes();
+                    torque[side] = sign
+                        * motion.delta[side].signum()
+                        * i32::from(u16::from_le_bytes([bytes[0], bytes[1]]));
+                }
+                Status::Baseline | Status::Rest | Status::Duplicate => {}
             }
-            Status::Baseline | Status::Rest | Status::Duplicate => {}
-        }
-        let mut report = neutral_report();
-        for (side, value) in torque.iter().enumerate() {
-            let offset = 1 + side * 5;
-            if *value < 0 {
-                report[offset + 1] = 0xe0;
-                report[offset + 2] = 0xfe;
-            }
-            let bytes = value.unsigned_abs().to_le_bytes();
-            report[offset + 3..offset + 5].copy_from_slice(&bytes[..2]);
         }
         Ok(Decision {
             torque,
-            report,
+            report: report_for(torque),
             fader,
         })
     }
-}
-
-pub const fn neutral_report() -> [u8; 11] {
-    [0x31, 1, 0x20, 1, 0, 0, 1, 0x20, 1, 0, 0]
 }
 
 #[cfg(test)]

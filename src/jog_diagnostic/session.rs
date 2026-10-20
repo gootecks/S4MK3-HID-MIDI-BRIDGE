@@ -3,15 +3,22 @@
 use std::io::Write;
 
 use anyhow::{bail, ensure};
-use tracing::{info, warn};
+use tracing::warn;
 
-use super::ControlArgs;
 use super::capture::{LogRecord, RawFrame, Summary, emit};
 use super::decode::{Decoder, FRESHNESS_US};
-use super::motor::{Controller, FaderState, neutral_report};
+use super::motor::{Controller, Decision, FaderState, neutral_report};
+use super::window::TrialWindow;
+use super::{ControlArgs, Mode};
+
+#[path = "initialization.rs"]
+mod initialization;
+#[path = "session_state.rs"]
+mod state;
 
 pub enum Event {
     Sample(RawFrame),
+    OutputTick,
     Stop,
     Deadline,
     InputTimeout,
@@ -26,6 +33,11 @@ pub struct Session<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> {
     summary: Summary,
     finished: bool,
     last_fader: Option<FaderState>,
+    paced: bool,
+    last_input_us: u64,
+    window: TrialWindow,
+    deduplicate_zeros: bool,
+    last_report: [u8; 11],
 }
 
 impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
@@ -38,10 +50,38 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
             summary: Summary::default(),
             finished: false,
             last_fader: None,
+            paced: control.mode.is_paced(),
+            last_input_us: 0,
+            window: TrialWindow::Immediate,
+            deduplicate_zeros: matches!(
+                control.mode,
+                Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay
+            ),
+            last_report: neutral_report(),
         };
         // The guard exists before even the startup neutral can fail.
         session.write_report(neutral_report(), "startup_neutral")?;
+        if matches!(
+            control.mode,
+            Mode::FaderDamped | Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay
+        ) {
+            emit(session.log, &super::damped::config())?;
+        }
+        if matches!(
+            control.mode,
+            Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay
+        ) {
+            emit(session.log, &super::smooth::config())?;
+        }
         Ok(session)
+    }
+
+    pub const fn is_paced(&self) -> bool {
+        self.paced
+    }
+
+    pub const fn input_deadline_us(&self) -> u64 {
+        self.last_input_us + FRESHNESS_US
     }
 
     pub fn handle(&mut self, event: Event, now_us: u64) -> anyhow::Result<bool> {
@@ -69,29 +109,48 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
                     },
                 )?;
                 let motion = self.decoder.decode(&frame)?;
+                self.last_input_us = frame.host_us;
                 self.summary.observe(&motion);
                 let decision = self.controller.decide(&motion)?;
                 if let Some(level) = decision.fader {
-                    let percent = u32::from(level.raw) * 100 / 4095;
-                    if self.last_fader.is_none_or(|previous| {
-                        previous.armed != level.armed
-                            || previous.zone != level.zone
-                            || (previous.selected_force == 0) != (level.selected_force == 0)
-                            || u32::from(previous.raw) * 100 / 4095 != percent
-                    }) {
-                        info!(
-                            percent,
-                            raw = level.raw,
-                            armed = level.armed,
-                            selected_force = level.selected_force,
-                            zone = ?level.zone,
-                            "DIAGNOSTIC_FADER: zero-force position arms; selection applies only to motion"
-                        );
-                    }
-                    self.last_fader = Some(level);
+                    self.update_fader(level, now_us)?;
                 }
+                let decision = self.gate_decision(decision);
                 emit(self.log, &LogRecord::Motion { motion, decision })?;
-                self.write_report(decision.report, "motion")?;
+                let immediate_zero = if self.deduplicate_zeros {
+                    (0..2).any(|side| {
+                        decision.torque[side] == 0
+                            && (self.last_report[4 + side * 5] != 0
+                                || self.last_report[5 + side * 5] != 0)
+                    })
+                } else {
+                    decision.torque == [0, 0]
+                };
+                if !self.paced || immediate_zero {
+                    self.write_report(decision.report, "motion")?;
+                }
+                Ok(true)
+            }
+            Event::OutputTick => {
+                ensure!(self.paced, "output ticks require a paced fader mode");
+                ensure!(
+                    now_us <= self.input_deadline_us(),
+                    "no fresh input within 50ms"
+                );
+                let decision = self.controller.output_at(now_us).unwrap_or(Decision {
+                    torque: [0, 0],
+                    report: neutral_report(),
+                    fader: None,
+                });
+                let decision = self.gate_decision(decision);
+                emit(
+                    self.log,
+                    &LogRecord::Tick {
+                        host_us: now_us,
+                        decision,
+                    },
+                )?;
+                self.write_report(decision.report, "tick")?;
                 Ok(true)
             }
             Event::Stop => {
@@ -140,6 +199,9 @@ impl<'a, F: FnMut(&[u8]) -> anyhow::Result<usize>> Session<'a, F> {
             ensure!(length == report.len(), "short motor write: {length}/11");
             Ok(())
         });
+        if hardware.is_ok() {
+            self.last_report = report;
+        }
         match (hardware, logging) {
             (Ok(()), logging) => logging,
             (Err(error), Ok(())) => Err(error),

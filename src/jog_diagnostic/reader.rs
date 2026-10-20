@@ -4,11 +4,12 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, bail, ensure};
-use crossbeam_channel::{Receiver, Sender, TryRecvError, bounded};
+use crossbeam_channel::{Receiver, RecvTimeoutError, Sender, TryRecvError, TrySendError, bounded};
 use hidapi::HidDevice;
 use tracing::warn;
 
 use super::capture::RawFrame;
+use super::continuity::OUTPUT_INTERVAL_US;
 
 pub struct Reader {
     pub frames: Receiver<RawFrame>,
@@ -47,11 +48,17 @@ impl Reader {
                 let result = (|| {
                     let mut buffers = [[0_u8; 128]; 3];
                     let mut analog_buffer = [0_u8; 79];
-                    loop {
-                        match cancel_rx.try_recv() {
-                            Ok(()) | Err(TryRecvError::Disconnected) => return Ok(()),
-                            Err(TryRecvError::Empty) => {}
-                        }
+                    let mut next_poll_us = 0;
+                    let clock = || -> anyhow::Result<u64> {
+                        Ok(u64::try_from(started.elapsed().as_micros())?)
+                    };
+                    let wait = |remaining_us| match cancel_rx
+                        .recv_timeout(Duration::from_micros(remaining_us))
+                    {
+                        Ok(()) | Err(RecvTimeoutError::Disconnected) => true,
+                        Err(RecvTimeoutError::Timeout) => false,
+                    };
+                    while poll_slot(&mut next_poll_us, &cancel_rx, (clock, wait))? {
                         let analog = if include_analog {
                             analog_buffer[0] = 2;
                             let length = hid
@@ -76,6 +83,7 @@ impl Reader {
                             return Ok(());
                         }
                     }
+                    Ok(())
                 })();
                 // Completion means native handle teardown has also finished.
                 drop(hid);
@@ -127,6 +135,33 @@ impl Drop for Reader {
     }
 }
 
+fn poll_slot<C, W>(
+    next_poll_us: &mut u64,
+    cancel: &Receiver<()>,
+    mut timing: (C, W),
+) -> anyhow::Result<bool>
+where
+    C: FnMut() -> anyhow::Result<u64>,
+    W: FnMut(u64) -> bool,
+{
+    loop {
+        match cancel.try_recv() {
+            Ok(()) | Err(TryRecvError::Disconnected) => return Ok(false),
+            Err(TryRecvError::Empty) => {}
+        }
+        let now_us = timing.0()?;
+        if now_us >= *next_poll_us {
+            // Schedule from this actual start, not missed deadlines. An
+            // available interrupt cannot create a catch-up polling burst.
+            *next_poll_us = now_us.saturating_add(OUTPUT_INTERVAL_US);
+            return Ok(true);
+        }
+        if timing.1(*next_poll_us - now_us) {
+            return Ok(false);
+        }
+    }
+}
+
 fn publish_frame(
     frame: RawFrame,
     channels: (&Sender<RawFrame>, &Receiver<()>),
@@ -135,11 +170,18 @@ fn publish_frame(
         Ok(()) | Err(TryRecvError::Disconnected) => return Ok(false),
         Err(TryRecvError::Empty) => {}
     }
-    channels
-        .0
-        .try_send(frame)
-        .context("snapshot queue overflow or writer stopped")?;
-    Ok(true)
+    match channels.0.try_send(frame) {
+        Ok(()) => Ok(true),
+        Err(TrySendError::Full(frame)) => bail!(
+            "snapshot queue overflow: capacity={:?}, rejected_snapshot_us={}",
+            channels.0.capacity(),
+            frame.host_us
+        ),
+        Err(TrySendError::Disconnected(frame)) => bail!(
+            "snapshot consumer disconnected: rejected_snapshot_us={}",
+            frame.host_us
+        ),
+    }
 }
 
 #[cfg(test)]
@@ -161,3 +203,7 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "reader_pacing_tests.rs"]
+mod pacing_tests;

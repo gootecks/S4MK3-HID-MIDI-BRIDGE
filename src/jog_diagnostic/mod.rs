@@ -1,28 +1,95 @@
 //! Offline and explicitly opted-in native wheel-tension diagnostics.
 
+#[cfg(test)]
+mod assist_preparation_tests;
+#[cfg(test)]
+mod assist_session_tests;
+#[cfg(test)]
+mod assist_tests;
 mod capture;
-mod decode;
+use s4mk3_hid_midi_bridge::jog::continuity;
+#[cfg(test)]
+mod continuity_tests;
+mod damped {
+    pub use s4mk3_hid_midi_bridge::jog::damped::*;
+    pub const fn config() -> super::capture::LogRecord {
+        super::capture::LogRecord::Damping {
+            window_us: WINDOW_US,
+            deadband_counts: DEADBAND_COUNTS,
+            full_scale_counts: FULL_SCALE_COUNTS,
+            qualification_us: QUALIFICATION_US,
+            qualification_counts: QUALIFICATION_COUNTS,
+            tail_us: super::continuity::TAIL_US,
+            output_interval_us: super::continuity::OUTPUT_INTERVAL_US,
+        }
+    }
+}
+#[cfg(test)]
+mod damped_session_tests;
+#[cfg(test)]
+mod damped_tests;
+mod decode {
+    pub use s4mk3_hid_midi_bridge::jog::decode::*;
+    #[cfg(test)]
+    pub(super) mod tests {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/jog_diagnostic/decode_tests.rs"
+        ));
+    }
+}
 mod live;
 mod motor;
+mod options;
 mod ownership;
+mod paced;
+#[cfg(test)]
+mod play_tests;
+#[cfg(test)]
+mod preparation_tests;
 mod reader;
+mod replay;
 mod session;
+mod smooth {
+    pub use s4mk3_hid_midi_bridge::jog::smooth::*;
+    pub const fn config() -> super::capture::LogRecord {
+        super::capture::LogRecord::Smoothing {
+            time_constant_us: TIME_CONSTANT_US,
+            rest_cutoff_us: super::continuity::TAIL_US,
+            zero_sample_dedup: true,
+        }
+    }
+}
+#[cfg(test)]
+mod smooth_preparation_tests;
+#[cfg(test)]
+mod smooth_session_tests;
+#[cfg(test)]
+mod smooth_tests;
+use s4mk3_hid_midi_bridge::jog::smooth_wheels;
 #[cfg(test)]
 mod tension_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod wheels_lifecycle_tests;
+#[cfg(test)]
+mod wheels_tests;
+mod window;
 
-use std::fs::File;
-use std::io::{BufRead as _, BufReader, BufWriter};
 use std::path::PathBuf;
 
-use anyhow::{Context as _, ensure};
+#[cfg(test)]
+use anyhow::Context as _;
+use anyhow::ensure;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 
-use capture::{LogRecord, Summary, emit};
+#[cfg(test)]
 use decode::Decoder;
+#[cfg(test)]
 use motor::Controller;
+use replay::run as replay;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -65,6 +132,12 @@ enum Command {
         /// Fader modes only: run under supervision until Ctrl-C.
         #[arg(long, conflicts_with = "seconds")]
         until_stopped: bool,
+        /// Independently compare the two native jog-ring initialization reports.
+        #[arg(long)]
+        initialize_rings: bool,
+        /// Hold neutral before starting; manual preparation is for qualified modes.
+        #[arg(long)]
+        start_after_neutral: bool,
         #[command(flatten)]
         control: ControlOptions,
     },
@@ -78,14 +151,36 @@ enum Mode {
     Assist,
     FaderBrake,
     FaderTension,
+    FaderContinuity,
+    FaderDamped,
+    FaderSmooth,
+    FaderAssist,
+    FaderPlay,
 }
 
 impl Mode {
     const fn uses_fader(self) -> bool {
         match self {
-            Self::FaderBrake | Self::FaderTension => true,
+            Self::FaderBrake
+            | Self::FaderTension
+            | Self::FaderContinuity
+            | Self::FaderDamped
+            | Self::FaderSmooth
+            | Self::FaderAssist
+            | Self::FaderPlay => true,
             Self::Baseline | Self::Brake | Self::Assist => false,
         }
+    }
+
+    const fn is_paced(self) -> bool {
+        matches!(
+            self,
+            Self::FaderContinuity
+                | Self::FaderDamped
+                | Self::FaderSmooth
+                | Self::FaderAssist
+                | Self::FaderPlay
+        )
     }
 }
 
@@ -94,13 +189,15 @@ impl Mode {
 enum Side {
     Left,
     Right,
+    Both,
 }
 
 impl Side {
-    const fn index(self) -> usize {
+    const fn mask(self) -> [bool; 2] {
         match self {
-            Self::Left => 0,
-            Self::Right => 1,
+            Self::Left => [true, false],
+            Self::Right => [false, true],
+            Self::Both => [true, true],
         }
     }
 }
@@ -109,7 +206,7 @@ impl Side {
 struct ControlOptions {
     #[arg(long, value_enum)]
     mode: Mode,
-    /// Physical wheel, not a logical A/B/C/D deck.
+    /// Physical wheel(s), not logical decks; both is for fader-play only.
     #[arg(long, value_enum, default_value = "left")]
     side: Side,
     /// Fixed modes only: raw units per count/ms (default 1).
@@ -118,7 +215,7 @@ struct ControlOptions {
     /// Braking ceiling: default 100 fixed / 5000 fader-brake / 30000 fader-tension.
     #[arg(long, visible_alias = "force-cap", value_parser = clap::value_parser!(u16).range(1..=60000))]
     max_force: Option<u16>,
-    /// Fader-tension only: held-touch assistance ceiling, default 8000; zero disables.
+    /// Held-touch assistance ceiling; fader-assist defaults to 2000, older bipolar modes 8000.
     #[arg(long, value_parser = clap::value_parser!(u16).range(0..=8000))]
     assist_force: Option<u16>,
 }
@@ -131,48 +228,6 @@ struct ControlArgs {
     max_force: u16,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     assist_force: Option<u16>,
-}
-
-impl ControlOptions {
-    fn resolve(self) -> anyhow::Result<ControlArgs> {
-        ensure!(
-            matches!(self.mode, Mode::FaderTension) || self.assist_force.is_none(),
-            "--assist-force requires --mode fader-tension"
-        );
-        if self.mode.uses_fader() {
-            ensure!(
-                matches!(self.side, Side::Left),
-                "fader modes require --side left and the physical deck1 fader"
-            );
-            ensure!(
-                self.gain.is_none(),
-                "fader modes use direct force; omit --gain"
-            );
-        }
-        let max_force = match self.mode {
-            Mode::FaderBrake => {
-                let force = self.max_force.unwrap_or(5000);
-                ensure!(force <= 25000, "fader-brake --max-force must be <=25000");
-                force
-            }
-            Mode::FaderTension => self.max_force.unwrap_or(30000),
-            Mode::Baseline | Mode::Brake | Mode::Assist => {
-                let max_force = self.max_force.unwrap_or(100);
-                ensure!(max_force <= 1000, "fixed-mode --max-force must be <=1000");
-                max_force
-            }
-        };
-        Ok(ControlArgs {
-            mode: self.mode,
-            side: self.side,
-            gain: self.gain.unwrap_or(1),
-            max_force,
-            assist_force: match self.mode {
-                Mode::FaderTension => Some(self.assist_force.unwrap_or(8000)),
-                Mode::Baseline | Mode::Brake | Mode::Assist | Mode::FaderBrake => None,
-            },
-        })
-    }
 }
 
 pub fn run(args: Args) -> anyhow::Result<()> {
@@ -188,6 +243,8 @@ pub fn run(args: Args) -> anyhow::Result<()> {
             seconds,
             enable_motor,
             until_stopped,
+            initialize_rings,
+            start_after_neutral,
             control,
         } => {
             ensure!(
@@ -195,6 +252,36 @@ pub fn run(args: Args) -> anyhow::Result<()> {
                 "live trials require --enable-motor, including baseline"
             );
             let control = control.resolve()?;
+            ensure!(
+                !start_after_neutral
+                    || !until_stopped
+                    || matches!(
+                        control.mode,
+                        Mode::FaderDamped | Mode::FaderSmooth | Mode::FaderAssist | Mode::FaderPlay
+                    ),
+                "--start-after-neutral with --until-stopped requires a qualified fader mode"
+            );
+            ensure!(
+                !start_after_neutral
+                    || matches!(
+                        control.mode,
+                        Mode::FaderTension
+                            | Mode::FaderContinuity
+                            | Mode::FaderDamped
+                            | Mode::FaderSmooth
+                            | Mode::FaderAssist
+                            | Mode::FaderPlay
+                    ),
+                "--start-after-neutral requires a bipolar fader mode"
+            );
+            ensure!(
+                !initialize_rings
+                    || matches!(
+                        control.mode,
+                        Mode::FaderTension | Mode::FaderContinuity | Mode::FaderPlay
+                    ),
+                "--initialize-rings requires fader-tension, fader-continuity or fader-play"
+            );
             ensure!(
                 !until_stopped || control.mode.uses_fader(),
                 "--until-stopped requires a fader mode"
@@ -205,36 +292,13 @@ pub fn run(args: Args) -> anyhow::Result<()> {
             );
             live::trial(
                 &out,
-                if until_stopped { None } else { Some(seconds) },
+                live::TrialOptions {
+                    seconds: if until_stopped { None } else { Some(seconds) },
+                    initialize_rings,
+                    start_after_neutral,
+                },
                 control,
             )
         }
     }
-}
-
-fn replay(path: &std::path::Path, control: ControlArgs) -> anyhow::Result<()> {
-    let input = BufReader::new(File::open(path).context("open raw capture")?);
-    let mut output = BufWriter::new(std::io::stdout().lock());
-    let mut decoder = Decoder::default();
-    let mut controller = Controller::new(control);
-    let mut summary = Summary::default();
-    emit(&mut output, &LogRecord::session("replay", Some(control)))?;
-    for (index, line) in input.lines().enumerate() {
-        let record: LogRecord = serde_json::from_str(&line?)
-            .with_context(|| format!("parse capture line {}", index + 1))?;
-        if index == 0 {
-            ensure!(
-                matches!(record, LogRecord::Session { version: 1, .. }),
-                "capture must start with a version 1 session"
-            );
-        }
-        if let LogRecord::Raw { frame } = record {
-            let motion = decoder.decode(&frame)?;
-            summary.observe(&motion);
-            let decision = controller.decide(&motion)?;
-            emit(&mut output, &LogRecord::Motion { motion, decision })?;
-        }
-    }
-    ensure!(summary.samples > 0, "capture contains no raw samples");
-    emit(&mut output, &LogRecord::end("replay_eof", summary))
 }

@@ -1,4 +1,4 @@
-//! Opted-in experiments use native HID only; audio and LEDs are untouched.
+//! Opted-in native HID experiments; optional ring initialization is isolated.
 
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write as _};
@@ -65,7 +65,14 @@ fn capture_loop(
     Ok(())
 }
 
-pub fn trial(path: &Path, seconds: Option<u64>, control: ControlArgs) -> anyhow::Result<()> {
+#[derive(Clone, Copy)]
+pub struct TrialOptions {
+    pub seconds: Option<u64>,
+    pub initialize_rings: bool,
+    pub start_after_neutral: bool,
+}
+
+pub fn trial(path: &Path, options: TrialOptions, control: ControlArgs) -> anyhow::Result<()> {
     ownership::check()?;
     let mut log = create_log(path)?;
     emit(
@@ -77,13 +84,28 @@ pub fn trial(path: &Path, seconds: Option<u64>, control: ControlArgs) -> anyhow:
     let stop = stop_signal()?;
     let started = Instant::now();
     let mut session = Session::new(control, |report| Ok(writer.write(report)?), &mut log)?;
+    if options.start_after_neutral {
+        match options.seconds {
+            Some(seconds) => session.prepare(seconds)?,
+            None => session.prepare_manual()?,
+        }
+    }
+    if options.initialize_rings {
+        session.initialize_rings()?;
+    }
     let mut reader = Reader::start(hid, started, control.mode.uses_fader())?;
     info!(
         ?control,
-        ?seconds,
+        seconds = ?options.seconds,
+        initialize_rings = options.initialize_rings,
+        start_after_neutral = options.start_after_neutral,
         "DIAGNOSTIC_MOTOR_ENABLED: uncalibrated torque; Ctrl-C neutralizes"
     );
-    let result = trial_loop(&mut session, &mut reader, (&stop, started, seconds));
+    let result = if control.mode.is_paced() {
+        super::paced::run(&mut session, &mut reader, (&stop, started, options.seconds))
+    } else {
+        trial_loop(&mut session, &mut reader, (&stop, started, options.seconds))
+    };
     // Explicit neutral precedes cancellation/join, even when input is stuck.
     let neutral = session.finish("error");
     let cleanup = reader.stop();
@@ -98,10 +120,11 @@ fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
     timing: (&Receiver<()>, Instant, Option<u64>),
 ) -> anyhow::Result<()> {
     loop {
-        let elapsed = timing.1.elapsed();
-        let remaining = timing.2.map_or(Duration::MAX, |seconds| {
-            Duration::from_secs(seconds).saturating_sub(elapsed)
-        });
+        let now_us = u64::try_from(timing.1.elapsed().as_micros())?;
+        let remaining = timing
+            .2
+            .and_then(|seconds| session.remaining_duration_us(now_us, seconds))
+            .map_or(Duration::MAX, Duration::from_micros);
         let event = if remaining.is_zero() {
             Event::Deadline
         } else {
@@ -119,7 +142,8 @@ fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
                     Err(error) => Event::ReaderError(error.into()),
                 },
                 default(timeout) => {
-                    if timing.2.is_some_and(|seconds| timing.1.elapsed() >= Duration::from_secs(seconds)) {
+                    let now_us = u64::try_from(timing.1.elapsed().as_micros())?;
+                    if timing.2.is_some_and(|seconds| session.remaining_duration_us(now_us, seconds) == Some(0)) {
                         Event::Deadline
                     } else {
                         Event::InputTimeout
@@ -128,15 +152,16 @@ fn trial_loop<F: FnMut(&[u8]) -> anyhow::Result<usize>>(
             }
         };
         // Check again after receiving: never apply a queued sample past duration.
+        let now_us = u64::try_from(timing.1.elapsed().as_micros())?;
         let event = if timing
             .2
-            .is_some_and(|seconds| timing.1.elapsed() >= Duration::from_secs(seconds))
+            .is_some_and(|seconds| session.remaining_duration_us(now_us, seconds) == Some(0))
         {
             Event::Deadline
         } else {
             event
         };
-        if !session.handle(event, u64::try_from(timing.1.elapsed().as_micros())?)? {
+        if !session.handle(event, now_us)? {
             return Ok(());
         }
     }

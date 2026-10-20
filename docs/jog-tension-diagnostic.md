@@ -1,457 +1,348 @@
 # Wheel-tension diagnostic
 
-October 8, 2026. This standalone diagnostic prepares **supervised** mechanical
-tension experiments. It does not change the normal bridge, Djay mappings,
-jog sensitivity, audio, LEDs, or saved preferences. Powered playback rotation,
-cue haptics, and app integration remain outside its scope.
+October 19, 2026. **Cold recovery PASSED. Current phase: RIGHT ONLY FIRST.**
+Use the RIGHT wheel with **channel 1, SECOND FROM LEFT**, in physical order
+**3 | 1 | 2 | 4**, as the shared tension selector. Don't switch to channel 2.
+The new build extends only `fader-play` to `--side left`, `right`, or `both`;
+the default remains `left`. Other fader profiles remain left only, and fixed
+modes remain left/right only. E braking and F assistance stay unchanged.
+Right-wheel polarity and both-wheel feel still need physical confirmation.
 
-**Physical motor behavior is unverified.** Offline replay proves decoding,
-direction selection, bounds, and software cleanup decisions, not physical
-resistance, neutral torque, or a backspin fix. Do not run motor trials unattended.
+## Setup and launch
 
-## Start here: bipolar fader-tension diagnostic, in order
+Stop any old diagnostic and the bridge; quit Traktor and Mixxx and keep the
+bridge app closed. The same powered, initialized controller is fine.
+**No further cold test or power cycle is required by default.**
+Explicitly **cd into the newly built
+suite's extracted folder** containing `s4mk3-jog-diagnostic`: type `cd `,
+drag that new folder from Finder into Terminal, then press Return. An old
+Terminal window may still point at an older folder. Preserve existing logs.
 
-This update is offline preparation, not physical acceptance. Step 2 is offline;
-steps 3-9 are instructions for a later supervised controller session.
-The lower half selects held-touch assistance, center selects zero, and the
-upper half selects braking. This is not a clone of Traktor's tension curve.
-
-Follow steps 1-9 in this section. Each step gives the command, physical actions,
-and result to check before continuing. The references and older fixed-mode
-experiments below are optional, not additional steps in this walkthrough.
-Use a fresh run even if you tried earlier commands; previous captures stay intact.
-
-Channel faders, left to right: **3 | 1 | 2 | 4**.
-**Channel 1 is the second fader from the left.** The comparison control is
-**channel 2, the third fader from the left**. Neither is the crossfader.
-Only the physical left jog receives nonzero proposals in this test.
-
-### 1. Open the suite folder and prepare filenames
-
-Unzip `S4 Jog Diagnostic-arm64.zip`. Open Terminal. Type `cd ` (including the
-trailing space), drag the extracted **S4 Jog Diagnostic** folder from Finder
-into Terminal, and press Return. If Terminal is already in that folder, stay
-there. Rust, Cargo, Python, and jq are not needed.
-
-Run this block once:
+Put channel 1 near CENTER and paste this one launch block. The lines after
+the diagnostic print its exit code, end record, final-neutral record, and
+filename once it stops:
 
 ```sh
-ls ./s4mk3-jog-diagnostic ./jog-diagnostic-tension-replay.jsonl
-run_id=$(date -u +%Y%m%dT%H%M%SZ)
-rehearsal="rehearsal-tension-$run_id.jsonl"
-capture="fader-check-$run_id.jsonl"
-analysis="fader-check-$run_id-analysis.jsonl"
-trial="tension-left-$run_id.jsonl"
+check="wheel-right-$(date -u +%Y%m%dT%H%M%SZ).jsonl"
+./s4mk3-jog-diagnostic live --out "$check" \
+  --mode fader-play --side right --max-force 30000 --assist-force 7000 \
+  --enable-motor --initialize-rings --start-after-neutral --until-stopped
+check_status=$?
+printf 'Right-wheel exit code: %s\n' "$check_status"
+grep '"kind":"initialization"' "$check"
+grep '"kind":"end"' "$check"
+grep '"kind":"motor","reason":"final_neutral"' "$check"
+printf 'Right-wheel log: %s\n' "$check"
 ```
 
-**Continue when:** both files are listed without an error. Keep this same
-Terminal window and folder for every remaining command; the filename variables
-above will be reused. If a file is missing, stop and open the correct folder.
+During `DIAGNOSTIC_FIND_NEUTRAL`, output stays zero. CENTER is raw
+**2016-2080 inclusive**. Keep it there for **one continuous second** until
+**`DIAGNOSTIC_TRIAL_READY`** appears; leaving the band resets preparation.
+`armed=true` alone isn't READY. There is no preparation deadline or run
+deadline, and no `--seconds` option in this launch.
 
-### 2. Run the offline bipolar rehearsal
+After READY, **play freely on the RIGHT wheel**: channel 1 DOWN selects
+assistance, CENTER selects neutral, and UP selects braking. The LEFT wheel
+must remain unforced even if moved or touched. There are no prescribed
+motions, holds, timings, or trial checklist. Don't raise either cap.
+Press **Ctrl-C** to finish, or immediately for wrong direction, unexpected
+drive, or chatter. A fault can also stop the run. Return the filename,
+how right assistance and braking felt, whether there was any left-wheel
+force, and the complete Terminal error if one appeared.
 
-This reads the supplied synthetic fixture. It does not access the S4 or send
-motor commands. Do not move any controls for this step. You do not need the
-older brake/assist rehearsals below.
+The launch retains **`--initialize-rings`**: two existing 28-byte
+`0x30` startup reports, also sent by the normal bridge. Expect two
+`initialization` records with `written:28` and `error:null`. Startup motor
+neutral precedes them; all motor output remains gated until READY.
+They may change ring LEDs. Cold-start testing supports this startup sequence;
+the individual firmware-enable fields have not been decoded. The positive
+physical contrast is recorded below. Without the flag, initialization remains
+omitted. No new packet format is introduced.
 
-```sh
-./s4mk3-jog-diagnostic replay --input jog-diagnostic-tension-replay.jsonl \
-  --mode fader-tension --max-force 30000 --assist-force 8000 > "$rehearsal"
-rehearsal_status=$?
-printf 'Rehearsal exit status: %s\n' "$rehearsal_status"
-awk '
-/"kind":"motion"/ {
-  count++
-  if ($0 !~ /"torque":\[-?[0-9]+,0\]/) bad=1
-  if (/"zone":"neutral"/) {
-    center++
-    if ($0 !~ /"selected_force":0/ || $0 !~ /"torque":\[0,0\]/) bad=1
-  }
-  if (/"zone":"assist"/ && /"raw":0,/ && /"selected_force":8000/) low++
-  if (/"zone":"brake"/ && /"raw":4095,/ && /"selected_force":30000/) high++
-  if (/"zone":"assist"/ && /"touch":\[false,/) {
-    released++
-    if ($0 !~ /"torque":\[0,0\]/) bad=1
-  }
-  if (/"armed":false/ && $0 !~ /"torque":\[0,0\]/) bad=1
-}
-/"kind":"end"/ { ended++ }
-END {
-  ok=(count && center && low && high && released && ended && !bad)
-  print ok ? "PASS: zones, endpoints, zero gates, and end" : "FAIL: rehearsal checks"
-  exit !ok
-}' "$rehearsal"
-checks_status=$?
-printf 'Rehearsal checks exit status: %s\n' "$checks_status"
-```
+This comparison retains the passed cold run's **7000 assistance / 30000 braking**
+ceilings. The ordinary free-play default is still 2000 assistance; the table
+below distinguishes those defaults from this launch.
 
-**Continue when:** both exit statuses are `0` and the check prints `PASS`.
-This checks selected zones, endpoint magnitudes, center/release/unarmed zeros,
-right-wheel zero, and a completed replay, not a claimed full torque trace.
-If either command fails or prints `FAIL`, stop here and keep the rehearsal.
-No physical feel has been accepted by this check.
+The input queue remains bounded to 32 snapshots; overflow, stale input and
+the 50 ms watchdog remain errors. Snapshots are not discarded to make room,
+and no failed publication is silently retried. The previous capture cannot
+prove whether its terminal overflow was a producer burst or a consumer/I/O
+stall. The existing paced reader removes the known unpaced-burst path; it doesn't promise
+to tolerate a stalled writer. If an error recurs, return its complete text,
+including `rejected_snapshot_us`, along with the log.
 
-### 3. Prepare the controller
+## Simple controls
 
-Choose **Stop bridge** in the menu-bar app, and quit Traktor and Mixxx.
-Connect and power one S4. Keep the current Djay mapping and jog settings.
-Leave the bridge stopped throughout steps 4-8. This standalone test sends no MIDI.
-
-### 4. Capture both fader movements without motor writes
-
-Read the actions first. Immediately after starting the command below, during
-its single 30-second capture:
-
-- Move **channel 1, second from the left**, fully down and hold briefly.
-- Move it to the midpoint and hold briefly, then fully up and hold briefly.
-- Return channel 1 to **CENTER** and leave it there.
-- With channel 1 still at **CENTER**, move **channel 2, third from the left**, up and down.
-- Leave both controls alone and let capture finish. Both movement checks must
-  happen before the 30 seconds end; do not replay between them.
-
-Start that capture now:
-
-```sh
-./s4mk3-jog-diagnostic capture --analog --seconds 30 --out "$capture"
-capture_status=$?
-printf 'Capture exit status: %s\n' "$capture_status"
-printf 'Saved capture: %s\n' "$capture"
-```
-
-**Continue when:** capture ends on its own, the prompt returns, and the exit
-status is `0`. This command sends no output reports, including neutral.
-If it fails or you missed the movements, stop and start a fresh walkthrough
-with a new run ID; do not reuse an existing capture filename.
-
-### 5. Replay your completed capture and check channel 1
-
-No controls need to move now. Replay reads the saved file without accessing
-HID or sending motor commands. Run:
-
-```sh
-./s4mk3-jog-diagnostic replay --input "$capture" \
-  --mode baseline > "$analysis"
-replay_status=$?
-printf 'Capture replay exit status: %s\n' "$replay_status"
-grep -o '"deck1_fader":[0-9]*' "$analysis" | uniq
-```
-
-**Continue when:** the exit status is `0` and the displayed channel-1 values
-follow the movement you recorded: near `0`, around `2048`, near `4095`,
-then back to center. During the final channel-2 movement they must stay near
-channel 1's center. A little variation at a held position is normal ADC noise.
-The center arming band is **raw 2016 through 2080 inclusive**. Confirm the
-returned center readings fall in that band before continuing.
-
-The command lists changes in order; it may print many intermediate values.
-If there are no values, a framing/range/timing error, or channel 2 substantially
-changes this field, stop here. Preserve the capture and analysis for diagnosis.
-
-### 6. Start the continuous motor test at CENTER
-
-Put **channel 1, second from the left, at CENTER**, not minimum, and leave
-both wheels at rest. The command explicitly uses the new mode's default
-30000 braking and 8000 assistance ceilings. It has no duration limit:
-`--until-stopped` runs until Ctrl-C or a fault. Omitting that flag would give
-a finite 10-second trial; don't add `--seconds` to this continuous command.
-Run:
-
-```sh
-./s4mk3-jog-diagnostic live --out "$trial" \
-  --mode fader-tension --side left --max-force 30000 --assist-force 8000 \
-  --enable-motor --until-stopped
-```
-
-**This is the first command in the walkthrough that enables motor output.**
-It keeps running; the Terminal prompt will not return until you stop it or a
-fault ends it. Do not enter another command while it runs.
-
-Look for a `DIAGNOSTIC_FADER` message with `armed=true` and
-`selected_force=0` and the neutral zone at center. No startup position outside
-raw 2016-2080 can arm this mode. If necessary, adjust channel 1 slightly around
-center while both wheels remain at rest. If it won't arm, press Ctrl-C and go
-to step 8 to inspect the stop; don't lower it to minimum or raise the ceiling.
-
-### 7. Compare the three zones while the same process runs
-
-With `armed=true`, perform these actions in order without restarting:
-
-- At **CENTER**, gently turn the left wheel in both directions. Selection and
-  torque must be zero throughout raw 2016-2080.
-- Keep touching and gently turning the left wheel while gradually lowering
-  **channel 1**. Below center, selection rises toward 8000 at raw 0. Assistance
-  follows measured motion only while touch is held. Release the wheel while
-  it is moving: assistance must become zero, even if the wheel keeps coasting.
-- Return channel 1 to **CENTER** before the next comparison.
-- Gradually raise channel 1 while gently turning the left wheel in both
-  directions. Above center, braking rises toward 30000 at raw 4095.
-  Release while moving: braking remains eligible after release, until rest.
-- Return channel 1 to **CENTER**. Let both wheels come to rest.
-
-Terminal messages identify raw fader value, zone, arming, and selected force.
-Selection isn't actual torque: unarmed, rest, duplicate snapshots, and the
-right wheel always propose zero. These are raw diagnostic units, not factory
-tension settings or calibrated physical torque.
-
-**Expected physical result, still unverified:** assistance feels looser only
-while touching and moving below center; resistance increases above center in
-both directions. Held-touch assistance is deliberately more restricted than
-native free rotation. Record the actual result, including no noticeable change.
-If it self-starts, assists in the brake zone, continues driving in the assist
-zone after release, reverses unexpectedly, or affects the right wheel, press
-Ctrl-C immediately and proceed only to step 8.
-
-### 8. Stop and inspect the actual final write
-
-For a normal stop, first return channel 1 to **CENTER**, then press **Ctrl-C** in the
-running Terminal window. If behavior is unexpected, press Ctrl-C immediately.
-Once the prompt returns, run this block before any other command:
-
-```sh
-trial_status=$?
-printf 'Live exit status: %s\n' "$trial_status"
-grep '"kind":"motor","reason":"final_neutral"' "$trial"
-grep '"kind":"end"' "$trial"
-```
-
-**Pass:** exit status `0`; the final motor line contains all three:
-
-- `"report":[49,1,32,1,0,0,1,32,1,0,0]`
-- `"written":11`
-- `"error":null`
-
-The end line should say `"reason":"ctrl_c"`. Also confirm the process has
-stopped and physical drive has stopped. An accepted write does not establish
-that physical drive stopped; check both wheels yourself.
-
-If the command failed, either line is missing, neutral delivery failed, or
-physical drive remains, stop testing and preserve the trial log. Do not increase
-the ceiling. A disconnected device cannot receive neutral.
-
-### 9. Save the results and finish
-
-Run this to show the files belonging to this run:
-
-```sh
-printf 'Rehearsal: %s\nCapture: %s\nAnalysis: %s\nMotor trial: %s\n' \
-  "$rehearsal" "$capture" "$analysis" "$trial"
-```
-
-Keep those files and note the feel below center, at center, and above center,
-the held-touch/release difference, both directions, and whether Ctrl-C removed
-physical drive.
-The primary walkthrough is finished. You may restart the normal bridge after
-the diagnostic has exited and the physical stop check passed.
-
-If the default ceilings produced no useful difference but every check passed, record
-that result first. A higher-ceiling repeat is a separate supervised experiment,
-not an automatic next step; see the option limits below. A user-chosen braking
-cap up to 60000 is allowed only for `fader-tension`, not an automatic jump to
-60000. Each new session must observe CENTER again. To disable assistance in
-a separately chosen repeat, use `--assist-force 0`; the lower zone then stays
-zero. Use fresh filenames and repeat the arming and stop checks. Don't run the
-older assist sequence as part of this test.
-
-On a fault, the diagnostic terminates and attempts neutral. The
-[pinned protocol comparison](jog-fader-braking-protocol.md) establishes software
-packet agreement, not resistance or physical shutdown acceptance.
-
-## Command reference (optional)
-
-| Command | Hardware effect |
+| Control or state | What it does |
 | --- | --- |
-| `capture --out PATH --seconds N` | Current button/jog snapshots only. **No output reports**, including neutral; preserves the wheel's current state. Default 30 seconds, maximum 120. |
-| `replay --input PATH --mode MODE` | Offline raw decoding and proposed reports on stdout. Never initializes HID or sends reports. |
-| `live --out PATH --mode MODE --enable-motor --seconds N` | Explicitly enabled bounded motor trial. Default 10 seconds, maximum 30; Ctrl-C stops it. `trial` is an alias. |
-| `live --out PATH --mode fader-tension --enable-motor --until-stopped` | Supervised continuous fader test, ending on Ctrl-C or an input/output fault. Also available for legacy `fader-brake`. Conflicts with explicit `--seconds`; unavailable for fixed modes. |
+| Channel 1, SECOND FROM LEFT, order 3 \| 1 \| 2 \| 4 | Shared selector for the selected side; RIGHT only in this launch, never channel 2 |
+| Lower half, raw 0-2015 | Assistance, rising from zero at CENTER to 7000 fully DOWN in this launch; default 2000 |
+| CENTER, raw 2016-2080 inclusive | Zero force and cleared movement/filter history for both wheels |
+| Upper half, raw 2081-4095 | Braking, rising from zero at CENTER to a 30000 ceiling fully UP |
+| Touch plus fresh qualified movement in assistance | Force follows movement |
+| Release in assistance | Immediate zero; fresh touched movement must qualify again |
+| Qualified movement in braking | Force opposes movement; may continue after release while moving, as in E |
+| Still wheel or stationary retouch | No force |
+| Any zone change, even a jump that skips CENTER | Immediately zero both wheels, reset both histories, then freshly qualify movement |
+| Reversal or inactivity cutoff on one wheel | Immediately zero only that wheel, then require fresh qualification |
+| Unselected wheel | Always zero request, even if moved or touched; LEFT in this launch |
+| Ctrl-C | End the run and send final neutral |
 
-Add `--analog` to `capture` to include fresh 79-byte numbered mixer snapshots
-(report 2). The physical channel-1 volume fader is decoded from numbered bytes
-3-4, little-endian, range 0-4095. Analog capture still sends no output reports;
-historical captures without this optional report remain replayable.
+The halves have **different ceilings**, not matched strengths: assistance
+defaults to **2000** and braking to **30000**. This launch explicitly uses
+**7000 assistance / 30000 braking**.
+These are uncalibrated diagnostic units, not torque settings. Selection is a
+ceiling, not constant output or a claim of definite assistance strength.
 
-Every capture/trial creates a **new** file; existing captures are never
-overwritten. Live commands refuse known running bridge, diagnostic, Traktor,
-or Mixxx processes before opening HID. An idle menu-bar app is allowed.
-Stop its bridge first. Process inspection failure also refuses access.
-This is not race-free ownership locking; do not start another controller
-program during a trial. Connect only one powered S4.
+## Fader-play movement and output rules
 
-Replay/live options:
+Both halves use the proven E/F smooth qualified law. A recent **20 ms
+same-direction displacement window** has a **4-count deadband**, then tapers
+linearly to full target at **20 counts**. Direction must accumulate **6 counts
+over at least 6 ms**. Magnitude smoothing uses **Q16** fractions on independent
+best-effort **2 ms output slots**, with actual elapsed microseconds:
 
-| Option | Meaning |
+```text
+tau = 20000 us
+y = (previous * tau + target * elapsed) / (tau + elapsed)
+```
+
+A hard **8 ms without real movement** cutoff zeros output and invalidates
+prior movement. Rest or duplicate samples don't refresh it. Assistance needs
+metal-top touch and fresh qualified movement; untouched motion can't prime
+it, and release immediately zeros and clears its history. Braking opposes
+qualified movement and may continue after release while moving, as in E.
+
+Each physical wheel has independent touch, direction, movement qualification,
+filter, and inactivity state. Moving or touching one can't prime the other.
+Assistance release, reversal, or the inactivity cutoff immediately zeros only
+the affected wheel before output ticks; the other selected wheel continues
+under its own qualified state. Braking retains E's moving-after-release rule.
+
+Every zone change zeros both wheels and clears both movement and filter histories,
+including direct assistance-to-braking or braking-to-assistance changes that
+skip CENTER. Fresh movement must qualify in the new zone. CENTER, reversal,
+unqualified direction, Stop, fault, and the **50 ms watchdog** also bypass
+smoothing and zero immediately.
+
+Repeated zero Sample proposals do not add writes for a wheel already at
+zero. Any nonzero-to-zero transition writes immediately, including a partial
+neutral report while the other wheel remains active. Periodic clock reports
+continue best-effort. Startup and final neutral are unconditional. Ring
+initialization is omitted unless explicitly requested, as in the launch above.
+The force law, cadence, 50 ms watchdog, 32-snapshot FIFO, paced reader, and
+native initialization packets are unchanged. No TT or free-spinning mode is requested.
+
+The preparation record has `seconds:null` and `neutral_hold_us:1000000`.
+READY starts free play until Ctrl-C, unless a fault stops it. `host_us` stays
+relative to process start. A clean log ends with exit code 0, `end` reason
+`ctrl_c`, and an accepted `final_neutral` report
+`[49,1,32,1,0,0,1,32,1,0,0]`, with `written:11` and `error:null`.
+Accepted writes don't prove physical removal of drive. An error ending isn't
+a clean exit even if final neutral was accepted.
+
+## Passed cold gate and historical startup comparisons
+
+`cold-paced-20261019T232541Z.jsonl` **passed cold recovery**: 15079 samples,
+last snapshot at **35.639203 s**, two accepted initialization writes, READY at
+**7.200647 s**, and all **17813 motor writes accepted**. There were no errors
+or overflow. Assistance peaked at **7000** and braking at **30000**, with both
+signs represented; right-wheel requests stayed zero. The run ended with
+`ctrl_c` and accepted final neutral.
+
+The user first reported "It worked. I forgot to return to neutral." and then
+explicitly confirmed "Both worked correctly", meaning assistance and braking
+on the left wheel, not both physical wheels. Manual return to CENTER wasn't
+tested in this run; its omission doesn't invalidate the cold gate.
+**No more cold tests are required by default.**
+
+Earlier, `cold-start-20261019T224211Z.jsonl` produced 3092 accepted nonzero
+writes without either effect being felt after a power cycle. Explicit native
+initialization restored the expected feel, with a blue ring tracking movement.
+The first fresh-power repeat, `cold-restart-20261019T230507Z.jsonl`, overflowed
+the snapshot queue after 3912 samples while still neutral; both initialization
+writes and final neutral were accepted. It didn't test either force zone.
+The passed paced run supersedes that retry, without proving the cause of the
+earlier overflow or decoding a firmware motor-enable specification.
+
+## Both-wheel stage, gated on right-result review
+
+Both-wheel live testing is **not the current action**. Review the right-only
+log and physical feel report before advancing. The `both` selection uses the
+same channel 1 selector, per-wheel touch, and independently qualified
+movements. It needs separate user physical confirmation; neither right-wheel
+polarity nor both-wheel feel is established by the left cold pass or replay.
+
+## Historical A/D/E/F baselines
+
+Keep these logs as **qualitative baselines**, not precisely matched trials:
+
+| Log | What it establishes and what it doesn't |
 | --- | --- |
-| `--mode baseline` | Zero magnitude on both wheels, including startup/exit. This is an explicit neutral experiment, unlike no-write capture. |
-| `--mode brake` | Torque opposite the selected wheel's observed movement. |
-| `--mode assist` | Torque in the selected wheel's observed direction, including after touch release. Never a target RPM. |
-| `--mode fader-tension` | Physical channel-1 fader selects left-wheel held-touch assistance below center, zero at center, braking above center. Raw 2016-2080 inclusive must be observed to arm. |
-| `--mode fader-brake` | Optional legacy mode, unchanged. Channel 1 selects left-wheel braking only. Raw 0-32 must be observed to arm; no assistance. |
-| `--side left` / `right` | Physical wheel, not logical deck A/B/C/D; default left. Both fader modes reject `right`. The other wheel always receives zero magnitude. |
-| `--gain N` | Fixed modes only: integer raw units per count/ms, default 1, range 1-100. Both fader modes reject even an explicit `--gain 1`. |
-| `--max-force N` | Fixed modes: default 100, live 1-500, replay 1-1000. Legacy `fader-brake`: default 5000, live/replay 1-25000. New `fader-tension`: default 30000, live/replay 1-60000. `--force-cap` is an alias. |
-| `--assist-force N` | Only `fader-tension`: integer 0-8000, default 8000; 0 disables assistance. All other modes reject this option. |
+| `continuity-A-left-20261019T191447Z.jsonl` | A assistance: neutral movement, both assistance directions, release zeros, and accepted final neutral. No braking phase; gesture timing and a full stationary-retouch check weren't established. |
+| `continuity-A-brake-20261019T200443Z.jsonl` | A braking: the user felt definite tension but chatter even after release, which stopped at process exit. Manual return to CENTER was missed; final neutral was accepted. |
+| `damped-brake-20261019T202900Z.jsonl` | D braking: the user reported chatter only while attempting movement. No nonzero requests followed release at 23.0762 s. CENTER at 35.921195 s was quiet for 7.57 s. The run ended with an I/O error coinciding with user-confirmed Ctrl-C; final neutral was accepted. |
+| `smooth-brake-20261019T210513Z.jsonl` | E braking: the user said "Definitely much smoother". Clean 41.592 s run, 21287 samples, 20766 writes, all accepted. Release at 17.717071 s was followed by quiet requested output. Final CENTER at 36.093143 s was quiet for 5.499 s. Right-wheel requests stayed zero; the run ended with `ctrl_c`. E is the successful braking baseline, not evidence of F assistance. |
+| `smooth-assist-20261019T221653Z.jsonl` | The user reported smooth feel and believed it was assisting; definite assistance strength isn't established. The held stop was confirmed still. Clean **61.060 s**, with **30973 samples** and **30511 writes, all accepted**, ending with `ctrl_c` and accepted final neutral. Untouched force and right-wheel requests stayed zero. Stationary retouch was **about 2 s, not 5 s**. |
 
-For fixed modes, the magnitude is
-`min(max_force, abs(raw_count_delta) * gain * 1000 / elapsed_host_microseconds)`,
-rounded down. Host timing is used; hardware timer frequency is not assumed.
-Legacy `fader-brake` instead selects `floor(raw_fader * max_force / 4095)`,
-independent of wheel speed. Raw values 0-32 select zero and arm that mode.
-New `fader-tension` selects `floor((2016 - raw) * assist_force / 2016)` below
-2016, zero at 2016-2080 inclusive, and
-`floor((raw - 2080) * max_force / 2015)` above 2080. Only center arms it.
-These are **uncalibrated diagnostic units**, not percentages, physical torque,
-factory tension equivalents, or established safe limits. Start below the default
-cap in fixed trials. Start the bipolar walkthrough at CENTER; minimum is only
-the legacy braking mode's arming position. Legacy's 25000 ceiling comes from
-pinned Mixxx source, not physical safety acceptance. New-mode caps are separate
-experimental bounds informed by native captures, not accepted physical limits.
+The A braking analysis found **399 full-30000 responses to alternating +2/-2
+counts during 7.35 seconds of released motion**. The working hypothesis is
+that full-cap responses to small direction changes contributed to chatter.
+D adds a movement threshold, taper, direction qualification, and a short
+decaying tail to test that hypothesis. It doesn't establish the cause or prove
+smooth physical braking. D remains unchanged, including its linear 8 ms decay.
 
-Fresh rest, first observations, and duplicate snapshots propose zero torque.
-All non-baseline modes apply only to measured motion. Lifting a hand doesn't
-terminate physical motion tracking, but does gate new-mode assistance to zero.
-Braking can continue after release while moving. This changes no Djay audio routing.
+In D, requested force jumped from **14968 to 8308 in about 2 ms** while motion
+remained clockwise. The log contains **42650 writes in 43.49 s**, about
+**981/s**, because zero Sample reports duplicated periodic clock reports.
+At **43.492 s**, `IOHIDDeviceSetReport` returned general error **`0xE00002BC`**.
+The user confirmed pressing Ctrl-C, so this isn't proof of spontaneous
+controller loss or overload. Accepted final neutral doesn't turn the error
+ending into a clean pass.
 
-## Older fixed-mode rehearsals (optional)
+E tested smoothing while moving and suppression of redundant zero Sample
+writes, with the successful physical result above. The same
+30000 ceiling is **not strength-matched**: removing D's decay can raise average
+force and change the feel. Preserve this baseline without changing E to enable
+assistance. A's initial assistance evidence is partial and qualitative, with
+the stationary-retouch check incomplete. F's qualitative result is recorded
+above; combined left-wheel E/F physical coupling in `fader-play` subsequently
+passed the cold gate recorded above. Right/both physical behavior remains unvalidated.
 
-The included `jog-diagnostic-replay.jsonl` is synthetic software test data,
-not a Traktor or bridge hardware capture.
+Also preserve `continuity-A-brake-20261019T193747Z.jsonl` as a failed timed
+attempt, not a braking baseline: it produced no nonzero requests and ended
+while neutral was still being found. Repeated time pressure is why D uses
+manual stop rather than `--seconds`.
 
-```sh
-./s4mk3-jog-diagnostic replay --input jog-diagnostic-replay.jsonl \
-  --mode brake --side left --gain 1 --max-force 10 > rehearsal-brake.jsonl
-./s4mk3-jog-diagnostic replay --input jog-diagnostic-replay.jsonl \
-  --mode assist --side right --gain 1 --max-force 10 > rehearsal-assist.jsonl
+## Historical F assistance control and readiness contract
+
+The unchanged `--mode fader-assist` is left only, separate from fixed `assist`.
+`--assist-force` defaults to **2000**, permits **0-8000 inclusive**, and
+was explicitly **2000** for the baseline. Zero disables assistance. The range
+is a validation bound, not a procedure for increasing force.
+**`--max-force` is forbidden for F; resolved braking force is 0.**
+The upper half is disabled, never braking. Channel 1 is second from the left
+in physical order **3 | 1 | 2 | 4**. Its lower half selects assistance from
+**0 at CENTER, raw 2016-2080 inclusive**, to the selected **2000 fully DOWN**.
+The right-wheel request is always zero. There is no TT or free-spinning mode.
+
+Real metal-top touch **and newly qualified same-direction movement** are
+required. Direction qualifies at **6 counts over at least 6 ms**. A recent
+**20 ms same-direction displacement window** supplies the movement target:
+**4 counts or less** is the deadband; between **4 and 20 counts** it tapers
+linearly to the selected cap; **20 counts** reaches full target.
+
+On independent best-effort **2 ms output ticks**, smooth magnitude using
+**Q16** fixed-point fractions and actual elapsed time:
+
+```text
+tau = 20000 us
+y = (previous * tau + target * elapsed) / (tau + elapsed)
 ```
 
-Both must exit successfully. Brake's three movement torques are
-`[-5,0]`, `[-10,0]`, `[10,0]`; right assistance gives
-`[0,-5]`, `[0,-10]`, `[0,10]`. Rest and the duplicate are `[0,0]`.
-The final summary is 60/-60 net counts and 50/-50 released counts.
-Final `neutral_report` is a proposal, not evidence that hardware received it.
+A separate **8 ms without real movement** cutoff zeros output and invalidates
+prior movement. Stopping means this cutoff; a single quantized rest sample doesn't
+zero otherwise-qualified output. Rest or duplicate samples don't refresh
+the cutoff. **Release, CENTER, disabled upper half, reversal, unqualified
+direction, Stop, fault, and the existing 50 ms watchdog immediately zero
+output.** These gates bypass smoothing. Release, CENTER and the upper half
+clear motion and filter history; reversal starts qualification for the new
+direction. Untouched motion cannot prime the filter or qualification;
+stationary retouch never revives assistance. Fresh touched movement must
+qualify again.
 
-## Older fixed-mode physical sequence (optional)
+Retain zero-Sample dedup only when the last successful motor report is already
+neutral. Periodic clock reports continue best-effort; immediate zero
+transitions write. **Startup and final neutral are unconditional**, regardless
+of dedup. No initialization is requested.
 
-Keep the current mapping and jog Speed/Reaction settings unchanged. Finish each
-trial and inspect its evidence before proceeding. Use a new filename on repeats.
+F uses the same no-deadline, one-second stable-neutral preparation and
+`--start-after-neutral --until-stopped`, with **no `--seconds`**.
+The preparation record has `seconds:null` and `neutral_hold_us:1000000`.
+Output stays zero until `DIAGNOSTIC_TRIAL_READY`; `armed=true` alone isn't
+READY. Leaving CENTER resets the continuous hold. After READY there is no
+duration limit, unless a fault stops the run. `host_us` stays relative to
+process start. Ctrl-C can stop preparation, but that isn't a completed trial.
 
-1. **No-write baseline.** Stop the bridge and quit Traktor/Mixxx. From rest,
-   slowly turn each wheel one revolution in both directions, then make a gentle
-   backward flick and release it. Use separate captures for each movement:
+These are approved software rules in uncalibrated diagnostic units.
+F's qualitative physical result is recorded above; these rules don't establish
+definite assistance strength or guarantee delivery to a blocked or disconnected
+device. The former scripted F trial is historical reference in
+`docs/jog-fader-braking-protocol.md`, not a next action.
 
-   ```sh
-   ./s4mk3-jog-diagnostic capture --out baseline-left.jsonl --seconds 30
-   ./s4mk3-jog-diagnostic replay --input baseline-left.jsonl \
-     --mode baseline > baseline-left-analysis.jsonl
-   ```
+## Historical E control reference, braking only
 
-   PASS: capture contains valid 23/60-byte snapshots; counters follow both
-   directions and continue after release; rest produces zero deltas. Record
-   physical turn counts, stop markers, and wheel feel alongside the capture.
-   Repeat for the right wheel. Do not assume 2880 counts/revolution without
-   comparing a deliberately measured turn. A replay timing/filter failure is
-   useful evidence; keep the raw file rather than relaxing limits blindly.
+`fader-smooth` is opt-in and left only. Its default braking cap is **30000**,
+with a maximum of **60000**, not a requested next step.
+Assistance is **disabled**: `--assist-force` defaults to **0**, and any nonzero
+value is rejected. CENTER remains raw **2016-2080 inclusive** for arming;
+below center provides no assistance. The right-wheel request remains zero.
 
-2. **Explicit neutral baseline.** Keep both wheels at rest at startup:
+E reuses D's recent **same-direction displacement over 20 ms**:
 
-   ```sh
-   ./s4mk3-jog-diagnostic live --out neutral-left.jsonl \
-     --mode baseline --side left --enable-motor --seconds 10
-   ```
+- At **4 counts/20 ms or less**, the movement target is zero.
+- Between **4 and 20 counts/20 ms**, the target magnitude tapers linearly from
+  zero to the selected cap; **20 counts/20 ms** reaches that target cap.
+  E's filtered output need not reach the target immediately.
+- Direction must accumulate **at least 6 counts over at least 6 ms** before
+  braking qualifies. Observed opposite motion immediately neutralizes output
+  and requires direction to qualify again.
+- E removes D's per-count linear **8 ms decay while moving**. On actual output
+  ticks, it smooths magnitude with a time-based first-order filter:
+  `y = (previous * tau + target * elapsed) / (tau + elapsed)`, where
+  `tau = 20000 us` and `elapsed` is actual elapsed time in microseconds.
+  Fixed-point fractions are retained.
+- A separate hard **8 ms without real movement** cutoff immediately zeros
+  output. Rest and duplicate snapshots don't refresh it.
+- CENTER, the disabled lower half, observed reversal or unqualified direction,
+  Stop, fault, and the **50 ms watchdog** bypass the filter and zero immediately.
+- Output uses independent best-effort **2 ms slots**, without initialization.
+  Only a zero **Sample** write is suppressed when the last successful motor
+  report is already neutral. Periodic clock reports continue every 2 ms
+  best-effort; immediate zero transitions and final neutral always write.
 
-   Gently repeat the passive movements. PASS: startup/final motor records show
-   successful 11-byte zero-magnitude writes, and neither wheel starts itself.
-   Record whether feel/free-spin distance differs from the no-write baseline.
-   A successful write is only transport evidence: physically check both wheels.
+The `smoothing` metadata record contains `time_constant_us:20000`,
+`rest_cutoff_us:8000`, and `zero_sample_dedup:true`.
 
-3. **Low-cap braking, one wheel.**
+These are software control rules and uncalibrated diagnostic units, not
+physical torque settings or a hardware failsafe. E's physical result is
+recorded above. A blocked or disconnected device may not receive neutral.
 
-   ```sh
-   ./s4mk3-jog-diagnostic live --out brake-left.jsonl \
-     --mode brake --side left --gain 1 --max-force 20 \
-     --enable-motor --seconds 10
-   ```
+`fader-play`, `fader-damped`, `fader-smooth`, and `fader-assist` permit
+**`--start-after-neutral --until-stopped` together**.
+The old `fader-tension` and `fader-continuity` modes still reject that pair.
+For D and E, the `preparation` JSON record has **`seconds:null`** and
+`neutral_hold_us:1000000`. Output stays zero throughout preparation.
+The `ready` record marks activation, not the start of a duration limit.
+`host_us` remains relative to process start. Ctrl-C can also stop preparation,
+but a run without READY isn't a completed comparison.
 
-   Begin with gentle turns in both directions, not a hard flick.
-   PASS: selected-wheel resistance increases rather than assists; the other
-   wheel has no commanded torque; fresh rest is neutral. If direction/feel is
-   unexpected, Ctrl-C and stop the sequence. Only repeat with higher caps after
-   the preceding result is understood; never infer safety from a raw number.
+## Optional offline free-play replay, no HID
 
-4. **Low-cap assistance.**
+This is optional, not a human prerequisite or a request for another capture.
+The new bundled fixture for this stage is `jog-diagnostic-wheels-replay.jsonl`.
+It can be passed to `replay --input` with `--mode fader-play`, side `right`
+or `both`, and `--max-force 30000 --assist-force 7000`. Offline `both` replay
+doesn't open the gated both-wheel live stage. The existing assist and damped
+fixtures remain left-wheel references.
 
-   ```sh
-   ./s4mk3-jog-diagnostic live --out assist-left.jsonl \
-     --mode assist --side left --gain 1 --max-force 20 \
-     --enable-motor --seconds 10
-   ```
+Expect exit status 0 and an `end` record. Replay opens no HID device and sends
+no output reports. Its proposals can help inspect software decisions, but
+don't verify physical feel, USB delivery, or real output timing.
 
-   PASS: motion feels looser, released movement remains tracked, and assistance
-   ends at actual rest without self-start or reversal. Press Ctrl-C while moving
-   for a separate Stop trial. Repeat brake/assist with `--side right`, using
-   right-named files. Do not increase gain to hide missing or delayed snapshots.
+## Archived comparisons, not next actions
 
-5. **Lifecycle and reference comparison.** Confirm duration expiry and Ctrl-C
-   both end the process with a successful final-neutral record and no lingering
-   physical drive. After a supervised disconnect, expect a nonzero exit and
-   failed neutral delivery if the device is gone. Reconnect and explicitly
-   establish neutral again before further trials; do not assume firmware reset.
-   Run Traktor separately, record its exact wheel-tension setting, and compare
-   turns/free-spin duration, not only equal-force gestures. PASS: documented
-   mechanical comparison with normal bridge audio/control behavior still intact
-   after restarting it. Djay scratch continuation remains a separate open issue.
+Existing `fader-tension`, `fader-continuity`, and `fader-damped` behavior is
+preserved.
+The earlier plan compared A (`fader-tension`), B (`fader-continuity`), and C
+(continuity plus `--initialize-rings`), with separate assistance and braking
+runs. **B/C and a D repeat are paused.** Their old combined or split
+walkthroughs are not the current procedure. Don't repeat A/D or request another
+input capture. The active right-only launch explicitly retains ring
+initialization. E remains braking only and F
+remains assistance only; neither baseline mode is changed by `fader-play`.
 
-## Evidence and stop boundaries
-
-Version-1 JSONL starts with `session`. `raw` contains host microseconds and
-complete numbered button/jog bytes and optional numbered analog bytes.
-Fader live trials always request fresh analog report 2. `motion` contains counters,
-sensor timers, touch, signed deltas, elapsed time, and the proposed torque/report.
-Fader decisions also contain `raw`, `armed`, and `selected_force`; new-mode
-decisions include `zone` (`assist`, `neutral`, or `brake`). Live `motor`
-records contain each attempted 11-byte report, accepted byte count, and any
-transport error; inspect actual `motor` results rather than only proposals.
-`end.summary` counts net and released movement. No-write capture ends with
-`capture_end`; it does not claim computed totals or motor cleanup.
-
-The decoder rejects out-of-order host/sensor time, changed counters at unchanged
-sensor time, more than 512 counts/sample, and input gaps over 50 ms. Sensor
-rollover is accepted only near the 32-bit boundary. Identical snapshots do not
-refresh sensor freshness. These filters are deliberately conservative and must
-be checked against actual captures.
-
-Live input uses the bridge's current snapshot transport, not its slow interrupt
-copies. A reader thread and a separate motor-writing handle let the writer react
-to Stop, duration, reader errors, queue overflow, and a 50 ms input timeout.
-Malformed/stale input, short writes, or failed writes terminate the trial and
-attempt neutral; a Drop guard makes a further best-effort attempt on failure.
-Reader cancellation is bounded rather than waiting indefinitely.
-
-**This is not a hardware failsafe.** A native output call or disk write can
-block, a forced process kill bypasses cleanup, and a disconnected device cannot
-receive neutral. The diagnostic cannot guarantee torque removal in those cases.
-Physical neutral and shutdown acceptance remain required before app integration.
-
-Protocol references:
-[pinned Encdr motor layout](https://github.com/RufusIbiza/Encdr/blob/5d7a689ca5789161b3efd1b2049d7e54504fe881/docs/hardware/ni_kontrol_s4_mk3.md),
-[pinned Mixxx motion-dependent tension](https://github.com/mixxxdj/mixxx/blob/f12661e29b36cfdd261939674f1ab94c52f1b2d8/res/controllers/Traktor-Kontrol-S4-MK3.js),
-and [local captured report lengths](traktor-ring-capture.md).
-
-## Developer packaging reference
-
-The DJ laptop uses the ZIP and walkthrough above; no development tools are
-needed there. To build the standalone suite from the repository root:
-
-```sh
-bash macos/build-jog-diagnostic.sh
-```
-
-This creates `dist/S4 Jog Diagnostic/` and
-`dist/S4 Jog Diagnostic-arm64.zip`, without rebuilding or replacing the app.
-Preserve existing outputs before rebuilding. The executable targets Apple
-Silicon and macOS 12 or later and is ad-hoc signed, not Developer ID signed
-or notarized.
-
-Developer equivalent: `cargo run --locked --bin s4mk3-jog-diagnostic -- ...`.
-Normal `cargo run --locked -- ...` still selects the MIDI bridge.
-The packager disables Cargo release stripping to avoid the recorded Rust
-1.88/Apple SDK 27 proc-macro loading failure; it still builds optimized code.
+Protocol history, packet layout, and the earlier offline oracle remain in
+`docs/jog-fader-braking-protocol.md`. The suite packages this guide as its
+`README.md`; use the new executable for `fader-play`, not an older extracted
+copy. The only active procedure is the compact free-play setup above.
