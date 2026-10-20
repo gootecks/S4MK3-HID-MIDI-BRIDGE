@@ -18,14 +18,19 @@ apply. No React, browser runtime, or downloaded assets are needed.
 - Bridge settings expose the actual CLI profile, bounded/continuous duration,
   raw logging, and log level. Mapping installation is a native save dialog that
   generates from the current jog settings through the bundled bridge executable.
-- Jog exposes the four mapping-time scratch/pitch-bend speed/reaction values.
-  Jog changes affect the exported Djay mapping only: install the generated file
+- Jog's Hardware group exposes the saved Jog Wheel Tension control for both
+  physical wheels. Put its title and value above the label-hidden slider; the
+  Assist, Neutral (0), and Brake legends share the slider's width. Neutral is
+  the physical midpoint of the track, not the midpoint of a labeled control.
+- Jog also exposes four mapping-time scratch/pitch-bend speed/reaction values.
+  Those mapping changes affect the exported Djay mapping only: install the generated file
   under a new name and select it in Djay. Bridge restart is not required and
-  does not apply jog changes; seek behavior is unchanged. No backspin, motor,
-  or screen behavior is changed from this tab.
+  does not apply mapping changes; seek behavior is unchanged. Hardware tension
+  applies through Save and restart, independently of the mapping.
 - LEDs and Palette expose all current JSON preferences. Invalid values must
   produce a visible error, not silently reset user configuration.
-- Diagnostics contains a bounded selectable log and the exact launch arguments.
+- Diagnostics contains the bundled release version and build number, a bounded
+  selectable log, and the exact launch arguments.
 
 ## Tokens and primitives
 
@@ -39,8 +44,10 @@ apply. No React, browser runtime, or downloaded assets are needed.
   Floating-point percent rows use the shared DecimalRow primitive with the same
   8/12/20 spacing and trailing Stepper. No one-off field layouts.
 - State is communicated in text and an SF Symbol, not color alone.
-- Status menu is a template SF Symbol with an S4 label; it follows light/dark
-  menu-bar appearance automatically. No custom animation in the app itself.
+- Status menu uses a green SF Symbol while the bridge is running, and a template
+  SF Symbol in other states that follows light/dark menu-bar appearance.
+  The S4 label and accessible process-state description remain present.
+  No custom animation in the app itself.
 - Keyboard access, native file dialogs, standard window close behavior, and
   accessible text labels are required. Closing Settings does not stop the bridge.
 

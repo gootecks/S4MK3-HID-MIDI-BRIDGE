@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Darwin
 import Foundation
@@ -5,6 +6,30 @@ import XCTest
 @testable import S4Bridge
 
 final class BridgeTests: XCTestCase {
+    @MainActor
+    func testStatusSymbolUsesGreenOnlyWhileRunning() throws {
+        let running = try XCTUnwrap(bridgeStatusImage(for: .running))
+        XCTAssertFalse(running.isTemplate)
+        let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(
+            running.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        ))
+        var greenPixels = 0
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<bitmap.pixelsWide {
+                if let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                   color.alphaComponent > 0.5,
+                   color.greenComponent > color.redComponent + 0.1,
+                   color.greenComponent > color.blueComponent + 0.1 {
+                    greenPixels += 1
+                }
+            }
+        }
+        XCTAssertGreaterThan(greenPixels, 0)
+        for state: BridgeState in [.stopped, .starting, .stopping, .checking, .failed] {
+            XCTAssertTrue(try XCTUnwrap(bridgeStatusImage(for: state)).isTemplate)
+        }
+    }
+
     private func defaultData() throws -> Data {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

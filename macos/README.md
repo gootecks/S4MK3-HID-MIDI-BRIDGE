@@ -128,8 +128,8 @@ visible and do not silently replace saved preferences.
 
 ### Hardware jog tension
 
-The **Jog** tab has a separate **Hardware tension** section. Its shared
-**Assist / Neutral / Brake** slider configures both physical wheels, while
+The **Jog** tab has a separate **Hardware** section. Its shared
+**Jog Wheel Tension** slider (Assist / Neutral / Brake) configures both wheels, while
 each wheel keeps independent movement and touch behavior. A first install
 starts at **Neutral (0)**; later launches restore the saved value.
 Channel 1's fader remains a normal mixer control, not a tension selector.
@@ -161,6 +161,10 @@ saved-setting restore while stopped, and explicit restart after USB reconnect.
 The [live integration check](../docs/jog-tension-integration.md) records that
 focused procedure. The full UI regression matrix remains deferred at the
 user's request; these passes do not establish a full visual QA pass.
+
+The menu-bar symbol is green while the bridge is running and returns to the
+normal system appearance in other states. Diagnostics shows the app's bundled
+release version and build number.
 
 ### Jog mapping preferences
 

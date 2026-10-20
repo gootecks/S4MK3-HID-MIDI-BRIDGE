@@ -806,9 +806,9 @@ struct BridgeSettingsView: View {
     private var jogTab: some View {
         ScrollView {
             VStack(spacing: 20) {
-                section("Hardware tension") {
+                section("Hardware") {
                     HStack {
-                        Text("Both physical wheels")
+                        Text("Jog Wheel Tension")
                         Spacer()
                         Text(controller.tension.tension, format: .number.grouping(.never))
                     }
@@ -816,8 +816,9 @@ struct BridgeSettingsView: View {
                         get: { Double(controller.tension.tension) },
                         set: { controller.tension.tension = Int($0) }
                     ), in: -100...100, step: 1) {
-                        Text("Hardware tension")
+                        Text("Jog Wheel Tension")
                     }
+                    .labelsHidden()
                     HStack {
                         Text("Assist").frame(maxWidth: .infinity, alignment: .leading)
                         Text("Neutral (0)").frame(maxWidth: .infinity)
@@ -947,6 +948,9 @@ struct BridgeSettingsView: View {
 
     private var diagnosticsTab: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text("App version: \(appVersion)")
+                .font(.caption).foregroundColor(.secondary)
+                .textSelection(.enabled)
             HStack {
                 Picker("Log detail", selection: $controller.run.logLevel) {
                     Text("Warnings").tag("warn"); Text("Normal").tag("info"); Text("Debug").tag("debug")
@@ -971,6 +975,12 @@ struct BridgeSettingsView: View {
         }.padding(20)
     }
 
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "S4BridgeReleaseVersion") as? String ?? "Unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+        return "\(version) (build \(build))"
+    }
+
     private func confirmReset() {
         let alert = NSAlert()
         alert.messageText = "Reset bridge preferences?"
@@ -979,6 +989,16 @@ struct BridgeSettingsView: View {
         alert.addButton(withTitle: "Cancel")
         if alert.runModal() == .alertFirstButtonReturn { controller.resetPreferences() }
     }
+}
+
+@MainActor
+func bridgeStatusImage(for state: BridgeState) -> NSImage? {
+    let image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "S4 MK3 Bridge")
+    if state == .running {
+        return image?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [.systemGreen]))
+    }
+    image?.isTemplate = true
+    return image
 }
 
 @MainActor
@@ -999,8 +1019,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller = model
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             statusItem = item
-            item.button?.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "S4 MK3 Bridge")
-            item.button?.image?.isTemplate = true
             item.button?.title = " S4"
             observation = model.$state.sink { [weak self] state in self?.updateMenu(state) }
             showSettings()
@@ -1027,6 +1045,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         addItem("Quit S4 MK3 Bridge", action: #selector(quit), to: menu)
         statusItem?.menu = menu
+        statusItem?.button?.image = bridgeStatusImage(for: state)
         statusItem?.button?.setAccessibilityLabel("S4 MK3 Bridge, \(state.rawValue)")
     }
 

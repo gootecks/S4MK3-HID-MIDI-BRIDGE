@@ -18,7 +18,7 @@ The full UI regression battery remains deferred at the user's request.
    open "/Users/joey/Development/S4MK3-HID-MIDI-BRIDGE/dist/S4 MK3 Bridge.app"
    ```
 
-3. Select **Full controller** in the Bridge tab. In **Jog > Hardware tension**,
+3. Select **Full controller** in the Bridge tab. In **Jog > Hardware > Jog Wheel Tension**,
    the first-install setting is **Neutral (0)**. Click **Save preferences**,
    then **Start bridge**. An existing saved tension value is restored instead.
 4. Keep the existing S4 mapping selected in Djay. This change does not require
