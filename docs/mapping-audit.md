@@ -112,6 +112,21 @@ that mouse result is not a physical encoder pass. Reinstall a newly generated
 mapping under a new filename and preserve custom mappings under their existing
 names. See the focused [live checks](full-midi-test.md#encoder-layout-live-check).
 
+### Mixer ON / Neural Mix EQ
+
+The user chose EQ-only deck selection on October 20, 2026. Filter now arms a
+one-shot selection and flashes cyan; another Filter press cancels. The next
+channel ON toggles that deck's Neural Mix EQ without retargeting Instant FX.
+Normal ON selection is retained. Filter no longer emits resetFilter.
+
+The generated mapping uses toggleUnmixerEQMode on Note 20, channels 1-4, with
+embedded feedback from enableUnmixerEQ. Confirmed mode determines white/cyan ON
+color; brightness denotes Instant FX arming. Active Instant FX color overrides
+mode, including on a previously armed deck. No mode is inferred from presses.
+Unknown mode stays dark. The historical resetFilter row below is superseded.
+See the [focused feedback and physical check](neural-mix-eq-check.md); live
+feedback and hardware behavior remain distinct from software regressions.
+
 ### Encdr v0.7.2: jog-ring upgrade candidate
 
 The user flagged [Encdr v0.7.2](https://github.com/RufusIbiza/Encdr/releases#release-v0.7.2).
@@ -253,7 +268,8 @@ seek command and, for toggle-based preview, reliable preview state.
    solos; Shift on the first four pads is exclusive solo. Stem numbers are
    native channel indices; confirm content with Djay's Neural Mix layout.
 4. Channel FX1/FX2 select the left/right strip's target deck. Channel FX SELECT
-   chooses the central instant-FX/reset target. These are control targets, not
+   normally chooses the central instant-FX target; Filter then ON changes only
+   that deck's EQ mode. These are control targets, not
    Traktor shared audio buses.
 5. Use the implemented encoder layout above and its pending live checks.
    Backspin, REV hold, THRU startup, and Browse direction remain beta issues

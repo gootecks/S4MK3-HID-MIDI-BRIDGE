@@ -82,6 +82,15 @@ earlier diagnostic passes. The full UI regression battery remains deferred.
 
 ### Historical base snapshot
 
+The Mixer ON/Filter overlay supersedes the base table's quick-FX/reset row:
+Filter arms/cancels a one-shot cyan-flashing deck selection. The next ON toggles
+that deck's Neural Mix EQ via Note 20 on channels 1-4 without changing the
+Instant FX target. Normal ON still selects that target. ON uses confirmed
+white/cyan EQ mode and dim/bright FX arming; active Instant FX color overrides
+both. Unknown mode stays dark. MIDI-only capture verified initial states and
+independent mouse-driven mode transitions for A-D on October 20, 2026. Physical
+Filter/ON and lamp checks remain pending; see [the focused check](neural-mix-eq-check.md).
+
 The table below retains the earlier snapshot and source line references.
 The encoder and selector-mode overlay above supplements it; it doesn't
 establish which revision is installed in an existing app bundle.

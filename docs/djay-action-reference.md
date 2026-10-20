@@ -21,6 +21,15 @@ All channel labels in this document are **MIDI channels 1-based**, as requested.
 
 ## Generated S4 mapping shape
 
+The Mixer ON / Neural Mix EQ overlay replaces resetFilter on Note 20,
+channels 1-4, with turntableN.toggleUnmixerEQMode and embedded mode feedback.
+Its declared modelState is turntable.enableUnmixerEQ. The physical Filter
+button is now a bridge-local selection latch; choosing a deck with ON emits
+the toggle pulse without changing the Instant FX target. Historical tables and
+counts below predate this overlay. MIDI-only capture on October 20, 2026 verified
+initial state and independent mouse-driven positive/zero transitions on all
+four decks. Physical behavior remains subject to the [focused check](neural-mix-eq-check.md).
+
 The counts and S4 usage cells below are the historical audit snapshot, not
 the rebuilt encoder mapping. Current encoder assignments supersede that
 snapshot: MOVE uses CC 2 for `skipRotary`, selection uses CC 7 for

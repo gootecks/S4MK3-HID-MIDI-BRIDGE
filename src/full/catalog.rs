@@ -2,6 +2,8 @@
 
 use super::jog;
 
+pub const EQ_MODE_NOTE: u8 = 20;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PadMode {
     Hotcue,
@@ -321,7 +323,12 @@ pub const QUICK_BINDINGS: &[Binding] = &[
     note("mixer_fx_2", 17, "turntable{deck}.instantFx2", None),
     note("mixer_fx_3", 18, "turntable{deck}.instantFx3", None),
     note("mixer_fx_4", 19, "turntable{deck}.instantFx4", None),
-    note("mixer_fx_filter", 20, "turntable{deck}.resetFilter", None),
+    note(
+        "eq_mode",
+        EQ_MODE_NOTE,
+        "turntable{deck}.toggleUnmixerEQMode",
+        None,
+    ),
 ];
 
 pub const CURVE_BINDING: Binding = Binding {

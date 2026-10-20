@@ -10,6 +10,8 @@ use midir::os::unix::VirtualInput as _;
 use midir::{MidiInput, MidiInputConnection};
 use tracing::{debug, info, warn};
 
+use super::catalog::EQ_MODE_NOTE;
+
 const QUEUE_CAPACITY: usize = 4096;
 pub const PAD_COLOR_TOKENS: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
 pub const PAD_WHITE_TOKEN: u8 = 9;
@@ -28,6 +30,9 @@ pub struct FeedbackState {
     pub meter_updated: [Option<Duration>; 4],
     pub loaded: [Option<bool>; 4],
     pub playing: [Option<bool>; 4],
+    /// Whether Djay's Neural Mix EQ mode is enabled, independently per deck.
+    pub eq_mode: [Option<bool>; 4],
+    instant_fx_order: [[Option<usize>; 4]; 4],
     /// A playback output arrived from the mapping during this bridge session.
     pub playback_received: bool,
 }
@@ -40,12 +45,19 @@ impl Default for FeedbackState {
             meter_updated: [None; 4],
             loaded: [None; 4],
             playing: [None; 4],
+            eq_mode: [None; 4],
+            instant_fx_order: [[None; 4]; 4],
             playback_received: false,
         }
     }
 }
 
 impl FeedbackState {
+    /// Return the most recently activated still-active Instant FX slot (0-3).
+    pub fn active_instant_fx(&self, deck: usize) -> Option<usize> {
+        self.instant_fx_order.get(deck)?.first().copied().flatten()
+    }
+
     pub fn apply(&mut self, message: Message, now: Duration) -> bool {
         let channel = usize::from(message.status & 0x0f);
         let kind = message.status & 0xf0;
@@ -87,7 +99,8 @@ impl FeedbackState {
         let supported = if channel == 4 {
             number < 4
         } else {
-            matches!(number, 0..=4 | 6 | 8 | 15..=19 | 32..=35 | 40..=63)
+            number == usize::from(EQ_MODE_NOTE)
+                || matches!(number, 0..=4 | 6 | 8 | 15..=19 | 32..=35 | 40..=63)
         };
         if !supported {
             return false;
@@ -95,6 +108,37 @@ impl FeedbackState {
         let value = if kind == 0x80 { 0 } else { message.value };
         let old = self.notes[channel][number];
         self.notes[channel][number] = Some(value);
+        if channel < 4 && number == usize::from(EQ_MODE_NOTE) {
+            let enabled = value != 0;
+            let changed = self.eq_mode[channel] != Some(enabled);
+            self.eq_mode[channel] = Some(enabled);
+            return changed;
+        }
+        if channel < 4 && (16..=19).contains(&number) {
+            let slot = number - 16;
+            if value != 0 && old.is_none_or(|old| old == 0) {
+                let mut order = [None; 4];
+                order[0] = Some(slot);
+                let mut next = 1;
+                for active in self.instant_fx_order[channel].iter().flatten().copied() {
+                    if active != slot {
+                        order[next] = Some(active);
+                        next += 1;
+                    }
+                }
+                self.instant_fx_order[channel] = order;
+            } else if value == 0 && old.is_some_and(|old| old != 0) {
+                let mut order = [None; 4];
+                let mut next = 0;
+                for active in self.instant_fx_order[channel].iter().flatten().copied() {
+                    if active != slot {
+                        order[next] = Some(active);
+                        next += 1;
+                    }
+                }
+                self.instant_fx_order[channel] = order;
+            }
+        }
         // A/C and B/D share sampler banks, including changes on a hidden deck.
         if channel < 4 && (48..=55).contains(&number) {
             self.notes[channel ^ 2][number] = Some(value);
@@ -272,6 +316,73 @@ mod tests {
         );
         // Then inactive state is zero, not the release velocity.
         assert_eq!(state.notes[0][0], Some(0));
+    }
+
+    #[test]
+    fn eq_mode_feedback_is_unknown_until_each_deck_reports_state() {
+        let mut state = FeedbackState::default();
+        assert_eq!(state.eq_mode, [None; 4]);
+        let mut expected = [None; 4];
+
+        for deck in 0_u8..4 {
+            assert!(state.apply(
+                Message {
+                    status: 0x90 | deck,
+                    number: EQ_MODE_NOTE,
+                    value: 127,
+                },
+                Duration::ZERO,
+            ));
+            expected[usize::from(deck)] = Some(true);
+            assert_eq!(state.eq_mode, expected);
+        }
+
+        assert!(state.apply(
+            Message {
+                status: 0x83,
+                number: EQ_MODE_NOTE,
+                value: 64,
+            },
+            Duration::ZERO,
+        ));
+        assert_eq!(
+            state.eq_mode,
+            [Some(true), Some(true), Some(true), Some(false)]
+        );
+    }
+
+    #[test]
+    fn instant_fx_order_ignores_duplicate_edges_and_falls_back_on_release() {
+        let mut state = FeedbackState::default();
+        let apply = |state: &mut FeedbackState, status, number, value| {
+            state.apply(
+                Message {
+                    status,
+                    number,
+                    value,
+                },
+                Duration::ZERO,
+            )
+        };
+
+        for slot in 0_u8..4 {
+            assert!(apply(&mut state, 0x90, 16 + slot, 127));
+        }
+        assert!(!apply(&mut state, 0x90, 16, 127));
+        assert_eq!(state.active_instant_fx(0), Some(3));
+
+        assert!(apply(&mut state, 0x80, 19, 32));
+        assert_eq!(state.active_instant_fx(0), Some(2));
+        assert!(apply(&mut state, 0x80, 18, 32));
+        assert_eq!(state.active_instant_fx(0), Some(1));
+        assert!(apply(&mut state, 0x80, 17, 32));
+        assert_eq!(state.active_instant_fx(0), Some(0));
+        assert!(apply(&mut state, 0x91, 19, 127));
+        assert_eq!(state.active_instant_fx(1), Some(3));
+        assert_eq!(state.active_instant_fx(4), None);
+
+        assert!(apply(&mut state, 0x80, 16, 0));
+        assert_eq!(state.active_instant_fx(0), None);
     }
 
     #[test]

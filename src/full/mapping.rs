@@ -9,8 +9,8 @@ use anyhow::{Context as _, Result, ensure};
 use plist::{Dictionary, Value};
 
 use super::catalog::{
-    Binding, DECK_BINDINGS, FX_LEFT_BINDINGS, FX_RIGHT_BINDINGS, Kind, MIXER_BINDINGS, PadMode,
-    QUICK_BINDINGS, pad_binding,
+    Binding, DECK_BINDINGS, EQ_MODE_NOTE, FX_LEFT_BINDINGS, FX_RIGHT_BINDINGS, Kind,
+    MIXER_BINDINGS, PadMode, QUICK_BINDINGS, pad_binding,
 };
 use super::feedback::{PAD_COLOR_TOKENS, PAD_WHITE_TOKEN};
 use super::jog;
@@ -289,7 +289,9 @@ fn push_control(
         );
     }
     let has_feedback = binding.kind == Kind::Note
-        && ((channel < 4 && matches!(binding.number, 0..=4 | 6 | 8 | 15..=19 | 32..=35 | 40..=63))
+        && ((channel < 4
+            && (binding.number == EQ_MODE_NOTE
+                || matches!(binding.number, 0..=4 | 6 | 8 | 15..=19 | 32..=35 | 40..=63)))
             || (channel == 4 && binding.number < 4));
     if has_feedback {
         let mut output = Dictionary::new();
@@ -380,6 +382,33 @@ mod tests {
             assert!(controls.iter().any(|control| {
                 field(control, "keyPath").and_then(Value::as_string) == Some(key_path)
             }));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn eq_mode_input_and_feedback_match_each_deck_address() -> anyhow::Result<()> {
+        let controls = generated_controls()?;
+        for deck in 1_u8..=4 {
+            let key_path = format!("turntable{deck}.toggleUnmixerEQMode");
+            let channel = u64::from(deck - 1);
+            let control = controls
+                .iter()
+                .find(|control| {
+                    field(control, "keyPath").and_then(Value::as_string) == Some(key_path.as_str())
+                        && field(control, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(channel)
+                        && field(control, "midiMessageType").and_then(Value::as_unsigned_integer)
+                            == Some(1)
+                        && field(control, "midiData").and_then(Value::as_unsigned_integer)
+                            == Some(u64::from(EQ_MODE_NOTE))
+                })
+                .context("EQ mode input missing")?;
+            assert!(
+                field(control, "output")
+                    .and_then(Value::as_dictionary)
+                    .is_some()
+            );
         }
         Ok(())
     }

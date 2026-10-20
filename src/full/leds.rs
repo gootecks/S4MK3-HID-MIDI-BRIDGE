@@ -228,6 +228,7 @@ pub struct LocalState {
     pub tempo: [Option<f32>; 2],
     /// Jump-size selection belongs to logical decks, not physical sides.
     pub move_selecting: [bool; 4],
+    pub eq_selecting: bool,
 }
 
 impl Default for LocalState {
@@ -243,6 +244,7 @@ impl Default for LocalState {
             held: [false; 11],
             tempo: [None; 2],
             move_selecting: [false; 4],
+            eq_selecting: false,
         }
     }
 }
@@ -437,13 +439,23 @@ impl ButtonRenderer<'_> {
                 79 + channel * 4,
                 self.palette(Color::White, self.local.fx[1] == channel),
             );
-            self.set(
-                46 + channel,
+            let quick = if let Some(effect) = self.feedback.active_instant_fx(channel) {
                 self.palette(
-                    self.config.deck_colors[channel],
-                    self.local.quick == channel,
-                ),
-            );
+                    [Color::Red, Color::Green, Color::Blue, Color::Yellow][effect],
+                    true,
+                )
+            } else {
+                self.feedback.eq_mode[channel].map_or(0, |neural| {
+                    let color = if neural { Color::Cyan } else { Color::White };
+                    color.base()
+                        + if self.local.quick == channel {
+                            self.config.palette_active_intensity
+                        } else {
+                            self.config.palette_inactive_intensity
+                        }
+                })
+            };
+            self.set(46 + channel, quick);
         }
         for effect in 0..4 {
             let color = [Color::Red, Color::Green, Color::Blue, Color::Yellow][effect];
@@ -452,7 +464,7 @@ impl ButtonRenderer<'_> {
                 self.state_palette(color, self.feedback.notes[self.local.quick][16 + effect]),
             );
         }
-        self.set(54, self.palette(Color::White, self.local.held[10]));
+        self.set(54, 0);
         let values: [Option<u8>; 4] = std::array::from_fn(|deck| self.feedback.notes[deck][15]);
         let quantize = if values.iter().any(Option::is_none) {
             0
@@ -608,6 +620,103 @@ mod tests {
         local.fx[0] = 2;
         let report = render_buttons(&config(), &feedback, &local);
         assert_eq!(report[1 + 62], Color::Yellow.base() + 2);
+    }
+
+    #[test]
+    fn quick_on_mode_and_arming_follow_received_eq_feedback() {
+        // Given all four known EQ modes and dark inactive preferences.
+        let config = LedConfig {
+            inactive_display: InactiveDisplay::Dark,
+            ..LedConfig::default()
+        };
+        let mut feedback = feedback();
+        feedback.eq_mode = [Some(false), Some(true), Some(false), Some(true)];
+        for selected in 0..4 {
+            let local = LocalState {
+                quick: selected,
+                ..LocalState::default()
+            };
+            // When the four ON lamps are rendered.
+            let report = render_buttons(&config, &feedback, &local);
+            // Then each uses its mode color with brightness indicating FX arming.
+            for deck in 0..4 {
+                let color = if deck % 2 == 0 {
+                    Color::White
+                } else {
+                    Color::Cyan
+                };
+                assert_eq!(
+                    report[47 + deck],
+                    color.base()
+                        + if deck == selected {
+                            config.palette_active_intensity
+                        } else {
+                            config.palette_inactive_intensity
+                        }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn quick_on_active_fx_overrides_mode_even_on_an_unselected_deck() {
+        // Given unselected C in Neural Mix with a confirmed active Instant FX 3.
+        let mut feedback = feedback();
+        feedback.apply(
+            super::super::feedback::Message {
+                status: 0x92,
+                number: 20,
+                value: 127,
+            },
+            std::time::Duration::ZERO,
+        );
+        feedback.apply(
+            super::super::feedback::Message {
+                status: 0x92,
+                number: 18,
+                value: 127,
+            },
+            std::time::Duration::ZERO,
+        );
+        // When rendered without changing the armed deck A.
+        let report = render_buttons(&config(), &feedback, &LocalState::default());
+        // Then C shows its active FX color, not cyan or the deck color.
+        assert_eq!(
+            report[49],
+            Color::Blue.base() + config().palette_active_intensity
+        );
+        assert_eq!(report[47], 0); // Unknown EQ mode isn't guessed to be white.
+    }
+
+    #[test]
+    fn quick_on_returns_to_confirmed_mode_after_effect_release() {
+        // Given armed A with known Neural Mix mode and a held effect.
+        let mut feedback = feedback();
+        for number in [20, 16] {
+            feedback.apply(
+                super::super::feedback::Message {
+                    status: 0x90,
+                    number,
+                    value: 127,
+                },
+                std::time::Duration::ZERO,
+            );
+        }
+        // When the effect ends.
+        feedback.apply(
+            super::super::feedback::Message {
+                status: 0x80,
+                number: 16,
+                value: 0,
+            },
+            std::time::Duration::ZERO,
+        );
+        // Then the ON lamp restores bright cyan.
+        let report = render_buttons(&config(), &feedback, &LocalState::default());
+        assert_eq!(
+            report[47],
+            Color::Cyan.base() + config().palette_active_intensity
+        );
     }
 
     #[test]

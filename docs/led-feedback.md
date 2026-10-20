@@ -48,6 +48,33 @@ Saved LED preferences and the user's `S4 MK3 Bridge 2` mapping retained
 their hashes. The previous bundle/archive are preserved at
 `/tmp/s4mk3-pre-palette.BZPApM`.
 
+## Mixer ON / Neural Mix EQ overlay
+
+The full profile now uses the central Filter button as a one-shot EQ-mode
+selector, not resetFilter. Pressing it flashes cyan every 600 ms; pressing again
+cancels. The next channel ON press toggles only that deck's native Neural Mix EQ
+mode, leaving the Instant FX target unchanged and ending the flash. Outside
+selection, ON still selects the Instant FX target. Duplicate held snapshots do
+not repeat either action. Stop/restart clears the local selection latch.
+
+ON lamps are dim white for known normal EQ and dim cyan for known Neural Mix;
+the armed Instant FX target is bright in that mode color. These four lamps keep
+their requested dim indication even when inactive_display is dark. Unknown EQ
+state stays dark, rather than claiming normal EQ. Active Instant FX overrides
+the mode color with its slot color (red/green/blue/yellow), on every deck,
+including a previously selected target. The most recently activated still-active
+effect wins; repeated positive feedback does not change this order.
+
+The new generated mapping assigns native toggleUnmixerEQMode to Note 20 on
+channels 1-4 with embedded feedback. The cache derives mode solely from that
+actual output; no button-count inference or saved mode is used. The installed
+factory GRV6 preset and Djay model metadata support this feedback declaration.
+On October 20, 2026, MIDI-only capture verified all four initial mode states and
+independent mouse-driven Neural Mix/on and EQ/off feedback. Physical button and
+lamp behavior still needs the [Neural Mix EQ check](neural-mix-eq-check.md).
+Install this build's newly generated
+mapping under a new name, preserving custom mappings.
+
 ## Current MOVE selection indicator
 
 In the full profile, MOVE press toggles a local size-select flag for the

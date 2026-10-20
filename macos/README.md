@@ -126,6 +126,23 @@ current LED JSON setting; import/export accepts a full or partial LED JSON objec
 **Save and restart** applies edits to an active bridge. Invalid settings remain
 visible and do not silently replace saved preferences.
 
+### Mixer ON and Neural Mix EQ
+
+With the updated full-profile bridge and its newly exported mapping, channel ON
+buttons use dim/bright white for normal EQ or cyan for Neural Mix EQ. Bright
+means that deck is the Instant FX target. An active Instant FX takes priority
+using its button color, then restores the mode indication on release. Unknown
+mode is dark until Djay sends feedback.
+
+Press Filter to flash cyan awaiting a deck, then press its ON to toggle only
+that deck's EQ mode without changing the FX target. Press Filter again to
+cancel; outside selection ON retains its normal target-selection behavior.
+Filter no longer resets the selected filter. Install the new mapping under a
+new filename and preserve any custom mappings. Follow the
+[live check](../docs/neural-mix-eq-check.md). MIDI-only capture verified initial
+states and independent mouse-driven mode transitions for all four decks;
+physical Filter/ON gestures and lamp colors still need confirmation.
+
 ### Hardware jog tension
 
 The **Jog** tab has a separate **Hardware** section. Its shared

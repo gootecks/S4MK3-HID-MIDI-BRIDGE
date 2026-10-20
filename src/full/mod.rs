@@ -100,6 +100,7 @@ struct Translator {
     led_held: [bool; 11],
     tempos: [Option<f32>; 2],
     move_selecting: [bool; 4],
+    eq_selecting: bool,
 }
 
 impl Default for Translator {
@@ -121,6 +122,7 @@ impl Default for Translator {
             led_held: [false; 11],
             tempos: [None; 2],
             move_selecting: [false; 4],
+            eq_selecting: false,
         }
     }
 }
@@ -221,6 +223,7 @@ impl Translator {
             held: self.led_held,
             tempo: self.tempos,
             move_selecting: self.move_selecting,
+            eq_selecting: self.eq_selecting,
         }
     }
 
@@ -265,6 +268,10 @@ impl Translator {
             if let Control::Button(name, false) = control {
                 self.release(name, output);
             }
+        }
+        if pressed(controls, "mixer_fx_filter") && !self.held.contains_key("mixer_fx_filter") {
+            self.eq_selecting = !self.eq_selecting;
+            self.held.insert("mixer_fx_filter", Vec::new());
         }
         self.selectors(controls, output);
         self.move_selection(controls);
@@ -445,7 +452,7 @@ impl Translator {
             }
             self.wheel_touch(side, controls);
         }
-        self.fx_targets(controls);
+        self.fx_targets(controls, output);
     }
 
     fn wheel_touch(&mut self, side: usize, controls: &[Control]) {
@@ -473,7 +480,8 @@ impl Translator {
         }
     }
 
-    fn fx_targets(&mut self, controls: &[Control]) {
+    fn fx_targets(&mut self, controls: &[Control], output: &mut Vec<[u8; 3]>) {
+        let choosing_eq = self.eq_selecting;
         for (deck, fx1, fx2, quick) in [
             (
                 Deck::A,
@@ -506,8 +514,22 @@ impl Translator {
             if pressed(controls, fx2) {
                 self.fx[1] = deck;
             }
-            if pressed(controls, quick) {
-                self.quick = deck;
+            if pressed(controls, quick) && !self.held.contains_key(quick) {
+                self.held.insert(quick, Vec::new());
+                if choosing_eq {
+                    if self.eq_selecting {
+                        pulse(
+                            Address {
+                                channel: deck.channel(),
+                                number: catalog::EQ_MODE_NOTE,
+                            },
+                            output,
+                        );
+                        self.eq_selecting = false;
+                    }
+                } else {
+                    self.quick = deck;
+                }
             }
         }
     }
@@ -631,6 +653,7 @@ impl Translator {
     }
 
     fn release_all(&mut self, output: &mut Vec<[u8; 3]>) {
+        self.eq_selecting = false;
         let mut addresses: Vec<_> = self
             .held
             .drain()
@@ -1094,6 +1117,96 @@ mod tests {
         let output = run(&mut state, &[Control::Button("left_pad_2", true)])?;
         // Then its sample binding is emitted.
         assert_eq!(output, [[0x90, 49, 127]]);
+        Ok(())
+    }
+
+    #[test]
+    fn eq_selection_toggles_each_deck_without_retargeting_instant_fx() -> anyhow::Result<()> {
+        for (deck, name) in [
+            (0, "mixer_ch1_fx_select"),
+            (1, "mixer_ch2_fx_select"),
+            (2, "mixer_ch3_fx_select"),
+            (3, "mixer_ch4_fx_select"),
+        ] {
+            for reversed in [false, true] {
+                // Given Instant FX targeting B and both buttons newly pressed.
+                let mut state = Translator {
+                    quick: Deck::B,
+                    ..Translator::default()
+                };
+                let mut controls = [
+                    Control::Button("mixer_fx_filter", true),
+                    Control::Button(name, true),
+                ];
+                if reversed {
+                    controls.reverse();
+                }
+                // When Filter and ON arrive together in either descriptor order.
+                let output = run(&mut state, &controls)?;
+                // Then only this deck's EQ toggle pulses; FX selection is preserved.
+                assert_eq!(output, [[0x90 | deck, 20, 127], [0x80 | deck, 20, 0]]);
+                assert_eq!(state.quick, Deck::B);
+                assert!(!state.local_led_state().eq_selecting);
+                assert!(run(&mut state, &controls)?.is_empty());
+                assert_eq!(state.quick, Deck::B);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn filter_selection_cancels_only_on_a_new_press() -> anyhow::Result<()> {
+        // Given a held Filter press and a duplicate snapshot.
+        let mut state = Translator::default();
+        assert!(run(&mut state, &[Control::Button("mixer_fx_filter", true)])?.is_empty());
+        assert!(run(&mut state, &[Control::Button("mixer_fx_filter", true)])?.is_empty());
+        assert!(state.local_led_state().eq_selecting);
+        run(&mut state, &[Control::Button("mixer_fx_filter", false)])?;
+        // When Filter is pressed again.
+        let output = run(&mut state, &[Control::Button("mixer_fx_filter", true)])?;
+        // Then it cancels without resetting a filter or toggling EQ.
+        assert!(output.is_empty());
+        assert!(!state.local_led_state().eq_selecting);
+        Ok(())
+    }
+
+    #[test]
+    fn eq_selection_preserves_held_fx_and_subsequent_normal_on_selection() -> anyhow::Result<()> {
+        // Given an Instant FX held on A and a pending EQ selection.
+        let mut state = Translator::default();
+        run(&mut state, &[Control::Button("mixer_fx_2", true)])?;
+        run(&mut state, &[Control::Button("mixer_fx_filter", true)])?;
+        run(&mut state, &[Control::Button("mixer_ch3_fx_select", true)])?;
+        // When the FX releases, then C is selected normally after ON releases.
+        let release = run(&mut state, &[Control::Button("mixer_fx_2", false)])?;
+        run(&mut state, &[Control::Button("mixer_ch3_fx_select", false)])?;
+        run(&mut state, &[Control::Button("mixer_ch3_fx_select", true)])?;
+        let next = run(&mut state, &[Control::Button("mixer_fx_2", true)])?;
+        // Then the old owner releases on A and the new effect targets C.
+        assert_eq!(release, [[0x80, 17, 0]]);
+        assert_eq!(next, [[0x92, 17, 127]]);
+        Ok(())
+    }
+
+    #[test]
+    fn simultaneous_eq_choices_consume_one_selection_without_changing_fx() -> anyhow::Result<()> {
+        // Given Filter awaiting one deck choice with FX targeting D.
+        let mut state = Translator {
+            quick: Deck::D,
+            ..Translator::default()
+        };
+        run(&mut state, &[Control::Button("mixer_fx_filter", true)])?;
+        // When multiple ON presses arrive in the same report.
+        let output = run(
+            &mut state,
+            &[
+                Control::Button("mixer_ch2_fx_select", true),
+                Control::Button("mixer_ch1_fx_select", true),
+            ],
+        )?;
+        // Then the lowest deck wins deterministically and neither retargets FX.
+        assert_eq!(output, [[0x90, 20, 127], [0x80, 20, 0]]);
+        assert_eq!(state.quick, Deck::D);
         Ok(())
     }
 

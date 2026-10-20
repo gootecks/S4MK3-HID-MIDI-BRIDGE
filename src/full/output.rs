@@ -142,6 +142,9 @@ fn render_button_frame(
     now: Duration,
 ) -> [u8; 95] {
     let mut report = render_buttons(config, feedback, local);
+    if local.eq_selecting && (now.as_millis() / 300).is_multiple_of(2) {
+        report[55] = super::leds::Color::Cyan.base() + config.palette_active_intensity;
+    }
     // A 1.2-second palette pulse, including a fully dark trough, remains
     // distinguishable even when inactive-display preferences are dark.
     let intensity = match (now.as_millis() / 200) % 6 {
@@ -228,6 +231,37 @@ fn render_meters(config: &LedConfig, feedback: &FeedbackState, now: Duration) ->
 mod tests {
     use super::super::leds::Color;
     use super::*;
+
+    #[test]
+    fn eq_selection_flashes_cyan_until_selection_or_cancel() {
+        // Given a pending selection, independent of button hold and deck display.
+        let config = LedConfig::default();
+        let feedback = FeedbackState::default();
+        let mut local = LocalState {
+            eq_selecting: true,
+            ..LocalState::default()
+        };
+        // When rendering exact points in the 600 ms flash cycle.
+        for millis in [0, 300, 600, 120_300] {
+            let report =
+                render_button_frame(&config, &feedback, &local, Duration::from_millis(millis));
+            // Then cyan alternates with dark without wall-clock sleeps.
+            assert_eq!(
+                report[55],
+                if (millis / 300) % 2 == 0 {
+                    Color::Cyan.base() + config.palette_active_intensity
+                } else {
+                    0
+                }
+            );
+        }
+        local.eq_selecting = false;
+        local.held[10] = true;
+        assert_eq!(
+            render_button_frame(&config, &feedback, &local, Duration::ZERO)[55],
+            0
+        );
+    }
 
     #[test]
     fn jump_selection_pulses_only_the_visible_selected_deck_without_expiring() {
