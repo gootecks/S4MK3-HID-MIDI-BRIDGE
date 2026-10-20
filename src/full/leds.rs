@@ -464,7 +464,10 @@ impl ButtonRenderer<'_> {
                 self.state_palette(color, self.feedback.notes[self.local.quick][16 + effect]),
             );
         }
-        self.set(54, 0);
+        self.set(
+            54,
+            Color::Cyan.base() + self.config.palette_inactive_intensity,
+        );
         let values: [Option<u8>; 4] = std::array::from_fn(|deck| self.feedback.notes[deck][15]);
         let quantize = if values.iter().any(Option::is_none) {
             0

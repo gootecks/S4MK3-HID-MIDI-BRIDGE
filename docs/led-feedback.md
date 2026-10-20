@@ -56,6 +56,8 @@ cancels. The next channel ON press toggles only that deck's native Neural Mix EQ
 mode, leaving the Instant FX target unchanged and ending the flash. Outside
 selection, ON still selects the Instant FX target. Duplicate held snapshots do
 not repeat either action. Stop/restart clears the local selection latch.
+Filter stays dim cyan at idle, even with inactive_display=dark. Selection keeps
+its bright-cyan/dark flash; selecting a deck or cancelling restores dim cyan.
 
 ON lamps are dim white for known normal EQ and dim cyan for known Neural Mix;
 the armed Instant FX target is bright in that mode color. These four lamps keep
@@ -70,8 +72,10 @@ channels 1-4 with embedded feedback. The cache derives mode solely from that
 actual output; no button-count inference or saved mode is used. The installed
 factory GRV6 preset and Djay model metadata support this feedback declaration.
 On October 20, 2026, MIDI-only capture verified all four initial mode states and
-independent mouse-driven Neural Mix/on and EQ/off feedback. Physical button and
-lamp behavior still needs the [Neural Mix EQ check](neural-mix-eq-check.md).
+independent mouse-driven Neural Mix/on and EQ/off feedback. The user subsequently
+confirmed the mapping works, then requested the dim-cyan Filter idle change.
+That idle appearance still needs confirmation with the rebuilt app; see the
+[Neural Mix EQ check](neural-mix-eq-check.md).
 Install this build's newly generated
 mapping under a new name, preserving custom mappings.
 

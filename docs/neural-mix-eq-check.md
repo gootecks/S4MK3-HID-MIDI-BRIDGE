@@ -53,10 +53,11 @@ bridge. Do not run a full bridge or another capture with the same port name.
 2. Put all decks in normal EQ with the mouse. Confirm ON is bright white for
    the armed Instant FX deck and dim white for the others. An unknown mode is
    deliberately dark until actual feedback arrives.
-3. Press and release **Filter**. It must continue flashing cyan after release;
+3. Confirm **Filter** is dim cyan at idle, including with inactive lamps set dark.
+   Press and release it. It must continue flashing cyan after release;
    no filter reset or EQ toggle should happen yet. Press Filter again: it goes
-   dark with no software action.
-4. Arm Instant FX on A. Press Filter, then C's ON. Filter goes dark; only C
+   dim cyan with no software action.
+4. Arm Instant FX on A. Press Filter, then C's ON. Filter returns to dim cyan; only C
    changes to Neural Mix and its ON is dim cyan. A remains the bright white
    Instant FX target. Repeat Filter then C ON to restore C to dim white.
 5. Select C ON normally, without Filter. C becomes bright white. Repeat Filter
@@ -75,7 +76,7 @@ bridge. Do not run a full bridge or another capture with the same port name.
 9. Hold Filter or ON without repeated tapping. There must be no repeated mode
    toggles. If multiple ON buttons are pressed in one report during selection,
    the lowest A-D deck wins; none of them moves the FX target.
-10. Enter Filter selection and stop/restart the bridge. Filter starts dark.
+10. Enter Filter selection and stop/restart the bridge. Filter starts dim cyan.
     Djay's real modes must return through feedback, not assumed defaults.
     Check normal playback, jog, mixer, LEDs and saved tension still work.
 

@@ -142,8 +142,12 @@ fn render_button_frame(
     now: Duration,
 ) -> [u8; 95] {
     let mut report = render_buttons(config, feedback, local);
-    if local.eq_selecting && (now.as_millis() / 300).is_multiple_of(2) {
-        report[55] = super::leds::Color::Cyan.base() + config.palette_active_intensity;
+    if local.eq_selecting {
+        report[55] = if (now.as_millis() / 300).is_multiple_of(2) {
+            super::leds::Color::Cyan.base() + config.palette_active_intensity
+        } else {
+            0
+        };
     }
     // A 1.2-second palette pulse, including a fully dark trough, remains
     // distinguishable even when inactive-display preferences are dark.
@@ -234,8 +238,11 @@ mod tests {
 
     #[test]
     fn eq_selection_flashes_cyan_until_selection_or_cancel() {
-        // Given a pending selection, independent of button hold and deck display.
-        let config = LedConfig::default();
+        // Given a pending selection, even with other inactive lamps set dark.
+        let config = LedConfig {
+            inactive_display: super::super::leds::InactiveDisplay::Dark,
+            ..LedConfig::default()
+        };
         let feedback = FeedbackState::default();
         let mut local = LocalState {
             eq_selecting: true,
@@ -259,7 +266,7 @@ mod tests {
         local.held[10] = true;
         assert_eq!(
             render_button_frame(&config, &feedback, &local, Duration::ZERO)[55],
-            0
+            Color::Cyan.base() + config.palette_inactive_intensity
         );
     }
 
