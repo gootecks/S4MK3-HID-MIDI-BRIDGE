@@ -1,8 +1,11 @@
 //! A bounded S4 MK3 HID probe with optional minimal MIDI output.
 
+mod bridge_runtime;
 mod full;
 mod input;
 mod midi;
+#[path = "jog_diagnostic/ownership.rs"]
+mod ownership;
 
 use std::num::NonZeroU64;
 use std::path::PathBuf;
@@ -48,6 +51,10 @@ struct Args {
     #[arg(long, value_name = "PATH", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
     led_config: Option<PathBuf>,
 
+    /// Saved hardware tension for the full profile; restart after editing.
+    #[arg(long, value_name = "PATH", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
+    tension_config: Option<PathBuf>,
+
     /// Export the full native Djay mapping without opening HID or MIDI.
     #[arg(long, value_name = "PATH", conflicts_with_all = ["midi", "list", "raw"])]
     generate_mapping: Option<PathBuf>,
@@ -79,6 +86,15 @@ fn main() -> anyhow::Result<()> {
         args.led_config.is_none() || matches!(args.midi, Some(MidiProfile::Full)),
         "--led-config requires --midi full"
     );
+    ensure!(
+        args.tension_config.is_none() || matches!(args.midi, Some(MidiProfile::Full)),
+        "--tension-config requires --midi full"
+    );
+    let tension = args
+        .tension_config
+        .as_deref()
+        .map(|path| s4mk3_hid_midi_bridge::tension::Config::load(Some(path)))
+        .transpose()?;
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::try_from_default_env().or_else(|_| EnvFilter::try_new("info"))?)
         .with_target(false)
@@ -105,6 +121,13 @@ fn main() -> anyhow::Result<()> {
         info!(path = %path.display(), "DJAY_MAPPING_EXPORTED");
         return Ok(());
     }
+    open_and_run(&args, tension)
+}
+
+fn open_and_run(
+    args: &Args,
+    tension: Option<s4mk3_hid_midi_bridge::tension::Config>,
+) -> anyhow::Result<()> {
     let mut registry = DescriptorRegistry::new();
     registry.load_builtins().context("load Encdr descriptors")?;
     let devices: Vec<_> = hotplug::scan_devices(&registry)
@@ -149,9 +172,17 @@ fn main() -> anyhow::Result<()> {
         collections.next().is_none(),
         "multiple S4 HID collections found; collection selection requires investigation"
     );
+    ownership::check()?;
     let hid = api
         .open_path(collection.path())
         .context("open S4 HID collection")?;
+    let tension = tension
+        .map(|config| {
+            api.open_path(collection.path())
+                .context("open S4 tension snapshot reader")
+                .map(|reader| (reader, config))
+        })
+        .transpose()?;
     let interface = descriptor
         .interface_by_id("control")
         .context("control interface missing")?;
@@ -161,7 +192,11 @@ fn main() -> anyhow::Result<()> {
         .context("button LED layout missing")?;
     let mut leds = LedBuilder::new(buttons, interface);
     info!("S4_HID_OPEN: native HID access; audio interfaces are not claimed");
-    run_probe(&args, &hid, &mut parser, &mut leds)
+    if let Some((reader, config)) = tension {
+        bridge_runtime::run(args, &hid, reader, &mut parser, &mut leds, config)
+    } else {
+        run_probe(args, &hid, &mut parser, &mut leds)
+    }
 }
 
 fn run_probe(

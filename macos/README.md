@@ -1,8 +1,9 @@
 # Standalone macOS app
 
 The app bundle packages the native status-bar app, the release bridge, its
-default LED configuration, and a Djay MIDI mapping. It targets Apple Silicon
-(arm64) and macOS 12.0 or later. Build it on an Apple Silicon Mac with Xcode
+default LED, jog mapping, and hardware tension configurations, and a Djay MIDI
+mapping. It targets Apple Silicon (arm64) and macOS 12.0 or later.
+Build it on an Apple Silicon Mac with Xcode
 Command Line Tools, the Rust toolchain, and the locked Cargo dependencies
 available:
 
@@ -15,7 +16,9 @@ The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-0.1.1-beta.1-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
-`examples/led-config.json` into the app resources, and creates
+`examples/led-config.json`, `examples/jog-config.json`, and
+`examples/tension-config.json` into the app resources as `default-led-config.json`,
+`default-jog-config.json`, and `default-tension-config.json`, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
 `--generate-mapping`. Cargo identifies this release as `0.1.1-beta.1`;
 the bundle uses numeric version `0.1.1`, build `2`, and records the complete
@@ -109,7 +112,7 @@ selected deck selector pulses while selecting, with a 1.2-second
 palette-brightness cycle and dark trough; hidden decks retain their modes
 without flashing inactive buttons. Mode exit restores normal lighting.
 **Stop bridge** followed by **Start bridge** initializes every mode flag off.
-Screens and motors remain excluded.
+Screens remain excluded. Hardware jog tension is configured separately below.
 
 The user mouse-verified beat jump moving an active loop. Fresh MIDI/native
 and physical LED checks are still pending. Follow the
@@ -117,11 +120,47 @@ and physical LED checks are still pending. Follow the
 for A/C/B/D independence, duplicate press/release, Shift while selecting,
 active-loop movement, independent LOOP size, pulse restoration, and restart.
 
-LED and run preferences are stored under
+LED, run, jog mapping, and hardware tension preferences are stored under
 `~/Library/Application Support/S4 MK3 Bridge/`. LEDs and Palette cover every
-current JSON setting; import/export accepts a full or partial LED JSON object.
+current LED JSON setting; import/export accepts a full or partial LED JSON object.
 **Save and restart** applies edits to an active bridge. Invalid settings remain
 visible and do not silently replace saved preferences.
+
+### Hardware jog tension
+
+The **Jog** tab has a separate **Hardware tension** section. Its shared
+**Assist / Neutral / Brake** slider configures both physical wheels, while
+each wheel keeps independent movement and touch behavior. A first install
+starts at **Neutral (0)**; later launches restore the saved value.
+Channel 1's fader remains a normal mixer control, not a tension selector.
+
+The integer range is -100 to 100: negative values select assistance (endpoint
+7000), positive values select braking (endpoint 30000), and zero selects
+neutral. Those endpoints are uncalibrated force ceilings, not torque units or
+constant force. Assistance requires each wheel's own touch and movement;
+braking can continue after release while that wheel is moving.
+
+Use the existing **Save preferences** action before the next start, or
+**Save and restart** while running. No mapping generation or reinstallation
+is required for hardware tension. Only the full-controller runtime receives
+`--tension-config PATH`; minimal, probe, controller checks, and mapping export
+do not receive it.
+
+The file is separate from jog mapping settings:
+`~/Library/Application Support/S4 MK3 Bridge/tension-config.json`.
+Its bundled default is `{"tension":0}`. A partial object (`{}`) keeps the
+bundled default. Malformed JSON, noninteger values (including `1.0` and
+booleans), out-of-range values, and unknown fields are rejected. Invalid
+saved files are preserved until explicit reset and save; invalid editor
+values remain in the editor without replacing saved preferences.
+
+The integrated build passes 237 Rust and 17 Swift tests, strict Clippy, build
+and package integrity checks. On October 20, 2026, the user also confirmed
+assistance/braking with Djay controls and LEDs, Stop/Quit clearing force,
+saved-setting restore while stopped, and explicit restart after USB reconnect.
+The [live integration check](../docs/jog-tension-integration.md) records that
+focused procedure. The full UI regression matrix remains deferred at the
+user's request; these passes do not establish a full visual QA pass.
 
 ### Jog mapping preferences
 
@@ -131,8 +170,8 @@ decks, not just the selected deck.** Normal Sync remains deck-specific.
 Install and select the new mapping to apply this binding; existing custom
 mappings are preserved. The user confirmed this works on October 6, 2026.
 
-The **Jog** tab configures native Djay **Speed** and **Reaction**, globally
-for decks A-D. Defaults match the user's calibration:
+The mapping sections of the **Jog** tab configure native Djay **Speed** and
+**Reaction**, globally for decks A-D. Defaults match the user's calibration:
 
 | Action | Speed | Reaction |
 | --- | ---: | ---: |
@@ -153,8 +192,9 @@ custom mappings, including **S4 MK3 Bridge 2**, under their existing names.
 Saving or restarting the bridge alone does not apply mapping changes in Djay.
 
 The user tested these values in Djay. This increment packages/configures those
-parameters; it does not fix backspin termination on touch release, add haptic
-tension control, or claim a fresh physical pass for every deck.
+mapping parameters; it does not fix backspin termination on touch release or
+claim a fresh physical pass for every deck. Hardware tension is independent
+of these mapping parameters.
 
 **Stop bridge** and **Quit S4 MK3 Bridge** send the bridge its normal Ctrl-C
 signal and wait for it to exit. Quitting the settings window does not stop it.

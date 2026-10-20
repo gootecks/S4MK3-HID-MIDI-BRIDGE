@@ -38,17 +38,19 @@ final class BridgeTests: XCTestCase {
 
     func testLaunchArgumentsMatchProfilesAndDuration() throws {
         let path = URL(fileURLWithPath: "/tmp/LED config with spaces.json")
+        let tensionPath = URL(fileURLWithPath: "/tmp/Tension config with spaces.json")
         var settings = RunPreferences()
-        XCTAssertEqual(settings.arguments(ledURL: path), [
-            "--midi", "full", "--led-config", path.path, "--until-stopped"
+        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), [
+            "--midi", "full", "--led-config", path.path,
+            "--tension-config", tensionPath.path, "--until-stopped"
         ])
         settings.profile = .minimal
         settings.limitDuration = true
         settings.durationSeconds = 60
         settings.rawReports = true
-        XCTAssertEqual(settings.arguments(ledURL: path), ["--midi", "minimal", "--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), ["--midi", "minimal", "--seconds", "60", "--raw"])
         settings.profile = .probe
-        XCTAssertEqual(settings.arguments(ledURL: path), ["--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), ["--seconds", "60", "--raw"])
         settings.durationSeconds = 0
         XCTAssertThrowsError(try settings.validate())
     }
@@ -101,6 +103,8 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(model.isBusy)
         XCTAssertEqual(model.state, .stopped)
         XCTAssertTrue(model.log.contains("CHECK:--list"))
+        XCTAssertFalse(model.log.contains("--tension-config"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
         XCTAssertTrue(model.log.contains("EXIT: 0"))
     }
 
@@ -212,6 +216,161 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(restored, broken.jog)
     }
 
+    func testTensionPreferencesDefaultsPartialOverridesAndRoundTrip() throws {
+        let defaults = try tensionDefaultsData()
+        let base = try TensionPreferences.decode(defaults, defaults: defaults)
+        XCTAssertEqual(base.tension, 0)
+        XCTAssertEqual(TensionPreferences(), base)
+        XCTAssertEqual(try TensionPreferences.decode(Data("{}".utf8), defaults: defaults), base)
+        for tension in [-100, -37, 0, 42, 100] {
+            let value = TensionPreferences(tension: tension)
+            XCTAssertEqual(try TensionPreferences.decode(value.encoded(), defaults: defaults), value)
+            XCTAssertEqual(try TensionPreferences.decode(Data("{}".utf8), defaults: value.encoded()), value)
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: value.encoded()) as? [String: Int])
+            XCTAssertEqual(object, ["tension": tension])
+        }
+    }
+
+    func testTensionPreferencesRejectInvalidJSONTypesRangesAndFields() throws {
+        let defaults = try tensionDefaultsData()
+        for input in [
+            "", "{", "[]", "null", "0", #""tension""#,
+            #"{"tension":-101}"#, #"{"tension":101}"#,
+            #"{"tension":1.5}"#, #"{"tension":1.0}"#, #"{"tension":0.0}"#,
+            #"{"tension":1e2}"#, #"{"tension":true}"#, #"{"tension":false}"#,
+            #"{"tension":"50"}"#, #"{"tension":null}"#, #"{"tension":[]}"#,
+            #"{"tension":{}}"#, #"{"tension":9223372036854775808}"#,
+            #"{"tension":0,"unknown":1}"#
+        ] {
+            XCTAssertThrowsError(try TensionPreferences.decode(Data(input.utf8), defaults: defaults), input)
+        }
+        for tension in [-101, 101] {
+            XCTAssertThrowsError(try TensionPreferences(tension: tension).encoded())
+        }
+    }
+
+    @MainActor
+    func testTensionPersistenceDefaultsAndInvalidEditorPreserveOtherPreferences() throws {
+        let fixture = try makeFixture()
+        let support = fixture.appendingPathComponent("support")
+        let model = try BridgeController(resourceURL: fixture, supportURL: support)
+        XCTAssertFalse(model.requiresReset)
+        XCTAssertEqual(model.tension.tension, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
+        model.leds.loopColor = "blue"
+        model.jog.scratchSpeed = 3.5
+        model.run.logLevel = "debug"
+        try model.save()
+        let ledData = try Data(contentsOf: model.ledURL)
+        let jogData = try Data(contentsOf: model.jogURL)
+        let runData = try Data(contentsOf: model.runURL)
+        model.tension.tension = -70
+        try model.save()
+        let savedTension = try Data(contentsOf: model.tensionURL)
+        let reloaded = try BridgeController(resourceURL: fixture, supportURL: support)
+        XCTAssertEqual(reloaded.tension, model.tension)
+        XCTAssertEqual(reloaded.leds, model.leds)
+        XCTAssertEqual(reloaded.jog, model.jog)
+        XCTAssertEqual(reloaded.run, model.run)
+
+        model.tension.tension = 101
+        model.apply()
+        XCTAssertFalse(model.errorMessage.isEmpty)
+        XCTAssertEqual(model.tension.tension, 101)
+        XCTAssertEqual(try Data(contentsOf: model.tensionURL), savedTension)
+        XCTAssertEqual(try Data(contentsOf: model.ledURL), ledData)
+        XCTAssertEqual(try Data(contentsOf: model.jogURL), jogData)
+        XCTAssertEqual(try Data(contentsOf: model.runURL), runData)
+    }
+
+    @MainActor
+    func testTensionInvalidSavedValuesRequireExplicitReset() throws {
+        let fixture = try makeFixture()
+        let support = fixture.appendingPathComponent("support")
+        let initial = try BridgeController(resourceURL: fixture, supportURL: support)
+        initial.leds.loopColor = "blue"
+        initial.jog.scratchSpeed = 3.5
+        try initial.save()
+        let invalid = Data(#"{"tension":true}"#.utf8)
+        try invalid.write(to: initial.tensionURL)
+        let broken = try BridgeController(resourceURL: fixture, supportURL: support)
+        XCTAssertTrue(broken.requiresReset)
+        XCTAssertFalse(broken.errorMessage.isEmpty)
+        XCTAssertEqual(broken.leds, initial.leds)
+        XCTAssertEqual(broken.jog, initial.jog)
+        XCTAssertThrowsError(try broken.save())
+        XCTAssertEqual(try Data(contentsOf: broken.tensionURL), invalid)
+        broken.resetPreferences()
+        XCTAssertFalse(broken.requiresReset)
+        XCTAssertEqual(broken.tension.tension, 0)
+        XCTAssertEqual(try Data(contentsOf: broken.tensionURL), invalid)
+        try broken.save()
+        let reloaded = try BridgeController(resourceURL: fixture, supportURL: support)
+        XCTAssertFalse(reloaded.requiresReset)
+        XCTAssertEqual(reloaded.tension.tension, 0)
+    }
+
+    @MainActor
+    func testTensionSaveAndRestartForwardsCurrentConfiguration() async throws {
+        let fixture = try makeFixture()
+        let received = fixture.appendingPathComponent("received-tension.json")
+        let fifo = fixture.appendingPathComponent("control.fifo")
+        XCTAssertEqual(mkfifo(fifo.path, 0o600), 0)
+        let descriptor = Darwin.open(fifo.path, O_RDWR)
+        guard descriptor >= 0 else { throw AppError.invalid("Could not open test FIFO.") }
+        defer { XCTAssertEqual(Darwin.close(descriptor), 0) }
+        let executable = fixture.appendingPathComponent("s4mk3-hid-midi-bridge")
+        let script = """
+        #!/bin/sh
+        trap 'exit 0' INT
+        cfg=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --tension-config) cfg="$2"; shift 2;;
+            *) shift;;
+          esac
+        done
+        [ -n "$cfg" ] || exit 2
+        cp "$cfg" '\(received.path)' || exit 3
+        exec 3< '\(fifo.path)'
+        printf 'TENSION_READY\\n'
+        IFS= read -r line <&3
+        """
+        try Data(script.utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let ready = expectation(description: "helper read first saved tension and installed signal handler")
+        let restarted = expectation(description: "restarted helper read updated saved tension")
+        let stopped = expectation(description: "restarted helper exited after final stop")
+        var readyCount = 0
+        var finalStop = false
+        let output = model.$log.sink { text in
+            let count = text.components(separatedBy: "TENSION_READY").count - 1
+            if count > readyCount {
+                readyCount = count
+                if count == 1 { ready.fulfill() }
+                if count == 2 { restarted.fulfill() }
+            }
+        }
+        let state = model.$state.sink { state in
+            if finalStop && state == .stopped { stopped.fulfill() }
+        }
+        model.tension.tension = -35
+        model.start()
+        await fulfillment(of: [ready], timeout: 10)
+        XCTAssertEqual(try TensionPreferences.decode(Data(contentsOf: received), defaults: tensionDefaultsData()).tension, -35)
+        model.tension.tension = 60
+        model.apply()
+        await fulfillment(of: [restarted], timeout: 10)
+        XCTAssertEqual(try TensionPreferences.decode(Data(contentsOf: received), defaults: tensionDefaultsData()).tension, 60)
+        XCTAssertTrue(model.commandPreview.contains("--tension-config"))
+        finalStop = true
+        model.stop()
+        await fulfillment(of: [stopped], timeout: 10)
+        withExtendedLifetime((output, state)) {}
+        XCTAssertFalse(model.isBusy)
+    }
+
     @MainActor
     func testExportMappingForwardsCurrentJogAndInstallsOutput() async throws {
         let fixture = try makeFixture()
@@ -241,6 +400,7 @@ final class BridgeTests: XCTestCase {
         let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         model.jog.scratchSpeed = 3.5
         model.jog.pitchBendReaction = 42
+        model.tension.tension = 85
         let destination = fixture.appendingPathComponent("S4 MK3 Bridge.djayMidiMapping")
         try Data("OLD-MAPPING".utf8).write(to: destination)
         try await model.exportMapping(to: destination)
@@ -251,6 +411,8 @@ final class BridgeTests: XCTestCase {
         let args = try String(contentsOf: argsURL, encoding: .utf8)
         XCTAssertTrue(args.contains("--generate-mapping"))
         XCTAssertTrue(args.contains("--jog-config"))
+        XCTAssertFalse(args.contains("--tension-config"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
         let forwarded = try JogPreferences.decode(Data(contentsOf: configURL), defaults: jogDefaultsData())
         XCTAssertEqual(forwarded, model.jog)
         XCTAssertTrue(model.log.contains("EXPORT_EXIT: 0"))
@@ -305,12 +467,19 @@ final class BridgeTests: XCTestCase {
         return try Data(contentsOf: root.appendingPathComponent("examples/jog-config.json"))
     }
 
+    private func tensionDefaultsData() throws -> Data {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return try Data(contentsOf: root.appendingPathComponent("examples/tension-config.json"))
+    }
+
     private func makeFixture() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("S4 Bridge Tests \(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try defaultData().write(to: directory.appendingPathComponent("default-led-config.json"))
         try jogDefaultsData().write(to: directory.appendingPathComponent("default-jog-config.json"))
+        try tensionDefaultsData().write(to: directory.appendingPathComponent("default-tension-config.json"))
         addTeardownBlock { try FileManager.default.removeItem(at: directory) }
         return directory
     }

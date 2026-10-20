@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import CoreFoundation
 import Darwin
 import SwiftUI
 import UniformTypeIdentifiers
@@ -42,10 +43,12 @@ struct RunPreferences: Codable, Equatable {
         }
     }
 
-    func arguments(ledURL: URL) -> [String] {
+    func arguments(ledURL: URL, tensionURL: URL) -> [String] {
         var arguments: [String] = []
         if profile != .probe { arguments += ["--midi", profile.rawValue] }
-        if profile == .full { arguments += ["--led-config", ledURL.path] }
+        if profile == .full {
+            arguments += ["--led-config", ledURL.path, "--tension-config", tensionURL.path]
+        }
         arguments += limitDuration ? ["--seconds", String(durationSeconds)] : ["--until-stopped"]
         if rawReports { arguments.append("--raw") }
         return arguments
@@ -182,6 +185,49 @@ struct JogPreferences: Codable, Equatable {
     }
 }
 
+struct TensionPreferences: Codable, Equatable {
+    var tension = 0
+
+    static func decode(_ data: Data, defaults: Data) throws -> TensionPreferences {
+        guard let base = try JSONSerialization.jsonObject(with: defaults) as? [String: Any],
+              let overrides = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AppError.invalid("Hardware tension preferences must be a JSON object.")
+        }
+        for object in [base, overrides] {
+            let unknown = Set(object.keys).subtracting(["tension"])
+            guard unknown.isEmpty else {
+                throw AppError.invalid("Unknown hardware tension settings: \(unknown.sorted().joined(separator: ", ")).")
+            }
+            if let raw = object["tension"] {
+                // JSONDecoder accepts integral floating-point tokens such as 1.0.
+                // Reject them before re-encoding to match the runtime's integer schema.
+                guard let number = raw as? NSNumber,
+                      CFGetTypeID(number) != CFBooleanGetTypeID(),
+                      !["f", "d"].contains(String(cString: number.objCType)) else {
+                    throw AppError.invalid("Hardware tension must be an integer from -100 to 100.")
+                }
+            }
+        }
+        let merged = base.merging(overrides) { _, override in override }
+        let value = try JSONDecoder().decode(TensionPreferences.self, from: JSONSerialization.data(withJSONObject: merged))
+        try value.validate()
+        return value
+    }
+
+    func encoded() throws -> Data {
+        try validate()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(self)
+    }
+
+    func validate() throws {
+        guard (-100...100).contains(tension) else {
+            throw AppError.invalid("Hardware tension must be an integer from -100 to 100.")
+        }
+    }
+}
+
 enum BridgeState: String {
     case stopped = "Stopped"
     case starting = "Starting"
@@ -222,6 +268,7 @@ final class BridgeController: ObservableObject {
     @Published var run = RunPreferences()
     @Published var leds: LedPreferences
     @Published var jog: JogPreferences
+    @Published var tension: TensionPreferences
     @Published private(set) var state: BridgeState = .stopped
     @Published private(set) var log = ""
     @Published private(set) var message = ""
@@ -233,6 +280,8 @@ final class BridgeController: ObservableObject {
     let supportURL: URL
     let defaults: Data
     let jogDefaults: Data
+    let tensionDefaults: Data
+    private var invalidSavedTension = false
     private var process: Process?
     private var isDiagnostic = false
     private var stopRequested = false
@@ -243,10 +292,11 @@ final class BridgeController: ObservableObject {
     var canStop: Bool { isBusy && state != .stopping }
     var ledURL: URL { supportURL.appendingPathComponent("led-config.json") }
     var jogURL: URL { supportURL.appendingPathComponent("jog-config.json") }
+    var tensionURL: URL { supportURL.appendingPathComponent("tension-config.json") }
     var runURL: URL { supportURL.appendingPathComponent("run-settings.json") }
     var executableURL: URL { resourceURL.appendingPathComponent("s4mk3-hid-midi-bridge") }
     var commandPreview: String {
-        ([executableURL.path] + run.arguments(ledURL: ledURL))
+        ([executableURL.path] + run.arguments(ledURL: ledURL, tensionURL: tensionURL))
             .map { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }
             .joined(separator: " ")
     }
@@ -258,6 +308,8 @@ final class BridgeController: ObservableObject {
         leds = try LedPreferences.decode(defaults, defaults: defaults)
         jogDefaults = try Data(contentsOf: resourceURL.appendingPathComponent("default-jog-config.json"))
         jog = try JogPreferences.decode(jogDefaults, defaults: jogDefaults)
+        tensionDefaults = try Data(contentsOf: resourceURL.appendingPathComponent("default-tension-config.json"))
+        tension = try TensionPreferences.decode(tensionDefaults, defaults: tensionDefaults)
         do {
             if FileManager.default.fileExists(atPath: runURL.path) {
                 run = try JSONDecoder().decode(RunPreferences.self, from: Data(contentsOf: runURL))
@@ -272,6 +324,15 @@ final class BridgeController: ObservableObject {
         } catch {
             requiresReset = true
             errorMessage = "Saved preferences could not be loaded: \(error.localizedDescription). Import valid settings or reset preferences before saving."
+        }
+        do {
+            if FileManager.default.fileExists(atPath: tensionURL.path) {
+                tension = try TensionPreferences.decode(Data(contentsOf: tensionURL), defaults: tensionDefaults)
+            }
+        } catch {
+            invalidSavedTension = true
+            requiresReset = true
+            errorMessage = "Saved hardware tension could not be loaded: \(error.localizedDescription). Reset preferences before saving."
         }
     }
 
@@ -291,12 +352,14 @@ final class BridgeController: ObservableObject {
         try run.validate()
         let ledData = try leds.encoded()
         let jogData = try jog.encoded()
+        let tensionData = try tension.encoded()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let runData = try encoder.encode(run)
         try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
         try ledData.write(to: ledURL, options: .atomic)
         try jogData.write(to: jogURL, options: .atomic)
+        try tensionData.write(to: tensionURL, options: .atomic)
         try runData.write(to: runURL, options: .atomic)
         errorMessage = ""
     }
@@ -313,7 +376,7 @@ final class BridgeController: ObservableObject {
         guard !isBusy else { return }
         do {
             try save()
-            try launch(arguments: run.arguments(ledURL: ledURL), diagnostic: false)
+            try launch(arguments: run.arguments(ledURL: ledURL, tensionURL: tensionURL), diagnostic: false)
         } catch {
             state = .failed
             report(error)
@@ -441,7 +504,9 @@ final class BridgeController: ObservableObject {
         do {
             leds = try LedPreferences.decode(defaults, defaults: defaults)
             jog = try JogPreferences.decode(jogDefaults, defaults: jogDefaults)
+            tension = try TensionPreferences.decode(tensionDefaults, defaults: tensionDefaults)
             run = RunPreferences()
+            invalidSavedTension = false
             requiresReset = false
             errorMessage = ""
             message = "Defaults restored in the editor. Save to apply."
@@ -457,9 +522,11 @@ final class BridgeController: ObservableObject {
         do {
             let imported = try LedPreferences.decode(Data(contentsOf: url), defaults: defaults)
             leds = imported
-            if requiresReset { run = RunPreferences() }
-            requiresReset = false
-            errorMessage = ""
+            if !invalidSavedTension {
+                if requiresReset { run = RunPreferences() }
+                requiresReset = false
+                errorMessage = ""
+            }
             message = "LED settings imported into the editor. Save to apply."
         } catch { report(error) }
     }
@@ -739,6 +806,28 @@ struct BridgeSettingsView: View {
     private var jogTab: some View {
         ScrollView {
             VStack(spacing: 20) {
+                section("Hardware tension") {
+                    HStack {
+                        Text("Both physical wheels")
+                        Spacer()
+                        Text(controller.tension.tension, format: .number.grouping(.never))
+                    }
+                    Slider(value: Binding(
+                        get: { Double(controller.tension.tension) },
+                        set: { controller.tension.tension = Int($0) }
+                    ), in: -100...100, step: 1) {
+                        Text("Hardware tension")
+                    }
+                    HStack {
+                        Text("Assist").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Neutral (0)").frame(maxWidth: .infinity)
+                        Text("Brake").frame(maxWidth: .infinity, alignment: .trailing)
+                    }.font(.caption).foregroundColor(.secondary)
+                    Text("One setting for both wheels; each responds to its own movement and touch. Channel 1's fader remains a normal mixer control.")
+                        .font(.caption).foregroundColor(.secondary)
+                    Text("Full-controller profile only. Save preferences to apply on the next start, or Save and restart while running. No new Djay mapping is needed.")
+                        .font(.caption).foregroundColor(.secondary)
+                }
                 section("Scratch (platter touch)") {
                     DecimalRow(title: "Scratch speed", value: $controller.jog.scratchSpeed, range: 0.1...Double.greatestFiniteMagnitude, unit: "%")
                     NumberRow(title: "Scratch reaction", value: $controller.jog.scratchReaction, range: 0...150, unit: "%")
@@ -747,8 +836,8 @@ struct BridgeSettingsView: View {
                     DecimalRow(title: "Pitch bend speed", value: $controller.jog.pitchBendSpeed, range: 0.1...Double.greatestFiniteMagnitude, unit: "%")
                     NumberRow(title: "Pitch bend reaction", value: $controller.jog.pitchBendReaction, range: 0...150, unit: "%")
                 }
-                section("Applying jog changes") {
-                    Text("Jog changes affect the exported mapping only. Save preferences, then install a new mapping and select it in Djay; restarting the bridge is not required. Seek behavior is unchanged.")
+                section("Applying jog mapping changes") {
+                    Text("Scratch and pitch bend changes affect the exported mapping only. Save preferences, then install a new mapping and select it in Djay; restarting the bridge is not required. Seek behavior is unchanged.")
                         .font(.caption).foregroundColor(.secondary)
                     HStack {
                         Button("Install Djay mapping…") { controller.installMapping() }.disabled(controller.isExporting)

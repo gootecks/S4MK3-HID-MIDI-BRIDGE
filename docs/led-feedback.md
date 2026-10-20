@@ -122,8 +122,11 @@ ports are live, restart Djay with the bridge already running. In the live
 chase test, this restored `Configure S4 MK3 MIDI Full` and the full control
 table without changing or deleting the saved mappings.
 
-The bridge initializes only ring LED reports `0x30`; it never sends motor report
-`0x31`. Full mode writes button report `0x80`, channel-meter report `0x81` when
+The LED output component initializes native report `0x30` and does not itself
+send motor report `0x31`. With the separate `--tension-config` option, the full
+bridge also sends paced `0x31` motor reports on the same output thread.
+That saved hardware setting is independent of LED preferences and mixer faders.
+Full mode writes button report `0x80`, channel-meter report `0x81` when
 levels arrive, and ring output report `0x32`. Software-state lamps start dark
 until Djay actually sends state. Local deck/mode/FX selectors light immediately.
 

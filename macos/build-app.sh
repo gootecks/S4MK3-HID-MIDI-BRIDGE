@@ -32,6 +32,7 @@ done
 [[ -f "$SWIFT_SOURCE" ]] || fail "missing Swift app source: $SWIFT_SOURCE"
 [[ -f "$ROOT/examples/led-config.json" ]] || fail "missing default LED config"
 [[ -f "$ROOT/examples/jog-config.json" ]] || fail "missing default jog config"
+[[ -f "$ROOT/examples/tension-config.json" ]] || fail "missing default hardware tension config"
 [[ -f "$ROOT/macos/Info.plist" ]] || fail "missing app Info.plist"
 [[ -f "$ROOT/macos/Assets/AppIcon.png" ]] || fail "missing app icon"
 
@@ -63,6 +64,7 @@ cp "$ROOT/macos/Info.plist" "$STAGED_APP/Contents/Info.plist"
 cp "$BRIDGE" "$STAGED_APP/Contents/Resources/$BRIDGE_NAME"
 cp "$ROOT/examples/led-config.json" "$STAGED_APP/Contents/Resources/default-led-config.json"
 cp "$ROOT/examples/jog-config.json" "$STAGED_APP/Contents/Resources/default-jog-config.json"
+cp "$ROOT/examples/tension-config.json" "$STAGED_APP/Contents/Resources/default-tension-config.json"
 
 ICONSET="$STAGING/AppIcon.iconset"
 mkdir "$ICONSET"

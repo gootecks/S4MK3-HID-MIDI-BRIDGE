@@ -45,12 +45,40 @@ only independent mode flags, initialized off on restart. No shared-size
 counters or resets are used, and fixed Shift jumps preserve chosen jump size.
 The selected deck selector pulses on a 1.2-second palette-brightness cycle
 with a dark trough while selecting. Hidden deck modes persist without
-flashing inactive buttons. No screen or motor traffic is included.
+flashing inactive buttons. This encoder overlay adds no screen or motor traffic;
+the separate saved-tension increment below adds motor output.
 
 These routes are implemented, not physically validated here. The user
 mouse-verified beat jump moving an active loop; fresh MIDI/native and LED
 checks remain pending. Reinstall the generated mapping under a new filename,
 preserving custom maps. See [live checks](full-midi-test.md#encoder-layout-live-check).
+
+### Saved hardware tension
+
+The full profile accepts `--tension-config PATH`, with a strict saved integer
+`{"tension":0}` in -100..100. Negative values select motion-qualified,
+held-touch assistance up to 7000; positive values select braking up to 30000.
+Zero is neutral. This is one saved setting for both physical wheels, not a
+logical-deck value or a mixer-fader assignment. The shared law is the same
+decoder, qualification and smoothing used by the physically validated
+diagnostic. Djay jog MIDI and held-touch ownership remain separate.
+
+An explicitly paced bounded reader delivers full snapshots and preserves
+ordinary analog interrupts. One bridge thread writes motor and LED reports.
+Startup neutral precedes native initialization; queued zero gates precede
+overdue output ticks. Stop and detected faults attempt full neutral before
+reader teardown. Input older than 50ms fails closed. There is no automatic
+reconnect: restart the bridge to initialize a fresh session. A disconnected
+device cannot acknowledge cleanup; the bridge reports that failure.
+
+The app saves this value separately from mapping sensitivity preferences and
+applies it with Save and restart. First installation defaults to neutral.
+No mapping regeneration is needed. Minimal/probe profiles do not use tension.
+On October 20, 2026, the user confirmed normal-app assistance, braking,
+Djay/MIDI/LED coexistence and Stop, followed by Quit, saved-setting restore
+while stopped, and USB disconnect/reconnect with explicit Start. These are
+user-reported physical passes on the integrated build, separate from the
+earlier diagnostic passes. The full UI regression battery remains deferred.
 
 ### Historical base snapshot
 
@@ -109,7 +137,7 @@ ultimately controls playback, Djay still performs the audio operation.
 
 ## Not implemented
 
-Screens, screen settings menus, pad legends, motors/haptics, playback-position
+Screens, screen settings menus, pad legends, playback-position
 platter tracking, live-input deck replacement, preview-dependent encoder
 routes, Shift+Sync tempo-range cycling, and automatic same-process mapping
 reconnect detection are not present. Startup crossfader initialization is
