@@ -96,6 +96,15 @@ impl Engine {
         }
     }
 
+    /// Discard all movement and smoothing history, preserving the selection.
+    /// The caller must neutralize hardware first. This does not refresh the
+    /// input deadline; a new snapshot must establish a baseline before ticking.
+    pub fn clear_motion(&mut self) {
+        self.decoder = Decoder::default();
+        self.wheels = SmoothWheels::new([true, true]);
+        self.last_report = neutral_report();
+    }
+
     /// Observe one numbered buttons/jog snapshot and return only an immediate
     /// zero-gate report. The caller owns all report writes and cleanup.
     ///

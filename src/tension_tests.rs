@@ -161,6 +161,35 @@ fn new_engine_cannot_replay_prior_motion_or_stationary_retouch() -> anyhow::Resu
 }
 
 #[test]
+fn clearing_motion_requires_a_new_baseline_and_preserves_saved_force_cap() -> anyhow::Result<()> {
+    // Given qualified assistance at a saved half-strength setting.
+    let mut engine = Engine::new(selected(-50)?);
+    assert!(magnitude(prime(&mut engine, 2, 2)?, 0) > 0);
+    // When the output owner clears history after neutralizing both wheels.
+    engine.clear_motion();
+    // Then clearing state does not make stale input fresh, and a distant
+    // counter/timer baseline or stationary touch cannot restore old force.
+    assert!(engine.tick(140_001).is_err());
+    for i in 0..=10 {
+        let at = 140_001 + u64::from(i) * 2000;
+        let (buttons, jog) = sample(at, i + 1, [9000, 3000], [true, true]);
+        assert_eq!(engine.observe(&buttons, &jog, at, at)?, None);
+        assert_eq!(engine.tick(at)?, neutral_report());
+    }
+    let mut last = neutral_report();
+    for i in 0..=200 {
+        let at = 162_001 + u64::from(i) * 2000;
+        let (buttons, jog) = sample(at, i + 12, [9000 + i * 2, 3000], [true, true]);
+        engine.observe(&buttons, &jog, at, at)?;
+        last = engine.tick(at)?;
+        assert_eq!(magnitude(last, 1), 0);
+        assert!(magnitude(last, 0) <= 3500);
+    }
+    assert_eq!(magnitude(last, 0), 3500);
+    Ok(())
+}
+
+#[test]
 fn rest_and_duplicate_do_not_extend_qualified_force() -> anyhow::Result<()> {
     let mut engine = Engine::new(selected(100)?);
     assert!(magnitude(prime(&mut engine, 2, 0)?, 0) > 0);

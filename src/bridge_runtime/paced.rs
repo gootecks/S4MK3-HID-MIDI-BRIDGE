@@ -2,7 +2,10 @@
 
 use anyhow::{Context as _, bail};
 use crossbeam_channel::{Receiver, TryRecvError, select_biased};
-use s4mk3_hid_midi_bridge::tension::{Engine, neutral_report};
+use s4mk3_hid_midi_bridge::{
+    jog::decode::FRESHNESS_US,
+    tension::{Engine, neutral_report},
+};
 use std::time::Duration;
 use tracing::{info, warn};
 
@@ -18,6 +21,7 @@ pub enum Action<'a> {
 pub struct Output<F: FnMut(Action<'_>) -> anyhow::Result<()>> {
     service: F,
     finished: bool,
+    recovery_since_us: Option<u64>,
 }
 
 impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
@@ -25,6 +29,7 @@ impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
         let mut output = Self {
             service,
             finished: false,
+            recovery_since_us: None,
         };
         (output.service)(Action::Motor(neutral_report()))?;
         Ok(output)
@@ -43,11 +48,37 @@ impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
         Ok(())
     }
 
+    fn expire_tension(&mut self, engine: &mut Engine, now_us: u64) -> anyhow::Result<()> {
+        let deadline_us = engine.input_deadline_us();
+        if self.recovery_since_us.is_none() && now_us >= deadline_us {
+            (self.service)(Action::Motor(neutral_report()))?;
+            engine.clear_motion();
+            self.recovery_since_us = Some(now_us);
+            warn!(
+                now_us,
+                deadline_us,
+                "TENSION_SUSPENDED: input freshness timeout; force cleared; waiting for fresh input"
+            );
+        }
+        Ok(())
+    }
+
     fn sample(&mut self, engine: &mut Engine, frame: &Frame, now_us: u64) -> anyhow::Result<()> {
-        if let Some(report) =
-            engine.observe(frame.report(0), frame.report(1), frame.host_us, now_us)?
-        {
-            (self.service)(Action::Motor(report))?;
+        self.expire_tension(engine, now_us)?;
+        if self.recovery_since_us.is_none_or(|suspended_us| {
+            frame.host_us > suspended_us && now_us.saturating_sub(frame.host_us) <= FRESHNESS_US
+        }) {
+            if let Some(report) =
+                engine.observe(frame.report(0), frame.report(1), frame.host_us, now_us)?
+            {
+                (self.service)(Action::Motor(report))?;
+            }
+            if self.recovery_since_us.take().is_some() {
+                info!(
+                    host_us = frame.host_us,
+                    "TENSION_INPUT_RECOVERED: fresh baseline; force requires new qualified movement"
+                );
+            }
         }
         (self.service)(Action::Frame(frame))
     }
@@ -81,6 +112,7 @@ where
             return Ok(());
         }
         let now_us = clock()?;
+        output.expire_tension(engine, now_us)?;
         if now_us >= next_tick_us {
             // A queued touch release cannot sit behind an overdue force write.
             for _ in 0..32 {
@@ -97,18 +129,28 @@ where
                 return Ok(());
             }
             let tick_us = clock()?;
-            (output.service)(Action::Motor(engine.tick(tick_us)?))?;
+            output.expire_tension(engine, tick_us)?;
+            let report = if output.recovery_since_us.is_some() {
+                neutral_report()
+            } else {
+                engine.tick(tick_us)?
+            };
+            (output.service)(Action::Motor(report))?;
             (output.service)(Action::Feedback(tick_us))?;
             // No bursts to catch up slots consumed by MIDI, logging or native I/O.
             next_tick_us = tick_us.saturating_add(INTERVAL_US);
             continue;
         }
         let wait_us = next_tick_us
-            .min(engine.input_deadline_us())
+            .min(
+                output
+                    .recovery_since_us
+                    .map_or_else(|| engine.input_deadline_us(), |_| u64::MAX),
+            )
             .min(duration_us.unwrap_or(u64::MAX))
             .saturating_sub(now_us);
         if wait_us == 0 {
-            bail!("no fresh tension input within 50ms");
+            continue;
         }
         select_biased! {
             recv(stop) -> _ => return Ok(()),

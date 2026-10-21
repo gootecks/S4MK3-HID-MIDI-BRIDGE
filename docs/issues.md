@@ -58,6 +58,13 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Open
 
+- [ ] **Practice-session freshness exit** - A 50 ms motor-input timeout
+  stopped the entire full-profile bridge during practice on October 20, 2026.
+  The beta.3 fix clears force, discards old movement, and automatically
+  resumes tension after a fresh baseline and newly qualified motion while
+  keeping control/feedback service running. The underlying input delay
+  is unconfirmed and physical recovery testing remains pending.
+  See [timeout recovery](tension-timeout-recovery.md).
 - [ ] **Jog feel and backspin** - Reduce excessive slow-movement sensitivity
   while improving fast-backspin response. Measure raw counts,
   emitted MIDI, and Djay response before choosing tuning behavior.

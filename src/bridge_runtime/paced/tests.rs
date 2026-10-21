@@ -1,6 +1,9 @@
 use super::*;
 use std::cell::{Cell, RefCell};
 
+mod recovery;
+mod watchdog;
+
 fn config(value: i32) -> anyhow::Result<s4mk3_hid_midi_bridge::tension::Config> {
     Ok(serde_json::from_str(&format!(r#"{{"tension":{value}}}"#))?)
 }
@@ -23,8 +26,8 @@ fn frame(host_us: u64, counts: [u32; 2], touch: u8) -> Frame {
     }
 }
 
-fn active_engine() -> anyhow::Result<Engine> {
-    let mut engine = Engine::new(config(-100)?);
+fn active_engine(setting: i32) -> anyhow::Result<Engine> {
+    let mut engine = Engine::new(config(setting)?);
     for index in 0_u32..8 {
         let at = u64::from(index) * 2000 + 1;
         let frame = frame(at, [index * 10, index * 10], 0x30);
@@ -37,7 +40,7 @@ fn active_engine() -> anyhow::Result<Engine> {
 #[test]
 fn queued_one_wheel_release_precedes_overdue_motor_and_feedback() -> anyhow::Result<()> {
     // Given both wheels already assisting, and a queued left-only release.
-    let mut engine = active_engine()?;
+    let mut engine = active_engine(-100)?;
     let (mut reader, frames, _done) = Reader::channels();
     frames.send(frame(16001, [80, 80], 0x20))?;
     let (stop_tx, stop) = crossbeam_channel::bounded(1);
@@ -80,7 +83,7 @@ fn queued_one_wheel_release_precedes_overdue_motor_and_feedback() -> anyhow::Res
 #[test]
 fn stop_wins_over_queued_force_without_dispatching_midi() -> anyhow::Result<()> {
     // Given active assistance, a pending frame, and Stop already signaled.
-    let mut engine = active_engine()?;
+    let mut engine = active_engine(-100)?;
     let (mut reader, frames, _done) = Reader::channels();
     frames.send(frame(16001, [80, 80], 0x30))?;
     let (stop_tx, stop) = crossbeam_channel::bounded(1);
@@ -112,12 +115,13 @@ fn stop_wins_over_queued_force_without_dispatching_midi() -> anyhow::Result<()> 
 
 #[test]
 fn runtime_faults_clear_force_before_returning() -> anyhow::Result<()> {
-    // Given a reader error, stale queued frame, watchdog gap, or MIDI/LED failure.
-    for fault in 0..6 {
-        let mut engine = active_engine()?;
+    // Given a reader error, future queued frame, or MIDI/LED/native write failure.
+    // Freshness gaps have separate nonfatal regressions in the watchdog module.
+    for fault in [0, 1, 3, 4, 5] {
+        let mut engine = active_engine(-100)?;
         let (mut reader, frames, done) = Reader::channels();
         let (_stop_tx, stop) = crossbeam_channel::bounded(1);
-        let now = if fault == 2 { 70002 } else { 16001 };
+        let now = 16001;
         if fault == 0 {
             done.send(Err(anyhow::anyhow!("native input failure")))?;
         } else if fault == 1 {

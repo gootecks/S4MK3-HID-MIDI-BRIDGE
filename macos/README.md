@@ -13,15 +13,15 @@ bash macos/build-app.sh
 
 The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-arm64.zip`, and the versioned release disk image
-`dist/S4 MK3 Bridge-0.1.1-beta.2-arm64.dmg`. The script compiles
+`dist/S4 MK3 Bridge-0.1.1-beta.3-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
 `examples/led-config.json`, `examples/jog-config.json`, and
 `examples/tension-config.json` into the app resources as `default-led-config.json`,
 `default-jog-config.json`, and `default-tension-config.json`, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
-`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.2`;
-the bundle uses numeric version `0.1.1`, build `3`, and records the complete
+`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.3`;
+the bundle uses numeric version `0.1.1`, build `4`, and records the complete
 release in `S4BridgeReleaseVersion`. The script checks alignment with Cargo.
 It generates `AppIcon.icns` from `macos/Assets/AppIcon.png` and includes an
 Applications shortcut in the compressed read-only DMG.
@@ -185,6 +185,16 @@ user's request; these passes do not establish a full visual QA pass.
 The menu-bar symbol is green while the bridge is running and returns to the
 normal system appearance in other states. Diagnostics shows the app's bundled
 release version and build number.
+
+The beta.3 [timeout recovery fix](../docs/tension-timeout-recovery.md)
+clears force after a 50 ms input gap without closing the bridge. Diagnostics
+logs `TENSION_SUSPENDED`; control/feedback processing continues while tension
+history is reset. Fresh input establishes a new baseline and logs
+`TENSION_INPUT_RECOVERED`; force returns only after each wheel qualifies new
+movement with its usual touch rules. No Stop/Start is needed, and the saved
+value is unchanged.
+Older beta.2 packages still exit on this timeout. Physical recovery testing
+remains pending.
 
 ### Jog mapping preferences
 
