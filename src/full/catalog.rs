@@ -85,7 +85,7 @@ pub const DECK_BINDINGS: &[Binding] = &[
         "cue",
         1,
         "turntable{deck}.cuePositionOrJumpConsideringPlayState1",
-        None,
+        Some("turntable{deck}.gotoZero"),
     ),
     note(
         "sync",
@@ -170,13 +170,13 @@ pub const DECK_BINDINGS: &[Binding] = &[
     },
     note("master", 8, "turntable{deck}.turntableIsSyncMaster", None),
     note("library_view", 9, "musicLibrary.toggleLibraryVisible", None),
-    note("library_playlist", 10, "musicLibrary.focusQueue", None),
     note(
-        "library_star",
-        11,
+        "library_playlist",
+        10,
         "musicLibrary.markUnmarkSelectedSongs",
         None,
     ),
+    note("library_star", 11, "musicLibrary.focusQueue", None),
     note(
         "browse_press",
         12,

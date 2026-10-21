@@ -76,15 +76,18 @@ preserving existing custom mappings.
 
 REV now uses native `reverseHold`: releasing it ends reverse, even after a
 deck or Shift change. It does not automatically enable or restore Slip.
-Normal Browse direction is corrected once in the mapping. Preview remains
-a playback toggle; Shift+BROWSER now seeks preview instead of navigating
-sections. Each detent emits a native forward/backward preview button pulse,
-without tracking playback state. Seeking while preview is stopped is ignored
-by Djay; ordinary browsing cancels preview. Shift+BROWSER press still goes
-back, and LOOP is unchanged. Use a rebuilt bridge and install its newly
-generated mapping under a new name; old bridge binaries and mappings do not
-provide this route. Physical seek direction and multi-detent response still
-need a live check.
+Normal Browse direction is corrected once in the mapping. Hold Preview to
+start preview, turn BROWSER while held to scrub, and release to stop. No Shift
+is required; otherwise BROWSER browses normally. Complete preview-toggle pulses
+are sent on press and release, including shutdown. If preview was already
+active or changes externally, close it using the mouse to recover.
+Shift+BROWSER press still goes back, and LOOP is unchanged. Shift+CUE jumps
+to the beginning of the song, leaving normal CUE unchanged. Playlist now
+marks/unmarks selected songs and Star focuses the Queue (Note 10/11 swap).
+Use a rebuilt bridge and install its newly generated mapping under a new name,
+preserving existing custom mappings. The earlier Shift+BROWSER scrubber was
+user-confirmed; this new held route and the new assignments need physical
+acceptance.
 
 Physical crossfader assignments and curve wait for raw Djay playback feedback
 before their initial application, then follow physical changes only. This

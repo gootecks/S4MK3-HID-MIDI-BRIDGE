@@ -275,6 +275,15 @@ impl Translator {
         }
         self.selectors(controls, output);
         self.move_selection(controls);
+        // Preview must be held before a simultaneous Browse turn, regardless
+        // of the descriptor's item order.
+        for control in controls {
+            if let Control::Button(name, true) = control
+                && is_preview(name)
+            {
+                self.press(name, output)?;
+            }
+        }
         if let Some(payload) = buttons {
             self.front_panel(payload, output)?;
         }
@@ -331,7 +340,14 @@ impl Translator {
 
     fn encoder(&self, name: &str, delta: i32, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
         if let Some((side, suffix @ ("move_encoder" | "browse_encoder"))) = side_name(name)
-            && self.shifted[side]
+            && match suffix {
+                "browse_encoder" => self.held.contains_key(if side == 0 {
+                    "left_library_play"
+                } else {
+                    "right_library_play"
+                }),
+                _ => self.shifted[side],
+            }
         {
             let action = match (suffix, delta < 0) {
                 ("browse_encoder", true) => "preview_backward",
@@ -346,7 +362,7 @@ impl Translator {
             for _ in 0..delta.unsigned_abs() {
                 pulse(
                     Address {
-                        channel: channel(*binding, self.decks[side], true),
+                        channel: channel(*binding, self.decks[side], self.shifted[side]),
                         number: binding.number,
                     },
                     output,
@@ -631,6 +647,15 @@ impl Translator {
                 number: binding.number,
             })
             .collect();
+        if is_preview(name) {
+            if !self.held.keys().any(|held| is_preview(held)) {
+                for address in &addresses {
+                    pulse(*address, output);
+                }
+            }
+            self.held.insert(name, addresses);
+            return Ok(());
+        }
         for address in &addresses {
             if !self.held.values().flatten().any(|owned| owned == address) {
                 output.push(address.press());
@@ -644,6 +669,14 @@ impl Translator {
 
     fn release(&mut self, name: &str, output: &mut Vec<[u8; 3]>) {
         if let Some(addresses) = self.held.remove(name) {
+            if is_preview(name) {
+                if !self.held.keys().any(|held| is_preview(held)) {
+                    for address in addresses {
+                        pulse(address, output);
+                    }
+                }
+                return;
+            }
             for address in addresses {
                 if !self.held.values().flatten().any(|owned| *owned == address) {
                     output.push(address.release());
@@ -654,6 +687,8 @@ impl Translator {
 
     fn release_all(&mut self, output: &mut Vec<[u8; 3]>) {
         self.eq_selecting = false;
+        self.release("left_library_play", output);
+        self.release("right_library_play", output);
         let mut addresses: Vec<_> = self
             .held
             .drain()
@@ -778,6 +813,10 @@ const fn channel(binding: Binding, deck: Deck, shifted: bool) -> u8 {
     } else {
         deck.channel()
     }
+}
+
+fn is_preview(name: &str) -> bool {
+    matches!(name, "left_library_play" | "right_library_play")
 }
 
 fn side_name(name: &str) -> Option<(usize, &str)> {
@@ -1367,7 +1406,7 @@ mod tests {
     }
 
     #[test]
-    fn shifted_browse_emits_mapped_preview_pulses_without_navigation() -> anyhow::Result<()> {
+    fn held_preview_browse_emits_mapped_pulses_without_navigation() -> anyhow::Result<()> {
         // Given the generated mapping and either physical side on every deck.
         let mapping = mapping::generate()?;
         let controls = mapping
@@ -1379,7 +1418,17 @@ mod tests {
             for deck in [Deck::A, Deck::B, Deck::C, Deck::D] {
                 let mut state = Translator::default();
                 state.decks[side] = deck;
-                state.shifted[side] = true;
+                run(
+                    &mut state,
+                    &[Control::Button(
+                        if side == 0 {
+                            "left_library_play"
+                        } else {
+                            "right_library_play"
+                        },
+                        true,
+                    )],
+                )?;
                 let name = if side == 0 {
                     "left_browse_encoder"
                 } else {
@@ -1393,7 +1442,7 @@ mod tests {
                 ] {
                     let output = run(&mut state, &[Control::Encoder(name, delta)])?;
                     let address = Address {
-                        channel: deck.channel() + 8,
+                        channel: deck.channel(),
                         number,
                     };
                     // Then each detent is a button pulse mapped to the correct action.
@@ -1427,32 +1476,125 @@ mod tests {
     }
 
     #[test]
-    fn browse_uses_current_shift_and_restores_navigation_on_release() -> anyhow::Result<()> {
-        // Given either side, with Shift and rotation in one unordered snapshot.
-        for (name, shift, channel) in [
-            ("left_browse_encoder", "left_shift", 0_u8),
-            ("right_browse_encoder", "right_shift", 1),
+    fn browse_uses_current_preview_hold_and_restores_navigation_on_release() -> anyhow::Result<()> {
+        // Given either side, with Preview and rotation in one unordered snapshot.
+        for (name, preview, channel) in [
+            ("left_browse_encoder", "left_library_play", 0_u8),
+            ("right_browse_encoder", "right_library_play", 1),
         ] {
             let mut state = Translator::default();
-            // When Shift is pressed or released in the same snapshot as a turn.
+            // When Preview is pressed or released in the same snapshot as a turn.
             let seek = run(
                 &mut state,
-                &[Control::Encoder(name, 1), Control::Button(shift, true)],
+                &[Control::Encoder(name, 1), Control::Button(preview, true)],
             )?;
             let browse = run(
                 &mut state,
-                &[Control::Encoder(name, -1), Control::Button(shift, false)],
+                &[Control::Encoder(name, -1), Control::Button(preview, false)],
             )?;
-            // Then only seek pulses occur while shifted, and browsing returns immediately.
+            // Then toggles bracket the held scrub route and browsing returns immediately.
             assert_eq!(
                 seek,
                 [
-                    [0x90 | (channel + 8), 23, 127],
-                    [0x80 | (channel + 8), 23, 0]
+                    [0x90 | channel, 13, 127],
+                    [0x80 | channel, 13, 0],
+                    [0x90 | channel, 23, 127],
+                    [0x80 | channel, 23, 0]
                 ]
             );
-            assert_eq!(browse, [[0xb0 | channel, 3, 63]]);
+            assert_eq!(
+                browse,
+                [
+                    [0x90 | channel, 13, 127],
+                    [0x80 | channel, 13, 0],
+                    [0xb0 | channel, 3, 63],
+                ]
+            );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn preview_toggles_once_per_hold_and_closes_on_release_or_shutdown() -> anyhow::Result<()> {
+        for shutdown in [false, true] {
+            // Given Preview held on A, including a duplicate held snapshot.
+            let mut state = Translator::default();
+            assert_eq!(
+                run(&mut state, &[Control::Button("left_library_play", true)])?,
+                [[0x90, 13, 127], [0x80, 13, 0]]
+            );
+            assert!(run(&mut state, &[Control::Button("left_library_play", true)])?.is_empty());
+            run(
+                &mut state,
+                &[
+                    Control::Button("left_deck_switch_c", true),
+                    Control::Button("left_shift", true),
+                ],
+            )?;
+            // When the physical button releases or the bridge stops.
+            let mut output = Vec::new();
+            if shutdown {
+                state.release_all(&mut output);
+            } else {
+                state.translate(
+                    &[Control::Button("left_library_play", false)],
+                    None,
+                    &mut output,
+                )?;
+            }
+            // Then a complete second toggle uses the original address, with no stuck note.
+            assert_eq!(output, [[0x90, 13, 127], [0x80, 13, 0]]);
+            assert!(run(&mut state, &[Control::Button("left_library_play", false)])?.is_empty());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn overlapping_preview_buttons_keep_preview_open_until_last_release() -> anyhow::Result<()> {
+        // Given both physical Preview buttons held.
+        let mut state = Translator::default();
+        run(&mut state, &[Control::Button("left_library_play", true)])?;
+        assert!(run(&mut state, &[Control::Button("right_library_play", true)])?.is_empty());
+        // When one side releases.
+        let output = run(&mut state, &[Control::Button("left_library_play", false)])?;
+        // Then it does not stop the other side's preview or suppress its scrub.
+        assert!(output.is_empty());
+        assert_eq!(
+            run(&mut state, &[Control::Encoder("right_browse_encoder", -1)])?,
+            [[0x91, 24, 127], [0x81, 24, 0]]
+        );
+        assert_eq!(
+            run(&mut state, &[Control::Button("right_library_play", false)])?,
+            [[0x91, 13, 127], [0x81, 13, 0]]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn shift_cue_keeps_original_deck_ownership_on_release() -> anyhow::Result<()> {
+        // Given Shift+Cue pressed on A in one unordered snapshot.
+        let mut state = Translator::default();
+        assert_eq!(
+            run(
+                &mut state,
+                &[
+                    Control::Button("left_cue", true),
+                    Control::Button("left_shift", true),
+                ],
+            )?,
+            [[0x98, 1, 127]]
+        );
+        run(
+            &mut state,
+            &[
+                Control::Button("left_shift", false),
+                Control::Button("left_deck_switch_c", true),
+            ],
+        )?;
+        // When Cue releases after changing deck and Shift.
+        let output = run(&mut state, &[Control::Button("left_cue", false)])?;
+        // Then the shifted A address receives the release.
+        assert_eq!(output, [[0x88, 1, 0]]);
         Ok(())
     }
 

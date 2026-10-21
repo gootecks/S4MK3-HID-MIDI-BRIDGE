@@ -15,14 +15,21 @@ them; restart alone does not. Seek and released-touch routing are unchanged.
 
 ### Current encoder overlay
 
-Preview remains the native `musicLibrary.togglePreview` action. Normal BROWSER
-browses; Shift+BROWSER emits one directional preview-seek button pulse per
-detent, replacing section navigation. Notes 23/24 on channels 9-12 target
-`musicLibrary.skipForwardPreview` / `musicLibrary.skipBackwardPreview`.
-No preview state is guessed or cached. Djay ignores inactive-preview seeks;
-ordinary browsing cancels preview. LOOP and Shift+BROWSER press are unchanged.
-The native seek actions were user-verified; this encoder route needs a live
-check with a rebuilt bridge and newly installed mapping.
+Preview uses a complete `musicLibrary.togglePreview` pulse on press and another
+on release or shutdown. While that side's Preview is held, BROWSER emits one
+directional preview-seek pulse per detent, without requiring Shift. Notes 23/24
+on channels 1-4 (9-12 with Shift) target `musicLibrary.skipForwardPreview` /
+`musicLibrary.skipBackwardPreview`. Otherwise BROWSER browses normally.
+Overlapping Preview holds keep preview open until the last release.
+No playback state is guessed; the user accepts mouse-close recovery if external
+preview changes leave the toggles out of sync. The previous Shift+BROWSER
+scrubber was physically confirmed on October 21; the new held route needs
+physical acceptance. LOOP and Shift+BROWSER press are unchanged.
+
+Shift+CUE uses `turntableN.gotoZero` on Note 1, channels 9-12, for the beginning
+of the song rather than a saved start cue. Normal CUE is unchanged. Library
+Note 10 now marks/unmarks selected songs; Note 11 focuses the Queue on channels
+1-4. These are the requested A#-1 / B-1 action swap, not a change to HID fields.
 
 The encoder increment is full-profile only. Descriptor normalization corrects
 all rotation names and only left press names. LOOP turn/press use native

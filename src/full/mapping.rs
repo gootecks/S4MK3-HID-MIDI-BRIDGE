@@ -610,6 +610,51 @@ mod tests {
     }
 
     #[test]
+    fn cue_layers_and_library_note_swap_resolve_on_every_deck() -> anyhow::Result<()> {
+        // Given the real generated mapping.
+        let controls = generated_controls()?;
+        for deck in 0_u64..4 {
+            // When the requested note addresses are resolved.
+            for (channel, number, key) in [
+                (
+                    deck,
+                    1,
+                    format!(
+                        "turntable{}.cuePositionOrJumpConsideringPlayState1",
+                        deck + 1
+                    ),
+                ),
+                (deck + 8, 1, format!("turntable{}.gotoZero", deck + 1)),
+                (
+                    deck,
+                    10,
+                    String::from("musicLibrary.markUnmarkSelectedSongs"),
+                ),
+                (deck, 11, String::from("musicLibrary.focusQueue")),
+            ] {
+                let control = controls
+                    .iter()
+                    .find(|control| {
+                        field(control, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(channel)
+                            && field(control, "midiMessageType")
+                                .and_then(Value::as_unsigned_integer)
+                                == Some(1)
+                            && field(control, "midiData").and_then(Value::as_unsigned_integer)
+                                == Some(number)
+                    })
+                    .context("requested note mapping missing")?;
+                // Then each note targets the requested native action, preserving normal Cue.
+                assert_eq!(
+                    field(control, "keyPath").and_then(Value::as_string),
+                    Some(key.as_str())
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn sync_layers_resolve_to_deck_sync_and_global_range_cycle() -> anyhow::Result<()> {
         // Given the serialized generated mapping.
         let controls = generated_controls()?;

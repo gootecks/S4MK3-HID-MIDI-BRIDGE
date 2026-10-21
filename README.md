@@ -105,7 +105,9 @@ thing.
 | **Filter, then channel ON**        | Filter flashes cyan awaiting a deck; the next ON toggles only that deck's Neural Mix EQ without changing the Instant FX target. Filter again cancels. Idle Filter is dim cyan; it no longer resets a filter. |
 | **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
 | **REC**                            | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                         |
-| **Preview**                        | Toggle library preview on/off; Shift+BROWSER seeks forward/backward instead of navigating sections. Normal BROWSER keeps browsing. It isn't Traktor's hold-to-preview interaction. |
+| **Shift+CUE**                      | Jump to the beginning of the song, not the saved start cue. Normal CUE is unchanged. |
+| **Playlist / Star buttons**        | Playlist marks/unmarks selected songs; Star focuses the Queue. These swap Note 10 (A#-1) and Note 11 (B-1) actions on deck channels 1-4. |
+| **Preview**                        | Hold to preview; turn BROWSER while holding to scrub, then release to stop. BROWSER otherwise browses, without requiring Shift. If preview gets out of sync with the hold, close it with the mouse. |
 
 HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.

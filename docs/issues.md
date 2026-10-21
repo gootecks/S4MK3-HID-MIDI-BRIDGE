@@ -11,6 +11,10 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Completed
 
+- [x] **Preview encoder scrubbing** - Preview toggles playback and
+  Shift+BROWSER emits directional preview seek pulses. The user confirmed
+  the current scrubber works on October 21, 2026. A proposed one-handed
+  replacement is tracked below.
 - [x] **Saved hardware wheel tension** - Jog > Hardware exposes a shared
   Assist / Neutral / Brake setting with independent per-wheel motion/touch
   response. User-confirmed assistance/braking, Djay/MIDI/LED coexistence,
@@ -58,6 +62,14 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Open
 
+- [ ] **Shift+CUE: jump to beginning** - Implemented October 21, 2026:
+  `turntableN.gotoZero` on Note 1, channels 9-12. Normal CUE is unchanged.
+  Generated mapping and ownership regressions cover it; physical acceptance
+  remains pending.
+- [ ] **Swap A#-1 / B-1 actions** - Implemented October 21, 2026 on input
+  endpoint S4 MK3 MIDI Full, Note 10/11, channels 1-4: Playlist now
+  marks/unmarks selected songs; Star focuses the Queue. Generated-mapping
+  regression covers every deck; physical acceptance remains pending.
 - [ ] **Practice-session freshness exit** - A 50 ms motor-input timeout
   stopped the entire full-profile bridge during practice on October 20, 2026.
   The beta.3 fix clears force, discards old movement, and automatically
@@ -80,20 +92,29 @@ Keep completed items and add their completion date and a short evidence note.
 - [ ] **Leftmost FX button duplicates slot 1** - Verify native bank-enable
   behavior and investigate a whole-bank bypass that preserves individual
   slot states.
-- [ ] **REC / Record Sample** - Establish the native action's recording
-  source, destination/slot, and press/hold requirements.
-- [ ] **Preview encoder scrubbing** - Native forward/backward preview skips
-  are user-verified. The approved layout is implemented: Preview toggles
-  playback and Shift+BROWSER emits directional seek pulses, replacing section
-  navigation without requiring playback feedback. A rebuilt bridge and new
-  mapping still need a physical direction/multi-detent live check.
-- [ ] **MUTE/STEMS behavior** - Decide whether MUTE should become a held
-  modifier instead of duplicating the STEMS layer, and settle pad actions.
+- [ ] **REC / Record Sample** - The user reports on October 21, 2026 that
+  the action did not record a sample in their testing. Its actual behavior
+  remains unknown; establish what it does before choosing a useful REC
+  assignment rather than assuming it supports sample recording.
+- [ ] **One-handed held preview** - Implemented October 21, 2026: pressing
+  Preview opens/starts the preview player, releasing it closes/stops preview,
+  and BROWSER scrubs while Preview is held, without Shift. Normal BROWSER
+  browsing resumes on release. Use paired preview toggles on press/release;
+  the user accepts occasional state mismatch if preview was already active
+  or changes externally, with closing preview using the mouse as sufficient
+  recovery. Preview-state feedback is not required for this design.
+  Duplicate snapshots, simultaneous press/turn, deck/Shift changes,
+  overlapping holds, release, and shutdown are regression-covered.
+  Physical acceptance of this replacement remains pending.
 - [ ] **EXT / microphone / line inputs** - Establish S4 input channels and
   hardware source switching, then determine which routing Djay can support.
 
 ## Deferred ideas
 
+- [ ] **MUTE button role** - Deferred by the user on October 21, 2026.
+  No distinct assignment chosen; revisit after screen support is understood,
+  when layered controls may provide a useful role. This defers the design
+  decision, not a change to the current STEMS-duplicate behavior.
 - [ ] **Powered platter rotation and other haptics** - Playback-driven
   rotation, cue effects, and other haptic behavior need their own agreed scope.
   The completed tension setting does not implement those behaviors.
