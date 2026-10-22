@@ -96,6 +96,7 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
             )?;
         }
     }
+    push_info_outputs(&mut outputs, &mut output_addresses)?;
     for deck in 1_u8..=4 {
         let selected = super::catalog::deck_selection_binding(deck)
             .ok_or_else(|| anyhow::anyhow!("deck selector missing"))?;
@@ -141,6 +142,66 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
     );
     root.insert(String::from("userInfo"), Value::Dictionary(user_info));
     Ok(Value::Dictionary(root))
+}
+
+fn push_info_outputs(
+    outputs: &mut Vec<Value>,
+    output_addresses: &mut BTreeSet<(u8, u8, u8)>,
+) -> Result<()> {
+    for deck in 1_u8..=4 {
+        for (index, (interval, _)) in super::feedback::info::JUMP_INTERVALS.iter().enumerate() {
+            let key = format!("turntable{deck}.skipping{interval}BeatInterval");
+            push_output(
+                outputs,
+                output_addresses,
+                OutputSpec {
+                    key_path: &key,
+                    channel: deck - 1,
+                    data: 80 + u8::try_from(index)?,
+                    message_type: 3,
+                    meter: false,
+                },
+            )?;
+        }
+        for (index, (interval, _)) in super::feedback::info::LOOP_INTERVALS.iter().enumerate() {
+            let key = format!("turntable{deck}.autoLoop{interval}BeatIntervalActive");
+            push_output(
+                outputs,
+                output_addresses,
+                OutputSpec {
+                    key_path: &key,
+                    channel: deck - 1,
+                    data: 90 + u8::try_from(index)?,
+                    message_type: 3,
+                    meter: false,
+                },
+            )?;
+        }
+        let key = format!("turntable{deck}.displayKeyIndex");
+        push_output(
+            outputs,
+            output_addresses,
+            OutputSpec {
+                key_path: &key,
+                channel: deck - 1,
+                data: 112,
+                message_type: 3,
+                meter: true,
+            },
+        )?;
+    }
+    push_output(
+        outputs,
+        output_addresses,
+        OutputSpec {
+            key_path: "userDefaults.DJTempoSliderRange",
+            channel: 6,
+            data: 8,
+            message_type: 3,
+            meter: true,
+        },
+    )?;
+    Ok(())
 }
 
 fn push_output(
@@ -429,6 +490,74 @@ mod tests {
                 .context("midiData is an integer")?;
             assert!(addresses.insert((channel, message_type, data)));
         }
+        Ok(())
+    }
+
+    #[test]
+    fn numeric_info_outputs_use_the_declared_deck_and_global_addresses() -> anyhow::Result<()> {
+        let outputs = generated_outputs()?;
+        let mut addresses = BTreeSet::new();
+        for output in &outputs {
+            let channel = field(output, "midiChannel")
+                .and_then(Value::as_unsigned_integer)
+                .context("output channel")?;
+            let data = field(output, "midiData")
+                .and_then(Value::as_unsigned_integer)
+                .context("output data")?;
+            let kind = field(output, "midiMessageType")
+                .and_then(Value::as_unsigned_integer)
+                .context("output message type")?;
+            assert!(addresses.insert((channel, kind, data)));
+        }
+        for deck in 1_u8..=4 {
+            let channel = u64::from(deck - 1);
+            for (offset, (interval, _)) in super::super::feedback::info::JUMP_INTERVALS
+                .iter()
+                .enumerate()
+            {
+                let key = format!("turntable{deck}.skipping{interval}BeatInterval");
+                let data = 80 + u64::try_from(offset)?;
+                assert!(outputs.iter().any(|output| {
+                    field(output, "keyPath").and_then(Value::as_string) == Some(key.as_str())
+                        && field(output, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(channel)
+                        && field(output, "midiMessageType").and_then(Value::as_unsigned_integer)
+                            == Some(3)
+                        && field(output, "midiData").and_then(Value::as_unsigned_integer)
+                            == Some(data)
+                }));
+            }
+            for (offset, (interval, _)) in super::super::feedback::info::LOOP_INTERVALS
+                .iter()
+                .enumerate()
+            {
+                let key = format!("turntable{deck}.autoLoop{interval}BeatIntervalActive");
+                let data = 90 + u64::try_from(offset)?;
+                assert!(outputs.iter().any(|output| {
+                    field(output, "keyPath").and_then(Value::as_string) == Some(key.as_str())
+                        && field(output, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(channel)
+                        && field(output, "midiMessageType").and_then(Value::as_unsigned_integer)
+                            == Some(3)
+                        && field(output, "midiData").and_then(Value::as_unsigned_integer)
+                            == Some(data)
+                }));
+            }
+            let key = format!("turntable{deck}.displayKeyIndex");
+            assert!(outputs.iter().any(|output| {
+                field(output, "keyPath").and_then(Value::as_string) == Some(key.as_str())
+                    && field(output, "midiChannel").and_then(Value::as_unsigned_integer)
+                        == Some(channel)
+                    && field(output, "midiData").and_then(Value::as_unsigned_integer) == Some(112)
+            }));
+        }
+        assert!(outputs.iter().any(|output| {
+            field(output, "keyPath").and_then(Value::as_string)
+                == Some("userDefaults.DJTempoSliderRange")
+                && field(output, "midiChannel").and_then(Value::as_unsigned_integer) == Some(6)
+                && field(output, "midiData").and_then(Value::as_unsigned_integer) == Some(8)
+                && field(output, "controlType").and_then(Value::as_string) == Some("control")
+        }));
         Ok(())
     }
 

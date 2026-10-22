@@ -15,6 +15,7 @@ ctrlc = "3"
 encdr = { git = "https://github.com/RufusIbiza/Encdr.git", rev = "5d7a689ca5789161b3efd1b2049d7e54504fe881" }
 hidapi = { version = "2.6", features = ["macos-shared-device"] }
 midir = "0.11"
+nusb = "0.2.3"
 num-traits = "0.2"
 plist = "1"
 serde = { version = "1", features = ["derive"] }

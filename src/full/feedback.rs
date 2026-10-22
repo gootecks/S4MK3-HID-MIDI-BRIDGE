@@ -1,5 +1,7 @@
 //! Bounded MIDI feedback ingestion; HID output stays on the bridge thread.
 
+pub mod info;
+
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -25,6 +27,7 @@ pub struct Message {
 
 #[derive(Clone, Debug)]
 pub struct FeedbackState {
+    pub info: info::State,
     pub notes: [[Option<u8>; 128]; 5],
     pub meters: [Option<u8>; 4],
     pub meter_updated: [Option<Duration>; 4],
@@ -40,6 +43,7 @@ pub struct FeedbackState {
 impl Default for FeedbackState {
     fn default() -> Self {
         Self {
+            info: info::State::default(),
             notes: [[None; 128]; 5],
             meters: [None; 4],
             meter_updated: [None; 4],
@@ -59,6 +63,14 @@ impl FeedbackState {
     }
 
     pub fn apply(&mut self, message: Message, now: Duration) -> bool {
+        if message.status & 0xf0 == 0xb0 {
+            let changed = self.info.apply(message);
+            if message.status & 0x0f < 4 && (80..=112).contains(&message.number)
+                || message.status & 0x0f == 6 && message.number == 8
+            {
+                return changed;
+            }
+        }
         let channel = usize::from(message.status & 0x0f);
         let kind = message.status & 0xf0;
         let number = usize::from(message.number);
@@ -83,6 +95,7 @@ impl FeedbackState {
                     let changed = self.loaded[number] != Some(loaded);
                     self.loaded[number] = Some(loaded);
                     if !loaded {
+                        self.info.clear_deck(number);
                         self.notes[number][40..48].fill(None);
                         self.meters[number] = None;
                         self.meter_updated[number] = None;
@@ -474,6 +487,165 @@ mod tests {
             Duration::ZERO,
         );
         assert_eq!(state.playing[2], Some(false));
+    }
+
+    #[test]
+    fn numeric_outputs_decode_from_the_serialized_generated_mapping() -> anyhow::Result<()> {
+        let mut bytes = Vec::new();
+        super::super::mapping::generate()?.to_writer_xml(&mut bytes)?;
+        let mapping = plist::Value::from_reader(std::io::Cursor::new(bytes))?;
+        let outputs = mapping
+            .as_dictionary()
+            .and_then(|root| root.get("outputs"))
+            .and_then(plist::Value::as_array)
+            .context("serialized mapping outputs missing")?;
+        let mut decoder = Decoder::default();
+        let mut state = FeedbackState::default();
+        for output in outputs {
+            let entry = output.as_dictionary().context("output dictionary")?;
+            let channel = entry
+                .get("midiChannel")
+                .and_then(plist::Value::as_unsigned_integer)
+                .context("output channel")?;
+            let data = entry
+                .get("midiData")
+                .and_then(plist::Value::as_unsigned_integer)
+                .context("output data")?;
+            if channel < 4 && (80..112).contains(&data) {
+                let data = u8::try_from(data)?;
+                let status = 0xb0 | u8::try_from(channel)?;
+                let (first, end, expected) = if data < 90 {
+                    (
+                        80_u8,
+                        90_u8,
+                        super::info::JUMP_INTERVALS
+                            .iter()
+                            .find(|(interval, _)| {
+                                entry.get("keyPath").and_then(plist::Value::as_string)
+                                    == Some(
+                                        format!(
+                                            "turntable{}.skipping{interval}BeatInterval",
+                                            channel + 1
+                                        )
+                                        .as_str(),
+                                    )
+                            })
+                            .map(|(_, label)| *label),
+                    )
+                } else {
+                    (
+                        90_u8,
+                        112_u8,
+                        super::info::LOOP_INTERVALS
+                            .iter()
+                            .find(|(interval, _)| {
+                                entry.get("keyPath").and_then(plist::Value::as_string)
+                                    == Some(
+                                        format!(
+                                            "turntable{}.autoLoop{interval}BeatIntervalActive",
+                                            channel + 1
+                                        )
+                                        .as_str(),
+                                    )
+                            })
+                            .map(|(_, label)| *label),
+                    )
+                };
+                for number in first..end {
+                    decoder.feed(&[status, number, 0], |message| {
+                        state.apply(message, Duration::ZERO);
+                    });
+                }
+                decoder.feed(&[status, data, 127], |message| {
+                    state.apply(message, Duration::ZERO);
+                });
+                let deck = usize::try_from(channel)?;
+                if data < 90 {
+                    assert_eq!(state.info.jump_size(deck), expected);
+                } else {
+                    assert_eq!(state.info.active_loop_size(deck), expected);
+                }
+            }
+        }
+        assert_eq!(state.info.jump_size(4), None);
+        Ok(())
+    }
+
+    #[test]
+    fn numeric_info_preserves_unknown_conflicts_and_clears_deck_ranges() {
+        // Given unknown sizes, then mutually exclusive states in transition.
+        let mut state = FeedbackState::default();
+        assert_eq!(state.info.jump_size(0), None);
+        let apply = |state: &mut FeedbackState, channel, number, value| {
+            state.apply(
+                Message {
+                    status: 0xb0_u8 | channel,
+                    number,
+                    value,
+                },
+                Duration::ZERO,
+            )
+        };
+        assert!(apply(&mut state, 0, 83, 127));
+        assert_eq!(state.info.jump_size(0), Some("1"));
+        assert!(!apply(&mut state, 0, 83, 127));
+        assert!(apply(&mut state, 0, 84, 127));
+        assert_eq!(state.info.jump_size(0), None);
+        assert!(apply(&mut state, 0, 83, 0));
+        assert_eq!(state.info.jump_size(0), Some("2"));
+        apply(&mut state, 0, 90, 127);
+        state.info.key_raw[0] = Some(81);
+        apply(&mut state, 6, 8, 32);
+        apply(&mut state, 6, 0, 0);
+        assert_eq!(state.info.active_loop_size(0), Some("1/32"));
+        // When loading-false arrives as a Note, not the meter CC at the same number.
+        state.apply(
+            Message {
+                status: 0x96,
+                number: 0,
+                value: 0,
+            },
+            Duration::ZERO,
+        );
+        // Then track-specific state clears while selection and global range survive.
+        assert_eq!(state.info.active_loop_size(0), None);
+        assert_eq!(state.info.jump_size(0), Some("2"));
+        assert_eq!(state.info.key_raw[0], None);
+        assert_eq!(state.info.tempo_range, Some(25));
+    }
+
+    #[test]
+    fn tempo_range_decodes_only_verified_values() {
+        let mut state = FeedbackState::default();
+        for (raw, percent) in [
+            (5, 4),
+            (8, 6),
+            (10, 8),
+            (13, 10),
+            (20, 16),
+            (32, 25),
+            (64, 50),
+            (95, 75),
+        ] {
+            state.apply(
+                Message {
+                    status: 0xb6,
+                    number: 8,
+                    value: raw,
+                },
+                Duration::ZERO,
+            );
+            assert_eq!(state.info.tempo_range, Some(percent));
+        }
+        state.apply(
+            Message {
+                status: 0xb6,
+                number: 8,
+                value: 7,
+            },
+            Duration::ZERO,
+        );
+        assert_eq!(state.info.tempo_range, None);
     }
 
     #[test]

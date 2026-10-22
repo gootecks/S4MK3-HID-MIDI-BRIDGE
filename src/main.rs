@@ -55,6 +55,9 @@ struct Args {
     #[arg(long, value_name = "PATH", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
     tension_config: Option<PathBuf>,
 
+    #[command(flatten)]
+    screens: ScreenArgs,
+
     /// Export the full native Djay mapping without opening HID or MIDI.
     #[arg(long, value_name = "PATH", conflicts_with_all = ["midi", "list", "raw"])]
     generate_mapping: Option<PathBuf>,
@@ -70,6 +73,17 @@ struct Args {
     /// Run until Ctrl-C instead of stopping after a fixed duration.
     #[arg(long, conflicts_with = "seconds")]
     until_stopped: bool,
+}
+
+#[derive(Debug, clap::Args)]
+struct ScreenArgs {
+    /// Experimental Djay feedback and reactive STEMS on both S4 screens (full profile).
+    #[arg(long = "screens", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
+    enabled: bool,
+
+    /// Export screen routing, feedback, and held-pad rasters without USB or MIDI.
+    #[arg(long, value_name = "DIR", conflicts_with_all = ["midi", "list", "raw", "generate_mapping", "jog_config"])]
+    generate_screen_previews: Option<PathBuf>,
 }
 
 #[derive(Debug, Default)]
@@ -89,6 +103,10 @@ fn main() -> anyhow::Result<()> {
     ensure!(
         args.tension_config.is_none() || matches!(args.midi, Some(MidiProfile::Full)),
         "--tension-config requires --midi full"
+    );
+    ensure!(
+        !args.screens.enabled || matches!(args.midi, Some(MidiProfile::Full)),
+        "--screens requires --midi full"
     );
     let tension = args
         .tension_config
@@ -119,6 +137,11 @@ fn main() -> anyhow::Result<()> {
             );
         }
         info!(path = %path.display(), "DJAY_MAPPING_EXPORTED");
+        return Ok(());
+    }
+    if let Some(path) = &args.screens.generate_screen_previews {
+        full::screens::write_previews(path)?;
+        info!(path = %path.display(), "SCREEN_PREVIEWS_EXPORTED: no USB or MIDI opened");
         return Ok(());
     }
     open_and_run(&args, tension)
@@ -213,7 +236,7 @@ fn run_probe(
         .then(midi::MidiBridge::new)
         .transpose()?;
     let mut full = matches!(args.midi, Some(MidiProfile::Full))
-        .then(full::FullBridge::new)
+        .then(|| full::FullBridge::new(args.screens.enabled))
         .transpose()?;
     let mut full_leds = full
         .as_ref()

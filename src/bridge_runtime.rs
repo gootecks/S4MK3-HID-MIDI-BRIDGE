@@ -25,7 +25,7 @@ pub fn run(
 ) -> anyhow::Result<()> {
     let led_config = full::leds::LedConfig::load(args.led_config.as_deref())?;
     let stop = crate::stop_signal()?;
-    let mut bridge = full::FullBridge::new()?;
+    let mut bridge = full::FullBridge::new(args.screens.enabled)?;
     let mut output = None;
     let mut counts = ProbeCounts::default();
     let mut events = Vec::with_capacity(128);

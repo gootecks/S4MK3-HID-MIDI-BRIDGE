@@ -18,6 +18,12 @@ apply. No React, browser runtime, or downloaded assets are needed.
 - Bridge settings expose the actual CLI profile, bounded/continuous duration,
   raw logging, and log level. Mapping installation is a native save dialog that
   generates from the current jog settings through the bundled bridge executable.
+- The full-controller profile includes the accepted info and STEMS/MUTE screens,
+  LEDs and saved jog tension in the normal Start/Save-and-restart path.
+  Minimal MIDI, HID probe, controller checks and mapping export never enable
+  screens. No separate screen preference or saved-file migration is needed.
+  Screen-interface failure stays in Diagnostics without stopping MIDI/LEDs;
+  the app never quits Native Instruments software automatically.
 - Jog's Hardware group exposes the saved Jog Wheel Tension control for both
   physical wheels. Put its title and value above the label-hidden slider; the
   Assist, Neutral (0), and Brake legends share the slider's width. Neutral is

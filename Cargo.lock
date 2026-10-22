@@ -1367,6 +1367,7 @@ dependencies = [
  "hidapi",
  "midir",
  "num-traits",
+ "nusb",
  "plist",
  "serde",
  "serde_json",

@@ -20,7 +20,7 @@ enum BridgeProfile: String, Codable, CaseIterable {
 
     var title: String {
         switch self {
-        case .full: return "Full controller + LED feedback"
+        case .full: return "Full controller + LEDs + screens"
         case .minimal: return "Minimal MIDI (Play, Cue, faders)"
         case .probe: return "HID probe (no MIDI)"
         }
@@ -47,7 +47,7 @@ struct RunPreferences: Codable, Equatable {
         var arguments: [String] = []
         if profile != .probe { arguments += ["--midi", profile.rawValue] }
         if profile == .full {
-            arguments += ["--led-config", ledURL.path, "--tension-config", tensionURL.path]
+            arguments += ["--screens", "--led-config", ledURL.path, "--tension-config", tensionURL.path]
         }
         arguments += limitDuration ? ["--seconds", String(durationSeconds)] : ["--until-stopped"]
         if rawReports { arguments.append("--raw") }

@@ -30,6 +30,7 @@ fn reject_competitors(processes: &str, own_pid: u32) -> anyhow::Result<()> {
             pid == own_pid
                 || !(name == "s4mk3-hid-midi-bridge"
                     || name == "s4mk3-jog-diagnostic"
+                    || name == "s4mk3-screen-diagnostic"
                     || name.starts_with("traktor")
                     || name == "mixxx"),
             "competing controller process {pid}: {executable}; stop it before diagnostic capture/trial"
@@ -51,6 +52,7 @@ mod tests {
         for name in [
             "s4mk3-hid-midi-bridge",
             "s4mk3-jog-diagnostic",
+            "s4mk3-screen-diagnostic",
             "Traktor",
             "Traktor Pro 4",
             "mixxx",

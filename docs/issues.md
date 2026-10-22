@@ -1,6 +1,6 @@
 # S4 MK3 bridge issues
 
-Current checklist as of October 20, 2026. This is the source of truth for issue
+Current checklist as of October 22, 2026. This is the source of truth for issue
 status; [the mapping audit](mapping-audit.md) retains detailed findings and
 historical snapshots.
 
@@ -62,6 +62,35 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## Open
 
+- [ ] **Experimental screen pages** - Implementation authorized October 21,
+  2026. Raw dual-screen transfers succeeded after temporarily quitting the
+  NIHardwareAgent process that owned interface 4; S4 audio stayed enumerated.
+  An attended blank-screen report led to delaying screen startup until
+  initialized input; the user then confirmed both deck pages appear from a
+  cold firmware-logo baseline on October 21. Static bars/labels also passed.
+  The approved legibility pass removes redundant headers, cue/sample grids,
+  and control-role rows. STEMS has larger text, real mute/solo activation,
+  separate held-press outlines, and unknown state. Hotcue/Samples now use the
+  approved info page described below. Physical legibility, reactive-state checks, and audible coexistence remain
+  acceptance checks, not inferred from USB completion.
+  On October 22, the user approved smooth anti-aliased sans-serif typography
+  for both info and STEMS/MUTE; the shared renderer now embeds native-size
+  coverage masks instead of enlarging an 8 x 8 font. The user then visually
+  accepted the updated font ("Looks good!"). The app's full-controller launch
+  now includes the accepted screens. The user tested the integrated app and
+  reported "Tested and it seems good!" on October 22; exhaustive reactive-state
+  and audio-coexistence checks remain separate.
+  See [screen implementation and ordered checks](screens.md).
+- [ ] **Numeric screen content** - Implemented October 22, 2026: non-STEMS
+  modes show JUMP / LOOP / KEY / RANGE in four quadrants. Active LOOP uses
+  green fill and black text; inactive says OFF. MOVE size selection has steady
+  SELECT and an amber/dark background flash, never a disappearing number.
+  A full paused-track calibration established all 24 numerical key labels.
+  Generator, decoder, selected-deck projection, native pixels and worker
+  timing have regressions; physical readability and live B/C/D acceptance
+  remain pending. Inactive selected loop length remains unexposed by tested
+  routes and is deliberately not shown. A fresh generated mapping is required. See
+  [evidence and probe boundaries](screen-feedback-investigation.md).
 - [ ] **Shift+CUE: jump to beginning** - Implemented October 21, 2026:
   `turntableN.gotoZero` on Note 1, channels 9-12. Normal CUE is unchanged.
   Generated mapping and ownership regressions cover it; physical acceptance
@@ -133,7 +162,8 @@ present, signature verification reported no error, and the same app then
 launched normally without changes. The cause is unconfirmed; no code fix or
 rebuild was made for that report.
 
-On-device screens/pad legends and a controller settings-menu gesture remain
-deferred. Automatic Slip during REV is a separate design choice, not part of
+On-device screens/pad legends are now authorized experimental work, tracked above.
+A controller settings-menu gesture remains deferred.
+Automatic Slip during REV is a separate design choice, not part of
 the completed momentary-reverse fix. See the mapping audit for these ideas
 and the Encdr upgrade candidate.

@@ -66,7 +66,7 @@ final class BridgeTests: XCTestCase {
         let tensionPath = URL(fileURLWithPath: "/tmp/Tension config with spaces.json")
         var settings = RunPreferences()
         XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), [
-            "--midi", "full", "--led-config", path.path,
+            "--midi", "full", "--screens", "--led-config", path.path,
             "--tension-config", tensionPath.path, "--until-stopped"
         ])
         settings.profile = .minimal
@@ -129,6 +129,7 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(model.state, .stopped)
         XCTAssertTrue(model.log.contains("CHECK:--list"))
         XCTAssertFalse(model.log.contains("--tension-config"))
+        XCTAssertFalse(model.log.contains("--screens"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
         XCTAssertTrue(model.log.contains("EXIT: 0"))
     }
@@ -136,6 +137,7 @@ final class BridgeTests: XCTestCase {
     @MainActor
     func testStopSendsSIGINTAndWaitsForChildAcknowledgement() async throws {
         let fixture = try makeFixture()
+        let argumentsURL = fixture.appendingPathComponent("received-arguments.txt")
         let fifo = fixture.appendingPathComponent("control.fifo")
         XCTAssertEqual(mkfifo(fifo.path, 0o600), 0)
         let descriptor = Darwin.open(fifo.path, O_RDWR)
@@ -145,6 +147,7 @@ final class BridgeTests: XCTestCase {
         let script = """
         #!/bin/sh
         trap 'printf "STOP_ACK\\n"; exit 0' INT
+        printf '%s\\n' "$@" > '\(argumentsURL.path)'
         exec 3< '\(fifo.path)'
         printf 'HELPER_READY\\n'
         IFS= read -r line <&3
@@ -168,6 +171,11 @@ final class BridgeTests: XCTestCase {
         }
         model.start()
         await fulfillment(of: [ready], timeout: 10)
+        XCTAssertEqual(try String(contentsOf: argumentsURL, encoding: .utf8)
+            .split(separator: "\n").map(String.init), [
+                "--midi", "full", "--screens", "--led-config", model.ledURL.path,
+                "--tension-config", model.tensionURL.path, "--until-stopped"
+            ])
         model.stop()
         await fulfillment(of: [exited], timeout: 10)
         withExtendedLifetime((output, state)) {}
@@ -348,14 +356,16 @@ final class BridgeTests: XCTestCase {
         let script = """
         #!/bin/sh
         trap 'exit 0' INT
-        cfg=""
+        cfg=""; screens=0
         while [ $# -gt 0 ]; do
           case "$1" in
             --tension-config) cfg="$2"; shift 2;;
+            --screens) screens=1; shift;;
             *) shift;;
           esac
         done
         [ -n "$cfg" ] || exit 2
+        [ "$screens" -eq 1 ] || exit 4
         cp "$cfg" '\(received.path)' || exit 3
         exec 3< '\(fifo.path)'
         printf 'TENSION_READY\\n'
@@ -389,6 +399,7 @@ final class BridgeTests: XCTestCase {
         await fulfillment(of: [restarted], timeout: 10)
         XCTAssertEqual(try TensionPreferences.decode(Data(contentsOf: received), defaults: tensionDefaultsData()).tension, 60)
         XCTAssertTrue(model.commandPreview.contains("--tension-config"))
+        XCTAssertTrue(model.commandPreview.contains("--screens"))
         finalStop = true
         model.stop()
         await fulfillment(of: [stopped], timeout: 10)
@@ -437,6 +448,7 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(args.contains("--generate-mapping"))
         XCTAssertTrue(args.contains("--jog-config"))
         XCTAssertFalse(args.contains("--tension-config"))
+        XCTAssertFalse(args.contains("--screens"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
         let forwarded = try JogPreferences.decode(Data(contentsOf: configURL), defaults: jogDefaultsData())
         XCTAssertEqual(forwarded, model.jog)

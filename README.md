@@ -23,9 +23,10 @@ below before using it for a set.
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
 
-The current portable build is **0.1.1-beta.3 (build 4)**. Its app, ZIP, and DMG
-have been rebuilt and verified. See the
+The published portable build is **0.1.1-beta.3 (build 4)**. See the
 [release notes and validation status](docs/release-0.1.1-beta.3.md).
+The October 22 local app rebuild adds the accepted S4 screens to normal
+full-controller startup; it is not a new GitHub release.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. macOS may block
 the first launch because it can't verify the developer. After attempting to
@@ -113,10 +114,18 @@ HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
 Neural Mix availability depends on the track and Djay support.
 
-**Screens, powered playback rotation, and haptic cues aren't supported.**
+**The updated app enables screens with the full-controller profile.**
+HOTCUE and SAMPLES show JUMP, active LOOP size, KEY and tempo RANGE.
+STEMS/MUTE shows the reactive mute/solo legend. Both use the accepted smooth
+font. Keep the prototype's Info Screen mapping selected, or install the updated
+app's mapping under a fresh name; older mappings lack numeric screen feedback.
+See [screen support](docs/screens.md) for setup, the NIHardwareAgent ownership
+conflict, and remaining physical checks. Older published apps do not enable
+these screens.
+Powered playback rotation and haptic cues aren't supported.
 JOG/TT select software wheel behavior, not powered platter rotation. The app
 does provide motor-assisted wheel tension in the full-controller profile,
-as described below. There are no on-device pad legends. Jog-ring animation
+as described below. Jog-ring animation
 remains decorative, not track-position or physical-platter-position tracking.
 
 ## App settings

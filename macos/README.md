@@ -3,6 +3,8 @@
 The app bundle packages the native status-bar app, the release bridge, its
 default LED, jog mapping, and hardware tension configurations, and a Djay MIDI
 mapping. It targets Apple Silicon (arm64) and macOS 12.0 or later.
+Builds also retain the embedded screen font's OFL notice as
+`Contents/Resources/S4ScreenSans-LICENSE.txt`.
 Build it on an Apple Silicon Mac with Xcode
 Command Line Tools, the Rust toolchain, and the locked Cargo dependencies
 available:
@@ -56,6 +58,31 @@ running.
    If only a blank S4 MK3 configuration appears, restart Djay with the bridge
    already running. Do not run a separate CLI bridge at the same time.
 5. Keep audio routed directly through the S4 in Djay.
+
+### S4 screens
+
+The October 22 local rebuild includes screens in **Full controller + LEDs +
+screens**. Use the normal **Start bridge** action; **Save and restart** keeps
+screens enabled alongside your saved LED and tension settings. Minimal MIDI,
+HID probe, controller checks and mapping export remain screen-free.
+
+HOTCUE/SAMPLES shows JUMP, active LOOP size, KEY and global RANGE.
+STEMS/MUTE shows actual mute/solo feedback; Shift changes the upper row to ONLY.
+All pages use the accepted smooth font, embedded in the bridge.
+
+Stop any separate prototype bridge before starting this app. The existing
+Info Screen mapping can stay selected. Otherwise use **Install Djay mapping...**
+under a new name and select it in Djay; older mappings lack numeric feedback.
+Preserve custom mappings. Quit Traktor/Mixxx before using the screens.
+If NIHardwareAgent owns display interface 4, quit it temporarily using the
+[ordered screen instructions](../docs/screens.md#macos-ownership-finding).
+The app does not quit other software. A screen-access failure appears in
+Diagnostics as `SCREENS_DISABLED`; MIDI, LEDs and saved tension keep running.
+The app's Stop/Quit path also stops screen service.
+
+This local rebuild keeps the existing version identifier; it is not a new
+public release. The older GitHub release does not include these screens.
+See the [app integration and package validation](../docs/app-screen-integration.md).
 
 ### Updated encoder layout
 
@@ -115,7 +142,8 @@ selected deck selector pulses while selecting, with a 1.2-second
 palette-brightness cycle and dark trough; hidden decks retain their modes
 without flashing inactive buttons. Mode exit restores normal lighting.
 **Stop bridge** followed by **Start bridge** initializes every mode flag off.
-Screens remain excluded. Hardware jog tension is configured separately below.
+The full profile also enables the S4 screens. Hardware jog tension is configured
+separately below.
 
 The user mouse-verified beat jump moving an active loop. Fresh MIDI/native
 and physical LED checks are still pending. Follow the
@@ -247,6 +275,12 @@ The verified build/UI evidence and remaining limits are recorded in
 [macos-app-qa.md](../docs/macos-app-qa.md).
 
 ## Developer checks
+
+The app's full-controller launch includes `--screens`. The standalone CLI
+still requires an explicit `--midi full --screens`. See
+[screen setup and physical checks](../docs/screens.md), including the
+NIHardwareAgent interface-ownership conflict. Existing published mapping-only
+builds do not contain this integration.
 
 ```sh
 swift test --package-path macos

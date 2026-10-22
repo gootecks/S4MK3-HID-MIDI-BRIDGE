@@ -35,6 +35,7 @@ done
 [[ -f "$ROOT/examples/tension-config.json" ]] || fail "missing default hardware tension config"
 [[ -f "$ROOT/macos/Info.plist" ]] || fail "missing app Info.plist"
 [[ -f "$ROOT/macos/Assets/AppIcon.png" ]] || fail "missing app icon"
+[[ -f "$ROOT/src/screens/text/LICENSE" ]] || fail "missing screen font license"
 
 PLIST_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/macos/Info.plist")"
 PLIST_RELEASE="$(/usr/libexec/PlistBuddy -c 'Print :S4BridgeReleaseVersion' "$ROOT/macos/Info.plist")"
@@ -65,6 +66,7 @@ cp "$BRIDGE" "$STAGED_APP/Contents/Resources/$BRIDGE_NAME"
 cp "$ROOT/examples/led-config.json" "$STAGED_APP/Contents/Resources/default-led-config.json"
 cp "$ROOT/examples/jog-config.json" "$STAGED_APP/Contents/Resources/default-jog-config.json"
 cp "$ROOT/examples/tension-config.json" "$STAGED_APP/Contents/Resources/default-tension-config.json"
+cp "$ROOT/src/screens/text/LICENSE" "$STAGED_APP/Contents/Resources/S4ScreenSans-LICENSE.txt"
 
 ICONSET="$STAGING/AppIcon.iconset"
 mkdir "$ICONSET"

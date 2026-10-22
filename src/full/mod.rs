@@ -6,6 +6,7 @@ pub mod jog;
 pub mod leds;
 pub mod mapping;
 pub mod output;
+pub mod screens;
 
 use std::collections::HashMap;
 use std::time::Duration;
@@ -134,10 +135,11 @@ pub struct FullBridge {
     translator: Translator,
     controls: Vec<Control>,
     messages: Vec<[u8; 3]>,
+    screens: screens::Output,
 }
 
 impl FullBridge {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(screen_output: bool) -> anyhow::Result<Self> {
         // Djay can return initial state as soon as the source appears.
         let feedback_input = feedback::FeedbackInput::new(mapping::PORT_NAME)?;
         let connection = MidiOutput::new("S4 MK3 full bridge")?
@@ -151,6 +153,7 @@ impl FullBridge {
             translator: Translator::default(),
             controls: Vec::with_capacity(160),
             messages: Vec::with_capacity(160),
+            screens: screens::Output::new(screen_output),
         })
     }
 
@@ -160,6 +163,10 @@ impl FullBridge {
         self.translator
             .sync_front_panel(&self.feedback, &mut self.messages)?;
         let sent = self.send_messages()?;
+        if received != 0 {
+            self.screens
+                .refresh(screens::pages(&self.translator, &self.feedback));
+        }
         Ok((received, sent))
     }
 
@@ -182,6 +189,8 @@ impl FullBridge {
         self.messages.clear();
         self.translator
             .translate(&self.controls, buttons, &mut self.messages)?;
+        self.screens
+            .publish(screens::pages(&self.translator, &self.feedback));
         self.send_messages()
     }
 
@@ -1860,6 +1869,35 @@ mod tests {
         run(&mut state, &[Control::Button("left_deck_switch_c", true)])?;
         // Then lights show C while the held Cue still belongs to A.
         assert_eq!(state.local_led_state().decks[0], 2);
+        assert_eq!(state.held["left_cue"][0].channel, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn screen_pages_follow_real_selectors_without_changing_held_note_ownership()
+    -> anyhow::Result<()> {
+        // Given Cue held on A.
+        let mut state = Translator::default();
+        run(&mut state, &[Control::Button("left_cue", true)])?;
+        let feedback = feedback::FeedbackState::default();
+        let initial = screens::pages(&state, &feedback);
+        // When C, STEMS, and Shift become the physical left side's current layer.
+        run(
+            &mut state,
+            &[
+                Control::Button("left_deck_switch_c", true),
+                Control::Button("left_stems_mode", true),
+                Control::Button("left_shift", true),
+            ],
+        )?;
+        let changed = screens::pages(&state, &feedback);
+        // Then the screen changes only that side while Cue retains its original owner.
+        assert!(matches!(
+            changed[0],
+            s4mk3_hid_midi_bridge::screens::page::Page::Stems { shifted: true, .. }
+        ));
+        assert_ne!(changed[0], initial[0]);
+        assert_eq!(changed[1], initial[1]);
         assert_eq!(state.held["left_cue"][0].channel, 0);
         Ok(())
     }

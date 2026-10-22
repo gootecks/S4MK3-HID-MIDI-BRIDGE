@@ -21,6 +21,17 @@ All channel labels in this document are **MIDI channels 1-based**, as requested.
 
 ## Generated S4 mapping shape
 
+The October 21 screen-data follow-up found live root outputs beyond the preset
+audit: global `userDefaults.DJTempoSliderRange`, selected
+`turntable1.skipping*BeatInterval` states, and original/current key-index values.
+The key fields in the historical factory-output union were HID declarations;
+their generic MIDI behavior was established by a separate live probe, not by
+that union. The October 22 source mapping now adds selected-jump flags on
+deck-channel CC80-89, active-loop flags on CC90-111, current key on CC112, and
+global tempo range on human channel 7 CC8, all from Djay to the bridge.
+The key codec uses 24 live-calibrated label/wire pairs.
+See [tested values and remaining limits](screen-feedback-investigation.md).
+
 The Mixer ON / Neural Mix EQ overlay replaces resetFilter on Note 20,
 channels 1-4, with turntableN.toggleUnmixerEQMode and embedded mode feedback.
 Its declared modelState is turntable.enableUnmixerEQ. The physical Filter
