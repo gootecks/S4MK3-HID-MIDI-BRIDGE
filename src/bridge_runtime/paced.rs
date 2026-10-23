@@ -16,12 +16,14 @@ pub enum Action<'a> {
     Motor([u8; 11]),
     Frame(&'a Frame),
     Feedback(u64),
+    Screens,
 }
 
 pub struct Output<F: FnMut(Action<'_>) -> anyhow::Result<()>> {
     service: F,
     finished: bool,
     recovery_since_us: Option<u64>,
+    input_seen: bool,
 }
 
 impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
@@ -30,6 +32,7 @@ impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
             service,
             finished: false,
             recovery_since_us: None,
+            input_seen: false,
         };
         (output.service)(Action::Motor(neutral_report()))?;
         Ok(output)
@@ -80,7 +83,9 @@ impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
                 );
             }
         }
-        (self.service)(Action::Frame(frame))
+        (self.service)(Action::Frame(frame))?;
+        self.input_seen = true;
+        Ok(())
     }
 }
 
@@ -137,6 +142,10 @@ where
             };
             (output.service)(Action::Motor(report))?;
             (output.service)(Action::Feedback(tick_us))?;
+            if output.input_seen {
+                // Screen USB starts only after input and a complete native LED tick.
+                (output.service)(Action::Screens)?;
+            }
             // No bursts to catch up slots consumed by MIDI, logging or native I/O.
             next_tick_us = tick_us.saturating_add(INTERVAL_US);
             continue;

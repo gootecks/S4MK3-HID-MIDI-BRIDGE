@@ -10,7 +10,12 @@ let package = Package(
             name: "S4Bridge",
             path: ".",
             exclude: ["build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests"],
-            sources: ["S4BridgeApp.swift"]
+            sources: [
+                "S4BridgeApp.swift", "ScreenPreferences.swift", "ScreenSupport.swift",
+                "ScreenSupport+Control.swift", "ScreenSettingsView.swift",
+                "BridgeController+Screens.swift", "ScreenPrompts.swift", "NIHardwareAgent.swift",
+                "NIHardwareAgentNative.swift", "BridgeStatusMenu.swift"
+            ]
         ),
         .testTarget(name: "S4BridgeTests", dependencies: ["S4Bridge"], path: "Tests")
     ]

@@ -114,11 +114,15 @@ HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
 Neural Mix availability depends on the track and Djay support.
 
-**The updated app enables screens with the full-controller profile.**
+**The updated app has a Screens tab and a shared Enable S4 screens menu toggle.**
 HOTCUE and SAMPLES show JUMP, active LOOP size, KEY and tempo RANGE.
 STEMS/MUTE shows the reactive mute/solo legend. Both use the accepted smooth
 font. Keep the prototype's Info Screen mapping selected, or install the updated
 app's mapping under a fresh name; older mappings lack numeric screen feedback.
+The new [screen-driver controls](docs/screen-driver-handover.md) can temporarily
+stop NIHardwareAgent with confirmation and restore it afterward. Manual recovery
+remains available even with screen support off. The handover development build
+is in `dist/Screens NI Handover Fix-20261023/`; older packages are preserved.
 See [screen support](docs/screens.md) for setup, the NIHardwareAgent ownership
 conflict, and remaining physical checks. Older published apps do not enable
 these screens.

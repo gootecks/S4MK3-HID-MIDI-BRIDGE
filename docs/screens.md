@@ -1,7 +1,10 @@
 # Experimental S4 screen support
 
 October 22, 2026. The updated menu-bar app enables screens with its normal
-full-controller Start action, alongside saved LED and tension preferences.
+full-controller Start action when **Enable S4 screens** is on, alongside saved
+LED and tension preferences. Its new Screens tab and shared menu toggle manage
+live screen support, consented NI driver handover and manual recovery; see the
+[screen-driver guide](screen-driver-handover.md).
 The standalone CLI remains opt-in with `--midi full --screens`. Older published
 apps do not enable screens. The info page requires a mapping containing numeric
 feedback; the prototype's Info Screen mapping already has it. Existing custom
@@ -270,6 +273,19 @@ at the same time.
    ```
 
    This does not disable its login item. Do not kill `usbaudiod`.
+
+   Confirm the agent is gone:
+
+   ```sh
+   pgrep -fl NIHardwareAgent
+   ```
+
+   Expect no output before continuing. Power-cycle the S4 now, with NI stopped,
+   and wait for both firmware logos. October 23 testing showed that SIGTERM can
+   leave the panels dark even after later valid frame transfers; resetting after
+   NI has stopped clears that state. The packaged app instead uses the
+   [guarded screen-preserving handover](screen-driver-handover.md), so its normal
+   workflow does not require this manual reset.
 
 3. Send the isolated test patterns:
 

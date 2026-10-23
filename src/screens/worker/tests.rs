@@ -142,3 +142,5 @@ fn transport_failure_ends_worker_without_reaching_control_service() -> anyhow::R
     // Then joining the screen worker does not propagate its failure to MIDI.
     Ok(())
 }
+
+mod managed;

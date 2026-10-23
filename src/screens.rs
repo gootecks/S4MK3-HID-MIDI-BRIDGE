@@ -15,7 +15,7 @@ pub mod info;
 pub mod page;
 mod text;
 mod worker;
-pub use worker::Worker;
+pub use worker::{Action as ControlAction, Control, Worker};
 
 pub const WIDTH: usize = 320;
 pub const HEIGHT: usize = 240;

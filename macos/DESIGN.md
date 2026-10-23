@@ -13,17 +13,38 @@ apply. No React, browser runtime, or downloaded assets are needed.
 - A persistent status-bar item opens Start/Stop, Settings, Check Controller,
   Install Mapping, and Quit actions. The first menu row states actual process
   status. No automatic bridge startup or forced restart.
-- Settings has Bridge, Jog, LEDs, Palette, and Diagnostics tabs. Status and Save/Apply
+- Settings has Bridge, Screens, Jog, LEDs, Palette, and Diagnostics tabs. Status and Save/Apply
   actions remain fixed; each tab body owns one vertical scroll region.
 - Bridge settings expose the actual CLI profile, bounded/continuous duration,
   raw logging, and log level. Mapping installation is a native save dialog that
   generates from the current jog settings through the bundled bridge executable.
-- The full-controller profile includes the accepted info and STEMS/MUTE screens,
-  LEDs and saved jog tension in the normal Start/Save-and-restart path.
+- The full-controller profile includes the accepted info and STEMS/MUTE screens
+  when screen support is enabled, alongside LEDs and saved jog tension.
   Minimal MIDI, HID probe, controller checks and mapping export never enable
-  screens. No separate screen preference or saved-file migration is needed.
-  Screen-interface failure stays in Diagnostics without stopping MIDI/LEDs;
-  the app never quits Native Instruments software automatically.
+  screens. A shared Enable S4 screens preference is available in the Screens
+  tab and status menu. It defaults on to preserve existing screen behavior;
+  automatic NI driver stopping defaults off and owned restoration defaults on.
+  Disabled screens skip automatic NI driver checks. Explicit manual recovery
+  remains available even when disabled and regardless of who stopped the agent.
+- The Screens tab uses native GroupBox sections for screen status, automatic
+  handover and manual NI driver recovery. Settings use the same 8/12/20 spacing,
+  semantic text colors and native toggles/buttons as existing tabs.
+  The enable toggle and automation preferences save immediately; screen toggles
+  affect only the screen worker, never silently restart MIDI/LED/jog service.
+- Agent confirmation uses the approved wording: "The Native Instruments screen
+  driver software is running in the background and will prevent the screens
+  from functioning in this app. We can temporarily stop it and restore it when
+  you quit." Actions are Enable screens, Continue without screens and Cancel,
+  with an explicit opt-in for future automatic stopping. Automatic restoration
+  alone is not permission to stop the agent. Screen handover uses guarded SIGKILL
+  for the verified NIHardwareAgent because its SIGTERM cleanup blanks the panels.
+  Never disable login registration or terminate NI applications; applications
+  using the service must be closed first.
+- Record restoration responsibility before stopping NI's service. Restore only
+  an agent this app stopped for automatic cleanup; manual restart has no such
+  requirement. Wait for screen-release acknowledgement or whole-child exit
+  before restoring. Keep NI stopped across Save and restart. Persist recovery
+  responsibility across a crash so the user can restore manually next launch.
 - Jog's Hardware group exposes the saved Jog Wheel Tension control for both
   physical wheels. Put its title and value above the label-hidden slider; the
   Assist, Neutral (0), and Brake legends share the slider's width. Neutral is
@@ -43,16 +64,23 @@ apply. No React, browser runtime, or downloaded assets are needed.
 - System window/control backgrounds, primary/secondary text, accent color.
 - System body font, headline labels, and monospaced log/command text.
 - Spacing: 8 points within rows, 12 between related controls, 20 around tab
-  content and groups. Content starts at 760 by 680 points, minimum 640 by 540;
+  content and groups. Content starts at 760 by 680 points, minimum 760 by 540;
   native title-bar/toolbar chrome is additional, not deducted from that minimum.
+  Six native toolbar tabs overflow entirely at 640 points on the tested macOS
+  version. The verified minimum width keeps Screens directly discoverable;
+  shorter windows still scroll vertically.
 - Native Button, Toggle, Picker, Stepper, TextField, Slider, GroupBox, and TabView.
 - Integer rows use the shared NumberRow (TextField plus Stepper) primitive.
   Floating-point percent rows use the shared DecimalRow primitive with the same
   8/12/20 spacing and trailing Stepper. No one-off field layouts.
 - State is communicated in text and an SF Symbol, not color alone.
-- Status menu uses a green SF Symbol while the bridge is running, and a template
+- Status menu uses a green SF Symbol while the bridge is running normally,
+  red when requested screens are blocked/failed, and a template
   SF Symbol in other states that follows light/dark menu-bar appearance.
   The S4 label and accessible process-state description remain present.
+  State text distinguishes "Bridge running" from "Screens blocked"; turning
+  screens off removes screen-related red attention. A blocked menu exposes
+  Enable screens / stop NI driver and the shared checked screen toggle.
   No custom animation in the app itself.
 - Keyboard access, native file dialogs, standard window close behavior, and
   accessible text labels are required. Closing Settings does not stop the bridge.

@@ -38,6 +38,65 @@ fn active_engine(setting: i32) -> anyhow::Result<Engine> {
 }
 
 #[test]
+fn screens_require_input_and_a_successful_native_feedback_tick() -> anyhow::Result<()> {
+    for input in [false, true] {
+        for fail_led in [false, true] {
+            // Given initialized output, with or without a queued input snapshot.
+            let mut engine = Engine::new(config(-25)?);
+            let (mut reader, frames, _done) = Reader::channels();
+            if input {
+                frames.send(frame(2001, [0, 0], 0))?;
+            }
+            let (stop_tx, stop) = crossbeam_channel::bounded(1);
+            let events = RefCell::new(Vec::new());
+            let mut output = Output::new(|action| {
+                match action {
+                    Action::Frame(_) => events.borrow_mut().push("input"),
+                    Action::Feedback(_) => {
+                        events.borrow_mut().push("feedback");
+                        if fail_led {
+                            anyhow::bail!("native LED write failed");
+                        }
+                        if !input {
+                            stop_tx.send(())?;
+                        }
+                    }
+                    Action::Screens => {
+                        events.borrow_mut().push("screens");
+                        stop_tx.send(())?;
+                    }
+                    Action::Initialize | Action::Motor(_) => {}
+                }
+                Ok(())
+            })?;
+            output.initialize()?;
+            // When the real scheduler services its first output tick.
+            let result = run(
+                &mut engine,
+                &mut reader,
+                &stop,
+                None,
+                || Ok(2001),
+                &mut output,
+            );
+            output.finish()?;
+            // Then screen publication follows successful output and never precedes input.
+            assert_eq!(result.is_err(), fail_led);
+            let mut expected = Vec::new();
+            if input {
+                expected.push("input");
+            }
+            expected.push("feedback");
+            if input && !fail_led {
+                expected.push("screens");
+            }
+            assert_eq!(*events.borrow(), expected);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn queued_one_wheel_release_precedes_overdue_motor_and_feedback() -> anyhow::Result<()> {
     // Given both wheels already assisting, and a queued left-only release.
     let mut engine = active_engine(-100)?;
@@ -53,7 +112,7 @@ fn queued_one_wheel_release_precedes_overdue_motor_and_feedback() -> anyhow::Res
                 actions.borrow_mut().push((2, neutral_report()));
                 stop_tx.send(())?;
             }
-            Action::Initialize => {}
+            Action::Initialize | Action::Screens => {}
         }
         Ok(())
     })?;
@@ -92,7 +151,7 @@ fn stop_wins_over_queued_force_without_dispatching_midi() -> anyhow::Result<()> 
     let mut output = Output::new(|action| {
         match action {
             Action::Motor(report) => writes.borrow_mut().push(report),
-            Action::Frame(_) | Action::Feedback(_) | Action::Initialize => {
+            Action::Frame(_) | Action::Feedback(_) | Action::Initialize | Action::Screens => {
                 anyhow::bail!("Stop must win before service dispatch")
             }
         }
@@ -140,7 +199,7 @@ fn runtime_faults_clear_force_before_returning() -> anyhow::Result<()> {
                 }
                 Action::Frame(_) if fault == 3 => anyhow::bail!("MIDI service failure"),
                 Action::Feedback(_) if fault == 5 => anyhow::bail!("LED service failure"),
-                Action::Initialize | Action::Frame(_) | Action::Feedback(_) => {}
+                Action::Initialize | Action::Frame(_) | Action::Feedback(_) | Action::Screens => {}
             }
             Ok(())
         })?;
@@ -182,7 +241,7 @@ fn analog_interrupt_reaches_service_unchanged_and_duration_stops_output() -> any
                 clock.set(10000);
             }
             Action::Motor(report) => writes.borrow_mut().push(report),
-            Action::Initialize | Action::Feedback(_) => {}
+            Action::Initialize | Action::Feedback(_) | Action::Screens => {}
         }
         Ok(())
     })?;
@@ -221,7 +280,7 @@ fn failed_startup_or_initialization_still_attempts_neutral() {
                         }
                     }
                     Action::Initialize => anyhow::bail!("ring initialization failed"),
-                    Action::Frame(_) | Action::Feedback(_) => {}
+                    Action::Frame(_) | Action::Feedback(_) | Action::Screens => {}
                 }
                 Ok(())
             })?;

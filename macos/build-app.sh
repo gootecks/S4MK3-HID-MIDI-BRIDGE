@@ -3,12 +3,17 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="S4 MK3 Bridge"
+OUTPUT_DIR="${S4_BRIDGE_OUTPUT_DIR:-$ROOT/dist}"
 APP_VERSION="$(awk -F '"' '/^version = / { print $2; exit }' "$ROOT/Cargo.toml")"
-APP_BUNDLE="$ROOT/dist/$APP_NAME.app"
+APP_BUNDLE="$OUTPUT_DIR/$APP_NAME.app"
 SWIFT_SOURCE="$ROOT/macos/S4BridgeApp.swift"
+SWIFT_SOURCES=()
+for source in "$ROOT"/macos/*.swift; do
+    [[ "$source" == "$ROOT/macos/Package.swift" ]] || SWIFT_SOURCES+=("$source")
+done
 BRIDGE_NAME="s4mk3-hid-midi-bridge"
 BRIDGE="$ROOT/target/release/$BRIDGE_NAME"
-DMG="$ROOT/dist/$APP_NAME-$APP_VERSION-arm64.dmg"
+DMG="$OUTPUT_DIR/$APP_NAME-$APP_VERSION-arm64.dmg"
 STAGING="$(mktemp -d "${TMPDIR:-/tmp}/s4mk3-app.XXXXXX")"
 STAGED_APP="$STAGING/$APP_NAME.app"
 
@@ -42,7 +47,7 @@ PLIST_RELEASE="$(/usr/libexec/PlistBuddy -c 'Print :S4BridgeReleaseVersion' "$RO
 [[ "$PLIST_RELEASE" == "$APP_VERSION" ]] || fail "update Info.plist release ($PLIST_RELEASE) to match Cargo.toml ($APP_VERSION)"
 [[ "$PLIST_VERSION" == "${APP_VERSION%%-*}" ]] || fail "update Info.plist numeric version ($PLIST_VERSION) to match Cargo.toml ($APP_VERSION)"
 
-mkdir -p "$ROOT/dist"
+mkdir -p "$OUTPUT_DIR"
 [[ ! -e "$APP_BUNDLE" ]] || fail "output already exists; move or remove it first: $APP_BUNDLE"
 [[ ! -e "$DMG" ]] || fail "output already exists; preserve it first: $DMG"
 
@@ -58,7 +63,7 @@ swiftc \
     -sdk "$SDK" \
     -framework AppKit \
     -framework SwiftUI \
-    "$SWIFT_SOURCE" \
+    "${SWIFT_SOURCES[@]}" \
     -o "$STAGED_APP/Contents/MacOS/S4Bridge"
 
 cp "$ROOT/macos/Info.plist" "$STAGED_APP/Contents/Info.plist"
@@ -106,8 +111,8 @@ codesign --force --sign - "$STAGED_APP"
 
 mv "$STAGED_APP" "$APP_BUNDLE"
 printf 'Created %s\n' "$APP_BUNDLE"
-ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ROOT/dist/$APP_NAME-arm64.zip"
-printf 'Created %s\n' "$ROOT/dist/$APP_NAME-arm64.zip"
+ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$OUTPUT_DIR/$APP_NAME-arm64.zip"
+printf 'Created %s\n' "$OUTPUT_DIR/$APP_NAME-arm64.zip"
 
 DMG_CONTENTS="$STAGING/dmg"
 mkdir "$DMG_CONTENTS"

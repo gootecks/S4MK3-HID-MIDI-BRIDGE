@@ -20,7 +20,7 @@ enum BridgeProfile: String, Codable, CaseIterable {
 
     var title: String {
         switch self {
-        case .full: return "Full controller + LEDs + screens"
+        case .full: return "Full controller + LED feedback"
         case .minimal: return "Minimal MIDI (Play, Cue, faders)"
         case .probe: return "HID probe (no MIDI)"
         }
@@ -43,11 +43,13 @@ struct RunPreferences: Codable, Equatable {
         }
     }
 
-    func arguments(ledURL: URL, tensionURL: URL) -> [String] {
+    func arguments(ledURL: URL, tensionURL: URL, screens: Bool = true) -> [String] {
         var arguments: [String] = []
         if profile != .probe { arguments += ["--midi", profile.rawValue] }
         if profile == .full {
-            arguments += ["--screens", "--led-config", ledURL.path, "--tension-config", tensionURL.path]
+            arguments += ["--screen-control-stdin"]
+            if screens { arguments += ["--screens"] }
+            arguments += ["--led-config", ledURL.path, "--tension-config", tensionURL.path]
         }
         arguments += limitDuration ? ["--seconds", String(durationSeconds)] : ["--until-stopped"]
         if rawReports { arguments.append("--raw") }
@@ -281,29 +283,38 @@ final class BridgeController: ObservableObject {
     let defaults: Data
     let jogDefaults: Data
     let tensionDefaults: Data
+    let screens: ScreenSupport
+    private var screenObservation: AnyCancellable?
+    private var screenInput: FileHandle?
+    private var launchID: UUID?
     private var invalidSavedTension = false
     private var process: Process?
     private var isDiagnostic = false
     private var stopRequested = false
     private var restartRequested = false
     private var quitRequested = false
+    var replyToQuit: (Bool) -> Void = { NSApp.reply(toApplicationShouldTerminate: $0) }
+    var screenConsent: () -> ScreenConsent = ScreenPrompts.confirmStop
+    var confirmDriverRestore: () async -> Bool = { ScreenPrompts.confirmStopBridge() }
 
-    var isBusy: Bool { process != nil }
-    var canStop: Bool { isBusy && state != .stopping }
+    var isBusy: Bool { process != nil || screens.busy }
+    var hasChildProcess: Bool { process != nil }
+    var canStop: Bool { process != nil && state != .stopping && !screens.busy }
     var ledURL: URL { supportURL.appendingPathComponent("led-config.json") }
     var jogURL: URL { supportURL.appendingPathComponent("jog-config.json") }
     var tensionURL: URL { supportURL.appendingPathComponent("tension-config.json") }
     var runURL: URL { supportURL.appendingPathComponent("run-settings.json") }
     var executableURL: URL { resourceURL.appendingPathComponent("s4mk3-hid-midi-bridge") }
     var commandPreview: String {
-        ([executableURL.path] + run.arguments(ledURL: ledURL, tensionURL: tensionURL))
+        ([executableURL.path] + run.arguments(ledURL: ledURL, tensionURL: tensionURL, screens: screens.preferences.enabled))
             .map { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }
             .joined(separator: " ")
     }
 
-    init(resourceURL: URL, supportURL: URL) throws {
+    init(resourceURL: URL, supportURL: URL, agent: NIHardwareAgentControlling? = nil) throws {
         self.resourceURL = resourceURL
         self.supportURL = supportURL
+        screens = ScreenSupport(supportURL: supportURL, agent: agent ?? NIHardwareAgent())
         defaults = try Data(contentsOf: resourceURL.appendingPathComponent("default-led-config.json"))
         leds = try LedPreferences.decode(defaults, defaults: defaults)
         jogDefaults = try Data(contentsOf: resourceURL.appendingPathComponent("default-jog-config.json"))
@@ -334,6 +345,13 @@ final class BridgeController: ObservableObject {
             requiresReset = true
             errorMessage = "Saved hardware tension could not be loaded: \(error.localizedDescription). Reset preferences before saving."
         }
+        if let error = screens.loadError {
+            requiresReset = true
+            errorMessage = "Saved screen preferences could not be loaded: \(error.localizedDescription). Reset preferences before saving."
+        }
+        screenObservation = screens.objectWillChange.sink { [weak self] in
+            self?.objectWillChange.send()
+        }
     }
 
     func appendLog(_ text: String) {
@@ -356,6 +374,7 @@ final class BridgeController: ObservableObject {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let runData = try encoder.encode(run)
+        try screens.save()
         try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
         try ledData.write(to: ledURL, options: .atomic)
         try jogData.write(to: jogURL, options: .atomic)
@@ -365,6 +384,7 @@ final class BridgeController: ObservableObject {
     }
 
     func apply() {
+        guard !screens.busy else { return }
         do {
             try save()
             message = "Preferences saved."
@@ -376,10 +396,31 @@ final class BridgeController: ObservableObject {
         guard !isBusy else { return }
         do {
             try save()
-            try launch(arguments: run.arguments(ledURL: ledURL, tensionURL: tensionURL), diagnostic: false)
         } catch {
             state = .failed
             report(error)
+            return
+        }
+        state = .starting
+        screens.beginOperation()
+        Task { @MainActor in
+            defer { finishScreenOperation() }
+            do {
+                let enabled = try await screens.prepare(full: run.profile == .full, consent: screenConsent)
+                guard let enabled, !quitRequested else {
+                    try await screens.restoreOwnedDriver()
+                    state = .stopped
+                    return
+                }
+                screens.bridgeStarted(screens: enabled, full: run.profile == .full)
+                try launch(arguments: run.arguments(
+                    ledURL: ledURL, tensionURL: tensionURL, screens: enabled
+                ), diagnostic: false)
+            } catch {
+                await screens.bridgeExited(restarting: false)
+                state = .failed
+                report(error)
+            }
         }
     }
 
@@ -395,12 +436,14 @@ final class BridgeController: ObservableObject {
     private func launch(arguments: [String], diagnostic: Bool) throws {
         let child = Process()
         let pipe = Pipe()
+        let token = UUID()
+        launchID = token
         child.executableURL = executableURL
         child.arguments = arguments
         var environment = ProcessInfo.processInfo.environment
         environment["RUST_LOG"] = run.logLevel
         child.environment = environment
-        child.standardInput = FileHandle.nullDevice
+        let input = try screenControlInput(for: child, diagnostic: diagnostic)
         child.standardOutput = pipe.fileHandleForWriting
         child.standardError = pipe.fileHandleForWriting
         isDiagnostic = diagnostic
@@ -411,36 +454,31 @@ final class BridgeController: ObservableObject {
         process = child
         state = diagnostic ? .checking : .starting
         let output = OutputBuffer()
-        let deliver: @Sendable () -> Void = { [weak self] in
-            DispatchQueue.main.async { self?.flush(output) }
-        }
-        let reportReadError: @Sendable (Error) -> Void = { [weak self] error in
-            DispatchQueue.main.async { self?.report(error) }
-        }
-        let reader = Task.detached {
-            do {
-                for try await line in pipe.fileHandleForReading.bytes.lines {
-                    if output.append(line) { deliver() }
-                }
-                try pipe.fileHandleForReading.close()
-            } catch { reportReadError(error) }
-        }
+        let reader = readOutput(pipe: pipe, output: output, token: token)
         child.terminationHandler = { [weak self] completed in
             Task { @MainActor in
                 await reader.value
                 self?.flush(output)
-                self?.completed(completed)
+                await self?.completed(completed)
             }
         }
         appendLog("LAUNCH: \(arguments.joined(separator: " "))")
         do {
             try child.run()
+            try input?.fileHandleForReading.close()
             try pipe.fileHandleForWriting.close()
             if !diagnostic { state = .running }
         } catch {
+            if child.isRunning {
+                report(error)
+                stop()
+                return
+            }
             child.terminationHandler = nil
             if !child.isRunning {
                 process = nil
+                closeScreenInput()
+                try input?.fileHandleForReading.close()
                 try pipe.fileHandleForWriting.close()
             }
             throw error
@@ -457,6 +495,7 @@ final class BridgeController: ObservableObject {
         restartRequested = restart
         stopRequested = true
         state = .stopping
+        guard child.isRunning else { return }
         if kill(child.processIdentifier, SIGINT) != 0 {
             restartRequested = false
             stopRequested = false
@@ -464,19 +503,80 @@ final class BridgeController: ObservableObject {
             state = .failed
             if quitRequested {
                 quitRequested = false
-                NSApp.reply(toApplicationShouldTerminate: false)
+                replyToQuit(false)
             }
         }
     }
 
-    private func completed(_ child: Process) {
+    private func screenControlInput(for child: Process, diagnostic: Bool) throws -> Pipe? {
+        let input = !diagnostic && run.profile == .full ? Pipe() : nil
+        if let input {
+            guard fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1) != -1 else {
+                throw AppError.invalid("Could not configure the screen control pipe.")
+            }
+            child.standardInput = input.fileHandleForReading
+            screenInput = input.fileHandleForWriting
+            screens.sendCommand = { [weak self] generation, command in
+                guard let writer = self?.screenInput else {
+                    throw AppError.invalid("The bridge's screen control connection is closed.")
+                }
+                try writer.write(contentsOf: Data("S4_SCREEN_CONTROL \(generation) \(command.rawValue)\n".utf8))
+            }
+        } else {
+            child.standardInput = FileHandle.nullDevice
+        }
+        return input
+    }
+
+    private func readOutput(pipe: Pipe, output: OutputBuffer, token: UUID) -> Task<Void, Never> {
+        let deliver: @Sendable () -> Void = { [weak self] in
+            DispatchQueue.main.async { self?.flush(output) }
+        }
+        let reportReadError: @Sendable (Error) -> Void = { [weak self] error in
+            DispatchQueue.main.async { self?.report(error) }
+        }
+        let screenStatus: @Sendable (String) -> Void = { [weak self] line in
+            DispatchQueue.main.async {
+                guard let self, self.launchID == token else { return }
+                self.screens.acceptStatus(line)
+            }
+        }
+        return Task.detached {
+            do {
+                for try await line in pipe.fileHandleForReading.bytes.lines {
+                    if line.hasPrefix("S4_SCREEN_STATUS ") { screenStatus(line) }
+                    if output.append(line) { deliver() }
+                }
+                try pipe.fileHandleForReading.close()
+            } catch { reportReadError(error) }
+        }
+    }
+
+
+    private func closeScreenInput() {
+        if let input = screenInput {
+            do { try input.close() }
+            catch { report(error) }
+        }
+        screenInput = nil
+        launchID = nil
+        screens.sendCommand = nil
+    }
+
+    private func completed(_ child: Process) async {
         guard process === child else { return }
         let normalStop = child.terminationStatus == 0 ||
             (stopRequested && child.terminationReason == .uncaughtSignal && child.terminationStatus == SIGINT)
         let restart = restartRequested && normalStop
         let wasDiagnostic = isDiagnostic
         process = nil
+        closeScreenInput()
         restartRequested = false
+        screens.beginOperation()
+        if !wasDiagnostic || screens.restoreAfterExit {
+            await screens.bridgeExited(restarting: restart && !quitRequested)
+        }
+        screens.endOperation()
         state = normalStop ? .stopped : .failed
         appendLog("EXIT: \(child.terminationStatus)")
         if !normalStop {
@@ -486,18 +586,41 @@ final class BridgeController: ObservableObject {
         } else {
             message = "Bridge stopped."
         }
-        if quitRequested {
-            NSApp.reply(toApplicationShouldTerminate: true)
+        if quitRequested && !screens.busy {
+            replyToQuit(true)
         } else if restart {
             start()
         }
     }
 
     func prepareToQuit() -> NSApplication.TerminateReply {
-        guard isBusy else { return .terminateNow }
+        guard isBusy || (screens.preferences.restorePending && screens.preferences.restoreNIOnStop) else { return .terminateNow }
         quitRequested = true
-        if state != .stopping { stop() }
+        guard !screens.busy else { return .terminateLater }
+        if process == nil && !screens.busy {
+            screens.beginOperation()
+            Task { @MainActor in
+                await screens.bridgeExited(restarting: false)
+                screens.endOperation()
+                replyToQuit(true)
+            }
+        } else if process != nil && state != .stopping { stop() }
         return quitRequested ? .terminateLater : .terminateCancel
+    }
+
+    func finishScreenOperation() {
+        screens.endOperation()
+        guard quitRequested && !screens.busy else { return }
+        if process != nil {
+            if state != .stopping { stop() }
+        } else {
+            screens.beginOperation()
+            Task { @MainActor in
+                await screens.bridgeExited(restarting: false)
+                screens.endOperation()
+                replyToQuit(true)
+            }
+        }
     }
 
     func resetPreferences() {
@@ -506,6 +629,7 @@ final class BridgeController: ObservableObject {
             jog = try JogPreferences.decode(jogDefaults, defaults: jogDefaults)
             tension = try TensionPreferences.decode(tensionDefaults, defaults: tensionDefaults)
             run = RunPreferences()
+            screens.reset()
             invalidSavedTension = false
             requiresReset = false
             errorMessage = ""
@@ -723,8 +847,13 @@ struct ColorArrayEditor: View {
     }
 }
 
+enum SettingsTab: Hashable {
+    case bridge, screens, jog, leds, palette, diagnostics
+}
+
 struct BridgeSettingsView: View {
     @ObservedObject var controller: BridgeController
+    @State var selectedTab: SettingsTab = .bridge
 
     var body: some View {
         VStack(spacing: 12) {
@@ -744,23 +873,25 @@ struct BridgeSettingsView: View {
                     .lineLimit(3).help(controller.errorMessage)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20)
             }
-            TabView {
-                bridgeTab.tabItem { Label("Bridge", systemImage: "slider.horizontal.3") }
-                jogTab.tabItem { Label("Jog", systemImage: "rotate.right") }
-                ledTab.tabItem { Label("LEDs", systemImage: "lightbulb") }
-                paletteTab.tabItem { Label("Palette", systemImage: "paintpalette") }
-                diagnosticsTab.tabItem { Label("Diagnostics", systemImage: "terminal") }
+            TabView(selection: $selectedTab) {
+                bridgeTab.tabItem { Label("Bridge", systemImage: "slider.horizontal.3") }.tag(SettingsTab.bridge)
+                ScreenSettingsView(controller: controller)
+                    .tabItem { Label("Screens", systemImage: "display.2") }.tag(SettingsTab.screens)
+                jogTab.tabItem { Label("Jog", systemImage: "rotate.right") }.tag(SettingsTab.jog)
+                ledTab.tabItem { Label("LEDs", systemImage: "lightbulb") }.tag(SettingsTab.leds)
+                paletteTab.tabItem { Label("Palette", systemImage: "paintpalette") }.tag(SettingsTab.palette)
+                diagnosticsTab.tabItem { Label("Diagnostics", systemImage: "terminal") }.tag(SettingsTab.diagnostics)
             }.padding(.horizontal, 16)
             HStack {
                 Text(controller.message).font(.caption).foregroundColor(.secondary)
                     .lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
                 Button("Reset preferences…") { confirmReset() }
                 Button(controller.isBusy ? "Save and restart" : "Save preferences") { controller.apply() }
-                    .disabled(controller.state == .stopping || controller.state == .checking)
+                    .disabled(controller.state == .stopping || controller.state == .checking || controller.screens.busy)
                     .keyboardShortcut("s", modifiers: .command)
             }.padding(.horizontal, 20).padding(.bottom, 16)
         }
-        .frame(minWidth: 640, minHeight: 540)
+        .frame(minWidth: 760, minHeight: 540)
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -773,7 +904,7 @@ struct BridgeSettingsView: View {
                 section("Bridge operation") {
                     Picker("Profile", selection: $controller.run.profile) {
                         ForEach(BridgeProfile.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
+                    }.disabled(controller.screens.busy)
                     Toggle("Stop after a fixed duration", isOn: $controller.run.limitDuration)
                     if controller.run.limitDuration {
                         NumberRow(title: "Run duration", value: $controller.run.durationSeconds, range: 1...604800, unit: "seconds")
@@ -992,21 +1123,29 @@ struct BridgeSettingsView: View {
 }
 
 @MainActor
-func bridgeStatusImage(for state: BridgeState) -> NSImage? {
+func bridgeStatusImage(for state: BridgeState, screenAttention: Bool = false) -> NSImage? {
     let image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "S4 MK3 Bridge")
     if state == .running {
-        return image?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [.systemGreen]))
+        return image?.withSymbolConfiguration(NSImage.SymbolConfiguration(
+            paletteColors: [screenAttention ? .systemRed : .systemGreen]
+        ))
     }
     image?.isTemplate = true
     return image
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: BridgeController?
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
     private var observation: AnyCancellable?
+    private var screenObservation: AnyCancellable?
+
+    init(controller: BridgeController? = nil) {
+        self.controller = controller
+        super.init()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -1021,6 +1160,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusItem = item
             item.button?.title = " S4"
             observation = model.$state.sink { [weak self] state in self?.updateMenu(state) }
+            screenObservation = model.screens.objectWillChange.sink { [weak self, weak model] in
+                DispatchQueue.main.async {
+                    guard let model else { return }
+                    self?.updateMenu(model.state)
+                }
+            }
             showSettings()
         } catch {
             let alert = NSAlert(error: error)
@@ -1030,49 +1175,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateMenu(_ state: BridgeState) {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        let status = NSMenuItem(title: "Bridge: \(state.rawValue)", action: nil, keyEquivalent: "")
-        status.isEnabled = false
-        menu.addItem(status)
-        menu.addItem(.separator())
-        addItem("Start bridge", action: #selector(start), to: menu, enabled: controller?.isBusy == false)
-        addItem("Stop bridge", action: #selector(stop), to: menu, enabled: controller?.isBusy == true && state != .stopping)
-        menu.addItem(.separator())
-        addItem("Settings…", action: #selector(showSettings), to: menu)
-        addItem("Install Djay mapping…", action: #selector(installMapping), to: menu)
-        addItem("Check controller", action: #selector(checkController), to: menu, enabled: controller?.isBusy == false)
-        menu.addItem(.separator())
-        addItem("Quit S4 MK3 Bridge", action: #selector(quit), to: menu)
-        statusItem?.menu = menu
-        statusItem?.button?.image = bridgeStatusImage(for: state)
-        statusItem?.button?.setAccessibilityLabel("S4 MK3 Bridge, \(state.rawValue)")
+        statusItem?.menu = bridgeStatusMenu(controller: controller, state: state, target: self)
+        statusItem?.button?.image = bridgeStatusImage(for: state, screenAttention: controller?.screens.needsAttention == true)
+        statusItem?.button?.setAccessibilityLabel("S4 MK3 Bridge, \(state.rawValue), \(controller?.screens.state.rawValue ?? "")")
     }
 
-    private func addItem(_ title: String, action: Selector, to menu: NSMenu, enabled: Bool = true) {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-        item.target = self
-        item.isEnabled = enabled
-        menu.addItem(item)
+    @objc func start() { controller?.start() }
+    @objc func toggleScreens() {
+        guard let controller else { return }
+        controller.setScreensEnabled(!controller.screens.preferences.enabled)
     }
-
-    @objc private func start() { controller?.start() }
-    @objc private func stop() { controller?.stop() }
-    @objc private func checkController() { controller?.checkController() }
-    @objc private func quit() { NSApp.terminate(nil) }
-    @objc private func installMapping() {
+    @objc func enableScreens() { controller?.enableScreensByStoppingDriver() }
+    @objc func restoreDriver() { controller?.restartNIDriver() }
+    func menuWillOpen(_ menu: NSMenu) {
+        guard let controller else { return }
+        controller.screens.refreshDriverStatus()
+        let refreshed = bridgeStatusMenu(controller: controller, state: controller.state, target: self)
+        menu.removeAllItems()
+        for item in refreshed.items {
+            refreshed.removeItem(item)
+            menu.addItem(item)
+        }
+    }
+    @objc func stop() { controller?.stop() }
+    @objc func checkController() { controller?.checkController() }
+    @objc func quit() { NSApp.terminate(nil) }
+    @objc func installMapping() {
         NSApp.activate(ignoringOtherApps: true)
         controller?.installMapping()
     }
 
-    @objc private func showSettings() {
+    @objc func showSettings() {
         guard let controller else { return }
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 680),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered, defer: false)
             window.title = "S4 MK3 Bridge"
-            window.contentMinSize = NSSize(width: 640, height: 540)
+            window.contentMinSize = NSSize(width: 760, height: 540)
             window.contentView = NSHostingView(rootView: BridgeSettingsView(controller: controller))
             window.isReleasedWhenClosed = false
             window.center()

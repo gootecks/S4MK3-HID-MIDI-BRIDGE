@@ -66,7 +66,7 @@ final class BridgeTests: XCTestCase {
         let tensionPath = URL(fileURLWithPath: "/tmp/Tension config with spaces.json")
         var settings = RunPreferences()
         XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), [
-            "--midi", "full", "--screens", "--led-config", path.path,
+            "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", path.path,
             "--tension-config", tensionPath.path, "--until-stopped"
         ])
         settings.profile = .minimal
@@ -98,7 +98,7 @@ final class BridgeTests: XCTestCase {
         let saved = support.appendingPathComponent("led-config.json")
         let invalid = Data(#"{"deck_colors":[]}"#.utf8)
         try invalid.write(to: saved)
-        let model = try BridgeController(resourceURL: fixture, supportURL: support)
+        let model = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertTrue(model.requiresReset)
         XCTAssertThrowsError(try model.save())
         XCTAssertEqual(try Data(contentsOf: saved), invalid)
@@ -115,7 +115,7 @@ final class BridgeTests: XCTestCase {
         let executable = fixture.appendingPathComponent("s4mk3-hid-midi-bridge")
         try Data("#!/bin/sh\nprintf 'CHECK:%s\\n' \"$*\"\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         let ended = expectation(description: "enumeration subprocess exited and output was drained")
         var checking = false
         let subscription = model.$state.sink { state in
@@ -154,7 +154,7 @@ final class BridgeTests: XCTestCase {
         """
         try Data(script.utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         let ready = expectation(description: "child installed its signal handler and opened the FIFO")
         let exited = expectation(description: "child acknowledged SIGINT and exited")
         var didSignalReady = false
@@ -173,7 +173,7 @@ final class BridgeTests: XCTestCase {
         await fulfillment(of: [ready], timeout: 10)
         XCTAssertEqual(try String(contentsOf: argumentsURL, encoding: .utf8)
             .split(separator: "\n").map(String.init), [
-                "--midi", "full", "--screens", "--led-config", model.ledURL.path,
+                "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", model.ledURL.path,
                 "--tension-config", model.tensionURL.path, "--until-stopped"
             ])
         model.stop()
@@ -215,7 +215,7 @@ final class BridgeTests: XCTestCase {
     @MainActor
     func testJogSavedPreferencesPersistenceAbsenceAndInvalid() throws {
         let absent = try makeFixture()
-        let absentModel = try BridgeController(resourceURL: absent, supportURL: absent.appendingPathComponent("support"))
+        let absentModel = try testController(resourceURL: absent, supportURL: absent.appendingPathComponent("support"))
         XCTAssertFalse(absentModel.requiresReset)
         XCTAssertEqual(absentModel.jog, try JogPreferences.decode(jogDefaultsData(), defaults: jogDefaultsData()))
 
@@ -224,18 +224,18 @@ final class BridgeTests: XCTestCase {
         try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         try Data(#"{"scratch_speed":3.5,"pitch_bend_reaction":42}"#.utf8)
             .write(to: support.appendingPathComponent("jog-config.json"))
-        let persisted = try BridgeController(resourceURL: fixture, supportURL: support)
+        let persisted = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertFalse(persisted.requiresReset)
         XCTAssertEqual(persisted.jog.scratchSpeed, 3.5)
         XCTAssertEqual(persisted.jog.pitchBendReaction, 42)
         XCTAssertEqual(persisted.jog.scratchReaction, 150)
         try persisted.save()
-        let reloaded = try BridgeController(resourceURL: fixture, supportURL: support)
+        let reloaded = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertEqual(reloaded.jog, persisted.jog)
 
         let invalid = Data(#"{"scratch_reaction":151}"#.utf8)
         try invalid.write(to: support.appendingPathComponent("jog-config.json"))
-        let broken = try BridgeController(resourceURL: fixture, supportURL: support)
+        let broken = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertTrue(broken.requiresReset)
         XCTAssertThrowsError(try broken.save())
         XCTAssertEqual(try Data(contentsOf: support.appendingPathComponent("jog-config.json")), invalid)
@@ -286,7 +286,7 @@ final class BridgeTests: XCTestCase {
     func testTensionPersistenceDefaultsAndInvalidEditorPreserveOtherPreferences() throws {
         let fixture = try makeFixture()
         let support = fixture.appendingPathComponent("support")
-        let model = try BridgeController(resourceURL: fixture, supportURL: support)
+        let model = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertFalse(model.requiresReset)
         XCTAssertEqual(model.tension.tension, 0)
         XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
@@ -300,7 +300,7 @@ final class BridgeTests: XCTestCase {
         model.tension.tension = -70
         try model.save()
         let savedTension = try Data(contentsOf: model.tensionURL)
-        let reloaded = try BridgeController(resourceURL: fixture, supportURL: support)
+        let reloaded = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertEqual(reloaded.tension, model.tension)
         XCTAssertEqual(reloaded.leds, model.leds)
         XCTAssertEqual(reloaded.jog, model.jog)
@@ -320,13 +320,13 @@ final class BridgeTests: XCTestCase {
     func testTensionInvalidSavedValuesRequireExplicitReset() throws {
         let fixture = try makeFixture()
         let support = fixture.appendingPathComponent("support")
-        let initial = try BridgeController(resourceURL: fixture, supportURL: support)
+        let initial = try testController(resourceURL: fixture, supportURL: support)
         initial.leds.loopColor = "blue"
         initial.jog.scratchSpeed = 3.5
         try initial.save()
         let invalid = Data(#"{"tension":true}"#.utf8)
         try invalid.write(to: initial.tensionURL)
-        let broken = try BridgeController(resourceURL: fixture, supportURL: support)
+        let broken = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertTrue(broken.requiresReset)
         XCTAssertFalse(broken.errorMessage.isEmpty)
         XCTAssertEqual(broken.leds, initial.leds)
@@ -338,7 +338,7 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(broken.tension.tension, 0)
         XCTAssertEqual(try Data(contentsOf: broken.tensionURL), invalid)
         try broken.save()
-        let reloaded = try BridgeController(resourceURL: fixture, supportURL: support)
+        let reloaded = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertFalse(reloaded.requiresReset)
         XCTAssertEqual(reloaded.tension.tension, 0)
     }
@@ -373,7 +373,7 @@ final class BridgeTests: XCTestCase {
         """
         try Data(script.utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         let ready = expectation(description: "helper read first saved tension and installed signal handler")
         let restarted = expectation(description: "restarted helper read updated saved tension")
         let stopped = expectation(description: "restarted helper exited after final stop")
@@ -433,7 +433,7 @@ final class BridgeTests: XCTestCase {
         """
         try Data(script.utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         model.jog.scratchSpeed = 3.5
         model.jog.pitchBendReaction = 42
         model.tension.tension = 85
@@ -461,7 +461,7 @@ final class BridgeTests: XCTestCase {
         let executable = fixture.appendingPathComponent("s4mk3-hid-midi-bridge")
         try Data("#!/bin/sh\necho 'generator boom' >&2\nexit 3\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         let destination = fixture.appendingPathComponent("S4 MK3 Bridge.djayMidiMapping")
         try Data("OLD-MAPPING".utf8).write(to: destination)
         do {
@@ -482,7 +482,7 @@ final class BridgeTests: XCTestCase {
         let executable = fixture.appendingPathComponent("s4mk3-hid-midi-bridge")
         try Data("#!/bin/sh\nprintf 'MAPPING-BYTES' > \"$2\"\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
-        let model = try BridgeController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
+        let model = try testController(resourceURL: fixture, supportURL: fixture.appendingPathComponent("support"))
         let destination = fixture.appendingPathComponent("existing-directory")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let sentinel = destination.appendingPathComponent("keep.txt")
@@ -496,6 +496,11 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(failed)
         XCTAssertEqual(try Data(contentsOf: sentinel), contents)
         XCTAssertFalse(model.isExporting)
+    }
+
+    @MainActor
+    private func testController(resourceURL: URL, supportURL: URL) throws -> BridgeController {
+        try BridgeController(resourceURL: resourceURL, supportURL: supportURL, agent: TestNIHardwareAgent())
     }
 
     private func jogDefaultsData() throws -> Data {

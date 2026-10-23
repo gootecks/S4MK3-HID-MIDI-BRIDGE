@@ -2,6 +2,9 @@
 
 October 22, 2026. This is a local rebuild, not a new public release.
 The version remains 0.1.1-beta.3, numeric 0.1.1, build 4.
+This historical record covers the initial screen integration committed as
+`93632c6`, before screen preferences and NI driver handover were added. For the
+current build, use the [screen-driver handover guide](screen-driver-handover.md).
 
 ## Use the updated app
 

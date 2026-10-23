@@ -8,6 +8,7 @@ mod key;
 
 pub struct Output {
     enabled: bool,
+    managed: bool,
     worker: Option<s4mk3_hid_midi_bridge::screens::Worker>,
 }
 
@@ -15,12 +16,36 @@ impl Output {
     pub const fn new(enabled: bool) -> Self {
         Self {
             enabled,
+            managed: false,
             worker: None,
         }
     }
 
-    /// Input reports reach this point only after native HID initialization.
+    pub fn managed(enabled: bool) -> anyhow::Result<Self> {
+        Ok(Self {
+            enabled,
+            managed: true,
+            worker: Some(s4mk3_hid_midi_bridge::screens::Worker::start_managed(
+                enabled,
+            )?),
+        })
+    }
+
+    pub fn control(&self) -> Option<s4mk3_hid_midi_bridge::screens::Control> {
+        self.worker
+            .as_ref()
+            .filter(|_| self.managed)
+            .map(s4mk3_hid_midi_bridge::screens::Worker::control)
+    }
+
+    /// Publication follows initialized input and a completed native output tick.
     pub fn publish(&mut self, pages: [Page; 2]) {
+        if self.managed {
+            if let Some(worker) = &mut self.worker {
+                worker.publish(pages);
+            }
+            return;
+        }
         if !self.enabled {
             return;
         }
@@ -34,13 +59,15 @@ impl Output {
                 }
             }
         }
-        self.refresh(pages);
+        if let Some(worker) = &mut self.worker {
+            worker.publish(pages);
+        }
     }
 
     /// Feedback can refresh an existing worker, but cannot start USB early.
     pub fn refresh(&mut self, pages: [Page; 2]) {
         if let Some(worker) = &mut self.worker {
-            worker.publish(pages);
+            worker.refresh(pages);
         }
     }
 }

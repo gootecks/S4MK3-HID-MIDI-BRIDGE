@@ -10,6 +10,19 @@ fn screen_output_requires_explicit_full_profile_before_usb() -> anyhow::Result<(
         vec!["--midi", "minimal", "--screens"],
         vec!["--list", "--screens"],
         vec!["--generate-mapping", "/dev/null/not-created", "--screens"],
+        vec!["--screen-control-stdin"],
+        vec!["--midi", "minimal", "--screen-control-stdin"],
+        vec!["--list", "--midi", "full", "--screen-control-stdin"],
+        vec![
+            "--generate-mapping",
+            "/dev/null/not-created",
+            "--screen-control-stdin",
+        ],
+        vec![
+            "--generate-screen-previews",
+            "/dev/null/not-created",
+            "--screen-control-stdin",
+        ],
     ] {
         // When the actual executable validates the arguments.
         let output = Command::new(env!("CARGO_BIN_EXE_s4mk3-hid-midi-bridge"))

@@ -6,6 +6,7 @@ mod input;
 mod midi;
 #[path = "jog_diagnostic/ownership.rs"]
 mod ownership;
+mod screens_control;
 
 use std::num::NonZeroU64;
 use std::path::PathBuf;
@@ -81,6 +82,10 @@ struct ScreenArgs {
     #[arg(long = "screens", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
     enabled: bool,
 
+    /// Accept live screen ON/OFF/RETRY commands on stdin; EOF stops the bridge.
+    #[arg(long = "screen-control-stdin", requires = "midi", conflicts_with_all = ["list", "generate_mapping", "generate_screen_previews"])]
+    control_stdin: bool,
+
     /// Export screen routing, feedback, and held-pad rasters without USB or MIDI.
     #[arg(long, value_name = "DIR", conflicts_with_all = ["midi", "list", "raw", "generate_mapping", "jog_config"])]
     generate_screen_previews: Option<PathBuf>,
@@ -107,6 +112,10 @@ fn main() -> anyhow::Result<()> {
     ensure!(
         !args.screens.enabled || matches!(args.midi, Some(MidiProfile::Full)),
         "--screens requires --midi full"
+    );
+    ensure!(
+        !args.screens.control_stdin || matches!(args.midi, Some(MidiProfile::Full)),
+        "--screen-control-stdin requires --midi full"
     );
     let tension = args
         .tension_config
@@ -231,12 +240,12 @@ fn run_probe(
     let led_config = matches!(args.midi, Some(MidiProfile::Full))
         .then(|| full::leds::LedConfig::load(args.led_config.as_deref()))
         .transpose()?;
-    let stop_rx = stop_signal()?;
+    let (stop_tx, stop_rx) = stop_signal()?;
     let mut midi = matches!(args.midi, Some(MidiProfile::Minimal))
         .then(midi::MidiBridge::new)
         .transpose()?;
     let mut full = matches!(args.midi, Some(MidiProfile::Full))
-        .then(|| full::FullBridge::new(args.screens.enabled))
+        .then(|| screens_control::bridge(args, stop_tx))
         .transpose()?;
     let mut full_leds = full
         .as_ref()
@@ -283,15 +292,13 @@ fn run_probe(
                 }
             }
             if let Some(bridge) = &mut full {
-                let buttons = if report.first() == Some(&1) {
-                    Some(
+                let buttons = (report.first() == Some(&1))
+                    .then(|| {
                         payload
                             .try_into()
-                            .context("full button payload must have 22 bytes")?,
-                    )
-                } else {
-                    None
-                };
+                            .context("full button payload must have 22 bytes")
+                    })
+                    .transpose()?;
                 let sent = bridge.send_report(&events, buttons)?;
                 counts.midi_messages = counts.midi_messages.saturating_add(u64::try_from(sent)?);
             }
@@ -325,20 +332,25 @@ fn run_probe(
                 now,
             )?;
             counts.led_writes = counts.led_writes.saturating_add(u64::try_from(writes)?);
+            bridge.publish_screens();
         }
     }
     report_probe_counts(args, &counts)
 }
 
-fn stop_signal() -> anyhow::Result<crossbeam_channel::Receiver<()>> {
+fn stop_signal() -> anyhow::Result<(
+    crossbeam_channel::Sender<()>,
+    crossbeam_channel::Receiver<()>,
+)> {
     let (sender, receiver) = crossbeam_channel::bounded(1);
+    let interrupt = sender.clone();
     ctrlc::set_handler(move || {
-        if let Err(error) = sender.try_send(()) {
+        if let Err(error) = interrupt.try_send(()) {
             warn!(%error, "could not enqueue stop signal");
         }
     })
     .context("install Ctrl-C handler")?;
-    Ok(receiver)
+    Ok((sender, receiver))
 }
 
 fn report_probe_counts(args: &Args, counts: &ProbeCounts) -> anyhow::Result<()> {
@@ -673,6 +685,24 @@ mod tests {
             Args::try_parse_from(["probe", "--midi", "full", "--until-stopped"])?.until_stopped
         );
         assert!(Args::try_parse_from(["probe", "--until-stopped", "--seconds", "60"]).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn managed_screen_stdin_accepts_full_profile_with_or_without_initial_screens()
+    -> anyhow::Result<()> {
+        for enabled in [false, true] {
+            // Given an explicitly requested full controller runtime.
+            let mut arguments = vec!["probe", "--midi", "full", "--screen-control-stdin"];
+            if enabled {
+                arguments.push("--screens");
+            }
+            // When the CLI parses the managed screen invocation.
+            let args = Args::try_parse_from(arguments)?;
+            // Then both enabled and initially-off generations are admitted.
+            assert!(args.screens.control_stdin);
+            assert_eq!(args.screens.enabled, enabled);
+        }
         Ok(())
     }
 

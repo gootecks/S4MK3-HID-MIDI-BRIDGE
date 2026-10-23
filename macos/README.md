@@ -61,9 +61,10 @@ running.
 
 ### S4 screens
 
-The October 22 local rebuild includes screens in **Full controller + LEDs +
-screens**. Use the normal **Start bridge** action; **Save and restart** keeps
-screens enabled alongside your saved LED and tension settings. Minimal MIDI,
+The October 22 handover build adds a **Screens** settings tab and shared
+**Enable S4 screens** menu toggle. Use the normal full-profile **Start bridge**
+action; **Save and restart** keeps your selected screen support and saved
+LED/tension settings. Minimal MIDI,
 HID probe, controller checks and mapping export remain screen-free.
 
 HOTCUE/SAMPLES shows JUMP, active LOOP size, KEY and global RANGE.
@@ -76,13 +77,24 @@ under a new name and select it in Djay; older mappings lack numeric feedback.
 Preserve custom mappings. Quit Traktor/Mixxx before using the screens.
 If NIHardwareAgent owns display interface 4, quit it temporarily using the
 [ordered screen instructions](../docs/screens.md#macos-ownership-finding).
-The app does not quit other software. A screen-access failure appears in
-Diagnostics as `SCREENS_DISABLED`; MIDI, LEDs and saved tension keep running.
+The app can stop NIHardwareAgent with confirmation or explicit automatic-stop
+consent, and restore an agent it stopped. Screen handover force-closes only the
+verified background driver: its normal shutdown blanks the S4 panels, while the
+guarded forced stop preserves them. Active Traktor, Maschine or Komplete Kontrol
+blocks the operation; the app never closes those applications.
+Manual **Restart Native Instruments screen driver** works even with screen
+support off and no previous app ownership. See the
+[ordered handover and recovery guide](../docs/screen-driver-handover.md).
+Screen failures turn the running status icon red while MIDI/LEDs/tension continue.
 The app's Stop/Quit path also stops screen service.
 
 This local rebuild keeps the existing version identifier; it is not a new
 public release. The older GitHub release does not include these screens.
 See the [app integration and package validation](../docs/app-screen-integration.md).
+The new handover app/ZIP/DMG are built separately under
+`dist/Screens NI Handover Fix-20261023/`, preserving the earlier apps and packages.
+Build into a separate folder with `S4_BRIDGE_OUTPUT_DIR=/absolute/output/path`
+when invoking `macos/build-app.sh`.
 
 ### Updated encoder layout
 
@@ -142,7 +154,7 @@ selected deck selector pulses while selecting, with a 1.2-second
 palette-brightness cycle and dark trough; hidden decks retain their modes
 without flashing inactive buttons. Mode exit restores normal lighting.
 **Stop bridge** followed by **Start bridge** initializes every mode flag off.
-The full profile also enables the S4 screens. Hardware jog tension is configured
+The full profile enables S4 screens when the Screens setting is on. Hardware jog tension is configured
 separately below.
 
 The user mouse-verified beat jump moving an active loop. Fresh MIDI/native
@@ -276,7 +288,8 @@ The verified build/UI evidence and remaining limits are recorded in
 
 ## Developer checks
 
-The app's full-controller launch includes `--screens`. The standalone CLI
+The app's full-controller launch includes `--screens` when enabled, and a live
+screen-control pipe. The standalone CLI
 still requires an explicit `--midi full --screens`. See
 [screen setup and physical checks](../docs/screens.md), including the
 NIHardwareAgent interface-ownership conflict. Existing published mapping-only

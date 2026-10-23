@@ -139,7 +139,7 @@ pub struct FullBridge {
 }
 
 impl FullBridge {
-    pub fn new(screen_output: bool) -> anyhow::Result<Self> {
+    pub fn new(screen_output: bool, screen_control: bool) -> anyhow::Result<Self> {
         // Djay can return initial state as soon as the source appears.
         let feedback_input = feedback::FeedbackInput::new(mapping::PORT_NAME)?;
         let connection = MidiOutput::new("S4 MK3 full bridge")?
@@ -153,8 +153,16 @@ impl FullBridge {
             translator: Translator::default(),
             controls: Vec::with_capacity(160),
             messages: Vec::with_capacity(160),
-            screens: screens::Output::new(screen_output),
+            screens: if screen_control {
+                screens::Output::managed(screen_output)?
+            } else {
+                screens::Output::new(screen_output)
+            },
         })
+    }
+
+    pub fn screen_control(&self) -> Option<s4mk3_hid_midi_bridge::screens::Control> {
+        self.screens.control()
     }
 
     pub fn drain_feedback(&mut self, now: Duration) -> anyhow::Result<(usize, usize)> {
@@ -189,9 +197,12 @@ impl FullBridge {
         self.messages.clear();
         self.translator
             .translate(&self.controls, buttons, &mut self.messages)?;
+        self.send_messages()
+    }
+
+    pub fn publish_screens(&mut self) {
         self.screens
             .publish(screens::pages(&self.translator, &self.feedback));
-        self.send_messages()
     }
 
     fn send_messages(&mut self) -> anyhow::Result<usize> {

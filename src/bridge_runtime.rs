@@ -24,8 +24,8 @@ pub fn run(
     config: Config,
 ) -> anyhow::Result<()> {
     let led_config = full::leds::LedConfig::load(args.led_config.as_deref())?;
-    let stop = crate::stop_signal()?;
-    let mut bridge = full::FullBridge::new(args.screens.enabled)?;
+    let (stop_tx, stop) = crate::stop_signal()?;
+    let mut bridge = crate::screens_control::bridge(args, stop_tx)?;
     let mut output = None;
     let mut counts = ProbeCounts::default();
     let mut events = Vec::with_capacity(128);
@@ -64,15 +64,13 @@ pub fn run(
                     for event in &events {
                         record_event(event, leds, &mut counts, false)?;
                     }
-                    let buttons = if report.first() == Some(&1) {
-                        Some(
+                    let buttons = (report.first() == Some(&1))
+                        .then(|| {
                             payload
                                 .try_into()
-                                .context("full button payload must have 22 bytes")?,
-                        )
-                    } else {
-                        None
-                    };
+                                .context("full button payload must have 22 bytes")
+                        })
+                        .transpose()?;
                     let sent = bridge.send_report(&events, buttons)?;
                     counts.midi_messages =
                         counts.midi_messages.saturating_add(u64::try_from(sent)?);
@@ -96,6 +94,7 @@ pub fn run(
                     )?;
                 counts.led_writes = counts.led_writes.saturating_add(u64::try_from(writes)?);
             }
+            Action::Screens => bridge.publish_screens(),
         }
         Ok(())
     })?;
