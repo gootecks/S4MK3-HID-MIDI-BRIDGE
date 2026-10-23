@@ -1,4 +1,4 @@
-# Screens in the menu-bar app
+# App screen integration: internal validation record
 
 October 22, 2026. This is a local rebuild, not a new public release.
 The version remains 0.1.1-beta.3, numeric 0.1.1, build 4.

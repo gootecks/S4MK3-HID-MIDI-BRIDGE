@@ -61,7 +61,7 @@ running.
 
 ### S4 screens
 
-The October 22 handover build adds a **Screens** settings tab and shared
+Source builds include a **Screens** settings tab and shared
 **Enable S4 screens** menu toggle. Use the normal full-profile **Start bridge**
 action; **Save and restart** keeps your selected screen support and saved
 LED/tension settings. Minimal MIDI,
@@ -69,7 +69,7 @@ HID probe, controller checks and mapping export remain screen-free.
 
 HOTCUE/SAMPLES shows JUMP, active LOOP size, KEY and global RANGE.
 STEMS/MUTE shows actual mute/solo feedback; Shift changes the upper row to ONLY.
-All pages use the accepted smooth font, embedded in the bridge.
+All pages use a smooth font embedded in the bridge.
 
 Stop any separate prototype bridge before starting this app. The existing
 Info Screen mapping can stay selected. Otherwise use **Install Djay mapping...**
@@ -88,11 +88,7 @@ support off and no previous app ownership. See the
 Screen failures turn the running status icon red while MIDI/LEDs/tension continue.
 The app's Stop/Quit path also stops screen service.
 
-This local rebuild keeps the existing version identifier; it is not a new
-public release. The older GitHub release does not include these screens.
-See the [app integration and package validation](../docs/app-screen-integration.md).
-The new handover app/ZIP/DMG are built separately under
-`dist/Screens NI Handover Fix-20261023/`, preserving the earlier apps and packages.
+Screen support is not included in the published beta.3 download.
 Build into a separate folder with `S4_BRIDGE_OUTPUT_DIR=/absolute/output/path`
 when invoking `macos/build-app.sh`.
 
@@ -102,8 +98,6 @@ Use a build containing the encoder increment and reinstall its generated
 mapping through **Install Djay mapping...**, saving under a new filename.
 Keep custom mappings under their existing names, then select the new mapping
 in Djay. Restarting an older bridge or selecting its old mapping isn't enough.
-The historical app QA record doesn't establish that a local bundle contains
-this increment.
 
 This layout is full-profile only. Physical naming is corrected for all
 rotations and only left presses. LOOP turn/press use native
@@ -124,9 +118,8 @@ Shift+BROWSER press still goes back, and LOOP is unchanged. Shift+CUE jumps
 to the beginning of the song, leaving normal CUE unchanged. Playlist now
 marks/unmarks selected songs and Star focuses the Queue (Note 10/11 swap).
 Use a rebuilt bridge and install its newly generated mapping under a new name,
-preserving existing custom mappings. The earlier Shift+BROWSER scrubber was
-user-confirmed; this new held route and the new assignments need physical
-acceptance.
+preserving existing custom mappings. Physical encoder direction and multi-detent
+response for the held preview route still need a live check.
 
 Physical crossfader assignments and curve wait for raw Djay playback feedback
 before their initial application, then follow physical changes only. This
@@ -157,10 +150,8 @@ without flashing inactive buttons. Mode exit restores normal lighting.
 The full profile enables S4 screens when the Screens setting is on. Hardware jog tension is configured
 separately below.
 
-The user mouse-verified beat jump moving an active loop. Fresh MIDI/native
-and physical LED checks are still pending. Follow the
-[encoder live check](../docs/full-midi-test.md#encoder-layout-live-check)
-for A/C/B/D independence, duplicate press/release, Shift while selecting,
+The [encoder live check](../docs/full-midi-test.md#encoder-layout-live-check)
+covers A/C/B/D independence, duplicate press/release, Shift while selecting,
 active-loop movement, independent LOOP size, pulse restoration, and restart.
 
 LED, run, jog mapping, and hardware tension preferences are stored under
@@ -181,12 +172,9 @@ Press Filter to flash cyan awaiting a deck, then press its ON to toggle only
 that deck's EQ mode without changing the FX target. Press Filter again to
 cancel; outside selection ON retains its normal target-selection behavior.
 Filter no longer resets the selected filter. Install the new mapping under a
-new filename and preserve any custom mappings. Follow the
-[live check](../docs/neural-mix-eq-check.md). MIDI-only capture verified initial
-states and independent mouse-driven mode transitions for all four decks;
-the user subsequently accepted the physical behavior and dim-cyan idle Filter
-refinement. This is general acceptance, not completion of every edge-case
-check in the runbook.
+new filename and preserve any custom mappings. The
+[live check](../docs/neural-mix-eq-check.md) covers feedback and transitions
+for all four decks.
 
 ### Hardware jog tension
 
@@ -216,14 +204,9 @@ booleans), out-of-range values, and unknown fields are rejected. Invalid
 saved files are preserved until explicit reset and save; invalid editor
 values remain in the editor without replacing saved preferences.
 
-The integrated tension build passed 237 Rust and 17 Swift tests; the subsequent
-Mixer ON/EQ and UI increments passed 248 Rust and 18 Swift tests, strict Clippy,
-build and package integrity checks. On October 20, 2026, the user also confirmed
+The [live integration check](../docs/jog-tension-integration.md) covers
 assistance/braking with Djay controls and LEDs, Stop/Quit clearing force,
 saved-setting restore while stopped, and explicit restart after USB reconnect.
-The [live integration check](../docs/jog-tension-integration.md) records that
-focused procedure. The full UI regression matrix remains deferred at the
-user's request; these passes do not establish a full visual QA pass.
 
 The menu-bar symbol is green while the bridge is running and returns to the
 normal system appearance in other states. Diagnostics shows the app's bundled
@@ -245,10 +228,10 @@ The generated mapping assigns **Shift+Sync** on either side to Djay's
 tempo-range cycle. **This is global: it changes the tempo-fader range for all
 decks, not just the selected deck.** Normal Sync remains deck-specific.
 Install and select the new mapping to apply this binding; existing custom
-mappings are preserved. The user confirmed this works on October 6, 2026.
+mappings are preserved.
 
 The mapping sections of the **Jog** tab configure native Djay **Speed** and
-**Reaction**, globally for decks A-D. Defaults match the user's calibration:
+**Reaction**, globally for decks A-D. Defaults:
 
 | Action | Speed | Reaction |
 | --- | ---: | ---: |
@@ -268,10 +251,8 @@ after the native save dialog's overwrite confirmation. Preserve existing
 custom mappings, including **S4 MK3 Bridge 2**, under their existing names.
 Saving or restarting the bridge alone does not apply mapping changes in Djay.
 
-The user tested these values in Djay. This increment packages/configures those
-mapping parameters; it does not fix backspin termination on touch release or
-claim a fresh physical pass for every deck. Hardware tension is independent
-of these mapping parameters.
+These mapping parameters do not fix backspin termination on touch release.
+Hardware tension is independent of them.
 
 **Stop bridge** and **Quit S4 MK3 Bridge** send the bridge its normal Ctrl-C
 signal and wait for it to exit. Quitting the settings window does not stop it.

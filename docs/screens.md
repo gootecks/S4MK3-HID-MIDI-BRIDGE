@@ -9,10 +9,9 @@ The standalone CLI remains opt-in with `--midi full --screens`. Older published
 apps do not enable screens. The info page requires a mapping containing numeric
 feedback; the prototype's Info Screen mapping already has it. Existing custom
 mappings and saved preferences are not overwritten.
-The [app integration record](app-screen-integration.md) has the normal-app
-installation steps, verification and remaining attended checks.
-The user tested and accepted the integrated app on October 22 ("Tested and it
-seems good!"); exhaustive edge-case acceptance is not inferred from that report.
+Use the [screen-driver guide](screen-driver-handover.md) for app setup and
+recovery. The [integration validation record](app-screen-integration-validation.md)
+preserves internal build and acceptance history.
 
 ## What is implemented
 

@@ -24,9 +24,8 @@ below before using it for a set.
 4. Open **S4 MK3 Bridge** from Applications.
 
 The published portable build is **0.1.1-beta.3 (build 4)**. See the
-[release notes and validation status](docs/release-0.1.1-beta.3.md).
-The October 22 local app rebuild adds the accepted S4 screens to normal
-full-controller startup; it is not a new GitHub release.
+[release notes](docs/release-0.1.1-beta.3.md).
+Screen support requires a source build; it is not included in this download.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. macOS may block
 the first launch because it can't verify the developer. After attempting to
@@ -114,18 +113,14 @@ HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
 Neural Mix availability depends on the track and Djay support.
 
-**The updated app has a Screens tab and a shared Enable S4 screens menu toggle.**
-HOTCUE and SAMPLES show JUMP, active LOOP size, KEY and tempo RANGE.
-STEMS/MUTE shows the reactive mute/solo legend. Both use the accepted smooth
-font. Keep the prototype's Info Screen mapping selected, or install the updated
-app's mapping under a fresh name; older mappings lack numeric screen feedback.
-The new [screen-driver controls](docs/screen-driver-handover.md) can temporarily
+**Source builds include S4 screen support.** Enable it in the **Screens** tab
+or with **Enable S4 screens** in the menu bar. HOTCUE and SAMPLES show JUMP,
+active LOOP size, KEY and tempo RANGE; STEMS/MUTE shows the reactive mute/solo
+legend. Install the mapping from the same app under a new filename, preserving
+custom mappings; older mappings lack numeric screen feedback.
+The [screen-driver controls](docs/screen-driver-handover.md) can temporarily
 stop NIHardwareAgent with confirmation and restore it afterward. Manual recovery
-remains available even with screen support off. The handover development build
-is in `dist/Screens NI Handover Fix-20261023/`; older packages are preserved.
-See [screen support](docs/screens.md) for setup, the NIHardwareAgent ownership
-conflict, and remaining physical checks. Older published apps do not enable
-these screens.
+remains available even with screen support off.
 Powered playback rotation and haptic cues aren't supported.
 JOG/TT select software wheel behavior, not powered platter rotation. The app
 does provide motor-assisted wheel tension in the full-controller profile,
@@ -142,9 +137,9 @@ appearance. LED settings can be imported or exported.
 Choose **Save and restart** to apply LED changes. A mapping export isn't needed.
 Saved LED preferences are preserved across app updates.
 
-All eight selectable Djay hotcue colors have been physically confirmed:
-red, orange, blue, yellow, green, azalea, cyan, and purple. White isn't offered
-in Djay's hotcue picker; its separate fallback hasn't been verified.
+The eight selectable Djay hotcue colors are supported: red, orange, blue, yellow,
+green, azalea, cyan, and purple. White isn't offered in Djay's hotcue picker;
+its separate fallback hasn't been verified.
 
 ### Jog wheels
 
@@ -190,19 +185,15 @@ Neither setting resolves released-backspin behavior.
 
 _Jog settings at Neutral (0), with the calibrated scratch and pitch-bend defaults._
 
-The menu-bar icon turns green while the bridge is running. **Diagnostics**
-shows the app release and build number alongside the bridge log.
+The menu-bar icon turns green while the bridge is running. In source builds,
+it turns red if requested screens are blocked or fail while the bridge keeps
+running. **Diagnostics** shows the app release and build number alongside the
+bridge log.
 
 ## Known issues and limitations
 
-The [current issue checklist](docs/issues.md) is the source of truth. Older
-test records describe earlier builds and may still list completed work as
-pending. LOOP/MOVE, Reloop, momentary REV, Browse direction, crossfader startup,
-Shift+Sync, and the eight selectable hotcue colors have been confirmed in
-controller testing. Focused hardware-tension checks passed for both wheels,
-Djay/LED coexistence, Stop/Quit, saved settings, and explicit restart after
-reconnection. The user also accepted the Mixer ON/Neural Mix EQ behavior;
-the exhaustive edge-case checklist and broader DJ-laptop testing remain open.
+See the [current issue checklist](docs/issues.md) for detailed limitations
+and remaining checks.
 
 Open bugs and unresolved behavior:
 
@@ -234,8 +225,8 @@ without automatic Slip are design choices, not outstanding fixes.
 - Refine jog feel and released backspin, and resolve the open FX, recording,
   preview, pad, and external-input questions.
 - Consider jog-ring touch/rotation polish separately. Playback-driven motor
-  rotation, other haptics, screens, pad legends, and an on-controller settings
-  gesture remain deferred.
+  rotation, other haptics, additional screen pages and pad legends, and an
+  on-controller settings gesture remain deferred.
 - Explore a standalone hardware bridge longer term, along with other DJ
   applications and simpler guest setup. These aren't features of this beta.
 

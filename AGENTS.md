@@ -42,6 +42,23 @@ motors are deferred unless explicitly requested.
 Historical validation records describe their tested revisions. Do not assume
 the packaged app or older test counts describe the current working tree.
 
+## Documentation audiences
+
+- `README.md` is public-facing product documentation. Keep it focused on
+  requirements, installation, current controls, usage, and known limitations.
+  Distinguish published downloads from source-only features when necessary.
+- Do not use README files as development diaries. Keep dated local-build
+  updates, temporary artifact paths, test counts and transcripts, commit or
+  approval history, and user-acceptance quotes out of them.
+- Put internal build, investigation, and acceptance history in clearly named
+  validation records under `docs/`, such as
+  `docs/app-screen-integration-validation.md` and
+  `docs/screen-driver-handover-validation.md`.
+- Keep user setup guides separate from those records. README links for setup
+  and troubleshooting must lead to current instructions, not session history.
+  `macos/README.md` may document developer build commands, but not internal
+  progress updates.
+
 ## Commands
 
 Run from the repository root:

@@ -1,6 +1,8 @@
 /target/
 .DS_Store
-*.pcapng
+/wireshark_captures
 /dist/
 /macos/.build/
-.omo/*
+.omo
+generated-images
+.vscode
