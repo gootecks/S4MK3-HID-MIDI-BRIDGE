@@ -71,6 +71,51 @@ fn move_selection_is_per_deck_and_stems_does_not_flash() -> anyhow::Result<()> {
 }
 
 #[test]
+fn key_feedback_before_loading_false_survives_next_loaded_state() -> anyhow::Result<()> {
+    // Given Deck 2's previously loaded 2A track, as captured at startup.
+    let translator = Translator::default();
+    let mut feedback = FeedbackState::default();
+    feed(&mut feedback, &[0x96, 1, 127, 0xb1, 112, 71]);
+    let left = pages(&translator, &feedback)[0];
+
+    // When Djay reports the new 11A key before loading-false.
+    // Exact wire order captured while loading William Kiss - Jacker.
+    feed(&mut feedback, &[0xb1, 112, 102]);
+    feed(&mut feedback, &[0x96, 1, 0]);
+    feed(&mut feedback, &[0x96, 1, 127]);
+
+    // Then the screen uses the new key, not unknown or the previous track's key.
+    let Page::Info(info) = pages(&translator, &feedback)[1] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(feedback.loaded[1], Some(true));
+    assert_eq!(info.key, Some("11A"));
+    assert_eq!(pages(&translator, &feedback)[0], left);
+    Ok(())
+}
+
+#[test]
+fn eject_key_feedback_clears_the_screen_independently_of_loading_order() -> anyhow::Result<()> {
+    for packets in [[0xb1, 112, 0, 0x96, 1, 0], [0x96, 1, 0, 0xb1, 112, 0]] {
+        // Given the 11A track from the captured failure.
+        let translator = Translator::default();
+        let mut feedback = FeedbackState::default();
+        feed(&mut feedback, &[0x96, 1, 127, 0xb1, 112, 102]);
+
+        // When eject reports no-key zero before loading-false, or in reverse order.
+        feed(&mut feedback, &packets);
+
+        // Then an empty deck shows no key, never the previous track's 11A.
+        let Page::Info(info) = pages(&translator, &feedback)[1] else {
+            anyhow::bail!("expected info");
+        };
+        assert_eq!(feedback.loaded[1], Some(false));
+        assert_eq!(info.key, Some("--"));
+    }
+    Ok(())
+}
+
+#[test]
 fn calibrated_key_bytes_reach_the_page_and_unknown_values_do_not_guess() -> anyhow::Result<()> {
     // Given the complete label/wire pairs recorded by the paused-track calibration.
     let calibration = [

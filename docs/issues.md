@@ -100,9 +100,12 @@ Keep completed items and add their completion date and a short evidence note.
   marks/unmarks selected songs. Current source supersedes Star's Queue action
   with Switch Library Table and adds Shift+BROWSER source navigation.
   Native MIDI/GUI checks passed; physical acceptance remains pending.
-- [ ] **Intermittent unknown key** - User requested live diagnostics only when
-  present to assist. No key decoder/cache changes are included in the startup
-  synchronization work.
+- [x] **Intermittent unknown key** - Fixed October 24, 2026 after an attended
+  capture showed new key feedback arriving before a loading-false
+  notification. The deck-owned key now follows its own feedback,
+  including the explicit no-key value on eject. Replacement and eject
+  regressions pass; the user verified `11A -> 2A -> --` on the physical S4.
+  No mapping change is needed. See [diagnosis and verification](key-feedback-order-validation.md).
 - [ ] **Djay coalesces zero-delay jump bursts** - A paused-deck MIDI-only check
   sent normal MOVE CC 2 deltas +4, -4, then four +2/-2 pairs with native one-beat
   size. All ten CCs were emitted, but the native waveform ended two beats behind

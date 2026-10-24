@@ -124,11 +124,10 @@ impl State {
     }
 
     pub fn clear_deck(&mut self, deck: usize) {
+        // displayKeyIndex is deck-owned: its new key (or zero on eject) can
+        // arrive before the song's loadingSuccess=false notification.
         if let Some(states) = self.active_loop.get_mut(deck) {
             states.fill(None);
-        }
-        if let Some(key) = self.key_raw.get_mut(deck) {
-            *key = None;
         }
     }
 }

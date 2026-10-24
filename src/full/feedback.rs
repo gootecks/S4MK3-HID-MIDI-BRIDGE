@@ -650,10 +650,10 @@ mod tests {
             },
             Duration::ZERO,
         );
-        // Then track-specific state clears while selection and global range survive.
+        // Then song state clears while the deck key, selection and global range survive.
         assert_eq!(state.info.active_loop_size(0), None);
         assert_eq!(state.info.jump_size(0), Some("2"));
-        assert_eq!(state.info.key_raw[0], None);
+        assert_eq!(state.info.key_raw[0], Some(81));
         assert_eq!(state.info.tempo_range, Some(25));
     }
 
