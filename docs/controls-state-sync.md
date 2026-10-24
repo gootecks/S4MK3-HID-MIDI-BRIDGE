@@ -2,6 +2,7 @@
 
 These controls require a current source build and its matching generated Djay
 mapping. They are not included in the published beta.3 download.
+For the complete daily workflow, start with the [user guide](user-guide.md).
 
 ## Setup
 
@@ -50,7 +51,9 @@ disappears after synchronization, restoring the ordinary Info or STEMS layout.
 
 Shift+MOVE temporarily selects one beat, uses native relative jumping with the
 encoder's full detent count, then restores the last confirmed jump size. No size
-is guessed if feedback is absent or conflicting. The screen continues to show
+is guessed if feedback is absent or conflicting: the one-beat jump still runs,
+but the previous size cannot be restored. Establish a confirmed JUMP value
+before relying on restoration. The screen continues to show
 actual Djay feedback. Install the matching mapping for the new size-selection
 notes.
 
@@ -65,3 +68,17 @@ selects the previous source. Normal BROWSER still browses tracks.
 Preview scrubbing requires holding **Preview**, not Shift. While Preview is
 held, BROWSER scrubs even if Shift is also held; release Preview to stop.
 Shift+BROWSER press retains Library Back.
+
+## Musical key when loading or ejecting
+
+KEY follows Djay's current key feedback. Replacing a track no longer lets a
+loading notification erase a key that Djay already sent. Ejecting a track
+shows `--` when Djay reports no key; `?` means feedback is unavailable or
+unrecognized, not a guessed key.
+
+This runtime fix does not change MIDI addresses. A mapping already providing
+the current numeric screen feedback can stay selected. Older mappings still
+need replacing for the screen/navigation/FX additions above. If Djay shows a
+key but the latest bridge shows `?`, retain the track and report its deck,
+title, Djay key and app Diagnostics. See the
+[captured fix and physical checks](key-feedback-order-validation.md).

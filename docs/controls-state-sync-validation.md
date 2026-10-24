@@ -8,8 +8,9 @@ guide. User instructions are in [controls-state-sync.md](controls-state-sync.md)
 Implemented physical startup channel-volume/EQ application, feedback-driven FX
 pickup and indications, preservation of confirmed jump size, library-table
 switching and shifted source navigation. Held Preview remains the scrub gesture.
-Intermittent musical-key diagnostics were explicitly deferred until the user
-is present.
+At this validation stage, intermittent musical-key diagnostics were explicitly
+deferred until the user was present. The subsequent
+[captured key fix](key-feedback-order-validation.md) resolves that issue.
 
 Native acceptance used a unique virtual MIDI endpoint, **S4 Controls QA 20261023**,
 and freshly imported configurations. The existing custom S4 mapping was not
@@ -288,3 +289,10 @@ Implementation commits:
 - `c3ee67e` Add feedback-driven FX pickup and synchronization warnings.
 
 No push, tag or release publication was requested or performed.
+
+## Follow-up use
+
+The user subsequently reported a successful hour-long set with the latest
+build on the actual DJ laptop. The [set record](dj-laptop-set-validation.md)
+captures that general acceptance without treating it as a focused check of
+every startup, pickup or modifier case above.

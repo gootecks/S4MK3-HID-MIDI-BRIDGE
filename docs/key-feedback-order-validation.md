@@ -117,3 +117,10 @@ The updated app remains running from the new build directory. The stopped
 diagnostic copy and older app instance were closed; neither old bundle was
 overwritten. Only the owned observer configuration and temporary diagnostic
 resources are removed. Captures and this record are retained.
+
+## Follow-up ordinary use
+
+The user subsequently reported a successful hour-long set with the latest
+build on the actual DJ laptop. See the
+[set validation record](dj-laptop-set-validation.md) for the report and its
+scope; it is separate from the focused key replacement/eject check above.

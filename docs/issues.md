@@ -119,6 +119,11 @@ Keep completed items and add their completion date and a short evidence note.
   keeping control/feedback service running. The underlying input delay
   is unconfirmed and physical recovery testing remains pending.
   See [timeout recovery](tension-timeout-recovery.md).
+- [ ] **Wheel sensor-time reversal** - A diagnostic run exited with
+  `wheel 0 sensor time reversed` on October 24, 2026. The cause remains
+  uninvestigated; this is separate from the self-recovering 50 ms input-gap
+  path and was not changed by the musical-key fix. Retain the exact log if it
+  occurs again. See [the captured run](key-feedback-order-validation.md#evidence-and-diagnostic-boundaries).
 - [ ] **Jog feel and backspin** - Reduce excessive slow-movement sensitivity
   while improving fast-backspin response. Measure raw counts,
   emitted MIDI, and Djay response before choosing tuning behavior.

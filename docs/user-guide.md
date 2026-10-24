@@ -1,0 +1,413 @@
+# S4 MK3 Bridge user guide
+
+Use this guide to DJ with the S4 MK3, understand the custom mappings, and
+recognize what its lights and screens are telling you.
+
+**Build coverage:** this guide follows the current full-controller source
+build, including features newer than the published beta.3 download. Local
+builds can display the same version number while containing newer controls.
+Use the app and mapping supplied together; check the [download notes](../README.md#download-and-install)
+for what the published package includes.
+
+The DJ laptop needs the standalone app, not Rust, Cargo or this repository.
+
+## Contents
+
+- [One-time setup](#one-time-setup)
+- [Start and finish a set](#start-and-finish-a-set)
+- [Deck focus and transport](#deck-focus-and-transport)
+- [Browse, preview and load](#browse-preview-and-load)
+- [Loops and beat jumps](#loops-and-beat-jumps)
+- [Mixing, cueing and Neural Mix EQ](#mixing-cueing-and-neural-mix-eq)
+- [Manual FX strips](#manual-fx-strips)
+- [Mixer Instant FX](#mixer-instant-fx)
+- [Pads and sample banks](#pads-and-sample-banks)
+- [Jog wheels and feel](#jog-wheels-and-feel)
+- [Screens and feedback](#screens-and-feedback)
+- [Settings: what needs saving or a new mapping?](#settings-what-needs-saving-or-a-new-mapping)
+- [Troubleshooting](#troubleshooting)
+- [Intentional differences and limits](#intentional-differences-and-limits)
+
+## One-time setup
+
+You need an Apple Silicon Mac, a supported macOS/Djay Pro combination, Djay
+PRO access for custom MIDI mappings, and the powered S4 MK3 connected by USB.
+The menu-bar app is currently macOS-only.
+
+1. [Install the app](../README.md#download-and-install), then open it.
+   Quit any older bridge app or standalone bridge first: run one instance.
+2. In Settings, select **Full controller + LED feedback** and turn off
+   **Stop after a fixed duration** for normal DJ use.
+3. Click **Start bridge**. For screens, enable **S4 screens** and follow the
+   NI-driver prompt described below.
+4. Choose **Install Djay mapping...**, save under a new filename, and accept
+   Djay's import. Keep your custom mappings under their existing names.
+5. In Djay's MIDI configuration, enable **S4 MK3 MIDI Full** and select the
+   configuration just imported. Its name may have a number appended.
+6. Set Djay's audio device to the S4's native audio interface. Route **Main**
+   to its speaker outputs and **Pre-cue** to its headphones. Audio does not
+   pass through the bridge.
+7. After selecting a different mapping, stop and start the bridge once.
+   Confirm controls and headphone cue before using the speakers.
+
+If Djay offers only a blank S4 configuration, restart Djay with the bridge
+already running, then select the imported mapping.
+
+### Let the app manage screen ownership
+
+If NI's background screen driver is running, the app offers **Enable screens**,
+**Continue without screens**, or **Cancel**. Enable screens temporarily stops
+that driver. Optional automatic stopping and restoration are in the Screens
+tab. Close Traktor, Maschine and Komplete Kontrol before handing over their
+shared service; the bridge will not close those applications for you.
+
+Continue without screens still runs MIDI, LEDs and saved tension. A red status
+icon can mean requested screens are blocked, not that all controls stopped.
+Use the app's recovery controls, not a separate driver-killing command.
+See the [screen-driver guide](screen-driver-handover.md).
+
+## Start and finish a set
+
+### Before playing
+
+1. Power/connect the S4 and open Djay and the bridge app.
+2. Put the channel-volume faders at your intended starting positions,
+   normally down for tracks you are cueing.
+3. Start the full-controller bridge with the matching mapping selected.
+4. Check Djay's channel volumes and EQ. After mapping feedback arrives, the
+   bridge applies the physical volume and high/mid/low EQ positions once.
+   Do not assume that synchronization has happened before the mapping connects.
+5. Check gain, filter, tempo and crossfader position separately: they are not
+   included in that startup push. Crossfader assignment switches and curve
+   have their own startup synchronization.
+6. Cue a track through headphones, confirm the selected deck, then bring its
+   channel volume into the mix.
+
+Later mouse edits are not repeatedly overwritten by unchanged hardware
+snapshots. Shared FX knobs use pickup instead of being pushed on startup.
+See [startup and pickup details](controls-state-sync.md).
+
+### When finished
+
+Pause playback or lower your outputs in the normal way, then use **Stop bridge**
+or **Quit S4 MK3 Bridge**. Stop is not Djay's transport Pause button.
+Closing the settings window alone leaves the bridge running in the menu bar.
+
+To return to Traktor, stop the bridge and use **Restart Native Instruments
+screen driver** if needed. With automatic restoration enabled, the app restores
+a driver it stopped after releasing the controller. Turning only the screens
+off does not hand the driver back during an ongoing bridge session.
+
+## Deck focus and transport
+
+| Physical side | Available decks | Djay deck numbers |
+| --- | --- | --- |
+| Left | A or C | 1 or 3 |
+| Right | B or D | 2 or 4 |
+
+Choose A/C or B/D before loading or working a deck. Its transport, pads,
+encoders and wheel follow that focus. The four mixer channels remain assigned
+to their own decks; changing the left focus to C does not turn A's channel
+fader into C's.
+
+| Control | What it does |
+| --- | --- |
+| PLAY | Djay play/pause |
+| Deck CUE | Djay's cue/jump action, dependent on whether the deck is playing or paused |
+| Shift+CUE | Jump to the beginning of the song, not the saved cue point |
+| SYNC | Sync the selected deck |
+| Shift+SYNC | Cycle the tempo-fader range for **all decks** |
+| MASTER | Choose that deck as Djay's sync master |
+| REV, held | Reverse while held; release ends reverse |
+| FLUX | Toggle Djay Slip independently |
+| QUANT | Send a quantize toggle to all four decks |
+
+REV does not automatically switch Slip on or restore an earlier Slip state.
+Use FLUX explicitly when you want Slip. Shift+SYNC is a global range change,
+not Traktor's per-deck tempo-fader lock.
+QUANT toggles each deck; it does not force already-mixed quantize states into
+one uniform state.
+
+## Browse, preview and load
+
+1. Select the destination deck with A/C or B/D.
+2. Turn that side's **BROWSER** to browse the library.
+3. Hold **Preview** to audition the selected track.
+4. While still holding Preview, turn BROWSER to scrub the preview:
+   clockwise forward, counterclockwise backward. **Shift is not required.**
+5. Release Preview to stop auditioning.
+6. Press BROWSER to load the selection into the deck chosen on that side.
+
+Other library controls:
+
+| Gesture | Action |
+| --- | --- |
+| Shift+BROWSER turn | Next/previous library source instead of track browsing |
+| Shift+BROWSER press | Library Back |
+| Star button | Djay's **Switch Library Table** action |
+| Playlist button | Mark/unmark the selected song; not a rating or Queue toggle |
+| Library View | Toggle library visibility |
+
+Switch Library Table changes which library table you work in; changing source
+is the separate Shift+BROWSER gesture. If Preview and Shift are both held,
+**Preview wins** and BROWSER still scrubs.
+
+Preview is implemented with toggle actions at the edges of the hold, not a
+latched mode. If it was already playing or changed externally and becomes out
+of sync, stop it with Djay's mouse control before trying another hold.
+
+## Loops and beat jumps
+
+LOOP length and MOVE jump length are independent. Each logical deck keeps its
+own values in Djay.
+
+### Set a loop
+
+1. Turn **LOOP** to choose the loop length in Djay.
+2. Press LOOP to activate it; press again to leave it.
+3. While active, turning LOOP changes its size.
+4. Shift+LOOP turn moves the loop region. Shift+LOOP press uses **Reloop**
+   to reactivate a stored loop range.
+
+On the S4, LOOP shows the active length with green fill, or **OFF** when no
+loop is active. It does not show the preselected inactive length; look at
+Djay's selector while choosing that.
+
+### Choose a jump length and move
+
+1. Press **MOVE** to enter jump-size selection for this deck.
+2. Turn MOVE to choose the jump length. The value changes immediately in Djay.
+   The deck selector pulses; the screen shows **SELECT**.
+3. Press MOVE again to leave selection. This exits the mode, not a deferred save.
+4. Turn MOVE to jump by that length. With an active loop, beat jump moves the
+   loop region by the jump length.
+
+Selection has no timeout. It survives a deck switch and clears when the bridge
+restarts; it does not mean the native jump length itself resets.
+
+For example, choose an 8-beat jump, then turn MOVE normally for 8-beat moves.
+Hold Shift while turning MOVE for 1-beat adjustments, including while SELECT
+is active. The bridge restores the **last confirmed** jump length afterward.
+
+If JUMP is `?`, the previous size is not known reliably. Shift+MOVE still
+selects and jumps one beat, but cannot restore an unknown size. Establish a
+confirmed size first. Manual loop-in/out is not mapped.
+
+## Mixing, cueing and Neural Mix EQ
+
+Channel volume, gain, high/mid/low EQ and filter control the corresponding
+Djay channel. Use the **small channel headphone/CUE button** for pre-cue,
+not the deck's large transport CUE button. Master, booth, headphone level and
+headphone mix remain hardware-local controls.
+
+Crossfader assignment switches choose a side or **THRU**. THRU means the channel
+bypasses the crossfader, not that it is muted. Djay may show **Crossfader
+assignment changed**; choose **Keep** to retain the physical assignments.
+**Restore** changes them to Djay's defaults.
+
+### Change a channel's EQ mode
+
+1. Press the mixer **Filter** button. It flashes cyan, waiting for a deck.
+2. Press that channel's **ON** button to toggle its normal/Neural Mix EQ mode.
+3. To cancel without changing a deck, press Filter again.
+
+This does not change the Instant FX target. Outside this selection workflow,
+channel ON chooses the Instant FX target; it is not a channel mute button.
+Filter no longer resets the software filter.
+
+ON is white for normal EQ and cyan for Neural Mix EQ, brighter on the selected
+Instant FX target. An active Instant FX temporarily takes over its color.
+Dark/unknown feedback is not proof the deck is muted.
+
+## Manual FX strips
+
+The two top FX strips each control three manual effect slots on one deck.
+They are **control targets**, not Traktor-style shared FX audio buses.
+
+1. Press a channel's **FX1** button to target it from the left FX strip, or
+   **FX2** for the right strip.
+2. Use strip buttons **1-3** for individual effects.
+3. Hold Shift on the strip's physical side and press an effect button to choose
+   its next effect.
+4. Turn parameter knobs 1-3 for those slots.
+5. Use the shared dry/wet knob for their wet/dry amounts.
+
+Defaults are A for the left strip and B for the right. Changing A/C or B/D
+deck focus does not automatically change these targets.
+
+### Pick up a software value without a jump
+
+After startup, retargeting or an external software edit, a physical FX knob
+can disagree with Djay. Its movement is held until it reaches or crosses
+the software position.
+
+- A blinking effect button means its parameter knob needs pickup.
+- A blinking strip ON means dry/wet needs pickup.
+- Move toward and through the value shown in Djay until the blink stops.
+- Dry/wet reaches three software slots; each picks up independently. Its
+  warning clears when all three agree with the knob.
+- An `FX SYNC` screen header identifies the affected deck and controls.
+  A `?` there means feedback is missing, not a confirmed mismatch.
+
+The strip's main **ON is not a reliable whole-bank bypass**: the current
+binding duplicates slot 1. Use the individual effect buttons or Djay's UI
+when you need to turn the other slots off.
+
+## Mixer Instant FX
+
+These are separate from the two manual FX strips:
+
+1. Press a channel **ON** without Filter selection armed to choose the target.
+   **FX SELECT** also cycles the central target.
+2. Hold a mixer FX button 1-4 to apply its assigned Djay Instant FX.
+3. Release to end the held action.
+
+The target defaults to A. Selecting a target does not route audio into a shared
+effect bus. A held effect stays with the deck where it began until release;
+changing targets does not move that held effect to the new deck.
+
+## Pads and sample banks
+
+| Mode | Pads | Shift |
+| --- | --- | --- |
+| HOTCUE | Trigger/set hotcues 1-8 | Clear the corresponding hotcue |
+| SAMPLES | Trigger sampler players | Stop their playback |
+| STEMS or MUTE | Pads 1-4 mute; pads 5-8 solo | Pads 1-4 exclusive solo; pads 5-8 stay ordinary solo |
+
+A/C share sampler bank 1; B/D share bank 2. Selecting another deck on the same
+physical side does not give you an independent new sample bank.
+
+The STEMS columns are **Drums, Bass, Harmonic, Vocals**, in that order. The
+lower four pads solo the same columns. Shift makes the upper row **ONLY**
+so you can select one stem exclusively. MUTE is a mode-selection alias for
+STEMS, not a held modifier and not a button that mutes the entire deck.
+
+Neural Mix availability depends on the track and Djay support. The screen
+reports actual mute/solo state; ON in a MUTE tile means that mute is active.
+
+**REC is not the set recorder.** It is assigned to Djay's Record Sample
+action, whose source/slot and press/hold behavior remain unresolved. Use
+Djay's onscreen recording controls when you want to record a mix.
+
+## Jog wheels and feel
+
+**JOG/TT select software wheel behavior, not powered platter rotation.**
+In Turntable mode, touching the top scratches; untouched motion bends/nudges.
+Jog mode uses bend/nudge instead of top-touch scratch. Shift+jog seeks.
+GRID+jog edits the beat grid rather than performing an ordinary nudge.
+
+### Change physical resistance
+
+In **Jog > Hardware > Jog Wheel Tension**:
+
+| Setting | Effect |
+| --- | --- |
+| Assist, -100 to -1 | Helps a wheel's own movement while its metal top is touched |
+| Neutral, 0 | No added tension; first-install default |
+| Brake, 1 to 100 | Resists movement, including after release |
+
+Both wheels share the setting but respond independently. It is not assigned
+to a mixer fader or saved separately per logical deck.
+
+### Change Djay's scratch/bend response
+
+The other Jog sections control **Speed** and **Reaction** in the exported
+Djay mapping. Defaults are scratch **2.7% / 150%** and pitch bend **2.7% / 17%**.
+These change software response, not motor force.
+
+Tension needs saving/restarting, but no mapping export. Speed/Reaction need a
+newly exported mapping selected in Djay. Neither fixes the current limitation
+that audio backspin ends when top touch is released. Playback-driven TT
+rotation and haptic cue points are not implemented.
+
+## Screens and feedback
+
+HOTCUE and SAMPLES show **JUMP / LOOP / KEY / RANGE**. STEMS and MUTE show the
+mute/solo legend. The selected A/C or B/D deck supplies the corresponding screen.
+There is no title, artwork, BPM, time or waveform display.
+
+| Indication | Read it as |
+| --- | --- |
+| Pulsing deck selector / SELECT | MOVE is choosing jump size, not a connection fault |
+| LOOP OFF | No active loop; not the inactive selected length |
+| KEY `--` | Djay reports no musical key |
+| KEY `?` | Missing/unrecognized key feedback |
+| FX SYNC / blinking FX control | A shared knob needs pickup, or its feedback is missing |
+| Red running status icon | Requested screens are blocked/failed; check the Screens tab |
+
+The musical-key load-order bug is fixed in the current build: replacement
+preserves the newly reported key, and eject uses Djay's explicit no-key value.
+It does not guess a key or retain an old track's key as a fallback.
+
+Most playback, pad and meter indications follow Djay feedback; selection and
+physical-hold indicators also represent local bridge state. The jog ring is
+decorative, not an absolute track playhead or physical-platter-position display.
+See the [screen reference](screens.md) and [LED reference](led-feedback.md).
+
+## Settings: what needs saving or a new mapping?
+
+| Change | How to apply it |
+| --- | --- |
+| LED colors, brightness, meter appearance | Save preferences while stopped, or Save and restart while running; no mapping export |
+| Hardware jog tension | Same save/restart actions; no mapping export |
+| Jog scratch/bend Speed or Reaction | Save, export with Install Djay mapping..., import and select that new mapping in Djay |
+| Screens on/off and NI handover options | Screen controls save immediately; use their live actions |
+| A build with changed MIDI bindings/feedback | Install/select its matching mapping under a new filename, then restart the bridge |
+
+Mapping export uses the current Jog editor values. Saving or restarting alone
+does not change Djay's selected mapping. Preserve custom maps when importing.
+A runtime-only key fix does not require a new mapping if the current numeric
+feedback is already present.
+
+LED and Palette preferences can be imported/exported. These LED exports are
+not a backup of every app preference or your custom Djay mapping.
+Saved settings survive app updates. Technical files live under
+`~/Library/Application Support/S4 MK3 Bridge/`; normal setup does not require
+editing them.
+
+## Troubleshooting
+
+| Symptom | First action |
+| --- | --- |
+| No controls or LEDs | Check power/USB, full profile, running status, and S4 MK3 MIDI Full's selected mapping; rule out a second bridge instance |
+| Changed mapping or restarted/reconnected Djay | Stop and start the bridge to reinitialize feedback-dependent startup state |
+| Channel level/EQ did not match at startup | Confirm the matching mapping is connected and sending feedback, then restart; check the excluded controls separately |
+| FX knob seems ignored or blinks | Check its target deck, then cross the software pickup value; missing feedback needs the matching mapping |
+| Jumps are one beat after Shift+MOVE | Confirm JUMP feedback and the matching mapping before relying on size restoration |
+| Preview stays playing | Stop Preview with the mouse to resynchronize the held workflow |
+| Screens show logos, stay dark, or status is red | Use Settings > Screens and the app's NI handover/recovery controls; do not start a second screen prototype |
+| Return to Traktor after a crash | Use Restart Native Instruments screen driver; accept Stop bridge & restore NI driver if prompted |
+| USB was disconnected | Reconnect and explicitly start the bridge again |
+
+Brief input gaps suspend tension and allow it to recover after fresh readings
+and newly qualified movement. That is different from a bridge exit. If the
+bridge actually stops with an error, keep the Diagnostics log and report the
+exact message rather than assuming the timeout-recovery path ran.
+
+If Djay shows a key but the latest S4 build shows `?`, retain the track and
+record the deck, title and Djay key before restarting. For a report, also
+include app release/build, macOS/Djay versions and selected mapping name.
+Copy relevant Diagnostics output and check it for private information.
+
+## Intentional differences and limits
+
+- LOOP and MOVE have independent lengths, rather than Traktor's shared length.
+- Shift+SYNC changes global range; it does not lock one deck's tempo fader.
+- REV and Slip are independent.
+- Channel FX1/FX2 choose manual control targets, not shared audio buses.
+- Filter then ON chooses an EQ-mode change; ordinary ON targets Instant FX.
+- MUTE selects the STEMS layer rather than acting as a held modifier.
+- The main FX ON, REC, external-input/EXT routing and released backspin have
+  the limitations described above; do not assume factory Traktor behavior.
+- Djay can coalesce very rapid separate jump commands. This is distinct from
+  the confirmed-size restoration fix.
+
+For every binding and lower-level detail, use the
+[bridge function reference](bridge-function-reference.md). The
+[Traktor comparison](traktor-djay-comparison.md) explains the factory
+differences; its historical rows are superseded by its current overlays.
+The [issue checklist](issues.md) tracks remaining work.
+
+This guide is the maintained explanation of current workflows. Control,
+mapping, setup and feedback changes should update the relevant section here
+alongside their technical reference.

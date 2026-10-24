@@ -3,6 +3,9 @@
 The full profile uses a separate `S4 MK3 MIDI Full` virtual source. The verified
 nine-control profile remains available with `--midi` and its original source
 name. This profile does not overwrite that saved Djay configuration.
+For normal app use, start with the [user guide](user-guide.md). This page
+contains the current mapping reference and focused developer/live checks;
+the dated records at the end describe earlier revisions.
 
 ## Generate and install
 
@@ -40,9 +43,9 @@ that an existing bundle has been rebuilt.
 | LOOP encoder press | `autoLoopOnOff`; Shift uses `reloop` to reactivate the stored loop range; manual loop in/out is unmapped |
 | MOVE encoder | Native jump by chosen jump size (`skipRotary`), with or without an active loop; selection mode changes jump size immediately (`skipDurationRotary`) |
 | MOVE encoder press | Local per-logical-deck size-select toggle, no MIDI, no timeout; second press exits |
-| Shift+MOVE turn | Fixed one-beat jump per detent in either direction, even while selecting; preserves chosen jump size |
-| Browse encoder / press | Browse / load active deck; Shift turn seeks preview with directional button pulses, Shift press goes back; normal browsing retains its native mapping inversion |
-| Library buttons | Show library, queue, mark selection, and preview |
+| Shift+MOVE turn | One-beat jump per detent, even while selecting; restore the last confirmed jump size, never guess missing feedback |
+| Browse encoder / press | Browse / load selected deck; Shift turn changes source, Shift press goes back; held Preview+BROWSER scrubs with or without Shift |
+| Library buttons | Show library, mark/unmark selection, Switch Library Table (Star), and held preview |
 | HOTCUE pads | Hotcues 1-8; Shift clears them |
 | SAMPLES pads | Play samples; Shift stops them |
 | STEMS / MUTE pads | Four Neural Mix mute pads plus four solo pads |
@@ -51,10 +54,10 @@ that an existing bundle has been rebuilt.
 | Channel strips | Fixed deck 1-4 gain, EQ, volume, filter, and headphone cue |
 | Channel FX1 / FX2 | Select the left/right hardware FX section's deck target |
 | Deck FX buttons | Enable three effects; Shift selects the next effect |
-| FX ON | Enable/disable that target deck's manual FX |
-| FX knobs | Parameters 1-3; dry/wet changes all three effect mixes |
-| Channel FX SELECT | Choose the deck targeted by the mixer instant-FX buttons |
-| Mixer FX 1-4 / Filter | Instant FX 1-4 / reset that deck's filter |
+| FX ON | Current native binding duplicates slot 1; true whole-bank bypass remains unresolved |
+| FX knobs | Parameters 1-3; dry/wet controls all three mixes, with per-control/slot pickup |
+| Channel ON / mixer FX SELECT | Choose the central Instant FX target |
+| Mixer FX 1-4 / Filter | Held Instant FX / arm or cancel Neural Mix EQ deck selection; next channel ON toggles its EQ mode |
 | Quantize | Toggle quantize on all four decks |
 | Front channel switches | Native Left / Through / Right crossfader assignment |
 | Front curve switch | Three positions of Djay's crossfader curve control |
@@ -72,9 +75,10 @@ are corrected to the S4 order 5, 4, 7, 6, 3, 2, 1, 0.
 Encoder naming is corrected for all rotations and only left presses in the
 full profile. Right presses and the minimal profile are unchanged.
 Normal MOVE uses CC 2 on channels 1-4; unshifted size selection uses CC 7 on
-those channels. Shift+MOVE emits note 5 forward or note 14 backward on
-channels 9-12 only. The native catalog also provides base-channel aliases
-for the fixed-jump actions, but runtime Shift routing doesn't use them.
+those channels. Shift+MOVE selects one beat, sends normal-channel CC 2 with
+the full signed delta, then restores the last confirmed size through notes
+64-73 on that deck's normal channel. Notes 5/14 remain aliases, not the runtime
+route. Unknown/conflicting feedback prevents restoration, not the one-beat jump.
 
 Each logical deck A/B/C/D retains independent native Djay jump and loop
 values. There are no bridge-owned size counters or shared-size resets.
@@ -94,23 +98,26 @@ Touched jog movement stays with its touch owner until release. Integer HID
 counts are recovered from Encdr's normalized float before MIDI conversion,
 so rounding error cannot defer a count or cancel it on reversal. Fractional
 grid steps are accumulated, and larger relative deltas are split rather than
-discarded. Tempo and FX pickup are handled by Djay; changing a target does not
-replay a cached knob position.
+discarded. Tempo uses native Djay pickup. Shared FX additionally use bridge-owned
+pickup gates based on actual software parameter/wet-dry feedback; changing a
+target does not replay a cached knob position.
 
 On the tested macOS/S4 combination, interrupt jog reports arrive about
 256 ms apart, causing MIDI movement to be emitted in bursts. Full mode now
 requests native input snapshots for buttons/touch and jogs, paced by a
 2 ms bounded interrupt read. Older interrupt copies of those reports are
-discarded so they cannot replay stale motion or touch state. Slider interrupts
-and the minimal profile keep their existing transport. This requests input
-only; it does not claim audio interfaces or enable motors.
+discarded so they cannot replay stale motion or touch state. Current full-mode
+analog notifications request fresh snapshots rather than replaying queued
+slider values older than the startup GET. The minimal transport is unchanged.
+This reader requests input; it does not claim audio or itself enable motors.
 
 High-rate jog and MIDI-message logs use debug level to avoid terminal output
 on every movement in normal use. Use `RUST_LOG=debug` for a short diagnostic
 capture; `--raw` remains an explicit full-report diagnostic.
 
 Deck MIDI channels are 1-4, shifted variants 9-12, mixer 5, and global selection
-6. The underlying native mapping file uses zero-based channel numbers.
+6; dedicated playback/meter/loading feedback uses 7. The underlying native
+mapping file uses zero-based channel numbers.
 Continuous MIDI controls use 7-bit values; physical feel and tempo precision
 need real testing rather than inference from successful message delivery.
 
@@ -120,8 +127,9 @@ need real testing rather than inference from successful message delivery.
   using the S4's outputs, avoiding duplicate software attenuation.
 - EXT presses are decoded, but no equivalent Djay live-input-selector action
   has been established. They are not given an arbitrary software assignment.
-- Screens, motor rotation, controller emulation, and audio forwarding are not
-  implemented by this input mapping.
+- The input mapping does not implement controller emulation, audio forwarding,
+  or playback-driven motor rotation. The full runtime separately supports
+  optional [screens](screens.md) and saved [jog tension](jog-tension-integration.md).
 - Regenerated full mappings include software-state LED feedback and configurable
   presentation. See [led-feedback.md](led-feedback.md) for setup and verification
   limits. Older input-only mappings do not emit those states. Minimal/probe Play
@@ -140,14 +148,16 @@ CC 4-7; an older mapping without those outputs cannot initialize selectors.
   independent.
 - Check clockwise/down-list and counterclockwise/up-list normal Browse movement
   on both sides. The mapping alone inverts ordinary browsing.
-- Toggle Preview on, then hold the corresponding Shift and turn BROWSER
-  on both sides and A/C/B/D: clockwise should seek forward, counterclockwise
-  backward, without changing the selected track. Each decoded detent sends
-  one press/release pair: note 23 forward, note 24 backward on channels 9-12.
-  Release Shift to restore browsing; ordinary navigation cancels preview.
-  With preview stopped, shifted turns should do nothing. Preview remains
-  Djay's native toggle, with no local playback-state flag. Both native seek
-  actions were user-verified; this new encoder route still needs a live check.
+- Hold Preview and turn BROWSER on both sides and A/C/B/D: clockwise should
+  seek forward, counterclockwise backward, without changing the selected track.
+  Each detent sends one press/release pair: notes 23/24 on channels 1-4,
+  or 9-12 with Shift. Release Preview to stop; normal browsing resumes.
+  With Preview released, Shift+BROWSER must change sources through notes 25/26,
+  not seek. With both Preview and Shift held, Preview takes precedence.
+  Overlapping holds keep Preview open until the last release. The paired
+  native toggles do not infer playback state; use mouse-close recovery if
+  external changes desynchronize them. Keep a focused physical result
+  separate from native action and software-routing checks.
 - Preset all physical assignments and curve without moving them. Check
   Djay-first and bridge-first startup, including Through positions and
   empty/paused decks. Diagnostics should show `CROSSFADER_FEEDBACK_RECEIVED`;
@@ -184,9 +194,10 @@ are references for file/action syntax, not controller emulation.
 
 ### Encoder layout live check
 
-These checks are pending. The user verified with the mouse that beat jump
-moves an active loop; this isn't evidence of fresh MIDI/native routing or
-physical selector-LED behavior.
+This focused physical matrix is not replaced by a general successful set.
+Native MIDI/GUI jump/restoration and production LED-report evidence is in
+[control validation](controls-state-sync-validation.md). The user also
+verified with the mouse that beat jump moves an active loop.
 
 1. Install and select the new mapping, then monitor MIDI while using both
    physical encoder pairs. Confirm corrected LOOP/MOVE pairing and both
@@ -201,10 +212,11 @@ physical selector-LED behavior.
    away and back: values and flags must remain independent, without a
    timeout or shared reset.
 4. While selecting, hold Shift and turn both directions. Expect one-beat
-   jumps per detent via note 5 forward / note 14 backward on channels
-   9/10/11/12 for A/B/C/D, never their base-channel aliases. Release Shift:
-   selection resumes with the chosen jump size intact. Repeat outside
-   selection mode.
+   jumps per detent: normal-channel Note67 selects one beat, CC2 carries the
+   signed count, then a normal-channel Note64-73 restores the confirmed size.
+   Use channels 1/2/3/4 for A/B/C/D. Repeat outside selection mode and test
+   missing/conflicting feedback: it must not invent a restoration value.
+   Release Shift: size selection resumes.
 5. Exit selection and check normal MOVE in both directions without a loop,
    then with an active loop. The jump and active-loop movement must use
    the chosen jump size. Change LOOP size and toggle LOOP on/off: its

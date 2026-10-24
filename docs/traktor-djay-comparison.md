@@ -7,6 +7,9 @@ claim that every control in the expanded profile has passed a live hardware
 test. Printed page numbers below refer to the page number in the manual footer;
 the supplied PDF has three preceding cover/front-matter pages.
 
+For the current workflow rather than the historical comparison table, use the
+[user guide](user-guide.md). Current overlays below supersede the older rows.
+
 ## Evidence and naming
 
 The manual is the source for factory Traktor behavior. The bridge's `input`
@@ -85,12 +88,13 @@ size-select mode without a timeout. In selection mode, unshifted MOVE sends
 CC 7 on channels 1-4 (`skipDurationRotary`), changing native jump size
 immediately. A second press exits, rather than saving a deferred value.
 
-Shift+MOVE always jumps one beat per detent in either direction, even during
-selection, preserving chosen jump size. Runtime sends note 5 forward or
-note 14 backward only on shifted channels 9-12; the native catalog also has
-base-channel aliases. A/B/C/D sizes remain independent native Djay values,
-not bridge counters or shared-size resets. Local mode flags are independent
-and start off on bridge restart.
+Shift+MOVE selects one beat, sends the full signed detent count through normal
+deck-channel CC 2, then restores the last confirmed jump size using normal-channel
+notes 64-73. Notes 5/14 are retained mapping aliases, not the runtime shortcut.
+If feedback is missing or conflicting, no previous size is guessed: the one-beat
+jump still occurs but a prior size cannot be restored. A/B/C/D sizes remain
+independent native Djay values, not bridge counters or shared-size resets.
+Local selection flags are independent and start off on bridge restart.
 
 The selected deck selector pulses on a 1.2-second palette-brightness cycle
 with a dark trough while selecting. Hidden decks retain their mode without
@@ -98,9 +102,11 @@ flashing inactive selectors. This encoder increment adds no screen or motor
 traffic; the separate hardware-tension increment below does add motor output.
 The minimal profile is unchanged.
 
-The user mouse-verified beat jump moving an active loop, but fresh MIDI/native
-and physical LED checks remain pending. Reinstall a newly generated mapping
-under a new filename, preserving custom maps. See the focused
+The user mouse-verified beat jump moving an active loop. Native MIDI/GUI
+jumping, confirmed-size restoration and LED-report checks are recorded in
+[control validation](controls-state-sync-validation.md); a complete physical
+gesture matrix is a separate check. Reinstall a newly generated mapping under
+a new filename when bindings change, preserving custom maps. See the focused
 [live checks](full-midi-test.md#encoder-layout-live-check).
 
 ## Current hardware tension and mixer EQ overlay
@@ -148,9 +154,10 @@ native key paths:
 
 ## Explicitly deferred
 
-- **On-device pad legends/screens:** deferred. The full bridge does not implement
-  screen feedback or dynamically printed pad legends; the current pad meanings
-  are software-selected layers.
+- **Additional on-device pages and settings:** current source implements Info
+  screens and reactive STEMS/MUTE legends, with optional FX pickup warnings.
+  Hotcue/sample pad grids, artwork, waveforms, playback-position tracking and
+  an on-controller settings menu are not implemented. See [screens](screens.md).
 - **A+C+B+D settings chord:** deferred. A and C are ordinary left-deck focus
   controls and B and D are ordinary right-deck focus controls (manual §7.16,
   p. 69; bridge selectors in `src/full/mod.rs`). Consuming all four as a settings
@@ -160,11 +167,19 @@ native key paths:
   isolated [physical capture](encoder-capture.md), including clockwise polarity
   and Shift. The full-profile naming correction is implemented; fresh musical
   routing and selector-LED validation remain pending.
-- **EXT routing, preview scrubbing, REC action semantics, Reverse+Slip hold
-  behavior, tempo lock, Djay FX assignment semantics, and startup selector
-  reapplication:** none is promoted from a catalog key or generic support-page
-  description to verified end-to-end behavior without the corresponding
-  Djay-version test.
+- **Preview and navigation:** held Preview+BROWSER scrubbing, Shift+BROWSER
+  source selection and Star's Switch Library Table route are implemented.
+  Preview toggle state can still need mouse-close recovery; there is no
+  latched-preview mode. See [navigation](user-guide.md#browse-preview-and-load).
+- **Startup and feedback:** physical volume/EQ application, FX pickup and
+  confirmed-size restoration are implemented. Musical-key feedback ordering
+  is fixed and physically verified for replacement/eject. Reconnection still
+  requires an explicit bridge restart.
+- **Remaining differences:** EXT routing, REC's end-to-end recording semantics,
+  automatic Reverse+Slip linking, Traktor-style tempo lock and true shared
+  FX-bus routing are not established equivalents. Shift+Sync changes the
+  global range; channel FX1/FX2 choose control targets rather than audio buses.
 
-No bridge code, mapping, hardware state, or device I/O was changed for this
-comparison. The only artifact produced is this report.
+The original comparison was documentation-only. Current overlays are maintained
+alongside the implementation; dated validation records identify what was
+actually exercised.

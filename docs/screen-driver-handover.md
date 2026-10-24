@@ -1,17 +1,19 @@
 # Screen support and the Native Instruments driver
 
-October 23, 2026. Local development build; not a new public release.
+These controls are in the current source build, not the published beta.3 download.
 No Terminal commands or extra development tools are required on the DJ laptop.
+For the full daily workflow, start with the [user guide](user-guide.md).
 
-## Use the new app
+## Start with screens
 
 1. Stop any standalone bridge. Quit the older menu-bar app before replacing
-   its Applications copy. The new packages are in
-   `dist/Screens NI Handover Fix-20261023/`; the older app and packages
-   remain untouched.
-2. Copy that folder's `S4 MK3 Bridge.app` to Applications, or install it from
-   the included DMG. Open the new app and select the full-controller profile.
-   Keep your existing Info Screen mapping selected.
+   its Applications copy. Use one screen-capable app build, not a separate
+   prototype alongside the app.
+2. Install that app normally, open it and select the full-controller profile.
+   Select the mapping exported by the same build. Save new mappings under
+   new filenames and preserve custom configurations. Older Info Screen mappings
+   can lack newer FX/navigation/jump outputs; a runtime-only key fix does not
+   require replacing a mapping that already has the current feedback.
 3. Open **Settings > Screens**. **Enable S4 screens** is the same preference
    as the checked item in the status-bar menu. It is on by default to preserve
    the previous app's behavior. Automatic NI driver stopping is off by default;
@@ -84,12 +86,10 @@ is managed. The backend verifies bundle ID `com.native-instruments.NIHardwareSer
 the executable path, and Native Instruments' signed identity.
 It sends SIGKILL only to the freshly revalidated driver process, subscribes before
 requesting termination, and waits for the actual exit with a bounded deadline.
-Attended testing isolated SIGTERM shutdown as the screen-blanking trigger:
-stopping NI alone darkened both panels, and a later bridge Start did not recover
-them. A verified forced stop preserved the logos, and the unchanged bridge then
-displayed both pages without a controller reset. The user selected this guarded
-handover policy. The existing active-NI-app checks and explicit stopping consent
-still apply. The app does not use sudo,
+Normal NI-driver shutdown can blank the panels. The app therefore uses the
+guarded screen-preserving stop rather than asking users to quit the driver
+manually. The active-NI-app checks and explicit stopping consent still apply.
+The app does not use sudo,
 disable login items, change SIP, send AppleScript or install a privileged helper.
 Native permission failures are reported rather than escalated.
 
@@ -127,21 +127,9 @@ The blocking stdin reader lasts until EOF or process exit.
 Minimal MIDI, HID probe, controller checks and mapping export do not enable this
 control protocol or manage NI. The standalone CLI still opts in with `--screens`.
 
-## Validation boundary
+## Validation records
 
-Tests cover exact native agent identity, absence of an installed agent, refusal
-while NI apps are active, denied termination, observed exit and timeout, native
-restore identity, manual unowned recovery, durable restoration responsibility,
-no automatic checks when off, shared menu preferences, red icon pixels, stale
-control generations, release acknowledgement and restore-after-child-exit, and live toggles through a real
-owned subprocess. The quit-during-handover and child-exit-during-OFF paths use
-explicit event gates rather than sleeps.
-
-NI policy tests use injected seams; native regressions launch owned AppKit and
-headless fixture apps and observe actual process exit. UI tests use a fake
-agent and an owned subprocess. An authorized real-driver check restored
-NIHardwareAgent in 0.202 seconds. The final rebuilt app passed attended Start,
-sustained visible screens, Stop/NI restoration and a normal Quit in 0.011 seconds.
-The user also verified working Traktor screens afterward and reported that the
-corrected app works well on the actual DJ laptop. Long-session endurance remains
-untested. See the [validation record](screen-driver-handover-validation.md).
+Native handover, Stop/Quit, restoration and return-to-Traktor evidence are in
+the [handover validation record](screen-driver-handover-validation.md).
+The [DJ-laptop set record](dj-laptop-set-validation.md) captures subsequent
+ordinary use, separately from focused driver fault/recovery checks.

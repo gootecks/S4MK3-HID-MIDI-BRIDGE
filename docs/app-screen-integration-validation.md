@@ -29,7 +29,7 @@ current build, use the [screen-driver handover guide](screen-driver-handover.md)
 
 If screens stay dark, open Diagnostics. `SCREENS_DISABLED` with an interface-4
 access error can mean NIHardwareAgent still owns the display interface.
-Follow the [ordered ownership instructions](screens.md#local-investigation-commands)
+Follow the [historical ownership instructions](screen-prototype-validation.md#local-investigation-commands)
 to quit it temporarily and then use Stop/Start in the app.
 The app never quits another application automatically. A screen failure does
 not stop MIDI, LEDs or the saved tension service.

@@ -1,9 +1,9 @@
 # Bridge-owned functionality
 
-Snapshot: October 6, 2026, full profile bundled with the macOS app. This table
-describes the implementation, not a promise of factory Traktor compatibility.
-The user confirmed the app runs on the actual DJ laptop; subsequent control
-notes are tracked in [mapping-audit.md](mapping-audit.md).
+Reference for the current full-controller source build, not a promise of
+factory Traktor compatibility. Start with the [user guide](user-guide.md)
+for everyday workflows. Current sections below supersede the October 6 base
+snapshot retained later in this document.
 
 ## Logic implemented inside the bridge
 
@@ -57,10 +57,12 @@ with a dark trough while selecting. Hidden deck modes persist without
 flashing inactive buttons. This encoder overlay adds no screen or motor traffic;
 the separate saved-tension increment below adds motor output.
 
-These routes are implemented, not physically validated here. The user
-mouse-verified beat jump moving an active loop; fresh MIDI/native and LED
-checks remain pending. Reinstall the generated mapping under a new filename,
-preserving custom maps. See [live checks](full-midi-test.md#encoder-layout-live-check).
+The user mouse-verified beat jump moving an active loop. Native MIDI/GUI,
+multi-detent jump restoration, and production LED-report checks are recorded in
+[control validation](controls-state-sync-validation.md). Those checks are not
+a complete physical A/C/B/D gesture matrix. When changing mappings, install
+under a new filename and preserve custom maps. See
+[focused live checks](full-midi-test.md#encoder-layout-live-check).
 
 ### Startup positions and FX pickup
 
@@ -79,6 +81,15 @@ Known mismatch blinks the corresponding FX button; dry/wet uses main ON.
 Info/STEMS adds an affected-deck `FX SYNC` header only while needed.
 See [operation](controls-state-sync.md) and
 [verification boundaries](controls-state-sync-validation.md).
+
+### Musical-key feedback
+
+The screen key follows deck-owned `displayKeyIndex` feedback independently of
+song-owned `loadingSuccess`. Djay can send a new key before loading-false;
+that notification must not erase it. Genuine eject reports key 0, displayed
+as `--`. Missing or unrecognized key feedback remains `?`, without guessing.
+The captured ordering regression and physical replacement/eject acceptance are
+recorded in [key feedback validation](key-feedback-order-validation.md).
 
 ### Saved hardware tension
 
@@ -174,9 +185,15 @@ ultimately controls playback, Djay still performs the audio operation.
 
 ## Not implemented
 
-Screens, screen settings menus, pad legends, playback-position
-platter tracking, live-input deck replacement, preview-dependent encoder
-routes, Shift+Sync tempo-range cycling, and automatic same-process mapping
-reconnect detection are not present. Startup crossfader initialization is
-gated on raw playback feedback. Keep these limits separate from the
-current-behavior reference.
+Playback-driven platter rotation, physical/playback-position ring tracking,
+an on-controller settings menu, live-input deck replacement, a latched Preview
+mode, and automatic same-process mapping-reconnect detection are not present.
+Whole-bank FX bypass and REC's end-to-end sample-recording behavior remain
+unresolved.
+
+App-managed screens, Info/STEMS legends, held-Preview encoder scrubbing, and
+global Shift+Sync tempo-range cycling are implemented in current source.
+See the [screen reference](screens.md) and [user guide](user-guide.md).
+Startup channel-volume/EQ and crossfader assignment/curve initialization wait
+for actual mapping feedback; gain, filter, crossfader position and tempo are
+not included in the channel-volume/EQ push.

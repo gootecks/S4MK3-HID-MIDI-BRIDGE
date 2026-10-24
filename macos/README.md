@@ -43,6 +43,9 @@ library reference.
 
 ## Use on the DJ laptop
 
+The maintained [user guide](../docs/user-guide.md) explains setup, everyday
+workflows, mapping choices and recovery. This page also covers developer builds.
+
 Download the DMG from GitHub Releases, open it, and drag the app to the
 Applications shortcut. Eject the disk image and launch the installed app.
 The ZIP is an alternative: unzip it and move the app to Applications.
@@ -71,12 +74,14 @@ HOTCUE/SAMPLES shows JUMP, active LOOP size, KEY and global RANGE.
 STEMS/MUTE shows actual mute/solo feedback; Shift changes the upper row to ONLY.
 All pages use a smooth font embedded in the bridge.
 
-Stop any separate prototype bridge before starting this app. The existing
-Info Screen mapping can stay selected. Otherwise use **Install Djay mapping...**
-under a new name and select it in Djay; older mappings lack numeric feedback.
-Preserve custom mappings. Quit Traktor/Mixxx before using the screens.
-If NIHardwareAgent owns display interface 4, quit it temporarily using the
-[ordered screen instructions](../docs/screens.md#macos-ownership-finding).
+Stop any separate prototype bridge before starting this app. Use **Install
+Djay mapping...** under a new name and select that build's mapping in Djay;
+older mappings can lack numeric, FX or navigation feedback. Preserve custom
+mappings. A runtime-only musical-key fix does not require replacing a mapping
+that already supplies the current numeric feedback.
+Quit Traktor/Mixxx before using the screens. If NIHardwareAgent owns the display,
+use the app's handover controls rather than manually quitting it. See the
+[ordered screen-driver instructions](../docs/screen-driver-handover.md#start-with-screens).
 The app can stop NIHardwareAgent with confirmation or explicit automatic-stop
 consent, and restore an agent it stopped. Screen handover force-closes only the
 verified background driver: its normal shutdown blanks the S4 panels, while the
@@ -173,6 +178,11 @@ headers identify the affected deck and strip without replacing Info/STEMS.
 Install the same build's new mapping and restart the bridge after changing it.
 See [setup and operation](../docs/controls-state-sync.md). These additions are
 not in the published beta.3 download.
+
+The current runtime also preserves musical-key feedback across track-loading
+notifications. Actual no-key feedback clears KEY to `--` on eject; unavailable
+feedback remains `?`. This key fix changes no MIDI addresses. See the
+[screen reference](../docs/screens.md#info-page-hotcue-and-samples).
 
 ### Mixer ON and Neural Mix EQ
 

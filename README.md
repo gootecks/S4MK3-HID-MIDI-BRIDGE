@@ -8,6 +8,11 @@ Djay sends audio directly to the S4. No development tools are needed.
 of every Traktor feature. Read the control differences and known limitations
 below before using it for a set.
 
+**[User guide: setup, everyday workflows and mapping choices](docs/user-guide.md)**
+is the maintained starting point for the current full-controller build.
+It explains browsing/preview, loops and jumps, FX pickup, pads, jog feel and
+screens without requiring MIDI or development knowledge.
+
 ## Requirements
 
 - An Apple Silicon Mac running macOS 12 or later, plus a macOS version supported
@@ -25,7 +30,11 @@ below before using it for a set.
 
 The published portable build is **0.1.1-beta.3 (build 4)**. See the
 [release notes](docs/release-0.1.1-beta.3.md).
-Screen support requires a source build; it is not included in this download.
+This download predates the current screen integration, updated Preview/CUE/
+library mappings, startup channel synchronization, FX pickup, jump-size
+restoration and musical-key fix. Those require a current source build.
+Local development builds can still show the same version number; use the app
+and mapping supplied together.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. macOS may block
 the first launch because it can't verify the developer. After attempting to
@@ -80,6 +89,9 @@ to stop control translation, or **Quit S4 MK3 Bridge** to quit.
 _Bridge controls and mapping installation._
 
 ## Controls and differences from Traktor
+
+This section and the [user guide](docs/user-guide.md) describe the current
+source build. The published beta.3 download has the older behavior noted above.
 
 The mapping covers four-deck transport, touch scratching and pitch bending,
 mixing, EQ, headphone cue, loops, browsing, hotcues, samples, Neural Mix, and
@@ -214,12 +226,16 @@ Open bugs and unresolved behavior:
 - **Jog feel and backspin:** backspin still ends on touch release. Slow/fast
   response and final stop behavior need further work; the new tension setting
   isn't full Traktor jog parity.
+- **Sensor-time safety exit:** reversed wheel-sensor time stops the bridge.
+  Keep the exact Diagnostics error if this occurs; it is separate from the
+  automatically recovering 50 ms input-gap path.
 - **FX bank enable:** the leftmost FX button duplicates slot 1. Whole-bank
   bypass that preserves individual slot states remains unresolved.
 - **REC:** recording source, destination/sample slot, and press/hold behavior
   aren't established.
 - **Preview scrubbing:** native forward/backward skips are verified, and
-  Shift+BROWSER seeking is implemented. Physical encoder direction and
+  held Preview+BROWSER seeking is implemented; Shift+BROWSER changes source.
+  Physical encoder direction and
   multi-detent response still need a live check with the new app and mapping.
 - **MUTE/STEMS:** the current alias works as described above, but a possible
   held modifier and final pad behavior are undecided.
@@ -259,6 +275,7 @@ for the S4 MK3 protocol documentation and controller support this bridge builds 
 
 ## Developer and reference documentation
 
+- [User guide and everyday workflows](docs/user-guide.md)
 - [macOS app, packaging, and developer checks](macos/README.md)
 - [Full mapping layout and test records](docs/full-midi-test.md)
 - [Settings and control tuning](docs/configurable-controls.md)

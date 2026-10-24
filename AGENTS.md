@@ -8,8 +8,10 @@ The current product is an Apple Silicon menu-bar app bundling a Rust
 HID-to-MIDI bridge, generated Djay mapping, and LED preferences. The DJ
 laptop must not require Rust or Cargo.
 
-A standalone hardware bridge remains a longer-term goal. Screens and
-motors are deferred unless explicitly requested.
+A standalone hardware bridge remains a longer-term goal. Current source
+includes optional screens and motor-assisted jog tension. Additional screen
+pages, playback-driven platter rotation and new haptics remain deferred unless
+explicitly requested.
 
 ## Architecture
 
@@ -31,6 +33,7 @@ motors are deferred unless explicitly requested.
 
 ## Read before changing behavior
 
+- `docs/user-guide.md`
 - `docs/mapping-audit.md`
 - `docs/encoder-capture.md`
 - `docs/djay-action-reference.md`
@@ -44,6 +47,12 @@ the packaged app or older test counts describe the current working tree.
 
 ## Documentation audiences
 
+- `docs/user-guide.md` is the canonical, workflow-oriented user guide. Keep it
+  understandable without MIDI/development knowledge. When user-visible
+  controls, mappings, feedback, setup or preferences change, update the
+  relevant guide section in the same change alongside focused references.
+  Check descriptions against the catalog, generator and runtime; keep current
+  source-build behavior distinct from published-download availability.
 - `README.md` is public-facing product documentation. Keep it focused on
   requirements, installation, current controls, usage, and known limitations.
   Distinguish published downloads from source-only features when necessary.
@@ -54,6 +63,9 @@ the packaged app or older test counts describe the current working tree.
   validation records under `docs/`, such as
   `docs/app-screen-integration-validation.md` and
   `docs/screen-driver-handover-validation.md`.
+- A successful set is general usage evidence, not proof that every individual
+  control or fault/recovery path was exercised. Preserve focused verification
+  limits in the corresponding validation records.
 - Keep user setup guides separate from those records. README links for setup
   and troubleshooting must lead to current instructions, not session history.
   `macos/README.md` may document developer build commands, but not internal

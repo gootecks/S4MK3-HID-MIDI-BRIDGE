@@ -6,6 +6,9 @@ not the bridge's HID counts, MIDI addresses, or touch ownership.
 
 ## Available now
 
+- Current source adds app-managed screen on/off, optional automatic NI-driver
+  stopping, restoration, and manual recovery. Screen controls save immediately;
+  see [screen setup](screen-driver-handover.md).
 - Full/minimal/HID-probe profiles, continuous run or a bounded duration,
   controller enumeration, raw HID logging, and log detail.
 - Mapping installation/export. The installed file contains the same fixed
@@ -25,6 +28,11 @@ not the bridge's HID counts, MIDI addresses, or touch ownership.
 
 LED edits only need a bridge restart, which the app performs on Save and
 restart. They do not require mapping regeneration or a Rust toolchain.
+
+Current-source startup volume/EQ synchronization and shared-FX pickup are
+runtime behavior, not additional sensitivity settings. They need the matching
+feedback mapping. See [operation](controls-state-sync.md) and the
+[user guide](user-guide.md#settings-what-needs-saving-or-a-new-mapping).
 
 Jog settings are different: save preferences, install the newly generated
 mapping under a new filename, then select it in Djay. Export uses the current
@@ -77,6 +85,7 @@ restarting the bridge alone cannot apply them inside Djay.
 - Held-note ownership, release-before-selector ordering, fractional jog
   residuals, feedback queue bounds, and output pacing protect correctness and
   smooth input. They are not appearance or musical-control choices.
-- No screen, playback-driven platter rotation, audio-forwarding, guessed
-  end-warning, or track-position chase setting is exposed. The motor-backed
-  tension setting is separate; decorative chase does not claim actual position.
+- No on-controller settings menu, playback-driven platter rotation,
+  audio-forwarding, guessed end-warning, or track-position chase setting is
+  exposed. App screen controls and motor-backed tension are separate;
+  decorative chase does not claim actual position.

@@ -53,9 +53,12 @@ four decks. Physical behavior remains subject to the [focused check](neural-mix-
 The counts and S4 usage cells below are the historical audit snapshot, not
 the rebuilt encoder mapping. Current encoder assignments supersede that
 snapshot: MOVE uses CC 2 for `skipRotary`, selection uses CC 7 for
-`skipDurationRotary`, and Shift+MOVE uses note 5/14 for fixed one-beat jumps.
-REV now uses `turntableN.reverseHold` on note 3, channels 1-4. Browse CC 3
-has `flipped=true` on normal channels 1-4 and shifted channels 9-12.
+`skipDurationRotary`, and Shift+MOVE temporarily selects one beat, sends
+normal-channel CC 2, then restores the last confirmed size with notes 64-73.
+Notes 5/14 are legacy aliases, not this runtime route.
+REV uses `turntableN.reverseHold` on note 3, channels 1-4. Normal Browse CC 3
+has `flipped=true`; current Shift+BROWSER emits source-selection notes 25/26
+instead of the old shifted rotary route.
 Shift+LOOP press uses `turntableN.reloop` on note 6, channels 9-12.
 
 The October 21 held-preview increment supersedes the October 8 Shift+BROWSER

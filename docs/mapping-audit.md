@@ -53,19 +53,19 @@ See [configurable controls](configurable-controls.md) and
 
 ### Implemented LOOP/MOVE layout
 
-The October 8 preview increment keeps native Preview toggle and normal
-BROWSER navigation. Shift+BROWSER now emits native forward/backward preview
-seek button pulses instead of section navigation, without guessing playback
-state. LOOP is unchanged. Both seek actions are user-verified; physical
-direction and multi-detent response for this new route remain pending.
-The earlier preview-dependent/LOOP proposal below is superseded by this layout.
+Current BROWSER navigation is unshifted. Hold Preview to audition and turn
+BROWSER to scrub; release Preview to stop. Shift+BROWSER without Preview
+changes source, while Preview takes precedence when both are held. These
+routes supersede the October 8 Shift-only scrubber and the earlier
+preview-dependent/LOOP proposal retained below. See the
+[user workflow](user-guide.md#browse-preview-and-load).
 
 The subsequent REV/Browse increment maps REV to native `reverseHold`,
 preserving press ownership through deck/Shift changes and shutdown. No
-automatic Slip/Flux behavior was added. Browse's normal and shifted rotary
-bindings now carry `flipped=true` in the native mapping; the decoder and
-wire polarity remain unchanged, avoiding a double inversion. These two
-changes pass 72 Rust tests but still require live confirmation.
+automatic Slip/Flux behavior was added. That increment's normal and shifted
+rotary bindings carried `flipped=true`; current runtime Shift routing is
+described above. The decoder and wire polarity were unchanged, avoiding a
+double inversion. Its historical software pass had 72 Rust tests.
 
 Crossfader startup now caches the physical switch snapshot until the mapping
 has returned a raw playback output, including a paused/zero value. It then
