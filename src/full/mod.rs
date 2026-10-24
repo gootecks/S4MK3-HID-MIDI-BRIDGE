@@ -84,6 +84,48 @@ struct WheelOwner {
     action: &'static str,
 }
 
+#[derive(Clone, Copy, Default)]
+struct FxPickup {
+    acquired: bool,
+    /// Ordered-feedback window for our own outstanding values: low, high, latest.
+    pending: Option<(u8, u8, u8)>,
+}
+
+impl FxPickup {
+    fn observe(&mut self, old: Option<u8>, value: Option<u8>, physical: Option<u8>) {
+        if let Some((low, high, latest)) = self.pending {
+            if value == Some(latest) {
+                self.pending = None;
+            } else if value.is_some_and(|value| !(low..=high).contains(&value)) {
+                *self = Self::default();
+            }
+        } else if value != old
+            && value
+                .zip(physical)
+                .is_none_or(|(value, physical)| value.abs_diff(physical) > 1)
+        {
+            self.acquired = false;
+        }
+    }
+
+    fn accepts(&mut self, previous: Option<u8>, value: u8, software: Option<u8>) -> bool {
+        let Some(software) = software else {
+            return false;
+        };
+        if !self.acquired {
+            self.acquired = value.abs_diff(software) <= 1
+                || previous.is_some_and(|previous| {
+                    (previous.min(value)..=previous.max(value)).contains(&software)
+                });
+        }
+        if self.acquired {
+            let (low, high, _) = self.pending.unwrap_or((software, software, software));
+            self.pending = Some((low.min(value), high.max(value), value));
+        }
+        self.acquired
+    }
+}
+
 struct Translator {
     decks: [Deck; 2],
     shifted: [bool; 2],
@@ -106,6 +148,9 @@ struct Translator {
     jump_restore: [Option<u64>; 4],
     mixer_positions: [Option<u8>; 16],
     delivered_mixer: [Option<u8>; 16],
+    fx_positions: [[Option<u8>; 4]; 2],
+    fx_values: [[Option<u8>; 6]; 4],
+    fx_pickup: [[FxPickup; 6]; 2],
     eq_selecting: bool,
 }
 
@@ -133,6 +178,9 @@ impl Default for Translator {
             jump_restore: [None; 4],
             mixer_positions: [None; 16],
             delivered_mixer: [None; 16],
+            fx_positions: [[None; 4]; 2],
+            fx_values: [[None; 6]; 4],
+            fx_pickup: [[FxPickup::default(); 6]; 2],
             eq_selecting: false,
         }
     }
@@ -270,6 +318,27 @@ impl Translator {
                             .context("quantize mixer position")?,
                     );
                 }
+                if let Some((side, suffix)) = name
+                    .strip_prefix("fx1_")
+                    .map(|suffix| (0, suffix))
+                    .or_else(|| name.strip_prefix("fx2_").map(|suffix| (1, suffix)))
+                {
+                    let knob = match suffix {
+                        "knob_1" => Some(0),
+                        "knob_2" => Some(1),
+                        "knob_3" => Some(2),
+                        "dry_wet" => Some(3),
+                        _ => None,
+                    };
+                    if let Some(knob) = knob {
+                        self.fx_positions[side][knob] = Some(
+                            (value * 127.0)
+                                .round()
+                                .to_u8()
+                                .context("quantize FX position")?,
+                        );
+                    }
+                }
             }
         }
         Ok(())
@@ -302,6 +371,7 @@ impl Translator {
             tempo: self.tempos,
             move_selecting: self.move_selecting,
             eq_selecting: self.eq_selecting,
+            fx_positions: self.fx_positions,
         }
     }
 
@@ -339,6 +409,8 @@ impl Translator {
         buttons: Option<&[u8; 22]>,
         output: &mut Vec<[u8; 3]>,
     ) -> anyhow::Result<()> {
+        let previous_fx = self.fx_positions;
+        let previous_targets = self.fx;
         self.observe_analog(controls)?;
         self.observe_led_inputs(controls);
         // All releases precede selectors; selectors precede new presses/movement.
@@ -353,6 +425,11 @@ impl Translator {
             self.held.insert("mixer_fx_filter", Vec::new());
         }
         self.selectors(controls, output);
+        for (side, previous) in previous_targets.into_iter().enumerate() {
+            if self.fx[side] != previous {
+                self.fx_pickup[side] = [FxPickup::default(); 6];
+            }
+        }
         self.move_selection(controls);
         // Preview must be held before a simultaneous Browse turn, regardless
         // of the descriptor's item order.
@@ -387,6 +464,21 @@ impl Translator {
                         if binding.kind == Kind::Absolute
                             && !(channel == 4 && (4..20).contains(&binding.number))
                         {
+                            if let Some(side) = name
+                                .strip_prefix("fx1_")
+                                .map(|_| 0)
+                                .or_else(|| name.strip_prefix("fx2_").map(|_| 1))
+                            {
+                                let slot = usize::from(binding.number % 8);
+                                let knob = if slot < 3 { slot } else { 3 };
+                                if !self.fx_pickup[side][slot].accepts(
+                                    previous_fx[side][knob],
+                                    value,
+                                    self.fx_values[usize::from(channel)][slot],
+                                ) {
+                                    continue;
+                                }
+                            }
                             output.push([0xb0 | channel, binding.number, value]);
                         }
                     }
@@ -893,6 +985,17 @@ impl Translator {
         feedback: &feedback::FeedbackState,
         output: &mut Vec<[u8; 3]>,
     ) -> anyhow::Result<()> {
+        for side in 0..2 {
+            let deck = usize::from(self.fx[side].channel());
+            for slot in 0..6 {
+                self.fx_pickup[side][slot].observe(
+                    self.fx_values[deck][slot],
+                    feedback.fx_values[deck][slot],
+                    self.fx_positions[side][if slot < 3 { slot } else { 3 }],
+                );
+            }
+        }
+        self.fx_values = feedback.fx_values;
         for deck in 0..4 {
             let selected = feedback.info.jump_index(deck);
             self.jump_revision[deck] = feedback.info.jump_revision[deck];
@@ -2009,15 +2112,6 @@ mod tests {
         Ok(())
     }
 
-    fn run_front_snapshot(
-        state: &mut Translator,
-        payload: &[u8; 22],
-    ) -> anyhow::Result<Vec<[u8; 3]>> {
-        let mut output = Vec::new();
-        state.translate(&[], Some(payload), &mut output)?;
-        Ok(output)
-    }
-
     #[test]
     fn startup_applies_only_latest_channel_volume_and_eq_in_either_launch_order()
     -> anyhow::Result<()> {
@@ -2073,6 +2167,69 @@ mod tests {
             assert_eq!(output, [[0xb4, 16, 64]]);
         }
         Ok(())
+    }
+
+    #[test]
+    fn fx_retarget_requires_pickup_but_feedback_lag_does_not_block_acquired_motion()
+    -> anyhow::Result<()> {
+        // Given a physical knob above C's confirmed software position.
+        let mut state = Translator::default();
+        state.observe_analog(&[Control::Slider("fx1_knob_1", 0.9)])?;
+        let mut feedback = feedback::FeedbackState::default();
+        let mut decoder = feedback::Decoder::default();
+        decoder.feed(&[0xb2, 32, 64], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        run(&mut state, &[Control::Button("mixer_ch3_fx1", true)])?;
+        // When movement approaches, crosses, then continues before feedback catches up.
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 0.8)])?.is_empty());
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 0.4)])?,
+            [[0xb2, 32, 51]]
+        );
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 0.2)])?,
+            [[0xb2, 32, 25]]
+        );
+        decoder.feed(&[0xb2, 32, 51, 32, 25], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        // Then a subsequent external software edit requires pickup again.
+        decoder.feed(&[0xb2, 32, 110], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 0.3)])?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn dry_wet_acquires_each_software_slot_independently() -> anyhow::Result<()> {
+        // Given three different real wet/dry positions on A and physical zero.
+        let mut state = Translator::default();
+        state.observe_analog(&[Control::Slider("fx1_dry_wet", 0.0)])?;
+        let mut feedback = feedback::FeedbackState::default();
+        feedback::Decoder::default().feed(&[0xb0, 35, 0, 36, 64, 37, 127], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        // When the shared knob reaches the midpoint, then the maximum slot stays unchanged.
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_dry_wet", 0.5)])?,
+            [[0xb0, 35, 64], [0xb0, 36, 64]]
+        );
+        Ok(())
+    }
+
+    fn run_front_snapshot(
+        state: &mut Translator,
+        payload: &[u8; 22],
+    ) -> anyhow::Result<Vec<[u8; 3]>> {
+        let mut output = Vec::new();
+        state.translate(&[], Some(payload), &mut output)?;
+        Ok(output)
     }
 
     #[test]

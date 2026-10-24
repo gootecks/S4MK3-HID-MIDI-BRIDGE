@@ -18,9 +18,12 @@ pub struct Info {
     pub key: Option<&'static str>,
     pub tempo_range: Option<u8>,
     pub selecting: bool,
+    pub fx: super::page::FxWarning,
 }
 
 pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
+    let top = super::page::render_fx_warning(info.fx, frame);
+    let quadrant_height = (HEIGHT - top) / 2;
     let range = match info.tempo_range {
         Some(4) => "±4%",
         Some(6) => "±6%",
@@ -47,7 +50,7 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
     .enumerate()
     {
         let x = (index % 2) * (WIDTH / 2);
-        let y = (index / 2) * (HEIGHT / 2);
+        let y = top + (index / 2) * quadrant_height;
         let selecting = index == 0 && info.selecting;
         let fill = if index == 1 && info.loop_active == Some(true) {
             GREEN
@@ -57,10 +60,10 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
             BACKGROUND
         };
         let ink = if fill == BACKGROUND { PRIMARY } else { BLACK };
-        frame.rect(x, y, WIDTH / 2, HEIGHT / 2, fill);
+        frame.rect(x, y, WIDTH / 2, quadrant_height, fill);
         frame.text(
             x + 12,
-            y + 12,
+            y + if top == 0 { 12 } else { 8 },
             label,
             2,
             if fill == BACKGROUND { SECONDARY } else { BLACK },
@@ -71,7 +74,7 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
             .unwrap_or(4);
         frame.centered_text(
             x + WIDTH / 4,
-            y + 44,
+            y + if top == 0 { 44 } else { 34 },
             value,
             scale,
             if index == 1 && info.loop_active == Some(false) {
@@ -83,15 +86,15 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
         if selecting {
             frame.centered_text(
                 x + WIDTH / 4,
-                y + 100,
+                y + if top == 0 { 100 } else { 88 },
                 "SELECT",
                 2,
                 if bright { BLACK } else { AMBER },
             );
         }
     }
-    frame.rect(WIDTH / 2, 0, 1, HEIGHT, DIVIDER);
-    frame.rect(0, HEIGHT / 2, WIDTH, 1, DIVIDER);
+    frame.rect(WIDTH / 2, top, 1, HEIGHT - top, DIVIDER);
+    frame.rect(0, top + quadrant_height, WIDTH, 1, DIVIDER);
 }
 
 #[cfg(test)]

@@ -73,6 +73,7 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
     for binding in MIXER_BINDINGS {
         push_control(&mut controls, &mut addresses, *binding, binding.target, 4)?;
     }
+    push_fx_outputs(&mut outputs, &mut output_addresses)?;
     for deck in 1_u8..=4 {
         for (suffix, data, message_type, meter) in [
             ("monoMeter", deck - 1, 3, true),
@@ -162,6 +163,35 @@ fn push_jump_restores(
         let binding = super::catalog::jump_restore_binding(index)
             .context("jump restoration binding missing")?;
         push_deck_bindings(std::slice::from_ref(&binding), controls, addresses)?;
+    }
+    Ok(())
+}
+
+fn push_fx_outputs(outputs: &mut Vec<Value>, addresses: &mut BTreeSet<(u8, u8, u8)>) -> Result<()> {
+    for deck in 1_u8..=4 {
+        for (index, suffix) in [
+            "fx1.parameterValue",
+            "fx2.parameterValue",
+            "fx3.parameterValue",
+            "fx1.wetDryValue",
+            "fx2.wetDryValue",
+            "fx3.wetDryValue",
+        ]
+        .iter()
+        .enumerate()
+        {
+            push_output(
+                outputs,
+                addresses,
+                OutputSpec {
+                    key_path: &format!("turntable{deck}.{suffix}"),
+                    channel: deck - 1,
+                    data: 32 + u8::try_from(index)?,
+                    message_type: 3,
+                    meter: true,
+                },
+            )?;
+        }
     }
     Ok(())
 }
@@ -879,7 +909,7 @@ mod tests {
                 .context("output midiData is an integer")?;
             assert!(addresses.insert((channel, message_type, data)));
             assert!(!(8..=11).contains(&channel));
-            assert!(!(0..=3).contains(&channel) || !(36..=39).contains(&data));
+            assert!(message_type != 1 || !(0..=3).contains(&channel) || !(36..=39).contains(&data));
             assert!(!(channel == 4 && data >= 80));
             assert!(!(channel == 5 && data <= 3));
         }
@@ -896,6 +926,71 @@ mod tests {
         }
         for data in 0..=3 {
             assert!(addresses.contains(&(4, 1, data)));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn fx_absolute_feedback_has_one_canonical_address_with_pickup_on_both_strips()
+    -> anyhow::Result<()> {
+        // Given the serialized mapping consumed by Djay.
+        let controls = generated_controls()?;
+        let generated = generate()?;
+        let outputs = field(&generated, "outputs")
+            .and_then(Value::as_array)
+            .context("outputs")?;
+        // When each FX parameter and wet/dry alias is resolved on every deck.
+        for channel in 0_u64..4 {
+            for data in 32_u64..38 {
+                let output = outputs
+                    .iter()
+                    .find(|output| {
+                        field(output, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(channel)
+                            && field(output, "midiData").and_then(Value::as_unsigned_integer)
+                                == Some(data)
+                    })
+                    .context("canonical FX model value output missing")?;
+                let index = data - 32;
+                let key = format!(
+                    "turntable{}.fx{}.{}",
+                    channel + 1,
+                    index % 3 + 1,
+                    if index < 3 {
+                        "parameterValue"
+                    } else {
+                        "wetDryValue"
+                    }
+                );
+                assert_eq!(
+                    field(output, "keyPath").and_then(Value::as_string),
+                    Some(key.as_str())
+                );
+                assert_eq!(
+                    field(output, "controlType").and_then(Value::as_string),
+                    Some("control")
+                );
+                for address in [data, data + 8] {
+                    let control = controls
+                        .iter()
+                        .find(|control| {
+                            field(control, "midiChannel").and_then(Value::as_unsigned_integer)
+                                == Some(channel)
+                                && field(control, "midiMessageType")
+                                    .and_then(Value::as_unsigned_integer)
+                                    == Some(3)
+                                && field(control, "midiData").and_then(Value::as_unsigned_integer)
+                                    == Some(address)
+                        })
+                        .context("FX absolute mapping missing")?;
+                    // Then both aliases use native pickup but only canonical CCs return values.
+                    assert_eq!(
+                        field(control, "pickupMode").and_then(Value::as_boolean),
+                        Some(true)
+                    );
+                    assert!(field(control, "output").is_none());
+                }
+            }
         }
         Ok(())
     }

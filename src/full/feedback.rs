@@ -35,6 +35,8 @@ pub struct FeedbackState {
     pub playing: [Option<bool>; 4],
     /// Whether Djay's Neural Mix EQ mode is enabled, independently per deck.
     pub eq_mode: [Option<bool>; 4],
+    /// Canonical FX parameters 1-3, then independent slot wet/dry values.
+    pub fx_values: [[Option<u8>; 6]; 4],
     instant_fx_order: [[Option<usize>; 4]; 4],
     /// A playback output arrived from the mapping during this bridge session.
     pub playback_received: bool,
@@ -50,6 +52,7 @@ impl Default for FeedbackState {
             loaded: [None; 4],
             playing: [None; 4],
             eq_mode: [None; 4],
+            fx_values: [[None; 6]; 4],
             instant_fx_order: [[None; 4]; 4],
             playback_received: false,
         }
@@ -64,6 +67,13 @@ impl FeedbackState {
 
     pub fn apply(&mut self, message: Message, now: Duration) -> bool {
         if message.status & 0xf0 == 0xb0 {
+            let deck = usize::from(message.status & 0x0f);
+            if deck < 4 && (32..38).contains(&message.number) {
+                let value = &mut self.fx_values[deck][usize::from(message.number - 32)];
+                let changed = *value != Some(message.value);
+                *value = Some(message.value);
+                return changed;
+            }
             let changed = self.info.apply(message);
             if message.status & 0x0f < 4 && (80..=112).contains(&message.number)
                 || message.status & 0x0f == 6 && message.number == 8
@@ -264,6 +274,39 @@ impl FeedbackInput {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fx_value_feedback_is_independent_per_deck_and_excludes_input_aliases() {
+        // Given a real MIDI decoder and unknown values for every deck.
+        let mut state = FeedbackState::default();
+        let mut decoder = Decoder::default();
+        // When canonical zero/maximum CCs and unrelated input aliases arrive.
+        for channel in 0_u8..4 {
+            for number in 32_u8..38 {
+                decoder.feed(
+                    &[
+                        0xb0 | channel,
+                        number,
+                        if channel.is_multiple_of(2) { 0 } else { 127 },
+                    ],
+                    |message| {
+                        state.apply(message, Duration::ZERO);
+                    },
+                );
+            }
+            decoder.feed(
+                &[0xb0 | channel, 40, 42, 0xb8 | channel, 32, 42],
+                |message| {
+                    state.apply(message, Duration::ZERO);
+                },
+            );
+        }
+        // Then neither the other strip's input address nor Shift contaminates feedback.
+        assert_eq!(
+            state.fx_values,
+            [[Some(0); 6], [Some(127); 6], [Some(0); 6], [Some(127); 6]]
+        );
+    }
 
     #[test]
     fn color_values_survive_running_status_and_realtime_interleaving() {

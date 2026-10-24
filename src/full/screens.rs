@@ -1,6 +1,6 @@
 //! Adapt held MIDI owners and confirmed Djay state to the hardware screens.
 
-use s4mk3_hid_midi_bridge::screens::page::{Info, PadState, Page};
+use s4mk3_hid_midi_bridge::screens::page::{FxWarning, Info, PadState, Page};
 
 use super::{Address, Translator, catalog::PadMode, feedback::FeedbackState};
 
@@ -73,50 +73,77 @@ impl Output {
 }
 
 pub(super) fn pages(translator: &Translator, feedback: &FeedbackState) -> [Page; 2] {
-    std::array::from_fn(|side| match translator.pads[side] {
-        PadMode::Hotcue | PadMode::Samples => {
-            let deck = usize::from(translator.decks[side].channel());
-            Page::Info(Info {
-                jump: feedback.info.jump_size(deck),
-                loop_active: feedback.notes[deck][6].map(|value| value != 0),
-                loop_size: feedback.info.active_loop_size(deck),
-                key: feedback.info.key_raw[deck].and_then(key::label),
-                tempo_range: feedback.info.tempo_range,
-                selecting: translator.move_selecting[deck],
-            })
-        }
-        PadMode::Stems => {
-            let deck = translator.decks[side];
-            let notes = &feedback.notes[usize::from(deck.channel())];
-            let shifted = translator.shifted[side];
-            let solo: [Option<bool>; 4] =
-                std::array::from_fn(|index| notes[60 + index].map(|value| value != 0));
-            Page::Stems {
-                shifted,
-                pads: std::array::from_fn(|index| {
-                    let number = [56_u8, 57, 58, 59, 60, 61, 62, 63][index];
-                    let exclusive = shifted && index < 4;
-                    let owner = Address {
-                        channel: deck.channel() + if exclusive { 8 } else { 0 },
-                        number,
-                    };
-                    PadState {
-                        active: if exclusive {
-                            solo.iter()
-                                .enumerate()
-                                .try_fold(true, |only, (stem, state)| {
-                                    state.map(|active| only && active == (stem == index))
-                                })
-                        } else {
-                            notes[usize::from(number)].map(|value| value != 0)
-                        },
-                        held: translator
-                            .held
-                            .values()
-                            .flatten()
-                            .any(|address| *address == owner),
+    let local = translator.local_led_state();
+    std::array::from_fn(|side| {
+        let deck = translator.decks[side].channel();
+        let mut fx = FxWarning {
+            deck,
+            ..FxWarning::default()
+        };
+        for strip in 0..2 {
+            if local.fx[strip] != usize::from(deck) {
+                continue;
+            }
+            for (knob, mismatch) in super::leds::fx_pickup(feedback, &local, strip)
+                .into_iter()
+                .enumerate()
+            {
+                match mismatch {
+                    Some(true) => fx.mismatch[strip] |= 1 << knob,
+                    None if local.fx_positions[strip][knob].is_some() => {
+                        fx.unknown[strip] |= 1 << knob;
                     }
-                }),
+                    Some(false) | None => {}
+                }
+            }
+        }
+        match translator.pads[side] {
+            PadMode::Hotcue | PadMode::Samples => {
+                let deck = usize::from(translator.decks[side].channel());
+                Page::Info(Info {
+                    jump: feedback.info.jump_size(deck),
+                    loop_active: feedback.notes[deck][6].map(|value| value != 0),
+                    loop_size: feedback.info.active_loop_size(deck),
+                    key: feedback.info.key_raw[deck].and_then(key::label),
+                    tempo_range: feedback.info.tempo_range,
+                    selecting: translator.move_selecting[deck],
+                    fx,
+                })
+            }
+            PadMode::Stems => {
+                let deck = translator.decks[side];
+                let notes = &feedback.notes[usize::from(deck.channel())];
+                let shifted = translator.shifted[side];
+                let solo: [Option<bool>; 4] =
+                    std::array::from_fn(|index| notes[60 + index].map(|value| value != 0));
+                Page::Stems {
+                    shifted,
+                    fx,
+                    pads: std::array::from_fn(|index| {
+                        let number = [56_u8, 57, 58, 59, 60, 61, 62, 63][index];
+                        let exclusive = shifted && index < 4;
+                        let owner = Address {
+                            channel: deck.channel() + if exclusive { 8 } else { 0 },
+                            number,
+                        };
+                        PadState {
+                            active: if exclusive {
+                                solo.iter()
+                                    .enumerate()
+                                    .try_fold(true, |only, (stem, state)| {
+                                        state.map(|active| only && active == (stem == index))
+                                    })
+                            } else {
+                                notes[usize::from(number)].map(|value| value != 0)
+                            },
+                            held: translator
+                                .held
+                                .values()
+                                .flatten()
+                                .any(|address| *address == owner),
+                        }
+                    }),
+                }
             }
         }
     })
@@ -198,8 +225,52 @@ pub fn write_previews(path: &std::path::Path) -> anyhow::Result<()> {
         frame.write_ppm(&path.join(format!("{name}.ppm")))?;
     }
     write_info_previews(path, &mut frame)?;
+    write_fx_previews(path, &mut frame)?;
     page::stopped(&mut frame);
     frame.write_ppm(&path.join("stopped.ppm"))?;
+    Ok(())
+}
+
+fn write_fx_previews(
+    path: &std::path::Path,
+    frame: &mut s4mk3_hid_midi_bridge::screens::Frame,
+) -> anyhow::Result<()> {
+    use s4mk3_hid_midi_bridge::screens::page;
+    for (name, mode) in [("info", PadMode::Hotcue), ("stems", PadMode::Stems)] {
+        for known in [false, true] {
+            let mut translator = Translator {
+                fx: [super::Deck::A; 2],
+                fx_positions: [[Some(0); 4]; 2],
+                pads: [mode; 2],
+                ..Translator::default()
+            };
+            translator.move_selecting[0] = true;
+            let mut feedback = FeedbackState::default();
+            feedback.info.key_raw[0] = Some(117);
+            feedback.info.tempo_range = Some(75);
+            feedback.notes[0][6] = Some(127);
+            feedback.notes[0][56..64].fill(Some(0));
+            for number in [80, 90] {
+                feedback.apply(
+                    super::feedback::Message {
+                        status: 0xb0,
+                        number,
+                        value: 127,
+                    },
+                    std::time::Duration::ZERO,
+                );
+            }
+            if known {
+                feedback.fx_values[0] = [Some(127); 6];
+            }
+            for bright in [false, true] {
+                page::render_phase(&pages(&translator, &feedback)[0], frame, bright);
+                frame.write_ppm(
+                    &path.join(format!("fx-{name}-known-{known}-bright-{bright}.ppm")),
+                )?;
+            }
+        }
+    }
     Ok(())
 }
 

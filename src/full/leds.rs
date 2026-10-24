@@ -229,6 +229,8 @@ pub struct LocalState {
     /// Jump-size selection belongs to logical decks, not physical sides.
     pub move_selecting: [bool; 4],
     pub eq_selecting: bool,
+    /// Parameter knobs 1-3 and dry/wet, by physical FX strip.
+    pub fx_positions: [[Option<u8>; 4]; 2],
 }
 
 impl Default for LocalState {
@@ -245,8 +247,31 @@ impl Default for LocalState {
             tempo: [None; 2],
             move_selecting: [false; 4],
             eq_selecting: false,
+            fx_positions: [[None; 4]; 2],
         }
     }
+}
+
+/// Some(true) is mismatched, Some(false) matched, None lacks actual state.
+pub fn fx_pickup(feedback: &FeedbackState, local: &LocalState, side: usize) -> [Option<bool>; 4] {
+    let values = &feedback.fx_values[local.fx[side]];
+    std::array::from_fn(|knob| {
+        let physical = local.fx_positions[side][knob]?;
+        if knob < 3 {
+            return Some(values[knob]?.abs_diff(physical) > 1);
+        }
+        if values[3..]
+            .iter()
+            .flatten()
+            .any(|value| value.abs_diff(physical) > 1)
+        {
+            Some(true)
+        } else if values[3..].iter().all(Option::is_some) {
+            Some(false)
+        } else {
+            None
+        }
+    })
 }
 
 /// Render the complete `0x80` buttons report without mutating cached state.
@@ -516,6 +541,37 @@ fn cue_color(config: &LedConfig, pad: usize, value: Option<u8>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fx_pickup_uses_actual_target_and_keeps_partial_wet_feedback_unknown() {
+        // Given physical positions and independently received per-deck FX values.
+        let mut local = LocalState {
+            fx_positions: [[Some(64); 4]; 2],
+            ..LocalState::default()
+        };
+        let mut feedback = FeedbackState::default();
+        super::super::feedback::Decoder::default().feed(
+            &[0xb0, 32, 63, 33, 66, 34, 64, 35, 64, 36, 65],
+            |message| {
+                feedback.apply(message, std::time::Duration::ZERO);
+            },
+        );
+        // When comparison covers matching tolerance, mismatch and incomplete state.
+        assert_eq!(
+            fx_pickup(&feedback, &local, 0),
+            [Some(false), Some(true), Some(false), None]
+        );
+        feedback.fx_values[0][5] = Some(64);
+        assert_eq!(fx_pickup(&feedback, &local, 0)[3], Some(false));
+        feedback.fx_values[0][4] = Some(0);
+        feedback.fx_values[0][5] = None;
+        assert_eq!(fx_pickup(&feedback, &local, 0)[3], Some(true));
+        // Then retargeting uses the new deck, never the old matching values.
+        local.fx[0] = 2;
+        assert_eq!(fx_pickup(&feedback, &local, 0), [None; 4]);
+        local.fx[1] = 0;
+        assert_eq!(fx_pickup(&feedback, &local, 1)[1], Some(true));
+    }
 
     fn feedback() -> FeedbackState {
         FeedbackState::default()

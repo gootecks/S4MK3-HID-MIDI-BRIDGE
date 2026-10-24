@@ -5,7 +5,9 @@
 The fixed 320 x 240 screens show useful Djay feedback or bridge-owned values
 not already indicated by an LED. STEMS is the exception: its reactive legend
 preserves the physical four-column, two-row pad arrangement. No deck, pad-mode,
-Shift, FX, jog, or encoder-role bars surround the content.
+Shift, jog, or encoder-role bars surround ordinary content. An FX pickup warning
+is the exception: reserve a 24-pixel header only while a targeted deck has
+mismatched or unknown physical/software FX positions.
 
 ## 2. Color
 
@@ -58,6 +60,11 @@ The approved info page divides 320 x 240 into four equal 160 x 120 quadrants:
 JUMP upper left, LOOP upper right, KEY lower left, RANGE lower right.
 Use 12-pixel label insets, values centered horizontally at y+44, and one-pixel
 dividers at x=160 and y=120. There are no surrounding headers or footers.
+While `FX SYNC` is present, the Info quadrants reflow into the remaining 216
+pixels, with labels at y+8, values at y+34, and SELECT at y+88. STEMS names
+and tiles move down 24 pixels and each tile row loses 12 pixels. The amber header
+names the affected deck, strip L/R, parameters 1-3 and W for dry/wet; `?` marks
+missing feedback. Removing the warning restores the original geometry.
 The user-approved mockup is
 `generated-images/ig_0c2d859c8ec5ece2016ad955282cc087d1a22fb13f87b3fc35.png`,
 with the user's subsequent active-loop green/black amendment.

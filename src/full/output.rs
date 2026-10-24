@@ -142,6 +142,21 @@ fn render_button_frame(
     now: Duration,
 ) -> [u8; 95] {
     let mut report = render_buttons(config, feedback, local);
+    for side in 0..2 {
+        for (knob, mismatch) in super::leds::fx_pickup(feedback, local, side)
+            .into_iter()
+            .enumerate()
+        {
+            if mismatch == Some(true) {
+                let button = if knob == 3 { 0 } else { knob + 1 };
+                report[[63, 74][side] + button] = if (now.as_millis() / 300).is_multiple_of(2) {
+                    config.deck_colors[local.fx[side]].base() + config.palette_active_intensity
+                } else {
+                    0
+                };
+            }
+        }
+    }
     if local.eq_selecting {
         report[55] = if (now.as_millis() / 300).is_multiple_of(2) {
             super::leds::Color::Cyan.base() + config.palette_active_intensity
@@ -235,6 +250,44 @@ fn render_meters(config: &LedConfig, feedback: &FeedbackState, now: Duration) ->
 mod tests {
     use super::super::leds::Color;
     use super::*;
+
+    #[test]
+    fn fx_mismatch_blinks_only_owned_buttons_and_restores_normal_feedback() {
+        // Given both strips targeting C, mismatched parameter1 and dry/wet.
+        let config = LedConfig::default();
+        let mut feedback = FeedbackState::default();
+        feedback.fx_values[2] = [Some(100); 6];
+        feedback.notes[2][32..36].fill(Some(0));
+        let mut local = LocalState {
+            fx: [2; 2],
+            fx_positions: [[Some(100); 4]; 2],
+            ..LocalState::default()
+        };
+        local.fx_positions[0][0] = Some(0);
+        local.fx_positions[1][3] = Some(0);
+        let steady = render_buttons(&config, &feedback, &local);
+        // When exact bright and dark phases render without a wall clock.
+        for (millis, bright) in [(0, true), (299, true), (300, false), (600, true)] {
+            let mut expected = steady;
+            let value = if bright {
+                config.deck_colors[2].base() + config.palette_active_intensity
+            } else {
+                0
+            };
+            expected[64] = value;
+            expected[74] = value;
+            assert_eq!(
+                render_button_frame(&config, &feedback, &local, Duration::from_millis(millis)),
+                expected
+            );
+        }
+        // Then picking up the values restores the real disabled-effect lamps.
+        local.fx_positions = [[Some(100); 4]; 2];
+        assert_eq!(
+            render_button_frame(&config, &feedback, &local, Duration::from_millis(300)),
+            steady
+        );
+    }
 
     #[test]
     fn eq_selection_flashes_cyan_until_selection_or_cancel() {

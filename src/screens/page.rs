@@ -22,11 +22,23 @@ pub struct PadState {
     pub held: bool,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FxWarning {
+    pub deck: u8,
+    /// Bits 0-2 are parameter knobs; bit 3 is dry/wet, per physical strip.
+    pub mismatch: [u8; 2],
+    pub unknown: [u8; 2],
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
     Empty,
     Info(Info),
-    Stems { shifted: bool, pads: [PadState; 8] },
+    Stems {
+        shifted: bool,
+        pads: [PadState; 8],
+        fx: FxWarning,
+    },
 }
 
 impl Page {
@@ -45,18 +57,21 @@ pub fn render(page: &Page, frame: &mut Frame) {
 
 pub fn render_phase(page: &Page, frame: &mut Frame, bright: bool) {
     frame.clear(BACKGROUND);
-    let (shifted, pads) = match page {
+    let (shifted, pads, fx) = match page {
         Page::Empty => return,
         Page::Info(info) => return super::info::render(info, frame, bright),
-        Page::Stems { shifted, pads } => (shifted, pads),
+        Page::Stems { shifted, pads, fx } => (shifted, pads, fx),
     };
+    let top = render_fx_warning(*fx, frame);
+    let pads_y = PADS_Y + top;
+    let pad_height = PAD_HEIGHT - top / 2;
     for (column, name) in ["DRUM", "BASS", "HARM", "VOX"].into_iter().enumerate() {
         let x = MARGIN + column * (PAD_WIDTH + GAP);
-        frame.centered_text(x + PAD_WIDTH / 2, 12, name, SCALE, PRIMARY);
+        frame.centered_text(x + PAD_WIDTH / 2, 12 + top, name, SCALE, PRIMARY);
     }
     for (index, pad) in pads.iter().enumerate() {
         let x = MARGIN + (index % 4) * (PAD_WIDTH + GAP);
-        let y = PADS_Y + (index / 4) * (PAD_HEIGHT + GAP);
+        let y = pads_y + (index / 4) * (pad_height + GAP);
         let (fill, ink, status) = match pad.active {
             Some(true) => (PRIMARY, BACKGROUND, "ON"),
             Some(false) => (PANEL, PRIMARY, "OFF"),
@@ -67,21 +82,21 @@ pub fn render_phase(page: &Page, frame: &mut Frame, bright: bool) {
             x,
             y,
             PAD_WIDTH,
-            PAD_HEIGHT,
+            pad_height,
             if pad.held { PRESSED } else { BORDER },
         );
         frame.rect(
             x + border,
             y + border,
             PAD_WIDTH - 2 * border,
-            PAD_HEIGHT - 2 * border,
+            pad_height - 2 * border,
             BACKGROUND,
         );
         frame.rect(
             x + border + 1,
             y + border + 1,
             PAD_WIDTH - 2 * (border + 1),
-            PAD_HEIGHT - 2 * (border + 1),
+            pad_height - 2 * (border + 1),
             fill,
         );
         let action = if index >= 4 {
@@ -94,6 +109,29 @@ pub fn render_phase(page: &Page, frame: &mut Frame, bright: bool) {
         frame.centered_text(x + PAD_WIDTH / 2, y + 16, action, SCALE, ink);
         frame.centered_text(x + PAD_WIDTH / 2, y + 56, status, SCALE, ink);
     }
+}
+
+pub(super) fn render_fx_warning(fx: FxWarning, frame: &mut Frame) -> usize {
+    if fx.mismatch == [0; 2] && fx.unknown == [0; 2] {
+        return 0;
+    }
+    let mut label = format!("{} FX SYNC", char::from(b'A' + fx.deck));
+    for side in 0..2 {
+        if fx.mismatch[side] | fx.unknown[side] == 0 {
+            continue;
+        }
+        label.push_str(if side == 0 { " L:" } else { " R:" });
+        for (knob, name) in ['1', '2', '3', 'W'].into_iter().enumerate() {
+            if fx.mismatch[side] & (1 << knob) != 0 {
+                label.push(name);
+            } else if fx.unknown[side] & (1 << knob) != 0 {
+                label.push(name);
+                label.push('?');
+            }
+        }
+    }
+    frame.centered_text(WIDTH / 2, 4, &label, SCALE, PRESSED);
+    24
 }
 
 pub fn stopped(frame: &mut Frame) {
@@ -115,6 +153,7 @@ mod tests {
     fn page(active: Option<bool>) -> Page {
         Page::Stems {
             shifted: false,
+            fx: FxWarning::default(),
             pads: [PadState {
                 active,
                 held: false,
@@ -189,6 +228,7 @@ mod tests {
             &Page::Stems {
                 shifted: false,
                 pads: held,
+                fx: FxWarning::default(),
             },
             &mut held_frame,
         );

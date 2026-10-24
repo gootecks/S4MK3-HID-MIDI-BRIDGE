@@ -8,6 +8,48 @@ fn feed(feedback: &mut FeedbackState, bytes: &[u8]) {
     });
 }
 
+#[test]
+fn fx_warnings_follow_target_decks_on_info_and_stems_without_cached_value_replay()
+-> anyhow::Result<()> {
+    // Given both physical strips seeded without any MIDI output.
+    let mut translator = Translator::default();
+    translator.observe_analog(&[
+        Control::Slider("fx1_knob_1", 0.0),
+        Control::Slider("fx2_dry_wet", 1.0),
+    ])?;
+    let mut feedback = FeedbackState::default();
+    feed(&mut feedback, &[0xb2, 32, 127, 35, 0, 36, 0, 37, 0]);
+    // When both strips target hidden C, then no stale values are replayed.
+    let mut output = Vec::new();
+    translator.translate(
+        &[
+            Control::Button("mixer_ch3_fx1", true),
+            Control::Button("mixer_ch3_fx2", true),
+        ],
+        None,
+        &mut output,
+    )?;
+    assert!(output.is_empty());
+    let Page::Info(info) = pages(&translator, &feedback)[0] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(info.fx.mismatch, [0; 2]);
+    translator.decks[0] = Deck::C;
+    for mode in [PadMode::Hotcue, PadMode::Stems] {
+        translator.pads[0] = mode;
+        let warning = match pages(&translator, &feedback)[0] {
+            Page::Info(info) => info.fx,
+            Page::Stems { fx, .. } => fx,
+            Page::Empty => anyhow::bail!("expected deck page"),
+        };
+        // Then the visible deck owns both strips' parameter and dry/wet warnings.
+        assert_eq!(warning.deck, 2);
+        assert_eq!(warning.mismatch, [1, 8]);
+        assert_eq!(warning.unknown, [0; 2]);
+    }
+    Ok(())
+}
+
 fn pads(
     translator: &Translator,
     feedback: &FeedbackState,
@@ -202,7 +244,19 @@ fn hotcue_and_samples_share_info_without_leaking_stem_feedback() {
         // When pages are selected.
         let visible = pages(&translator, &feedback);
         // Then both modes use the same unknown info fields, not a pad legend.
-        assert_eq!(visible, [Page::Info(Info::default()); 2]);
+        assert_eq!(
+            visible,
+            [
+                Page::Info(Info::default()),
+                Page::Info(Info {
+                    fx: FxWarning {
+                        deck: 1,
+                        ..FxWarning::default()
+                    },
+                    ..Info::default()
+                }),
+            ]
+        );
     }
 }
 
