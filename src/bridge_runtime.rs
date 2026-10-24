@@ -64,16 +64,13 @@ pub fn run(
                     for event in &events {
                         record_event(event, leds, &mut counts, false)?;
                     }
-                    let buttons = (report.first() == Some(&1))
-                        .then(|| {
-                            payload
-                                .try_into()
-                                .context("full button payload must have 22 bytes")
-                        })
-                        .transpose()?;
-                    let sent = bridge.send_report(&events, buttons)?;
-                    counts.midi_messages =
-                        counts.midi_messages.saturating_add(u64::try_from(sent)?);
+                    crate::send_full_report(
+                        &mut bridge,
+                        &events,
+                        report,
+                        &mut counts,
+                        started.elapsed(),
+                    )?;
                 }
             }
             Action::Feedback(now_us) => {

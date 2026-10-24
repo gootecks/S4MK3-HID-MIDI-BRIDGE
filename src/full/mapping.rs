@@ -58,12 +58,9 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
         }
     }
     for bindings in [FX_LEFT_BINDINGS, FX_RIGHT_BINDINGS, QUICK_BINDINGS] {
-        for binding in bindings {
-            for deck in 1_u8..=4 {
-                push_deck(&mut controls, &mut addresses, *binding, deck)?;
-            }
-        }
+        push_deck_bindings(bindings, &mut controls, &mut addresses)?;
     }
+    push_jump_restores(&mut controls, &mut addresses)?;
     for mode in [PadMode::Hotcue, PadMode::Samples, PadMode::Stems] {
         for index in 0_u8..8 {
             let binding = pad_binding(mode, index)
@@ -142,6 +139,31 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
     );
     root.insert(String::from("userInfo"), Value::Dictionary(user_info));
     Ok(Value::Dictionary(root))
+}
+
+fn push_deck_bindings(
+    bindings: &[Binding],
+    controls: &mut Vec<Value>,
+    addresses: &mut BTreeSet<(u8, u8, u8)>,
+) -> Result<()> {
+    for binding in bindings {
+        for deck in 1_u8..=4 {
+            push_deck(controls, addresses, *binding, deck)?;
+        }
+    }
+    Ok(())
+}
+
+fn push_jump_restores(
+    controls: &mut Vec<Value>,
+    addresses: &mut BTreeSet<(u8, u8, u8)>,
+) -> Result<()> {
+    for index in 0..super::feedback::info::JUMP_INTERVALS.len() {
+        let binding = super::catalog::jump_restore_binding(index)
+            .context("jump restoration binding missing")?;
+        push_deck_bindings(std::slice::from_ref(&binding), controls, addresses)?;
+    }
+    Ok(())
 }
 
 fn push_info_outputs(

@@ -4,6 +4,7 @@
 pub struct State {
     pub key_raw: [Option<u8>; 4],
     pub tempo_range: Option<u8>,
+    pub jump_revision: [u64; 4],
     jump: [[Option<bool>; 10]; 4],
     active_loop: [[Option<bool>; 22]; 4],
 }
@@ -54,6 +55,7 @@ impl State {
         }
         if channel < 4 {
             if (80..90).contains(&message.number) {
+                self.jump_revision[channel] = self.jump_revision[channel].wrapping_add(1);
                 let states = &mut self.jump[channel];
                 let index = usize::from(message.number - 80);
                 let old = states[index];
@@ -92,6 +94,10 @@ impl State {
     }
 
     pub fn jump_size(&self, deck: usize) -> Option<&'static str> {
+        Some(JUMP_INTERVALS[self.jump_index(deck)?].1)
+    }
+
+    pub fn jump_index(&self, deck: usize) -> Option<usize> {
         let states = self.jump.get(deck)?;
         let mut active = states
             .iter()
@@ -101,7 +107,7 @@ impl State {
         if active.next().is_some() {
             return None;
         }
-        Some(JUMP_INTERVALS[selected].1)
+        Some(selected)
     }
 
     pub fn active_loop_size(&self, deck: usize) -> Option<&'static str> {

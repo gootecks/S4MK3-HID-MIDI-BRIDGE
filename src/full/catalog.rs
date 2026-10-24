@@ -4,6 +4,28 @@ use super::jog;
 
 pub const EQ_MODE_NOTE: u8 = 20;
 
+pub fn jump_restore_binding(index: usize) -> Option<Binding> {
+    let target = *[
+        "turntable{deck}.skipDuration0125Beats",
+        "turntable{deck}.skipDuration025Beats",
+        "turntable{deck}.skipDuration05Beats",
+        "turntable{deck}.skipDuration1Beat",
+        "turntable{deck}.skipDuration2Beats",
+        "turntable{deck}.skipDuration4Beats",
+        "turntable{deck}.skipDuration8Beats",
+        "turntable{deck}.skipDuration16Beats",
+        "turntable{deck}.skipDuration32Beats",
+        "turntable{deck}.skipDuration64Beats",
+    ]
+    .get(index)?;
+    Some(note(
+        "jump_restore",
+        64 + u8::try_from(index).ok()?,
+        target,
+        None,
+    ))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PadMode {
     Hotcue,

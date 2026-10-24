@@ -292,15 +292,7 @@ fn run_probe(
                 }
             }
             if let Some(bridge) = &mut full {
-                let buttons = (report.first() == Some(&1))
-                    .then(|| {
-                        payload
-                            .try_into()
-                            .context("full button payload must have 22 bytes")
-                    })
-                    .transpose()?;
-                let sent = bridge.send_report(&events, buttons)?;
-                counts.midi_messages = counts.midi_messages.saturating_add(u64::try_from(sent)?);
+                send_full_report(bridge, &events, report, &mut counts, started.elapsed())?;
             }
             if full.is_none()
                 && let Some(report) = leds.flush()
@@ -351,6 +343,28 @@ fn stop_signal() -> anyhow::Result<(
     })
     .context("install Ctrl-C handler")?;
     Ok((sender, receiver))
+}
+
+fn send_full_report(
+    bridge: &mut full::FullBridge,
+    events: &[Event],
+    report: &[u8],
+    counts: &mut ProbeCounts,
+    now: Duration,
+) -> anyhow::Result<()> {
+    let buttons = (report.first() == Some(&1))
+        .then(|| {
+            report[1..]
+                .try_into()
+                .context("full button payload must have 22 bytes")
+        })
+        .transpose()?;
+    let (received, sent) = bridge.send_report(events, buttons, now)?;
+    counts.feedback_messages = counts
+        .feedback_messages
+        .saturating_add(u64::try_from(received)?);
+    counts.midi_messages = counts.midi_messages.saturating_add(u64::try_from(sent)?);
+    Ok(())
 }
 
 fn report_probe_counts(args: &Args, counts: &ProbeCounts) -> anyhow::Result<()> {

@@ -101,6 +101,9 @@ struct Translator {
     led_held: [bool; 11],
     tempos: [Option<f32>; 2],
     move_selecting: [bool; 4],
+    jump_sizes: [Option<usize>; 4],
+    jump_revision: [u64; 4],
+    jump_restore: [Option<u64>; 4],
     eq_selecting: bool,
 }
 
@@ -123,6 +126,9 @@ impl Default for Translator {
             led_held: [false; 11],
             tempos: [None; 2],
             move_selecting: [false; 4],
+            jump_sizes: [None; 4],
+            jump_revision: [0; 4],
+            jump_restore: [None; 4],
             eq_selecting: false,
         }
     }
@@ -190,14 +196,18 @@ impl FullBridge {
         &mut self,
         events: &[Event],
         buttons: Option<&[u8; 22]>,
-    ) -> anyhow::Result<usize> {
+        now: Duration,
+    ) -> anyhow::Result<(usize, usize)> {
+        let received = self.feedback_input.drain(&mut self.feedback, now)?;
         self.controls.clear();
         self.controls
             .extend(events.iter().filter_map(Control::from_event));
         self.messages.clear();
         self.translator
+            .sync_front_panel(&self.feedback, &mut self.messages)?;
+        self.translator
             .translate(&self.controls, buttons, &mut self.messages)?;
-        self.send_messages()
+        Ok((received, self.send_messages()?))
     }
 
     pub fn publish_screens(&mut self) {
@@ -358,51 +368,76 @@ impl Translator {
         }
     }
 
-    fn encoder(&self, name: &str, delta: i32, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
-        if let Some((side, suffix @ ("move_encoder" | "browse_encoder"))) = side_name(name)
-            && match suffix {
-                "browse_encoder" => {
-                    self.shifted[side]
-                        || self.held.contains_key(if side == 0 {
-                            "left_library_play"
-                        } else {
-                            "right_library_play"
-                        })
-                }
-                _ => self.shifted[side],
-            }
+    fn encoder(&mut self, name: &str, delta: i32, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
+        if let Some((side, "move_encoder")) = side_name(name)
+            && self.shifted[side]
         {
-            let action = if suffix == "browse_encoder" {
-                let preview = self.held.contains_key(if side == 0 {
-                    "left_library_play"
-                } else {
-                    "right_library_play"
-                });
-                match (preview, delta < 0) {
-                    (true, true) => "preview_backward",
-                    (true, false) => "preview_forward",
-                    (false, true) => "source_previous",
-                    (false, false) => "source_next",
-                }
-            } else if delta < 0 {
-                "move_one_backward"
-            } else {
-                "move_one_forward"
-            };
-            let binding = catalog::DECK_BINDINGS
-                .iter()
-                .find(|binding| binding.input == action)
-                .context("shifted encoder pulse binding missing")?;
-            for _ in 0..delta.unsigned_abs() {
+            if delta == 0 {
+                return Ok(());
+            }
+            let channel = self.decks[side].channel();
+            let one_beat = catalog::jump_restore_binding(3).context("one-beat size missing")?;
+            pulse(
+                Address {
+                    channel,
+                    number: one_beat.number,
+                },
+                output,
+            );
+            // Djay coalesces repeated fixed-jump button pulses in one batch.
+            // Its rotary consumes the full delta at the temporarily selected size.
+            relative(Address { channel, number: 2 }, delta, output)?;
+            let deck = usize::from(channel);
+            if let Some(binding) = self.jump_sizes[deck].and_then(catalog::jump_restore_binding) {
                 pulse(
                     Address {
-                        channel: channel(*binding, self.decks[side], self.shifted[side]),
+                        channel,
                         number: binding.number,
                     },
                     output,
                 );
+                if self.jump_sizes[deck] != Some(3) {
+                    self.jump_restore[deck] = Some(self.jump_revision[deck]);
+                }
             }
             return Ok(());
+        }
+        if let Some((side, "browse_encoder")) = side_name(name) {
+            let preview = self.held.contains_key(if side == 0 {
+                "left_library_play"
+            } else {
+                "right_library_play"
+            });
+            if self.shifted[side] || preview {
+                let action = match (preview, delta < 0) {
+                    (true, true) => "preview_backward",
+                    (true, false) => "preview_forward",
+                    (false, true) => "source_previous",
+                    (false, false) => "source_next",
+                };
+                let binding = catalog::DECK_BINDINGS
+                    .iter()
+                    .find(|binding| binding.input == action)
+                    .context("browser pulse binding missing")?;
+                for _ in 0..delta.unsigned_abs() {
+                    pulse(
+                        Address {
+                            channel: channel(*binding, self.decks[side], self.shifted[side]),
+                            number: binding.number,
+                        },
+                        output,
+                    );
+                }
+                return Ok(());
+            }
+        }
+        if let Some((side, "move_encoder")) = side_name(name)
+            && self.move_selecting[usize::from(self.decks[side].channel())]
+            && delta != 0
+        {
+            let deck = usize::from(self.decks[side].channel());
+            self.jump_restore[deck] = None;
+            self.jump_sizes[deck] = None;
         }
         for (binding, channel) in self.routes(name)? {
             if binding.kind == Kind::Relative {
@@ -807,6 +842,21 @@ impl Translator {
         feedback: &feedback::FeedbackState,
         output: &mut Vec<[u8; 3]>,
     ) -> anyhow::Result<()> {
+        for deck in 0..4 {
+            let selected = feedback.info.jump_index(deck);
+            self.jump_revision[deck] = feedback.info.jump_revision[deck];
+            if let Some(revision) = self.jump_restore[deck] {
+                // The fixed jump reports one before the following restore.
+                // A newer non-one value confirms restoration or an external edit.
+                if self.jump_revision[deck] != revision && selected.is_some_and(|index| index != 3)
+                {
+                    self.jump_restore[deck] = None;
+                    self.jump_sizes[deck] = selected;
+                }
+            } else {
+                self.jump_sizes[deck] = selected;
+            }
+        }
         if !self.front_panel_ready && feedback.playback_received {
             self.front_panel_ready = true;
             info!(
@@ -1335,10 +1385,12 @@ mod tests {
         match (note, shifted) {
             (5, false) => vec![[0xb0 | deck, cc, 65], [0xb0 | deck, cc, 63]],
             (5, true) => vec![
-                [0x90 | channel, 5, 127],
-                [0x80 | channel, 5, 0],
-                [0x90 | channel, 14, 127],
-                [0x80 | channel, 14, 0],
+                [0x90 | deck, 67, 127],
+                [0x80 | deck, 67, 0],
+                [0xb0 | deck, 2, 65],
+                [0x90 | deck, 67, 127],
+                [0x80 | deck, 67, 0],
+                [0xb0 | deck, 2, 63],
             ],
             _ => vec![
                 [0xb0 | channel, cc, 65],
@@ -1420,22 +1472,133 @@ mod tests {
                 };
                 state.move_selecting[usize::from(deck.channel())] = selecting;
                 // When both directions turn through multiple detents.
-                for (delta, note) in [(2_i32, 5), (-3, 14), (0, 5)] {
+                for delta in [2_i32, -3, 0] {
                     let output = run(&mut state, &[Control::Encoder("left_move_encoder", delta)])?;
-                    // Then fixed-size pulses preserve every detent, without size-changing CCs.
+                    // Then one-beat selection precedes a magnitude-preserving native rotary.
                     let address = Address {
-                        channel: deck.channel() + 8,
-                        number: note,
+                        channel: deck.channel(),
+                        number: 67,
                     };
-                    assert_eq!(
-                        output,
-                        [address.press(), address.release()]
-                            .repeat(usize::try_from(delta.unsigned_abs())?)
-                    );
+                    let expected = if delta == 0 {
+                        Vec::new()
+                    } else {
+                        vec![
+                            address.press(),
+                            address.release(),
+                            [0xb0 | deck.channel(), 2, u8::try_from(64 + delta)?],
+                        ]
+                    };
+                    assert_eq!(output, expected);
                 }
                 assert_eq!(state.move_selecting[usize::from(deck.channel())], selecting);
             }
         }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_move_restores_confirmed_size_after_every_detent_batch() -> anyhow::Result<()> {
+        // Given every independently confirmed deck/size and either direction.
+        for deck in [Deck::A, Deck::B, Deck::C, Deck::D] {
+            for index in 0..feedback::info::JUMP_INTERVALS.len() {
+                for delta in [-3_i32, 0, 2] {
+                    let mut state = Translator {
+                        decks: [deck, Deck::B],
+                        shifted: [true, false],
+                        ..Translator::default()
+                    };
+                    let mut feedback = feedback::FeedbackState::default();
+                    feedback.apply(
+                        feedback::Message {
+                            status: 0xb0 | deck.channel(),
+                            number: 80 + u8::try_from(index)?,
+                            value: 127,
+                        },
+                        Duration::ZERO,
+                    );
+                    state.sync_front_panel(&feedback, &mut Vec::new())?;
+                    // When Shift+MOVE turns, then one-beat rotary movement precedes one restore.
+                    let output = run(&mut state, &[Control::Encoder("left_move_encoder", delta)])?;
+                    let one = Address {
+                        channel: deck.channel(),
+                        number: 67,
+                    };
+                    let mut expected = Vec::new();
+                    if delta != 0 {
+                        expected.extend([
+                            one.press(),
+                            one.release(),
+                            [0xb0 | deck.channel(), 2, u8::try_from(64 + delta)?],
+                        ]);
+                        let restore = Address {
+                            channel: deck.channel(),
+                            number: 64 + u8::try_from(index)?,
+                        };
+                        expected.extend([restore.press(), restore.release()]);
+                    }
+                    assert_eq!(output, expected);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn intermediate_one_beat_feedback_cannot_replace_an_inflight_restore() -> anyhow::Result<()> {
+        // Given a confirmed eight-beat selection and a fixed jump already sent.
+        let mut state = Translator {
+            shifted: [true, false],
+            ..Translator::default()
+        };
+        let mut feedback = feedback::FeedbackState::default();
+        let mut decoder = feedback::Decoder::default();
+        decoder.feed(&[0xb0, 86, 127], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        run(&mut state, &[Control::Encoder("left_move_encoder", 1)])?;
+        decoder.feed(&[0xb0, 86, 0, 83, 127], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        // When a new turn arrives before the eight-beat restoration feedback.
+        let output = run(&mut state, &[Control::Encoder("left_move_encoder", -1)])?;
+        // Then it still restores eight, not the native command's intermediate one.
+        assert_eq!(
+            output,
+            [
+                [0x90, 67, 127],
+                [0x80, 67, 0],
+                [0xb0, 2, 63],
+                [0x90, 70, 127],
+                [0x80, 70, 0]
+            ]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn newer_confirmed_jump_selection_replaces_inflight_ownership() -> anyhow::Result<()> {
+        // Given eight beats captured before a fixed jump.
+        let mut state = Translator {
+            shifted: [true, false],
+            ..Translator::default()
+        };
+        let mut feedback = feedback::FeedbackState::default();
+        let mut decoder = feedback::Decoder::default();
+        decoder.feed(&[0xb0, 86, 127], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        run(&mut state, &[Control::Encoder("left_move_encoder", 1)])?;
+        // When a newer unambiguous sixteen-beat selection is received.
+        decoder.feed(&[0xb0, 86, 0, 87, 127], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        let output = run(&mut state, &[Control::Encoder("left_move_encoder", 1)])?;
+        // Then the next jump restores that actual value, not the old eight.
+        assert_eq!(output.last(), Some(&[0x80, 71, 0]));
         Ok(())
     }
 
