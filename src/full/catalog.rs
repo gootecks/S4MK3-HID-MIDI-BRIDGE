@@ -154,6 +154,18 @@ pub const DECK_BINDINGS: &[Binding] = &[
         "musicLibrary.skipBackwardPreview",
         Some("musicLibrary.skipBackwardPreview"),
     ),
+    note(
+        "source_next",
+        25,
+        "musicLibrary.nextSource",
+        Some("musicLibrary.nextSource"),
+    ),
+    note(
+        "source_previous",
+        26,
+        "musicLibrary.previousSource",
+        Some("musicLibrary.previousSource"),
+    ),
     Binding {
         sensitivity: Some(jog::DEFAULT.pitch_bend_speed),
         acceleration: Some(jog::DEFAULT.pitch_bend_reaction),
@@ -176,7 +188,7 @@ pub const DECK_BINDINGS: &[Binding] = &[
         "musicLibrary.markUnmarkSelectedSongs",
         None,
     ),
-    note("library_star", 11, "musicLibrary.focusQueue", None),
+    note("library_star", 11, "musicLibrary.toggleLibrarySource", None),
     note(
         "browse_press",
         12,

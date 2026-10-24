@@ -759,7 +759,9 @@ mod tests {
                     10,
                     String::from("musicLibrary.markUnmarkSelectedSongs"),
                 ),
-                (deck, 11, String::from("musicLibrary.focusQueue")),
+                (deck, 11, String::from("musicLibrary.toggleLibrarySource")),
+                (deck + 8, 25, String::from("musicLibrary.nextSource")),
+                (deck + 8, 26, String::from("musicLibrary.previousSource")),
             ] {
                 let control = controls
                     .iter()

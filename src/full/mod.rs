@@ -361,19 +361,33 @@ impl Translator {
     fn encoder(&self, name: &str, delta: i32, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
         if let Some((side, suffix @ ("move_encoder" | "browse_encoder"))) = side_name(name)
             && match suffix {
-                "browse_encoder" => self.held.contains_key(if side == 0 {
-                    "left_library_play"
-                } else {
-                    "right_library_play"
-                }),
+                "browse_encoder" => {
+                    self.shifted[side]
+                        || self.held.contains_key(if side == 0 {
+                            "left_library_play"
+                        } else {
+                            "right_library_play"
+                        })
+                }
                 _ => self.shifted[side],
             }
         {
-            let action = match (suffix, delta < 0) {
-                ("browse_encoder", true) => "preview_backward",
-                ("browse_encoder", false) => "preview_forward",
-                (_, true) => "move_one_backward",
-                (_, false) => "move_one_forward",
+            let action = if suffix == "browse_encoder" {
+                let preview = self.held.contains_key(if side == 0 {
+                    "left_library_play"
+                } else {
+                    "right_library_play"
+                });
+                match (preview, delta < 0) {
+                    (true, true) => "preview_backward",
+                    (true, false) => "preview_forward",
+                    (false, true) => "source_previous",
+                    (false, false) => "source_next",
+                }
+            } else if delta < 0 {
+                "move_one_backward"
+            } else {
+                "move_one_forward"
             };
             let binding = catalog::DECK_BINDINGS
                 .iter()
@@ -1489,6 +1503,41 @@ mod tests {
                                 .and_then(plist::Value::as_unsigned_integer)
                                 == Some(1)
                     }));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_browse_selects_sources_until_preview_is_held() -> anyhow::Result<()> {
+        // Given either side on each deck with Shift held.
+        for side in 0..2 {
+            for deck in [Deck::A, Deck::B, Deck::C, Deck::D] {
+                let mut state = Translator::default();
+                state.decks[side] = deck;
+                state.shifted[side] = true;
+                let (browse, preview) = if side == 0 {
+                    ("left_browse_encoder", "left_library_play")
+                } else {
+                    ("right_browse_encoder", "right_library_play")
+                };
+                for held in [false, true, false] {
+                    run(&mut state, &[Control::Button(preview, held)])?;
+                    // When the encoder turns through positive, negative and zero detents.
+                    for (delta, source, seek) in [(2_i32, 25, 23), (-3, 26, 24), (0, 25, 23)] {
+                        let output = run(&mut state, &[Control::Encoder(browse, delta)])?;
+                        let address = Address {
+                            channel: deck.channel() + 8,
+                            number: if held { seek } else { source },
+                        };
+                        // Then only the selected source/held-preview route receives pulses.
+                        assert_eq!(
+                            output,
+                            [address.press(), address.release()]
+                                .repeat(usize::try_from(delta.unsigned_abs())?)
+                        );
+                    }
                 }
             }
         }
