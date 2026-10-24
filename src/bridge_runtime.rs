@@ -35,6 +35,7 @@ pub fn run(
         match action {
             Action::Initialize => {
                 output = Some(full::output::LedOutput::new(hid)?);
+                crate::initialize_full_analog(hid, parser, &mut bridge)?;
             }
             Action::Motor(report) => {
                 let written = hid.write(&report).context("write S4 tension report")?;

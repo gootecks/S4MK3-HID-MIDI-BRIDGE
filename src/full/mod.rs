@@ -104,6 +104,8 @@ struct Translator {
     jump_sizes: [Option<usize>; 4],
     jump_revision: [u64; 4],
     jump_restore: [Option<u64>; 4],
+    mixer_positions: [Option<u8>; 16],
+    delivered_mixer: [Option<u8>; 16],
     eq_selecting: bool,
 }
 
@@ -129,6 +131,8 @@ impl Default for Translator {
             jump_sizes: [None; 4],
             jump_revision: [0; 4],
             jump_restore: [None; 4],
+            mixer_positions: [None; 16],
+            delivered_mixer: [None; 16],
             eq_selecting: false,
         }
     }
@@ -192,6 +196,13 @@ impl FullBridge {
         self.translator.local_led_state()
     }
 
+    pub fn seed_analog(&mut self, events: &[Event]) -> anyhow::Result<()> {
+        self.controls.clear();
+        self.controls
+            .extend(events.iter().filter_map(Control::from_event));
+        self.translator.observe_analog(&self.controls)
+    }
+
     pub fn send_report(
         &mut self,
         events: &[Event],
@@ -241,6 +252,43 @@ impl Drop for FullBridge {
 }
 
 impl Translator {
+    fn observe_analog(&mut self, controls: &[Control]) -> anyhow::Result<()> {
+        for control in controls {
+            if let Control::Slider(name, value) = *control {
+                ensure!(
+                    (0.0..=1.0).contains(&value),
+                    "invalid full-profile {name}: {value}"
+                );
+                if let Some(binding) = catalog::MIXER_BINDINGS
+                    .iter()
+                    .find(|binding| binding.input == name && (4..20).contains(&binding.number))
+                {
+                    self.mixer_positions[usize::from(binding.number - 4)] = Some(
+                        (value * 127.0)
+                            .round()
+                            .to_u8()
+                            .context("quantize mixer position")?,
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn emit_mixer(&mut self, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
+        if self.front_panel_ready {
+            for (index, position) in self.mixer_positions.iter().copied().enumerate() {
+                if let Some(value) = position
+                    && self.delivered_mixer[index] != position
+                {
+                    output.push([0xb4, 4 + u8::try_from(index)?, value]);
+                    self.delivered_mixer[index] = position;
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn local_led_state(&self) -> leds::LocalState {
         leds::LocalState {
             decks: self.decks.map(|deck| usize::from(deck.channel())),
@@ -291,6 +339,7 @@ impl Translator {
         buttons: Option<&[u8; 22]>,
         output: &mut Vec<[u8; 3]>,
     ) -> anyhow::Result<()> {
+        self.observe_analog(controls)?;
         self.observe_led_inputs(controls);
         // All releases precede selectors; selectors precede new presses/movement.
         // Thus descriptor item order cannot choose a simultaneous Shift+Play route.
@@ -335,7 +384,9 @@ impl Translator {
                         .to_u8()
                         .context("quantize MIDI CC")?;
                     for (binding, channel) in routes {
-                        if binding.kind == Kind::Absolute {
+                        if binding.kind == Kind::Absolute
+                            && !(channel == 4 && (4..20).contains(&binding.number))
+                        {
                             output.push([0xb0 | channel, binding.number, value]);
                         }
                     }
@@ -346,7 +397,7 @@ impl Translator {
                 Control::Jog(name, delta) => self.jog(name, delta, output)?,
             }
         }
-        Ok(())
+        self.emit_mixer(output)
     }
 
     fn move_selection(&mut self, controls: &[Control]) {
@@ -863,7 +914,8 @@ impl Translator {
                 "CROSSFADER_FEEDBACK_RECEIVED: applying physical switches once; restart bridge after mapping reconnect"
             );
         }
-        self.emit_front_panel(output)
+        self.emit_front_panel(output)?;
+        self.emit_mixer(output)
     }
 
     fn emit_front_panel(&mut self, output: &mut Vec<[u8; 3]>) -> anyhow::Result<()> {
@@ -1964,6 +2016,63 @@ mod tests {
         let mut output = Vec::new();
         state.translate(&[], Some(payload), &mut output)?;
         Ok(output)
+    }
+
+    #[test]
+    fn startup_applies_only_latest_channel_volume_and_eq_in_either_launch_order()
+    -> anyhow::Result<()> {
+        for feedback_first in [false, true] {
+            // Given the full physical analog baseline, including zero and maximum.
+            let mut state = Translator::default();
+            let mut feedback = feedback::FeedbackState::default();
+            let baseline: Vec<_> = catalog::MIXER_BINDINGS
+                .iter()
+                .filter(|binding| (4..20).contains(&binding.number))
+                .map(|binding| Control::Slider(binding.input, 0.0))
+                .chain([
+                    Control::Slider("fx1_knob_1", 1.0),
+                    Control::Slider("left_tempo_fader", 1.0),
+                    Control::Slider("crossfader", 1.0),
+                    Control::Slider("ch1_gain", 1.0),
+                    Control::Slider("ch1_quick_fx", 1.0),
+                ])
+                .collect();
+            let mut output = Vec::new();
+            feedback.apply(
+                feedback::Message {
+                    status: 0xb6,
+                    number: 4,
+                    value: 0,
+                },
+                Duration::ZERO,
+            );
+            if feedback_first {
+                state.sync_front_panel(&feedback, &mut output)?;
+            }
+            state.observe_analog(&baseline)?;
+            state.observe_analog(&[Control::Slider("ch2_fader", 1.0)])?;
+            // When the other half of startup becomes available.
+            if feedback_first {
+                state.translate(&[], None, &mut output)?;
+            } else {
+                state.sync_front_panel(&feedback, &mut output)?;
+            }
+            // Then exactly sixteen authorized controls apply their latest values.
+            let expected: Vec<_> = (4_u8..20)
+                .map(|number| [0xb4, number, if number == 17 { 127 } else { 0 }])
+                .collect();
+            assert_eq!(output, expected);
+            output.clear();
+            state.sync_front_panel(&feedback, &mut output)?;
+            state.translate(&[Control::Slider("ch2_fader", 1.0)], None, &mut output)?;
+            assert!(
+                output.is_empty(),
+                "unchanged physical state must not undo mouse edits"
+            );
+            state.translate(&[Control::Slider("ch1_fader", 0.5)], None, &mut output)?;
+            assert_eq!(output, [[0xb4, 16, 64]]);
+        }
+        Ok(())
     }
 
     #[test]

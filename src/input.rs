@@ -2,6 +2,19 @@
 use anyhow::{Context as _, ensure};
 use hidapi::HidDevice;
 
+pub fn read_analog(hid: &HidDevice) -> anyhow::Result<[u8; 79]> {
+    let mut report = [0_u8; 79];
+    report[0] = 2;
+    let length = hid
+        .get_input_report(&mut report)
+        .context("request initial S4 analog report 2")?;
+    ensure!(
+        length == report.len() && report[0] == 2,
+        "unexpected initial S4 analog snapshot framing"
+    );
+    Ok(report)
+}
+
 pub fn read_batch(
     hid: &HidDevice,
     full: bool,
@@ -26,7 +39,13 @@ pub fn read_batch(
     let length = hid
         .read_timeout(&mut buffers[2], if full { 2 } else { 100 })
         .context("read S4 HID interrupt report")?;
-    if accepts_interrupt(&buffers[2][..length], full) {
+    if full && length != 0 && buffers[2][0] == 2 {
+        // A queued analog interrupt can predate the startup GET. Use it as
+        // a change notification, not as authority over a newer physical snapshot.
+        let report = read_analog(hid)?;
+        buffers[2][..report.len()].copy_from_slice(&report);
+        lengths[2] = report.len();
+    } else if accepts_interrupt(&buffers[2][..length], full) {
         lengths[2] = length;
     }
     Ok(lengths)

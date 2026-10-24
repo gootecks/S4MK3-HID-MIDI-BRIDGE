@@ -251,6 +251,9 @@ fn run_probe(
         .as_ref()
         .map(|_| full::output::LedOutput::new(hid))
         .transpose()?;
+    if let Some(bridge) = &mut full {
+        initialize_full_analog(hid, parser, bridge)?;
+    }
     info!(
         seconds = args.seconds.get(),
         until_stopped = args.until_stopped,
@@ -343,6 +346,19 @@ fn stop_signal() -> anyhow::Result<(
     })
     .context("install Ctrl-C handler")?;
     Ok((sender, receiver))
+}
+
+fn initialize_full_analog(
+    hid: &HidDevice,
+    parser: &mut PacketParser,
+    bridge: &mut full::FullBridge,
+) -> anyhow::Result<()> {
+    let report = input::read_analog(hid)?;
+    let mut events = Vec::with_capacity(48);
+    // Seed the real parser once, including zero-valued sliders, without sending
+    // startup FX, gain, filter, crossfader-position or tempo commands.
+    parser.parse_from("control", &report[1..], &mut events);
+    bridge.seed_analog(&events)
 }
 
 fn send_full_report(
