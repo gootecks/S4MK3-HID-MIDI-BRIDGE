@@ -15,6 +15,12 @@ preserves internal build and acceptance history.
 
 ## What is implemented
 
+Current source builds add an optional `FX SYNC` header to both Info and STEMS.
+It identifies the affected logical deck, left/right FX strip, parameter knobs
+and dry/wet (`W`). Unknown values carry `?`. The underlying page reflows below
+the header; it returns to its original layout when the warning clears.
+See [pickup setup and behavior](controls-state-sync.md).
+
 - Independent 320 x 240 left/right RGB565 rasters and bulk output on USB
   interface 4, endpoint 0x03. No audio or HID interface is claimed by this
   component. It does not reset the device or detach drivers.

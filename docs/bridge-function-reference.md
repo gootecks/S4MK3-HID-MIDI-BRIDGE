@@ -19,7 +19,8 @@ Preview uses a complete `musicLibrary.togglePreview` pulse on press and another
 on release or shutdown. While that side's Preview is held, BROWSER emits one
 directional preview-seek pulse per detent, without requiring Shift. Notes 23/24
 on channels 1-4 (9-12 with Shift) target `musicLibrary.skipForwardPreview` /
-`musicLibrary.skipBackwardPreview`. Otherwise BROWSER browses normally.
+`musicLibrary.skipBackwardPreview`. Otherwise Shift+BROWSER sends source-next/
+previous pulses on notes 25/26, channels 9-12; unshifted BROWSER browses normally.
 Overlapping Preview holds keep preview open until the last release.
 No playback state is guessed; the user accepts mouse-close recovery if external
 preview changes leave the toggles out of sync. The previous Shift+BROWSER
@@ -28,8 +29,8 @@ physical acceptance. LOOP and Shift+BROWSER press are unchanged.
 
 Shift+CUE uses `turntableN.gotoZero` on Note 1, channels 9-12, for the beginning
 of the song rather than a saved start cue. Normal CUE is unchanged. Library
-Note 10 now marks/unmarks selected songs; Note 11 focuses the Queue on channels
-1-4. These are the requested A#-1 / B-1 action swap, not a change to HID fields.
+Note 10 marks/unmarks selected songs; Note 11 switches the library table on channels
+1-4. These assignments do not change HID fields.
 
 The encoder increment is full-profile only. Descriptor normalization corrects
 all rotation names and only left press names. LOOP turn/press use native
@@ -42,14 +43,15 @@ MOVE normally sends CC 2 on channels 1-4 to `skipRotary`, whether a loop is
 active or not. Its press emits no MIDI and toggles size-select mode per
 logical deck, with no timeout. Unshifted MOVE in that mode sends CC 7 on
 channels 1-4 to `skipDurationRotary`: native jump size changes immediately,
-and the second press only exits. Shift+MOVE always emits a fixed one-beat
-jump per detent, note 5 forward or note 14 backward on channels 9-12,
-including during selection. Base-channel aliases in the native catalog
-aren't used by runtime Shift routing.
+and the second press only exits. Shift+MOVE selects one beat, sends native CC 2
+with the full signed detent count, then restores the last confirmed selection
+using normal-channel notes 64-73. Missing/conflicting feedback is not guessed.
+The fixed-jump notes 5/14 remain mapping aliases, not runtime Shift destinations:
+Djay coalesced repeated fixed-action pulses in a native multi-detent probe.
 
 Djay owns the independent A/B/C/D jump and loop values; the bridge keeps
-only independent mode flags, initialized off on restart. No shared-size
-counters or resets are used, and fixed Shift jumps preserve chosen jump size.
+independent mode flags, initialized off on restart, plus confirmed jump feedback
+and in-flight restoration ownership. No shared-size counters are used.
 The selected deck selector pulses on a 1.2-second palette-brightness cycle
 with a dark trough while selecting. Hidden deck modes persist without
 flashing inactive buttons. This encoder overlay adds no screen or motor traffic;
@@ -59,6 +61,24 @@ These routes are implemented, not physically validated here. The user
 mouse-verified beat jump moving an active loop; fresh MIDI/native and LED
 checks remain pending. Reinstall the generated mapping under a new filename,
 preserving custom maps. See [live checks](full-midi-test.md#encoder-layout-live-check).
+
+### Startup positions and FX pickup
+
+The full profile seeds its real parser from an initial numbered analog report 2
+GET without emitting bootstrap slider MIDI. After raw playback feedback opens
+the existing mapping-ready gate, sixteen channel-volume/EQ CCs apply their latest
+physical positions once. Full-mode analog interrupts trigger fresh snapshots
+rather than replaying queued values older than the startup GET. Minimal is unchanged.
+
+FX uses six actual values per deck from explicit root control outputs on CC 32-37:
+three parameters and three wet/dry values. Shared physical knobs are not replayed
+at startup or retarget. Per-strip/slot pickup gates require known software state
+and matching/crossing movement, retaining ownership through ordinary feedback lag
+and reacquiring after confirmed external edits. Native pickup flags remain enabled.
+Known mismatch blinks the corresponding FX button; dry/wet uses main ON.
+Info/STEMS adds an affected-deck `FX SYNC` header only while needed.
+See [operation](controls-state-sync.md) and
+[verification boundaries](controls-state-sync-validation.md).
 
 ### Saved hardware tension
 

@@ -59,7 +59,7 @@ Both physical screens use the same geometry.
 The approved info page divides 320 x 240 into four equal 160 x 120 quadrants:
 JUMP upper left, LOOP upper right, KEY lower left, RANGE lower right.
 Use 12-pixel label insets, values centered horizontally at y+44, and one-pixel
-dividers at x=160 and y=120. There are no surrounding headers or footers.
+dividers at x=160 and y=120. Without an FX warning, there are no surrounding headers or footers.
 While `FX SYNC` is present, the Info quadrants reflow into the remaining 216
 pixels, with labels at y+8, values at y+34, and SELECT at y+88. STEMS names
 and tiles move down 24 pixels and each tile row loses 12 pixels. The amber header

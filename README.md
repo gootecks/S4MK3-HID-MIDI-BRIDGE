@@ -95,7 +95,7 @@ thing.
 | **LOOP turn / press**              | Select loop size / toggle the loop. Loop size is independent of MOVE's jump length, unlike Traktor's shared length.                                                                                                                   |
 | **MOVE turn**                      | Jump by the selected jump length, or move the active loop by that length. Each deck keeps its own loop and jump sizes.                                                                                                                |
 | **MOVE press**                     | Toggle jump-size selection. Turn MOVE to change the size immediately; press again to exit. The selected deck's selector pulses while selecting. The mode survives deck switches, has no timeout, and clears when the bridge restarts. |
-| **Shift+MOVE turn**                | Jump one beat per step in either direction, even during size selection, without changing the chosen jump length.                                                                                                                      |
+| **Shift+MOVE turn**                | Jump one beat per step in either direction, even during size selection. Current source builds restore the last confirmed jump length afterward; install the matching mapping. |
 | **Shift+LOOP turn / press**        | Move the loop region / reloop the stored loop range. Manual loop in/out isn't mapped. These replace Traktor's shifted key/quantize functions.                                                                                         |
 | **REV**                            | Reverse only while held. Release ends reverse. It doesn't automatically enable Slip as Traktor enables Flux; use FLUX to control Slip independently.                                                                                  |
 | **Sync / Shift+Sync**              | Normal Sync is deck-specific. Shift+Sync on either side cycles Djay's tempo-fader range **globally for all decks**, rather than locking one deck's tempo fader as in Traktor. Djay determines the ranges and their order.             |
@@ -106,8 +106,9 @@ thing.
 | **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
 | **REC**                            | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                         |
 | **Shift+CUE**                      | Jump to the beginning of the song, not the saved start cue. Normal CUE is unchanged. |
-| **Playlist / Star buttons**        | Playlist marks/unmarks selected songs; Star focuses the Queue. These swap Note 10 (A#-1) and Note 11 (B-1) actions on deck channels 1-4. |
-| **Preview**                        | Hold to preview; turn BROWSER while holding to scrub, then release to stop. BROWSER otherwise browses, without requiring Shift. If preview gets out of sync with the hold, close it with the mouse. |
+| **Playlist / Star buttons**        | Playlist marks/unmarks selected songs. In current source builds, Star switches the library table (Note 11 / B-1); published beta.3 focuses the Queue. |
+| **Preview**                        | Hold to preview; turn BROWSER while holding to scrub, then release to stop. Without Preview or Shift, BROWSER browses tracks. If preview gets out of sync with the hold, close it with the mouse. |
+| **Shift+BROWSER turn**              | In current source builds, select the next/previous library source. Holding Preview still scrubs instead, including with Shift held. |
 
 HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
@@ -126,6 +127,19 @@ JOG/TT select software wheel behavior, not powered platter rotation. The app
 does provide motor-assisted wheel tension in the full-controller profile,
 as described below. Jog-ring animation
 remains decorative, not track-position or physical-platter-position tracking.
+
+### Startup positions and FX pickup
+
+Current source builds apply all four channel-volume faders and high/mid/low EQ
+positions once Djay's mapping is ready. Gain, filter, crossfader position and
+tempo are not applied by this startup synchronization.
+
+Shared FX knobs keep Djay's values until you move through their pickup positions.
+A mismatched knob blinks its FX button; dry/wet uses the strip's main ON button.
+With screens enabled, `FX SYNC` identifies the affected deck, left/right strip,
+knobs 1-3 and `W` for dry/wet. A `?` means feedback is unavailable.
+These changes are not in the published beta.3 download. See
+[setup and operation](docs/controls-state-sync.md).
 
 ## App settings
 

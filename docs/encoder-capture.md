@@ -75,10 +75,11 @@ active loop. MOVE press emits no MIDI and toggles the logical deck's local
 size-select mode. There is no timeout. In selection mode, unshifted MOVE
 uses CC 7 on channels 1-4 (`skipDurationRotary`) to change the native jump
 value immediately; pressing again exits without a deferred save.
-Shift+MOVE always sends fixed one-beat jumps, note 5 forward or note 14
-backward on channels 9-12, even while selecting, without changing jump size.
-Base-channel aliases exist in the native catalog but aren't runtime Shift
-destinations.
+Shift+MOVE temporarily selects one beat using normal-channel Note 67, sends
+native CC 2 with the complete signed detent count, then restores the last
+confirmed jump size using notes 64-73. Unknown/conflicting sizes are not guessed.
+The old fixed-jump notes 5/14 remain mapping aliases, not runtime destinations.
+The new generated mapping and jump-state feedback are required.
 
 A/B/C/D keep independent Djay values and independent local mode flags;
 the bridge doesn't count or reset their sizes. All mode flags start off on

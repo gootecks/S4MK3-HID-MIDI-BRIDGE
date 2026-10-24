@@ -81,13 +81,20 @@ mapping under a new name, preserving custom mappings.
 
 ## Current MOVE selection indicator
 
+Current source builds also indicate shared FX pickup: parameter mismatches blink
+FX buttons 1-3, while dry/wet mismatch blinks the strip's main ON button. The
+600 ms cycle uses target-deck active color then dark; ordinary confirmed effect
+lighting returns when matched. Six actual parameter/wet values per deck arrive
+through root control outputs on CC 32-37. Missing feedback is unknown, not synced.
+See [setup and pickup behavior](controls-state-sync.md).
+
 In the full profile, MOVE press toggles a local size-select flag for the
 logical deck and emits no MIDI. There is no timeout or deferred save:
 unshifted MOVE immediately changes native jump size through CC 7 on
 channels 1-4 (`skipDurationRotary`). Outside selection it sends CC 2
-(`skipRotary`). Shift+MOVE always jumps one beat per detent via note 5
-forward / note 14 backward on channels 9-12, even while selecting,
-preserving the chosen size.
+(`skipRotary`). Shift+MOVE selects one beat, sends native CC 2 with the full
+detent count, then restores the last confirmed size via normal-channel
+notes 64-73. The old fixed-jump notes 5/14 are unused runtime aliases.
 
 Only the currently selected deck selector pulses, on a 1.2-second
 palette-brightness cycle with a dark trough. A hidden deck keeps its mode

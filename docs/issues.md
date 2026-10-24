@@ -97,8 +97,18 @@ Keep completed items and add their completion date and a short evidence note.
   remains pending.
 - [ ] **Swap A#-1 / B-1 actions** - Implemented October 21, 2026 on input
   endpoint S4 MK3 MIDI Full, Note 10/11, channels 1-4: Playlist now
-  marks/unmarks selected songs; Star focuses the Queue. Generated-mapping
-  regression covers every deck; physical acceptance remains pending.
+  marks/unmarks selected songs. Current source supersedes Star's Queue action
+  with Switch Library Table and adds Shift+BROWSER source navigation.
+  Native MIDI/GUI checks passed; physical acceptance remains pending.
+- [ ] **Intermittent unknown key** - User requested live diagnostics only when
+  present to assist. No key decoder/cache changes are included in the startup
+  synchronization work.
+- [ ] **Djay coalesces zero-delay jump bursts** - A paused-deck MIDI-only check
+  sent normal MOVE CC 2 deltas +4, -4, then four +2/-2 pairs with native one-beat
+  size. All ten CCs were emitted, but the native waveform ended two beats behind
+  the starting point. The unchanged normal-MOVE path reproduces this independently
+  of Shift-size restoration. Separate four-detent commands work in both directions.
+  See [reproduction and evidence](controls-state-sync-validation.md#native-burst-limitation).
 - [ ] **Practice-session freshness exit** - A 50 ms motor-input timeout
   stopped the entire full-profile bridge during practice on October 20, 2026.
   The beta.3 fix clears force, discards old movement, and automatically

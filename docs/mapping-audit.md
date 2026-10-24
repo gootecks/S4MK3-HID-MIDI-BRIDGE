@@ -94,11 +94,11 @@ unshifted MOVE sends CC 7 on channels 1-4 to `skipDurationRotary`, immediately
 changing Djay's native jump value. The second press exits, not saves a
 deferred value.
 
-Shift+MOVE always jumps one beat per detent in either direction, including
-while selecting: note 5 forward and note 14 backward on channels 9-12.
-The native catalog also contains base-channel aliases for these actions;
-runtime Shift routing uses only the shifted channels. Fixed jumps preserve
-the chosen jump size.
+Current source Shift+MOVE selects one beat, sends relative CC 2 with the full
+signed detent count, then restores the last confirmed size through normal-channel
+notes 64-73. Native fixed actions changed the selected size and coalesced rapid
+pulse batches; notes 5/14 remain unused runtime aliases. Missing/conflicting size
+feedback is not guessed. See [current operation](controls-state-sync.md).
 
 A/B/C/D retain independent native Djay loop and jump values, not bridge
 counters or shared-size resets. Only the selection-mode flags belong to the

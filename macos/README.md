@@ -111,12 +111,14 @@ REV now uses native `reverseHold`: releasing it ends reverse, even after a
 deck or Shift change. It does not automatically enable or restore Slip.
 Normal Browse direction is corrected once in the mapping. Hold Preview to
 start preview, turn BROWSER while held to scrub, and release to stop. No Shift
-is required; otherwise BROWSER browses normally. Complete preview-toggle pulses
+is required. Without Preview or Shift, BROWSER browses normally. Complete preview-toggle pulses
 are sent on press and release, including shutdown. If preview was already
 active or changes externally, close it using the mouse to recover.
 Shift+BROWSER press still goes back, and LOOP is unchanged. Shift+CUE jumps
 to the beginning of the song, leaving normal CUE unchanged. Playlist now
-marks/unmarks selected songs and Star focuses the Queue (Note 10/11 swap).
+marks/unmarks selected songs and Star switches the library table (Note 11/B-1).
+Shift+BROWSER rotation selects next/previous sources with separate note pulses.
+Holding Preview takes the scrub route, with or without Shift.
 Use a rebuilt bridge and install its newly generated mapping under a new name,
 preserving existing custom mappings. Physical encoder direction and multi-detent
 response for the held preview route still need a live check.
@@ -136,10 +138,11 @@ Normal MOVE jumps with or without an active loop using CC 2 on channels 1-4
 (`skipRotary`). Press MOVE to toggle size-select mode for that logical deck:
 the press sends no MIDI, there is no timeout, and unshifted rotation uses
 CC 7 (`skipDurationRotary`) to change the native jump value immediately.
-Press again to exit, not to save. Shift+MOVE always jumps one beat per
-detent in either direction, even while selecting, preserving chosen jump
-size: note 5 forward / note 14 backward on channels 9-12 only. Base-channel
-aliases in the native catalog aren't runtime Shift destinations.
+Press again to exit, not to save. Shift+MOVE temporarily selects one beat,
+uses native CC2 jumping with the full detent count, then restores the last
+confirmed jump size. Normal-channel notes 64-73 select sizes 1/8 through 64.
+An unknown/conflicting size is not guessed. The old fixed-jump notes 5/14
+remain mapping aliases but are not the runtime Shift+MOVE route.
 
 A/B/C/D retain independent native Djay loop/jump values and independent
 local mode flags. The bridge doesn't count or reset shared sizes. Only the
@@ -159,6 +162,17 @@ LED, run, jog mapping, and hardware tension preferences are stored under
 current LED JSON setting; import/export accepts a full or partial LED JSON object.
 **Save and restart** applies edits to an active bridge. Invalid settings remain
 visible and do not silently replace saved preferences.
+
+### Startup positions and FX pickup
+
+Current source builds synchronize all four channel volumes and high/mid/low EQ
+to the physical positions after mapping feedback arrives. Shared FX controls
+preserve software values until pickup. Mismatched parameter knobs blink their
+FX buttons; dry/wet blinks the strip's main ON button. Optional `FX SYNC` screen
+headers identify the affected deck and strip without replacing Info/STEMS.
+Install the same build's new mapping and restart the bridge after changing it.
+See [setup and operation](../docs/controls-state-sync.md). These additions are
+not in the published beta.3 download.
 
 ### Mixer ON and Neural Mix EQ
 

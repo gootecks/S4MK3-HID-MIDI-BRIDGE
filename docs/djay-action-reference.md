@@ -21,6 +21,15 @@ All channel labels in this document are **MIDI channels 1-based**, as requested.
 
 ## Generated S4 mapping shape
 
+Current source builds add explicit FX model-value outputs on deck-channel
+CC 32-37 (`turntableN.fx1/2/3.parameterValue` and `.wetDryValue`, control type).
+Embedded absolute feedback produced misleading zero snapshots in native testing
+and is not used. Jump-size selection inputs use notes 64-73 on channels 1-4.
+Shift+MOVE selects one beat, uses native relative CC 2, then restores the last
+confirmed size; the old fixed-jump notes 5/14 are unused runtime aliases.
+Shift+BROWSER source-next/previous uses notes 25/26 on channels 9-12; held Preview
+keeps the existing scrub route. See [current control-state setup](controls-state-sync.md).
+
 The October 21 screen-data follow-up found live root outputs beyond the preset
 audit: global `userDefaults.DJTempoSliderRange`, selected
 `turntable1.skipping*BeatInterval` states, and original/current key-index values.
@@ -58,7 +67,7 @@ press and release, including shutdown cleanup; no preview-playing state output
 is declared. External preview-state mismatch is an accepted mouse-recovery case.
 Shift+CUE now uses `turntableN.gotoZero` on Note 1, channels 9-12.
 Note 10 on channels 1-4 now targets `musicLibrary.markUnmarkSelectedSongs`;
-Note 11 targets `musicLibrary.focusQueue` (A#-1 / B-1 action swap).
+Note 11 now targets `musicLibrary.toggleLibrarySource` (Switch Library Table).
 `loopIn`, `loopOut`, and `loopInOut` are now unmapped. Normal LOOP remains
 `autoLoopDurationRotary` / `autoLoopOnOff`; Shift+LOOP turn remains
 `autoLoopMoveRotary`. Reloop's declared enable gate is
