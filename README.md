@@ -4,7 +4,7 @@ Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
 Djay sends audio directly to the S4. No development tools are needed.
 
-**Version 0.1.1-beta.3** is a beta with a custom Djay mapping, not a recreation
+**S4 MK3 Bridge** is a beta with a custom Djay mapping, not a recreation
 of every Traktor feature. Read the control differences and known limitations
 below before using it for a set.
 
@@ -22,19 +22,19 @@ screens without requiring MIDI or development knowledge.
 
 ## Download and install
 
-1. Open [GitHub Releases](../../releases) and find **0.1.1-beta.3**.
-2. Download **`S4 MK3 Bridge-0.1.1-beta.3-arm64.dmg`**.
+1. Open [GitHub Releases](../../releases) and choose the latest published release.
+2. Download its **`S4 MK3 Bridge-<version>-arm64.dmg`**.
 3. Open the disk image, drag **S4 MK3 Bridge** to **Applications**, then eject
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
 
-The published portable build is **0.1.1-beta.3 (build 4)**. See the
-[release notes](docs/release-0.1.1-beta.3.md).
-This download predates the current screen integration, updated Preview/CUE/
-library mappings, startup channel synchronization, FX pickup, jump-size
-restoration and musical-key fix. Those require a current source build.
-Local development builds can still show the same version number; use the app
-and mapping supplied together.
+**0.2.0-beta.1 (build 5)** is prepared for release; see
+[what changed since 0.1.1-beta.3](docs/release-0.2.0-beta.1.md).
+Until it is published, the available download remains
+[0.1.1-beta.3 (build 4)](docs/release-0.1.1-beta.3.md).
+Version 0.2.0 adds screens, updated Preview/CUE/library controls, startup channel
+synchronization, FX pickup and jump-size restoration. Use the app and mapping
+supplied together; beta.3's older mapping does not provide these additions.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. macOS may block
 the first launch because it can't verify the developer. After attempting to
@@ -91,7 +91,7 @@ _Bridge controls and mapping installation._
 ## Controls and differences from Traktor
 
 This section and the [user guide](docs/user-guide.md) describe the current
-source build. The published beta.3 download has the older behavior noted above.
+0.2.0-beta.1 build. The published 0.1.1-beta.3 download has the older behavior noted above.
 
 The mapping covers four-deck transport, touch scratching and pitch bending,
 mixing, EQ, headphone cue, loops, browsing, hotcues, samples, Neural Mix, and

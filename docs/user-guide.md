@@ -3,9 +3,8 @@
 Use this guide to DJ with the S4 MK3, understand the custom mappings, and
 recognize what its lights and screens are telling you.
 
-**Build coverage:** this guide follows the current full-controller source
-build, including features newer than the published beta.3 download. Local
-builds can display the same version number while containing newer controls.
+**Build coverage:** this guide follows the full-controller 0.2.0-beta.1 build.
+Version 0.1.1-beta.3 and older downloads lack its screens and updated control workflows.
 Use the app and mapping supplied together; check the [download notes](../README.md#download-and-install)
 for what the published package includes.
 

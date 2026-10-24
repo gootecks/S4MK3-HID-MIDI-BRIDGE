@@ -1,7 +1,7 @@
 # Startup positions, FX pickup and library navigation
 
-These controls require a current source build and its matching generated Djay
-mapping. They are not included in the published beta.3 download.
+These controls require 0.2.0-beta.1 and its matching generated Djay mapping.
+They are not included in 0.1.1-beta.3 or older downloads.
 For the complete daily workflow, start with the [user guide](user-guide.md).
 
 ## Setup

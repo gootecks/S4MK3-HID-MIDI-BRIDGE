@@ -1,8 +1,8 @@
 # S4 screen reference
 
-This page describes screen support in the current full-controller source build.
+This page describes screen support in the full-controller 0.2.0-beta.1 build.
 For normal operation, start with the [user guide](user-guide.md#screens-and-feedback).
-Screen support is not included in the published beta.3 download; see
+Screen support is not included in 0.1.1-beta.3 or older downloads; see
 [build availability](../README.md#download-and-install).
 
 ## Start and stop screens

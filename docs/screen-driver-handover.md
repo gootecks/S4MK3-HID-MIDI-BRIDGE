@@ -1,6 +1,6 @@
 # Screen support and the Native Instruments driver
 
-These controls are in the current source build, not the published beta.3 download.
+These controls are in 0.2.0-beta.1, not 0.1.1-beta.3 or older downloads.
 No Terminal commands or extra development tools are required on the DJ laptop.
 For the full daily workflow, start with the [user guide](user-guide.md).
 

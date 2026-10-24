@@ -15,15 +15,15 @@ bash macos/build-app.sh
 
 The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-arm64.zip`, and the versioned release disk image
-`dist/S4 MK3 Bridge-0.1.1-beta.3-arm64.dmg`. The script compiles
+`dist/S4 MK3 Bridge-0.2.0-beta.1-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
 `examples/led-config.json`, `examples/jog-config.json`, and
 `examples/tension-config.json` into the app resources as `default-led-config.json`,
 `default-jog-config.json`, and `default-tension-config.json`, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
-`--generate-mapping`. Cargo identifies this release as `0.1.1-beta.3`;
-the bundle uses numeric version `0.1.1`, build `4`, and records the complete
+`--generate-mapping`. Cargo identifies this release as `0.2.0-beta.1`;
+the bundle uses numeric version `0.2.0`, build `5`, and records the complete
 release in `S4BridgeReleaseVersion`. The script checks alignment with Cargo.
 It generates `AppIcon.icns` from `macos/Assets/AppIcon.png` and includes an
 Applications shortcut in the compressed read-only DMG.
@@ -64,7 +64,7 @@ running.
 
 ### S4 screens
 
-Source builds include a **Screens** settings tab and shared
+Version 0.2.0-beta.1 includes a **Screens** settings tab and shared
 **Enable S4 screens** menu toggle. Use the normal full-profile **Start bridge**
 action; **Save and restart** keeps your selected screen support and saved
 LED/tension settings. Minimal MIDI,
@@ -93,7 +93,7 @@ support off and no previous app ownership. See the
 Screen failures turn the running status icon red while MIDI/LEDs/tension continue.
 The app's Stop/Quit path also stops screen service.
 
-Screen support is not included in the published beta.3 download.
+Screen support is included in the prepared 0.2.0-beta.1, not the published 0.1.1-beta.3.
 Build into a separate folder with `S4_BRIDGE_OUTPUT_DIR=/absolute/output/path`
 when invoking `macos/build-app.sh`.
 
@@ -170,7 +170,7 @@ visible and do not silently replace saved preferences.
 
 ### Startup positions and FX pickup
 
-Current source builds synchronize all four channel volumes and high/mid/low EQ
+Version 0.2.0-beta.1 synchronizes all four channel volumes and high/mid/low EQ
 to the physical positions after mapping feedback arrives. Shared FX controls
 preserve software values until pickup. Mismatched parameter knobs blink their
 FX buttons; dry/wet blinks the strip's main ON button. Optional `FX SYNC` screen
@@ -297,8 +297,8 @@ The app's full-controller launch includes `--screens` when enabled, and a live
 screen-control pipe. The standalone CLI
 still requires an explicit `--midi full --screens`. See
 [screen setup and physical checks](../docs/screens.md), including the
-NIHardwareAgent interface-ownership conflict. Existing published mapping-only
-builds do not contain this integration.
+NIHardwareAgent interface-ownership conflict. Beta.3 and older published
+mapping-only builds do not contain this integration.
 
 ```sh
 swift test --package-path macos
