@@ -239,10 +239,6 @@ Open bugs and unresolved behavior:
   bypass that preserves individual slot states remains unresolved.
 - **REC:** recording source, destination/sample slot, and press/hold behavior
   aren't established.
-- **Preview scrubbing:** native forward/backward skips are verified, and
-  held Preview+BROWSER seeking is implemented; Shift+BROWSER changes source.
-  Physical encoder direction and
-  multi-detent response still need a live check with the new app and mapping.
 - **MUTE/STEMS:** the current alias works as described above, but a possible
   held modifier and final pad behavior are undecided.
 - **EXT, microphone, and line inputs:** S4 input channels, hardware source
@@ -259,7 +255,7 @@ without automatic Slip are design choices, not outstanding fixes.
 ## Roadmap
 
 - Broaden backspin validation and refine jog feel, and resolve the open FX, recording,
-  preview, pad, and external-input questions.
+  pad, and external-input questions.
 - Consider jog-ring touch/rotation polish separately. Playback-driven motor
   rotation, other haptics, additional screen pages and pad legends, and an
   on-controller settings gesture remain deferred.

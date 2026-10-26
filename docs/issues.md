@@ -1,6 +1,6 @@
 # S4 MK3 bridge issues
 
-Current checklist as of October 22, 2026. This is the source of truth for issue
+Current checklist as of October 25, 2026. This is the source of truth for issue
 status; [the mapping audit](mapping-audit.md) retains detailed findings and
 historical snapshots.
 
@@ -28,8 +28,10 @@ Keep completed items and add their completion date and a short evidence note.
   cyan idle Filter replace the former deck colors/reset indication.
   Live MIDI feedback was captured independently for A-D; the user accepted
   the physical behavior and idle refinement on October 20, 2026.
-  The exhaustive [edge-case check](neural-mix-eq-check.md) remains available
-  and is not claimed complete.
+  The user confirmed working LED/FX behavior in their test set on October 25,
+  2026, with no LED/FX fault reported. The exhaustive
+  [edge-case check](neural-mix-eq-check.md) is optional regression coverage,
+  not a known defect or an outstanding acceptance requirement.
 
 - [x] **Default Djay color-token correspondence** - All eight selectable
   hotcue colors physically matched the user's saved correspondence,
@@ -60,9 +62,7 @@ Keep completed items and add their completion date and a short evidence note.
   Software routing/export checks passed and the user confirmed "Works,"
   October 6, 2026. See [validation](shift-sync-validation.md).
 
-## Open
-
-- [ ] **Experimental screen pages** - Implementation authorized October 21,
+- [x] **Experimental screen pages** - Implementation authorized October 21,
   2026. Raw dual-screen transfers succeeded after temporarily quitting the
   NIHardwareAgent process that owned interface 4; S4 audio stayed enumerated.
   An attended blank-screen report led to delaying screen startup until
@@ -71,41 +71,57 @@ Keep completed items and add their completion date and a short evidence note.
   The approved legibility pass removes redundant headers, cue/sample grids,
   and control-role rows. STEMS has larger text, real mute/solo activation,
   separate held-press outlines, and unknown state. Hotcue/Samples now use the
-  approved info page described below. Physical legibility, reactive-state checks, and audible coexistence remain
-  acceptance checks, not inferred from USB completion.
+  approved info page described below.
   On October 22, the user approved smooth anti-aliased sans-serif typography
   for both info and STEMS/MUTE; the shared renderer now embeds native-size
   coverage masks instead of enlarging an 8 x 8 font. The user then visually
   accepted the updated font ("Looks good!"). The app's full-controller launch
   now includes the accepted screens. The user tested the integrated app and
-  reported "Tested and it seems good!" on October 22; exhaustive reactive-state
-  and audio-coexistence checks remain separate.
+  reported "Tested and it seems good!" on October 22. On October 25, the user
+  explicitly confirmed screen states across decks worked in the test set.
+  This closes normal-use acceptance; it is not inferred from USB completion.
   See [screen implementation and ordered checks](screens.md).
-- [ ] **Numeric screen content** - Implemented October 22, 2026: non-STEMS
+- [x] **Numeric screen content** - Implemented October 22, 2026: non-STEMS
   modes show JUMP / LOOP / KEY / RANGE in four quadrants. Active LOOP uses
   green fill and black text; inactive says OFF. MOVE size selection has steady
   SELECT and an amber/dark background flash, never a disappearing number.
   A full paused-track calibration established all 24 numerical key labels.
   Generator, decoder, selected-deck projection, native pixels and worker
-  timing have regressions; physical readability and live B/C/D acceptance
-  remain pending. Inactive selected loop length remains unexposed by tested
+  timing have regressions. The user confirmed cross-deck screen behavior in
+  the test set on October 25, 2026, completing physical acceptance.
+  Inactive selected loop length remains unexposed by tested
   routes and is deliberately not shown. A fresh generated mapping is required. See
   [evidence and probe boundaries](screen-feedback-investigation.md).
-- [ ] **Shift+CUE: jump to beginning** - Implemented October 21, 2026:
+- [x] **Shift+CUE: jump to beginning** - Implemented October 21, 2026:
   `turntableN.gotoZero` on Note 1, channels 9-12. Normal CUE is unchanged.
-  Generated mapping and ownership regressions cover it; physical acceptance
-  remains pending.
-- [ ] **Swap A#-1 / B-1 actions** - Implemented October 21, 2026 on input
+  Generated mapping and ownership regressions cover it. The user confirmed
+  it worked in the test set on October 25, 2026.
+- [x] **Swap A#-1 / B-1 actions** - Implemented October 21, 2026 on input
   endpoint S4 MK3 MIDI Full, Note 10/11, channels 1-4: Playlist now
   marks/unmarks selected songs. Current source supersedes Star's Queue action
   with Switch Library Table and adds Shift+BROWSER source navigation.
-  Native MIDI/GUI checks passed; physical acceptance remains pending.
+  Native MIDI/GUI checks passed; the user confirmed the library controls
+  worked in the test set on October 25, 2026.
+- [x] **One-handed held preview** - Implemented October 21, 2026: pressing
+  Preview opens/starts the preview player, releasing it closes/stops preview,
+  and BROWSER scrubs while Preview is held, without Shift. Normal BROWSER
+  browsing resumes on release. Use paired preview toggles on press/release;
+  the user accepts occasional state mismatch if preview was already active
+  or changes externally, with closing preview using the mouse as sufficient
+  recovery. Preview-state feedback is not required for this design.
+  Duplicate snapshots, simultaneous press/turn, deck/Shift changes,
+  overlapping holds, release, and shutdown are regression-covered.
+  The user confirmed held Preview scrubbing worked in the test set on
+  October 25, 2026, completing physical acceptance.
 - [x] **Intermittent unknown key** - Fixed October 24, 2026 after an attended
   capture showed new key feedback arriving before a loading-false
   notification. The deck-owned key now follows its own feedback,
   including the explicit no-key value on eject. Replacement and eject
   regressions pass; the user verified `11A -> 2A -> --` on the physical S4.
   No mapping change is needed. See [diagnosis and verification](key-feedback-order-validation.md).
+
+## Open
+
 - [ ] **Djay coalesces zero-delay jump bursts** - A paused-deck MIDI-only check
   sent normal MOVE CC 2 deltas +4, -4, then four +2/-2 pairs with native one-beat
   size. All ten CCs were emitted, but the native waveform ended two beats behind
@@ -157,16 +173,6 @@ Keep completed items and add their completion date and a short evidence note.
   the action did not record a sample in their testing. Its actual behavior
   remains unknown; establish what it does before choosing a useful REC
   assignment rather than assuming it supports sample recording.
-- [ ] **One-handed held preview** - Implemented October 21, 2026: pressing
-  Preview opens/starts the preview player, releasing it closes/stops preview,
-  and BROWSER scrubs while Preview is held, without Shift. Normal BROWSER
-  browsing resumes on release. Use paired preview toggles on press/release;
-  the user accepts occasional state mismatch if preview was already active
-  or changes externally, with closing preview using the mouse as sufficient
-  recovery. Preview-state feedback is not required for this design.
-  Duplicate snapshots, simultaneous press/turn, deck/Shift changes,
-  overlapping holds, release, and shutdown are regression-covered.
-  Physical acceptance of this replacement remains pending.
 - [ ] **EXT / microphone / line inputs** - Establish S4 input channels and
   hardware source switching, then determine which routing Djay can support.
 
@@ -187,8 +193,13 @@ Keep completed items and add their completion date and a short evidence note.
 
 ## DJ-laptop validation
 
-Broader testing of this session's changes on the actual DJ laptop is in
-progress. On October 20, 2026, an initial launch reported that
+The October 24 hour-long set passed on the actual DJ laptop. On October 25,
+the user explicitly confirmed held Preview, Shift+CUE, library controls,
+cross-deck screens and working LED/FX behavior from that set. See the
+[set validation](dj-laptop-set-validation.md) for scope and remaining known
+faults. Optional exhaustive scenarios are not additional reported bugs.
+
+On October 20, 2026, an initial launch reported that
 `default-tension-config.json` could not be opened. The installed resource was
 present, signature verification reported no error, and the same app then
 launched normally without changes. The cause is unconfirmed; no code fix or

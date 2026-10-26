@@ -10,9 +10,11 @@ feedback, both decks' Play/Cue lamps, channel level meters, and the colors of
 the user's current hotcues. The user also confirmed deck-colored segments
 across A/C and B/D, green whole-ring loop flashing and exit, preserved hardware
 master meters, and smooth jog response with feedback active.
-**Remaining controls, white-token behavior, and master clip indication
-still need confirmation.**
-Successful HID writes alone do not prove those behaviors.
+On October 25, 2026, the user confirmed working LED/FX behavior in their
+[DJ-laptop test set](dj-laptop-set-validation.md), with no LED/FX fault reported.
+White-token behavior and master clip indication retain their historical
+unverified status; these are evidence limits, not observed LED defects or
+outstanding normal-use acceptance requirements.
 
 ## Verified hotcue palette
 
@@ -74,8 +76,8 @@ factory GRV6 preset and Djay model metadata support this feedback declaration.
 On October 20, 2026, MIDI-only capture verified all four initial mode states and
 independent mouse-driven Neural Mix/on and EQ/off feedback. The user subsequently
 confirmed the mapping works, then requested the dim-cyan Filter idle change.
-That idle appearance still needs confirmation with the rebuilt app; see the
-[Neural Mix EQ check](neural-mix-eq-check.md).
+The user accepted the dim-cyan idle appearance on October 20, 2026; the
+[Neural Mix EQ check](neural-mix-eq-check.md) retains optional exhaustive scenarios.
 Install this build's newly generated
 mapping under a new name, preserving custom mappings.
 
@@ -105,9 +107,10 @@ or shared resets. LOOP retains its independent native size and existing
 shifted actions. This local pulse isn't software-state feedback or the
 green jog-ring loop flash. No screen or motor traffic is added.
 
-Physical pulse, hidden-deck restoration, and fresh MIDI/native-action checks
-are pending. The user's mouse check established beat jump moving an active
-loop, not this LED behavior. Follow the focused
+The October 25 test-set clarification establishes normal-use acceptance of
+cross-deck screens and LED/FX behavior. The original mouse check established
+beat jump moving an active loop, not every LED transition. For optional
+focused regression coverage, follow the
 [encoder live check](full-midi-test.md#encoder-layout-live-check), including
 both sides, all four decks, duplicate press/release, Shift while selecting,
 mode exit, and stop/restart.
