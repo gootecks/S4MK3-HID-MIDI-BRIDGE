@@ -20,7 +20,7 @@ fn recovery_skips_snapshots_that_aged_during_the_neutral_write() -> anyhow::Resu
                     frames.send(frame(140_003, [5000, 6000], 0x30))?;
                 }
             }
-            Action::Frame(frame) => received.borrow_mut().push(frame.host_us),
+            Action::Frame(frame, _) => received.borrow_mut().push(frame.host_us),
             Action::Feedback(_) => {
                 ticks.set(ticks.get() + 1);
                 if ticks.get() == 1 {
@@ -88,7 +88,7 @@ fn repeated_gaps_require_new_movement_and_keep_each_wheels_touch_gate() -> anyho
     let mut output = Output::new(|action| {
         match action {
             Action::Motor(report) => writes.borrow_mut().push((clock.get(), report)),
-            Action::Frame(_) => received.set(received.get() + 1),
+            Action::Frame(..) => received.set(received.get() + 1),
             Action::Feedback(_) => {
                 next.set(next.get() + 1);
                 if let Some((at, sample)) = script.get(next.get()) {

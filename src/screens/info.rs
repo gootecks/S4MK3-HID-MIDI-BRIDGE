@@ -19,10 +19,11 @@ pub struct Info {
     pub tempo_range: Option<u8>,
     pub selecting: bool,
     pub fx: super::page::FxWarning,
+    pub backspin: Option<u8>,
 }
 
 pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
-    let top = super::page::render_fx_warning(info.fx, frame);
+    let top = super::page::render_headers(info.fx, info.backspin, frame);
     let quadrant_height = (HEIGHT - top) / 2;
     let range = match info.tempo_range {
         Some(4) => "±4%",
@@ -63,7 +64,13 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
         frame.rect(x, y, WIDTH / 2, quadrant_height, fill);
         frame.text(
             x + 12,
-            y + if top == 0 { 12 } else { 8 },
+            y + if top == 0 {
+                12
+            } else if top == 24 {
+                8
+            } else {
+                6
+            },
             label,
             2,
             if fill == BACKGROUND { SECONDARY } else { BLACK },
@@ -74,7 +81,13 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
             .unwrap_or(4);
         frame.centered_text(
             x + WIDTH / 4,
-            y + if top == 0 { 44 } else { 34 },
+            y + if top == 0 {
+                44
+            } else if top == 24 {
+                34
+            } else {
+                28
+            },
             value,
             scale,
             if index == 1 && info.loop_active == Some(false) {
@@ -86,7 +99,13 @@ pub(super) fn render(info: &Info, frame: &mut Frame, bright: bool) {
         if selecting {
             frame.centered_text(
                 x + WIDTH / 4,
-                y + if top == 0 { 100 } else { 88 },
+                y + if top == 0 {
+                    100
+                } else if top == 24 {
+                    88
+                } else {
+                    76
+                },
                 "SELECT",
                 2,
                 if bright { BLACK } else { AMBER },
@@ -209,5 +228,67 @@ mod tests {
         assert!(
             (164..196).any(|y| actual.pixels[y * WIDTH + 176..y * WIDTH + 208].contains(&PRIMARY))
         );
+    }
+
+    #[test]
+    fn backspin_and_fx_headers_reflow_info_quadrants_and_clear_cleanly() {
+        // Given populated info fields with each deck owner and optional FX warning.
+        let base = Info {
+            jump: Some("16"),
+            loop_active: Some(true),
+            loop_size: Some("8"),
+            key: Some("9A"),
+            tempo_range: Some(8),
+            selecting: true,
+            ..Info::default()
+        };
+        let fx = super::super::page::FxWarning {
+            deck: 0,
+            mismatch: [1, 2],
+            unknown: [0; 2],
+        };
+        let default = frame(base, true);
+        let backspin_decks: [Frame; 4] = std::array::from_fn(|deck| {
+            frame(
+                Info {
+                    backspin: u8::try_from(deck).ok(),
+                    ..base
+                },
+                true,
+            )
+        });
+        let fx_only = frame(Info { fx, ..base }, true);
+        let both = frame(
+            Info {
+                fx,
+                backspin: Some(2),
+                ..base
+            },
+            true,
+        );
+        // Then each deck A-D has a distinct header, both headers coexist in the top 48 rows,
+        // all four quadrants remain populated, and clearing backspin restores the default raster.
+        for left in 0..4 {
+            assert_ne!(default.pixels, backspin_decks[left].pixels);
+            assert!(backspin_decks[left].pixels[..24 * WIDTH].contains(&AMBER));
+            for right in left + 1..4 {
+                assert_ne!(
+                    backspin_decks[left].pixels[..24 * WIDTH],
+                    backspin_decks[right].pixels[..24 * WIDTH]
+                );
+            }
+        }
+        assert_eq!(
+            &both.pixels[..24 * WIDTH],
+            &backspin_decks[2].pixels[..24 * WIDTH]
+        );
+        assert!(both.pixels[24 * WIDTH..48 * WIDTH].contains(&AMBER));
+        assert_ne!(both.pixels, fx_only.pixels);
+        assert_eq!(both.pixels[56 * WIDTH + 8], AMBER);
+        assert_eq!(both.pixels[56 * WIDTH + 168], GREEN);
+        assert!(both.pixels[152 * WIDTH..236 * WIDTH].contains(&PRIMARY));
+        let mut cleared = both;
+        render(&base, &mut cleared, true);
+        assert_eq!(cleared.pixels, default.pixels);
     }
 }

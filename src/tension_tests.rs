@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "tension_tests/backspin.rs"]
+mod backspin;
+
 fn sample(at: u64, timer: u32, counts: [u32; 2], touch: [bool; 2]) -> ([u8; 23], [u8; 60]) {
     let mut buttons = [0; 23];
     buttons[0] = 1;

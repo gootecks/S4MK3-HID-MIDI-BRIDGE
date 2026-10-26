@@ -14,7 +14,7 @@ fn freshness_gap_neutralizes_tension_without_stopping_midi_or_feedback() -> anyh
     let mut output = Output::new(|action| {
         match action {
             Action::Motor(report) => writes.borrow_mut().push(report),
-            Action::Frame(frame) => received.borrow_mut().push(frame.report(0).to_vec()),
+            Action::Frame(frame, _) => received.borrow_mut().push(frame.report(0).to_vec()),
             Action::Feedback(_) => {
                 ticks.set(ticks.get() + 1);
                 match ticks.get() {
@@ -66,7 +66,7 @@ fn fresh_queued_motion_cannot_hide_timeout_or_reuse_prior_force() -> anyhow::Res
         let mut output = Output::new(|action| {
             match action {
                 Action::Motor(report) => writes.borrow_mut().push((clock.get(), report)),
-                Action::Frame(_) => {
+                Action::Frame(..) => {
                     if received.get() < 2 {
                         assert_eq!(
                             writes.borrow().last().map(|(_, report)| *report),
@@ -137,7 +137,7 @@ fn failed_timeout_neutral_still_exits_with_an_error() -> anyhow::Result<()> {
                 active.set(report != neutral_report());
             }
             Action::Feedback(_) => clock.set(70002),
-            Action::Frame(_) | Action::Initialize | Action::Screens => {}
+            Action::Frame(..) | Action::Initialize | Action::Screens => {}
         }
         Ok(())
     })?;

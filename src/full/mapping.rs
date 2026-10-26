@@ -622,6 +622,11 @@ mod tests {
             scratch_reaction: 60,
             pitch_bend_speed: 1.6,
             pitch_bend_reaction: 25,
+            backspin_enabled: false,
+            backspin_assist_enabled: true,
+            backspin_assist_strength: 37,
+            backspin_acceleration: 250_000.0,
+            backspin_speed_increase: 2.0,
         };
         // When the real generated mapping is serialized and read back.
         let mapping = generate_with_jog(&config)?;
@@ -703,6 +708,22 @@ mod tests {
             },
             jog::Config {
                 pitch_bend_reaction: 255,
+                ..jog::DEFAULT
+            },
+            jog::Config {
+                backspin_acceleration: 0.0,
+                ..jog::DEFAULT
+            },
+            jog::Config {
+                backspin_acceleration: f64::NAN,
+                ..jog::DEFAULT
+            },
+            jog::Config {
+                backspin_speed_increase: -1.0,
+                ..jog::DEFAULT
+            },
+            jog::Config {
+                backspin_speed_increase: f64::INFINITY,
                 ..jog::DEFAULT
             },
         ] {

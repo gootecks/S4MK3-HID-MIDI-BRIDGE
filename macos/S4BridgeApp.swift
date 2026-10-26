@@ -43,13 +43,13 @@ struct RunPreferences: Codable, Equatable {
         }
     }
 
-    func arguments(ledURL: URL, tensionURL: URL, screens: Bool = true) -> [String] {
+    func arguments(ledURL: URL, jogURL: URL, tensionURL: URL, screens: Bool = true) -> [String] {
         var arguments: [String] = []
         if profile != .probe { arguments += ["--midi", profile.rawValue] }
         if profile == .full {
             arguments += ["--screen-control-stdin"]
             if screens { arguments += ["--screens"] }
-            arguments += ["--led-config", ledURL.path, "--tension-config", tensionURL.path]
+            arguments += ["--led-config", ledURL.path, "--jog-config", jogURL.path, "--tension-config", tensionURL.path]
         }
         arguments += limitDuration ? ["--seconds", String(durationSeconds)] : ["--until-stopped"]
         if rawReports { arguments.append("--raw") }
@@ -149,17 +149,32 @@ struct JogPreferences: Codable, Equatable {
     var scratchReaction = 150
     var pitchBendSpeed = 2.7
     var pitchBendReaction = 17
+    var backspinEnabled = true
+    var backspinAcceleration = 150000.0
+    var backspinSpeedIncrease = 0.0
+    var backspinAssistEnabled = false
+    var backspinAssistStrength = 100
 
     static func decode(_ data: Data, defaults: Data) throws -> JogPreferences {
         guard let base = try JSONSerialization.jsonObject(with: defaults) as? [String: Any],
               let overrides = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw AppError.invalid("Jog preferences must be a JSON object.")
         }
-        let unknown = Set(overrides.keys).subtracting(base.keys)
+        let unknown = Set(overrides.keys).subtracting(Set(base.keys).union(["backspin_assist_strength"]))
         guard unknown.isEmpty else {
             throw AppError.invalid("Unknown jog settings: \(unknown.sorted().joined(separator: ", ")).")
         }
-        let merged = base.merging(overrides) { _, override in override }
+        if let raw = overrides["backspin_assist_strength"] {
+            guard let number = raw as? NSNumber,
+                  CFGetTypeID(number) != CFBooleanGetTypeID(),
+                  !["f", "d"].contains(String(cString: number.objCType)) else {
+                throw AppError.invalid("Backspin assist strength must be an integer from 0 to 100.")
+            }
+        }
+        var merged = base.merging(overrides) { _, override in override }
+        if merged["backspin_assist_strength"] == nil {
+            merged["backspin_assist_strength"] = 100
+        }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let value = try decoder.decode(JogPreferences.self, from: JSONSerialization.data(withJSONObject: merged))
@@ -183,6 +198,16 @@ struct JogPreferences: Codable, Equatable {
         }
         guard (0...150).contains(scratchReaction), (0...150).contains(pitchBendReaction) else {
             throw AppError.invalid("Jog reactions must be integers from 0 to 150.")
+        }
+        guard backspinAcceleration.isFinite, backspinAcceleration > 0 else {
+            throw AppError.invalid("Backspin acceleration must be finite and greater than 0.")
+        }
+        guard backspinSpeedIncrease.isFinite, backspinSpeedIncrease >= 0,
+              (scratchSpeed + backspinSpeedIncrease).isFinite else {
+            throw AppError.invalid("Backspin speed increase must be finite and at least 0.")
+        }
+        guard (0...100).contains(backspinAssistStrength) else {
+            throw AppError.invalid("Backspin assist strength must be an integer from 0 to 100.")
         }
     }
 }
@@ -306,7 +331,7 @@ final class BridgeController: ObservableObject {
     var runURL: URL { supportURL.appendingPathComponent("run-settings.json") }
     var executableURL: URL { resourceURL.appendingPathComponent("s4mk3-hid-midi-bridge") }
     var commandPreview: String {
-        ([executableURL.path] + run.arguments(ledURL: ledURL, tensionURL: tensionURL, screens: screens.preferences.enabled))
+        ([executableURL.path] + run.arguments(ledURL: ledURL, jogURL: jogURL, tensionURL: tensionURL, screens: screens.preferences.enabled))
             .map { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }
             .joined(separator: " ")
     }
@@ -414,7 +439,7 @@ final class BridgeController: ObservableObject {
                 }
                 screens.bridgeStarted(screens: enabled, full: run.profile == .full)
                 try launch(arguments: run.arguments(
-                    ledURL: ledURL, tensionURL: tensionURL, screens: enabled
+                    ledURL: ledURL, jogURL: jogURL, tensionURL: tensionURL, screens: enabled
                 ), diagnostic: false)
             } catch {
                 await screens.bridgeExited(restarting: false)
@@ -958,6 +983,44 @@ struct BridgeSettingsView: View {
                     Text("One setting for both wheels; each responds to its own movement and touch. Channel 1's fader remains a normal mixer control.")
                         .font(.caption).foregroundColor(.secondary)
                     Text("Full-controller profile only. Save preferences to apply on the next start, or Save and restart while running. No new Djay mapping is needed.")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+                section("Backspin") {
+                    Toggle("Detect backspins and continue scratch after release", isOn: $controller.jog.backspinEnabled)
+                    HStack {
+                        Text("Acceleration threshold")
+                        Spacer()
+                        TextField("Acceleration threshold", value: $controller.jog.backspinAcceleration, format: .number.grouping(.never))
+                            .frame(width: 90).multilineTextAlignment(.trailing)
+                        Text("counts/s^2").foregroundColor(.secondary)
+                        Stepper("Acceleration threshold", value: $controller.jog.backspinAcceleration, in: 1000...Double.greatestFiniteMagnitude, step: 10000)
+                            .labelsHidden().fixedSize()
+                    }
+                    .disabled(!controller.jog.backspinEnabled)
+                    HStack {
+                        Text("Scratch speed increase")
+                        Slider(value: $controller.jog.backspinSpeedIncrease, in: 0...10, step: 0.1)
+                        Text(controller.jog.backspinSpeedIncrease, format: .number.precision(.fractionLength(1)).grouping(.never))
+                            .frame(width: 35, alignment: .trailing)
+                        Text("%").foregroundColor(.secondary)
+                    }
+                    .disabled(!controller.jog.backspinEnabled)
+                    Toggle("Apply motor assistance during detected backspins", isOn: $controller.jog.backspinAssistEnabled)
+                        .disabled(!controller.jog.backspinEnabled)
+                    HStack {
+                        Text("Motor assist strength")
+                        Slider(value: Binding(
+                            get: { Double(controller.jog.backspinAssistStrength) },
+                            set: { controller.jog.backspinAssistStrength = Int($0) }
+                        ), in: 0...100, step: 1)
+                        .accessibilityLabel("Motor assist strength")
+                        Text("\(controller.jog.backspinAssistStrength)%")
+                            .frame(width: 42, alignment: .trailing)
+                    }
+                    .disabled(!controller.jog.backspinEnabled || !controller.jog.backspinAssistEnabled)
+                    Text("Adjusts motor assistance during detected backspins. Assistance continues after release and fades out within one second. Normal Jog Wheel Tension and scratch speed increase are independent settings.")
+                        .font(.caption).foregroundColor(.secondary)
+                    Text("Backspin options apply on the next start after saving, or through Save and restart while running; no new Djay mapping export is needed.")
                         .font(.caption).foregroundColor(.secondary)
                 }
                 section("Scratch (platter touch)") {

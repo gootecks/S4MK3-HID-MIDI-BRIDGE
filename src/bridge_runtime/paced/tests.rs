@@ -1,6 +1,7 @@
 use super::*;
 use std::cell::{Cell, RefCell};
 
+mod backspin;
 mod recovery;
 mod watchdog;
 
@@ -51,7 +52,7 @@ fn screens_require_input_and_a_successful_native_feedback_tick() -> anyhow::Resu
             let events = RefCell::new(Vec::new());
             let mut output = Output::new(|action| {
                 match action {
-                    Action::Frame(_) => events.borrow_mut().push("input"),
+                    Action::Frame(..) => events.borrow_mut().push("input"),
                     Action::Feedback(_) => {
                         events.borrow_mut().push("feedback");
                         if fail_led {
@@ -107,7 +108,7 @@ fn queued_one_wheel_release_precedes_overdue_motor_and_feedback() -> anyhow::Res
     let mut output = Output::new(|action| {
         match action {
             Action::Motor(report) => actions.borrow_mut().push((0, report)),
-            Action::Frame(_) => actions.borrow_mut().push((1, neutral_report())),
+            Action::Frame(..) => actions.borrow_mut().push((1, neutral_report())),
             Action::Feedback(_) => {
                 actions.borrow_mut().push((2, neutral_report()));
                 stop_tx.send(())?;
@@ -151,7 +152,7 @@ fn stop_wins_over_queued_force_without_dispatching_midi() -> anyhow::Result<()> 
     let mut output = Output::new(|action| {
         match action {
             Action::Motor(report) => writes.borrow_mut().push(report),
-            Action::Frame(_) | Action::Feedback(_) | Action::Initialize | Action::Screens => {
+            Action::Frame(..) | Action::Feedback(_) | Action::Initialize | Action::Screens => {
                 anyhow::bail!("Stop must win before service dispatch")
             }
         }
@@ -197,9 +198,9 @@ fn runtime_faults_clear_force_before_returning() -> anyhow::Result<()> {
                         anyhow::bail!("native output failure");
                     }
                 }
-                Action::Frame(_) if fault == 3 => anyhow::bail!("MIDI service failure"),
+                Action::Frame(..) if fault == 3 => anyhow::bail!("MIDI service failure"),
                 Action::Feedback(_) if fault == 5 => anyhow::bail!("LED service failure"),
-                Action::Initialize | Action::Frame(_) | Action::Feedback(_) | Action::Screens => {}
+                Action::Initialize | Action::Frame(..) | Action::Feedback(_) | Action::Screens => {}
             }
             Ok(())
         })?;
@@ -236,7 +237,7 @@ fn analog_interrupt_reaches_service_unchanged_and_duration_stops_output() -> any
     let writes = RefCell::new(Vec::new());
     let mut output = Output::new(|action| {
         match action {
-            Action::Frame(frame) => {
+            Action::Frame(frame, _) => {
                 seen.borrow_mut().push(frame.report(2).to_vec());
                 clock.set(10000);
             }
@@ -280,7 +281,7 @@ fn failed_startup_or_initialization_still_attempts_neutral() {
                         }
                     }
                     Action::Initialize => anyhow::bail!("ring initialization failed"),
-                    Action::Frame(_) | Action::Feedback(_) | Action::Screens => {}
+                    Action::Frame(..) | Action::Feedback(_) | Action::Screens => {}
                 }
                 Ok(())
             })?;

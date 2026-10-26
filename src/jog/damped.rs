@@ -41,6 +41,15 @@ impl Damping {
     }
 
     pub fn observe(&mut self, motion: &Motion, decision: Decision) -> Decision {
+        self.observe_with_assist_gate(motion, decision, motion.touch[self.side])
+    }
+
+    pub(crate) fn observe_with_assist_gate(
+        &mut self,
+        motion: &Motion,
+        decision: Decision,
+        assist_gate: bool,
+    ) -> Decision {
         if self
             .latest
             .and_then(|previous| previous.fader)
@@ -55,7 +64,7 @@ impl Damping {
                 && level.selected_force > 0
                 && match level.zone {
                     Some(FaderZone::Brake) => true,
-                    Some(FaderZone::Assist) => motion.touch[self.side],
+                    Some(FaderZone::Assist) => assist_gate,
                     Some(FaderZone::Neutral) | None => false,
                 }
         }) {

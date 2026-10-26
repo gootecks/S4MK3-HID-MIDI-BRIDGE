@@ -14,7 +14,7 @@ use super::input::{Frame, INTERVAL_US, Reader};
 pub enum Action<'a> {
     Initialize,
     Motor([u8; 11]),
-    Frame(&'a Frame),
+    Frame(&'a Frame, &'a mut [bool; 2]),
     Feedback(u64),
     Screens,
 }
@@ -83,7 +83,11 @@ impl<F: FnMut(Action<'_>) -> anyhow::Result<()>> Output<F> {
                 );
             }
         }
-        (self.service)(Action::Frame(frame))?;
+        let mut backspin = [false; 2];
+        (self.service)(Action::Frame(frame, &mut backspin))?;
+        if let Some(report) = engine.set_backspin(backspin) {
+            (self.service)(Action::Motor(report))?;
+        }
         self.input_seen = true;
         Ok(())
     }

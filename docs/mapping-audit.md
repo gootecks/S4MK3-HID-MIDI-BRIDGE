@@ -45,8 +45,19 @@ pitch-bend Speed 2.7% / Reaction 17%. Speed is exported as
 `rotarySensitivity`, Reaction as `rotaryAcceleration`, on all four decks.
 The app's Jog tab saves a separate jog configuration and generates customized
 mapping exports; selecting that new mapping in Djay is required.
-Runtime counts, touch ownership, seek, and MIDI addresses are unchanged.
-Released-backspin behavior remains open. Saved hardware tension is now
+Current-source experimental backspin detection adds a qualified scratch hold
+after touch release, an adjustable acceleration threshold, optional event-only
+count gain and a deck-owned screen indicator. Ordinary nudge/seek, native
+Speed/Reaction bindings and MIDI addresses are unchanged. Zero speed increase
+preserves normal count gain. Save/restart applies backspin settings; no new
+mapping is required unless ordinary Speed/Reaction also changes.
+The optional default-off motor-assist flag and independent 0-100% strength also
+change runtime behavior only: no new MIDI addresses or mapping parameters.
+Zero strength bypasses the override. Its released pulse has an independent
+one-second cutoff and does not prolong the MIDI hold beyond measured motion.
+Physical acceptance remains separate from the captured-input replay and
+regressions. See [backspin validation](backspin-detection-validation.md).
+Saved hardware tension is
 implemented separately; see [normal-app integration](jog-tension-integration.md).
 See [configurable controls](configurable-controls.md) and
 [the measured jog comparison](jog-wheel-investigation.md).

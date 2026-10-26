@@ -260,4 +260,103 @@ fn hotcue_and_samples_share_info_without_leaking_stem_feedback() {
     }
 }
 
+#[test]
+fn backspin_projects_original_owner_across_deck_and_page_switches_and_coexists_with_fx()
+-> anyhow::Result<()> {
+    for (side, initial_deck, switched_deck, switch_button, touch) in [
+        (
+            0,
+            Deck::A,
+            Deck::C,
+            "left_deck_switch_c",
+            "left_wheel_touch",
+        ),
+        (
+            1,
+            Deck::D,
+            Deck::B,
+            "right_deck_switch_b",
+            "right_wheel_touch",
+        ),
+    ] {
+        // Given a physical wheel on its initial deck with an FX mismatch on the switched deck.
+        let mut translator = Translator::default();
+        translator.decks[side] = initial_deck;
+        translator.fx = [switched_deck; 2];
+        translator.observe_analog(&[Control::Slider("fx1_knob_1", 0.0)])?;
+        let mut feedback = FeedbackState::default();
+        feed(
+            &mut feedback,
+            &[
+                0xb0 | switched_deck.channel(),
+                32,
+                127,
+                0x90 | initial_deck.channel(),
+                0,
+                127,
+            ],
+        );
+        // Playback feedback alone never invents a backspin indicator.
+        let Page::Info(before) = pages(&translator, &feedback)[side] else {
+            anyhow::bail!("expected info page");
+        };
+        assert_eq!(before.backspin, None);
+
+        // When a qualified backspin starts on the initial deck (touched and then released).
+        super::super::tests::prime_backspin(&mut translator, side)?;
+        let Page::Info(touched_info) = pages(&translator, &feedback)[side] else {
+            anyhow::bail!("expected info page while touched");
+        };
+        assert_eq!(touched_info.backspin, Some(initial_deck.channel()));
+
+        // And when released and the physical side switches deck and pad modes.
+        translator.translate(
+            &[
+                Control::Button(touch, false),
+                Control::Button(switch_button, true),
+            ],
+            None,
+            &mut Vec::new(),
+        )?;
+        super::super::tests::jog_snapshot(&mut translator, side, 70, 600)?;
+        for mode in [PadMode::Hotcue, PadMode::Samples, PadMode::Stems] {
+            translator.pads[side] = mode;
+            let visible = pages(&translator, &feedback);
+            // Then the active side shows the original backspin owner alongside the switched deck's FX warning,
+            // while the other physical screen remains untouched.
+            match visible[side] {
+                Page::Info(info) => {
+                    assert_eq!(info.backspin, Some(initial_deck.channel()));
+                    assert_eq!(info.fx.deck, switched_deck.channel());
+                    assert_eq!(info.fx.mismatch, [1, 0]);
+                }
+                Page::Stems { backspin, fx, .. } => {
+                    assert_eq!(backspin, Some(initial_deck.channel()));
+                    assert_eq!(fx.deck, switched_deck.channel());
+                    assert_eq!(fx.mismatch, [1, 0]);
+                }
+                Page::Empty => anyhow::bail!("expected active page"),
+            }
+            let Page::Info(other) = visible[side ^ 1] else {
+                anyhow::bail!("expected info on other side");
+            };
+            assert_eq!(other.backspin, None);
+        }
+
+        // When motion stops, the indicator clears on both page types.
+        for time in [80, 90, 100] {
+            super::super::tests::jog_snapshot(&mut translator, side, time, 600)?;
+        }
+        for mode in [PadMode::Hotcue, PadMode::Stems] {
+            translator.pads[side] = mode;
+            match pages(&translator, &feedback)[side] {
+                Page::Info(info) => assert_eq!(info.backspin, None),
+                Page::Stems { backspin, .. } => assert_eq!(backspin, None),
+                Page::Empty => anyhow::bail!("expected active page"),
+            }
+        }
+    }
+    Ok(())
+}
+
 mod info;

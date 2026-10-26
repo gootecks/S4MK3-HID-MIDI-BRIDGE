@@ -31,6 +31,18 @@ movement and touch. Negative values select assistance while touching the metal
 top, zero selects neutral, and positive values select braking. Full assistance
 is -100 (ceiling 7000); full braking is +100 (ceiling 30000).
 
+Current-source **Jog > Backspin > Motor assistance** is a separate default-off
+experiment. When enabled with detection, it can override that wheel's ordinary
+tension during a detected gesture and through a one-second fade after release.
+The independent **Motor assist strength** slider selects 0-100% of the existing
+maximum; 0% bypasses the override. It does not write -100 or the selected
+percentage into your normal tension preference. Retouching, measured
+stop/reversal, cancellation or stale input ends the override, and normal tension
+behavior resumes. MIDI scratching may continue through the remaining natural coast.
+Change on/off or strength, use **Save and restart**, and repeat the same gesture
+to make your own comparisons. The normal tension and software boost stay separate.
+See [the separate trial and verification limits](backspin-assist-validation.md).
+
 While the bridge is running, **Save and restart** applies an edited value. Wait
 for the bridge to be **Running** again before evaluating the new setting.
 Moving a physical mixer fader does not change tension. Scratch/pitch-bend

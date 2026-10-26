@@ -7,6 +7,8 @@ recognize what its lights and screens are telling you.
 Version 0.1.1-beta.3 and older downloads lack its screens and updated control workflows.
 Use the app and mapping supplied together; check the [download notes](../README.md#download-and-install)
 for what the published package includes.
+The backspin controls below are a current-source experiment; earlier packaged
+builds do not include them.
 
 The DJ laptop needs the standalone app, not Rust, Cargo or this repository.
 
@@ -294,6 +296,8 @@ Djay's onscreen recording controls when you want to record a mix.
 In Turntable mode, touching the top scratches; untouched motion bends/nudges.
 Jog mode uses bend/nudge instead of top-touch scratch. Shift+jog seeks.
 GRID+jog edits the beat grid rather than performing an ordinary nudge.
+A detected backspin can keep scratching after you lift your hand, following
+the wheel's actual movement rather than switching immediately to nudge.
 
 ### Change physical resistance
 
@@ -315,9 +319,59 @@ Djay mapping. Defaults are scratch **2.7% / 150%** and pitch bend **2.7% / 17%**
 These change software response, not motor force.
 
 Tension needs saving/restarting, but no mapping export. Speed/Reaction need a
-newly exported mapping selected in Djay. Neither fixes the current limitation
-that audio backspin ends when top touch is released. Playback-driven TT
-rotation and haptic cue points are not implemented.
+newly exported mapping selected in Djay. Playback-driven TT rotation and haptic
+cue points are not implemented.
+
+### Backspin detection
+
+In **Jog > Backspin**:
+
+- **Detection** recognizes a sharp backward acceleration while you scratch in
+  Turntable mode. Ordinary scratch releases still return immediately to nudge.
+  JOG, Shift-seek and GRID gestures do not start backspin events.
+- **Acceleration threshold** controls how hard a backward flick must be.
+  Higher values need a sharper flick; lower values detect more easily.
+  The starting value is **150000 counts/s^2**, using filtered wheel movement.
+- **Scratch speed increase** adds to the normal Scratch speed only during a
+  detected event. **0.0%** preserves normal travel. For example, a **1.0%**
+  increase over **2.7%** gives an effective **3.7%** during the backspin.
+  Keep the app's normal Scratch speed matched to the mapping selected in Djay.
+- **Motor assistance** is a separate, experimental option, **off by default**.
+  **Motor assist strength** selects **0-100%** of the existing maximum, only
+  for the wheel in a detected backspin. **100%** is the original maximum;
+  **0%** bypasses the override, just like switching motor assistance off.
+  After you lift your hand, assistance fades to zero over one second. Continued
+  spinning cannot extend that deadline or start another pulse without a new
+  touch gesture. Your saved Jog Wheel Tension setting is not changed.
+
+The wheel's screen shows **BACKSPIN** and its owning deck while detection is
+active, including before release. Use that indicator to spot unwanted
+detections before changing the threshold or adding speed.
+
+After release, movement stays on the deck that started the backspin, even if
+you select another deck. It ends when the wheel settles, reverses direction,
+or you touch it again. **Stop in the bridge app** also releases the scratch
+hold and clears motor force. MIDI movement is not invented after the platter stops.
+
+With motor assistance enabled, retouching, stopping/reversing the wheel or
+cancelling its mode ends the assist pulse early. The existing input-freshness
+cutoff also clears it. Your normal tension behavior resumes after the override.
+The **BACKSPIN** indicator can remain visible after the one-second motor fade:
+scratch continues to follow the remaining real coast, without extending motor
+assistance. Disabling detection disables the assist controls without forgetting
+their saved checkbox or strength values.
+
+These options apply after **Save preferences** and the next Start, or **Save
+and restart**. They do not need a mapping export. Compare with motor assistance
+off first; software speed increase and motor assistance change different parts
+of the feel. This is gesture-driven assistance, not playback-driven platter rotation.
+
+You can make your own repeated comparisons in the app: choose assist off or a
+strength, use **Save and restart**, wait for **Running**, then repeat the same
+flick and release. The slider does not change a running motor until you apply
+it. Keep normal Jog Wheel Tension and Scratch speed increase fixed while
+comparing motor levels; neither is changed by the strength control. No mapping
+reinstall is needed.
 
 ## Screens and feedback
 
@@ -332,6 +386,7 @@ There is no title, artwork, BPM, time or waveform display.
 | KEY `--` | Djay reports no musical key |
 | KEY `?` | Missing/unrecognized key feedback |
 | FX SYNC / blinking FX control | A shared knob needs pickup, or its feedback is missing |
+| BACKSPIN A/B/C/D | That wheel is in a detected backspin owned by the named deck |
 | Red running status icon | Requested screens are blocked/failed; check the Screens tab |
 
 The musical-key load-order bug is fixed in the current build: replacement
@@ -350,6 +405,7 @@ See the [screen reference](screens.md) and [LED reference](led-feedback.md).
 | LED colors, brightness, meter appearance | Save preferences while stopped, or Save and restart while running; no mapping export |
 | Hardware jog tension | Same save/restart actions; no mapping export |
 | Jog scratch/bend Speed or Reaction | Save, export with Install Djay mapping..., import and select that new mapping in Djay |
+| Backspin detection, threshold or speed increase | Save preferences and restart the bridge; no mapping export |
 | Screens on/off and NI handover options | Screen controls save immediately; use their live actions |
 | A build with changed MIDI bindings/feedback | Install/select its matching mapping under a new filename, then restart the bridge |
 
@@ -396,7 +452,7 @@ Copy relevant Diagnostics output and check it for private information.
 - Channel FX1/FX2 choose manual control targets, not shared audio buses.
 - Filter then ON chooses an EQ-mode change; ordinary ON targets Instant FX.
 - MUTE selects the STEMS layer rather than acting as a held modifier.
-- The main FX ON, REC, external-input/EXT routing and released backspin have
+- The main FX ON, REC and external-input/EXT routing have
   the limitations described above; do not assume factory Traktor behavior.
 - Djay can coalesce very rapid separate jump commands. This is distinct from
   the confirmed-size restoration fix.

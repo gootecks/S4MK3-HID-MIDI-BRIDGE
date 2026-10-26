@@ -26,7 +26,18 @@ impl Smoothing {
     }
 
     pub fn observe(&mut self, motion: &Motion, decision: Decision) -> Decision {
-        let mut result = self.damping.observe(motion, decision);
+        self.observe_with_assist_gate(motion, decision, motion.touch[self.side])
+    }
+
+    pub(crate) fn observe_with_assist_gate(
+        &mut self,
+        motion: &Motion,
+        decision: Decision,
+        assist_gate: bool,
+    ) -> Decision {
+        let mut result = self
+            .damping
+            .observe_with_assist_gate(motion, decision, assist_gate);
         let direction = self.damping.direction_at(motion.host_us);
         if direction == 0 {
             self.magnitude_q16 = 0;

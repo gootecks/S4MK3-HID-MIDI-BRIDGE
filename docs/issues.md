@@ -132,10 +132,24 @@ Keep completed items and add their completion date and a short evidence note.
   with no reversal after the platter stops. The user calibrated scratch
   Speed/Reaction to 2.7% / 150% and pitch bend to 2.7% / 17%; these are now
   configurable exported defaults in the app's Jog tab.
-  Backspin still ends on touch release, especially at Reaction 50%.
-  Released-spin routing and final stop-response acceptance remain unresolved;
-  the separate tension setting is now available, but equal-force flicks are
-  not equivalent across the two setups.
+  The earlier routing ended backspin on touch release, especially at Reaction 50%.
+  Current source adds an acceleration-qualified
+  scratch continuation, detection toggle/threshold, optional additive scratch
+  speed and an owning-deck screen indicator. The October 25 input-only capture
+  distinguishes all four deliberate backspins from ordinary releases. The user
+  confirmed live continuation, catching, indicator clearing, slow release and
+  normal rim nudging on both wheels, plus the detection-disabled comparison.
+  A 1.0% boost was not noticeable to them; 5.2% was closer to the desired feel.
+  General slow/fast calibration remains open; optional boost deliberately changes
+  event travel rather than guaranteeing a fixed distance per revolution.
+  The normal motor-tension setting is preserved. A subsequent default-off
+  released-assist trial provides independent on/off and 0-100% strength with a
+  non-renewable one-second fade. The user confirmed useful assistance at 100%,
+  both-wheel operation, catching and wheel isolation. Earlier short motion-stop
+  cancellations remain unexplained, not a claimed fix; see the
+  [focused physical results and limits](backspin-assist-validation.md).
+  See [the experiment and ordered checks](backspin-detection-validation.md).
+  Equal-force flicks are not equivalent across the two setups.
 - [ ] **Leftmost FX button duplicates slot 1** - Verify native bank-enable
   behavior and investigate a whole-bank bypass that preserves individual
   slot states.

@@ -34,7 +34,11 @@ enum MidiProfile {
 }
 
 #[derive(Debug, Parser)]
-#[command(version, about)]
+#[command(
+    version,
+    about,
+    group(clap::ArgGroup::new("jog_context").args(["generate_mapping", "midi"]))
+)]
 struct Args {
     /// List attached S4 MK3 devices without opening their USB interfaces.
     #[arg(long)]
@@ -63,8 +67,13 @@ struct Args {
     #[arg(long, value_name = "PATH", conflicts_with_all = ["midi", "list", "raw"])]
     generate_mapping: Option<PathBuf>,
 
-    /// JSON jog preferences for mapping export; does not alter runtime counts.
-    #[arg(long, value_name = "PATH", requires = "generate_mapping", conflicts_with_all = ["midi", "list", "raw"])]
+    /// JSON jog preferences for mapping export or full-profile backspin behavior.
+    #[arg(
+        long,
+        value_name = "PATH",
+        requires = "jog_context",
+        conflicts_with = "list"
+    )]
     jog_config: Option<PathBuf>,
 
     /// Maximum probe duration; stop earlier with Ctrl-C.
@@ -101,6 +110,12 @@ struct ProbeCounts {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    ensure!(
+        args.jog_config.is_none()
+            || args.generate_mapping.is_some()
+            || matches!(args.midi, Some(MidiProfile::Full)),
+        "--jog-config requires mapping export or --midi full"
+    );
     ensure!(
         args.led_config.is_none() || matches!(args.midi, Some(MidiProfile::Full)),
         "--led-config requires --midi full"
@@ -153,12 +168,23 @@ fn main() -> anyhow::Result<()> {
         info!(path = %path.display(), "SCREEN_PREVIEWS_EXPORTED: no USB or MIDI opened");
         return Ok(());
     }
-    open_and_run(&args, tension)
+    let jog = matches!(args.midi, Some(MidiProfile::Full))
+        .then(|| full::jog::Config::load(args.jog_config.as_deref()))
+        .transpose()?;
+    if let Some(jog) = jog {
+        jog.validate()?;
+    }
+    let tension = tension.or_else(|| {
+        jog.filter(full::jog::Config::motor_assist_enabled)
+            .map(|_| s4mk3_hid_midi_bridge::tension::Config::default())
+    });
+    open_and_run(&args, tension, jog)
 }
 
 fn open_and_run(
     args: &Args,
     tension: Option<s4mk3_hid_midi_bridge::tension::Config>,
+    jog: Option<full::jog::Config>,
 ) -> anyhow::Result<()> {
     let mut registry = DescriptorRegistry::new();
     registry.load_builtins().context("load Encdr descriptors")?;
@@ -225,9 +251,17 @@ fn open_and_run(
     let mut leds = LedBuilder::new(buttons, interface);
     info!("S4_HID_OPEN: native HID access; audio interfaces are not claimed");
     if let Some((reader, config)) = tension {
-        bridge_runtime::run(args, &hid, reader, &mut parser, &mut leds, config)
+        bridge_runtime::run(
+            args,
+            &hid,
+            reader,
+            &mut parser,
+            &mut leds,
+            config,
+            jog.context("motor output requires the full MIDI profile")?,
+        )
     } else {
-        run_probe(args, &hid, &mut parser, &mut leds)
+        run_probe(args, &hid, &mut parser, &mut leds, jog)
     }
 }
 
@@ -236,6 +270,7 @@ fn run_probe(
     hid: &HidDevice,
     parser: &mut PacketParser,
     leds: &mut LedBuilder,
+    jog: Option<full::jog::Config>,
 ) -> anyhow::Result<()> {
     let led_config = matches!(args.midi, Some(MidiProfile::Full))
         .then(|| full::leds::LedConfig::load(args.led_config.as_deref()))
@@ -244,8 +279,8 @@ fn run_probe(
     let mut midi = matches!(args.midi, Some(MidiProfile::Minimal))
         .then(midi::MidiBridge::new)
         .transpose()?;
-    let mut full = matches!(args.midi, Some(MidiProfile::Full))
-        .then(|| screens_control::bridge(args, stop_tx))
+    let mut full = jog
+        .map(|jog| screens_control::bridge(args, stop_tx, jog))
         .transpose()?;
     let mut full_leds = full
         .as_ref()
@@ -368,14 +403,7 @@ fn send_full_report(
     counts: &mut ProbeCounts,
     now: Duration,
 ) -> anyhow::Result<()> {
-    let buttons = (report.first() == Some(&1))
-        .then(|| {
-            report[1..]
-                .try_into()
-                .context("full button payload must have 22 bytes")
-        })
-        .transpose()?;
-    let (received, sent) = bridge.send_report(events, buttons, now)?;
+    let (received, sent) = bridge.send_report(events, report, now)?;
     counts.feedback_messages = counts
         .feedback_messages
         .saturating_add(u64::try_from(received)?);
@@ -737,7 +765,7 @@ mod tests {
     }
 
     #[test]
-    fn jog_preferences_are_only_accepted_for_mapping_export() -> anyhow::Result<()> {
+    fn jog_preferences_are_accepted_for_export_and_full_runtime() -> anyhow::Result<()> {
         // Given a jog configuration supplied to export and runtime commands.
         let valid = [
             "probe",
@@ -748,12 +776,11 @@ mod tests {
         ];
         // When the real argument parser accepts the supported invocation.
         let args = Args::try_parse_from(valid)?;
-        // Then it retains the path and rejects live/profile-only use.
+        // Then export and full runtime retain the path, while bare probe use fails.
         assert_eq!(args.jog_config, Some(PathBuf::from("jog.json")));
         assert!(Args::try_parse_from(["probe", "--jog-config", "jog.json"]).is_err());
-        assert!(
-            Args::try_parse_from(["probe", "--midi", "full", "--jog-config", "jog.json"]).is_err()
-        );
+        let full = Args::try_parse_from(["probe", "--midi", "full", "--jog-config", "jog.json"])?;
+        assert_eq!(full.jog_config, Some(PathBuf::from("jog.json")));
         Ok(())
     }
 

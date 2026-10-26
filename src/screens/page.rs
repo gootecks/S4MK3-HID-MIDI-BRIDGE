@@ -38,6 +38,7 @@ pub enum Page {
         shifted: bool,
         pads: [PadState; 8],
         fx: FxWarning,
+        backspin: Option<u8>,
     },
 }
 
@@ -57,12 +58,17 @@ pub fn render(page: &Page, frame: &mut Frame) {
 
 pub fn render_phase(page: &Page, frame: &mut Frame, bright: bool) {
     frame.clear(BACKGROUND);
-    let (shifted, pads, fx) = match page {
+    let (shifted, pads, fx, backspin) = match page {
         Page::Empty => return,
         Page::Info(info) => return super::info::render(info, frame, bright),
-        Page::Stems { shifted, pads, fx } => (shifted, pads, fx),
+        Page::Stems {
+            shifted,
+            pads,
+            fx,
+            backspin,
+        } => (shifted, pads, fx, backspin),
     };
-    let top = render_fx_warning(*fx, frame);
+    let top = render_headers(*fx, *backspin, frame);
     let pads_y = PADS_Y + top;
     let pad_height = PAD_HEIGHT - top / 2;
     for (column, name) in ["DRUM", "BASS", "HARM", "VOX"].into_iter().enumerate() {
@@ -106,12 +112,23 @@ pub fn render_phase(page: &Page, frame: &mut Frame, bright: bool) {
         } else {
             "MUTE"
         };
+        let status_y = y + (pad_height - 20).min(56);
         frame.centered_text(x + PAD_WIDTH / 2, y + 16, action, SCALE, ink);
-        frame.centered_text(x + PAD_WIDTH / 2, y + 56, status, SCALE, ink);
+        frame.centered_text(x + PAD_WIDTH / 2, status_y, status, SCALE, ink);
     }
 }
 
-pub(super) fn render_fx_warning(fx: FxWarning, frame: &mut Frame) -> usize {
+pub(super) fn render_headers(fx: FxWarning, backspin: Option<u8>, frame: &mut Frame) -> usize {
+    let mut top = 0;
+    if let Some(deck) = backspin.filter(|&deck| deck < 4) {
+        let label = format!("BACKSPIN {}", char::from(b'A' + deck));
+        frame.centered_text(WIDTH / 2, 4 + top, &label, SCALE, PRESSED);
+        top += 24;
+    }
+    top + render_fx_warning(fx, top, frame)
+}
+
+fn render_fx_warning(fx: FxWarning, y: usize, frame: &mut Frame) -> usize {
     if fx.mismatch == [0; 2] && fx.unknown == [0; 2] {
         return 0;
     }
@@ -130,7 +147,7 @@ pub(super) fn render_fx_warning(fx: FxWarning, frame: &mut Frame) -> usize {
             }
         }
     }
-    frame.centered_text(WIDTH / 2, 4, &label, SCALE, PRESSED);
+    frame.centered_text(WIDTH / 2, 4 + y, &label, SCALE, PRESSED);
     24
 }
 
@@ -154,6 +171,7 @@ mod tests {
         Page::Stems {
             shifted: false,
             fx: FxWarning::default(),
+            backspin: None,
             pads: [PadState {
                 active,
                 held: false,
@@ -229,6 +247,7 @@ mod tests {
                 shifted: false,
                 pads: held,
                 fx: FxWarning::default(),
+                backspin: None,
             },
             &mut held_frame,
         );
@@ -276,5 +295,57 @@ mod tests {
         assert_eq!(reused.pixels, fresh.pixels);
         assert!(reused.pixels.contains(&PRIMARY));
         assert!(!reused.pixels.contains(&PRESSED));
+    }
+
+    #[test]
+    fn backspin_and_fx_headers_coexist_on_stems_and_clear_to_default_raster() {
+        // Given STEMS pages with no headers, backspin only, FX only, and both.
+        let pads = [PadState {
+            active: Some(true),
+            held: false,
+        }; 8];
+        let fx = FxWarning {
+            deck: 0,
+            mismatch: [1, 0],
+            unknown: [0; 2],
+        };
+        let render_stems = |fx, backspin| {
+            let mut frame = Frame::default();
+            render(
+                &Page::Stems {
+                    shifted: false,
+                    pads,
+                    fx,
+                    backspin,
+                },
+                &mut frame,
+            );
+            frame
+        };
+        let default = render_stems(FxWarning::default(), None);
+        let fx_only = render_stems(fx, None);
+        let backspin_a = render_stems(FxWarning::default(), Some(0));
+        let backspin_c = render_stems(FxWarning::default(), Some(2));
+        let both = render_stems(fx, Some(2));
+        // Then each deck letter and header combination renders distinct amber header rows
+        // while keeping all eight stem tiles populated, and clearing restores exact default pixels.
+        assert_ne!(default.pixels, backspin_a.pixels);
+        assert_ne!(backspin_a.pixels, backspin_c.pixels);
+        assert_ne!(fx_only.pixels, backspin_c.pixels);
+        assert_ne!(both.pixels, backspin_c.pixels);
+        assert_ne!(both.pixels, fx_only.pixels);
+        assert!(!default.pixels[..24 * WIDTH].contains(&PRESSED));
+        assert!(backspin_c.pixels[..24 * WIDTH].contains(&PRESSED));
+        assert!(!backspin_c.pixels[24 * WIDTH..48 * WIDTH].contains(&PRESSED));
+        assert!(both.pixels[..24 * WIDTH].contains(&PRESSED));
+        assert!(both.pixels[24 * WIDTH..48 * WIDTH].contains(&PRESSED));
+        for index in 0..8 {
+            let x = MARGIN + (index % 4) * (PAD_WIDTH + GAP);
+            let y = PADS_Y + 48 + (index / 4) * (PAD_HEIGHT - 24 + GAP);
+            assert_eq!(both.pixels[(y + 8) * WIDTH + x + 8], PRIMARY);
+        }
+        let mut cleared = both;
+        render(&page(Some(true)), &mut cleared);
+        assert_eq!(cleared.pixels, default.pixels);
     }
 }

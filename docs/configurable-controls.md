@@ -1,8 +1,9 @@
 # Bridge settings and control-tuning candidates
 
 The menu-bar app exposes operating flags, LED preferences, saved hardware
-wheel tension, and native Djay jog mapping preferences. Mapping preferences change exported parameters,
-not the bridge's HID counts, MIDI addresses, or touch ownership.
+wheel tension, native Djay jog mapping preferences, and experimental backspin
+controls. Ordinary Speed/Reaction preferences change exported mapping parameters;
+backspin controls affect runtime detection and event-only scratch routing/gain.
 
 ## Available now
 
@@ -16,6 +17,20 @@ not the bridge's HID counts, MIDI addresses, or touch ownership.
 - Jog-tab scratch and pitch-bend Speed/Reaction settings. Defaults are
   scratch 2.7% / 150% and pitch bend 2.7% / 17%, applied to decks A-D.
   Speed becomes `rotarySensitivity`; Reaction becomes `rotaryAcceleration`.
+- Current-source Jog > Backspin controls: detection enabled by default,
+  filtered backward-acceleration threshold **150000 counts/s^2**, and additive
+  scratch-speed increase **0.0%**. Save/restart applies these without exporting
+  a mapping. Zero increase preserves ordinary count gain; nonzero increase uses
+  `(scratch_speed + backspin_speed_increase) / scratch_speed` only during a
+  detected event. The normal Scratch speed must match the selected Djay mapping.
+- Current-source **Motor assistance** is a separate default-off Backspin option.
+  `backspin_assist_enabled` opts in; `backspin_assist_strength` is an integer
+  **0-100%**, default **100**, scaling the existing maximum on only the detected
+  wheel. Zero is equivalent to assist off and preserves ordinary tension.
+  Save/restart lets the user repeat their own level comparisons. After touch
+  release its one-second fade cannot be extended by
+  movement. Retouch, stop/reversal, mode cancellation, freshness loss or Stop
+  clears the override; normal tension and software scratch speed remain separate.
 - Jog > Hardware > Jog Wheel Tension: a saved integer from -100 to 100,
   shared by both wheels with independent motion/touch response. Negative is
   assistance, zero neutral, positive braking. Full profile only; save before
@@ -34,7 +49,7 @@ runtime behavior, not additional sensitivity settings. They need the matching
 feedback mapping. See [operation](controls-state-sync.md) and the
 [user guide](user-guide.md#settings-what-needs-saving-or-a-new-mapping).
 
-Jog settings are different: save preferences, install the newly generated
+Ordinary scratch/bend settings are different: save preferences, install the newly generated
 mapping under a new filename, then select it in Djay. Export uses the current
 editor values and the bundled generator; it can run while the source bridge
 is running. A bridge restart alone cannot change Djay's selected mapping.
@@ -49,13 +64,18 @@ cargo run --locked -- --generate-mapping "S4 Jog Custom.djayMidiMapping" --jog-c
 ```
 
 The exporter refuses an existing output path. Jog configuration is accepted
-only for mapping export, not live MIDI/probe commands. Speeds must be finite
+for mapping export and full-profile runtime, not minimal MIDI/probe commands.
+At runtime, `--jog-config` supplies backspin settings and the configured normal
+Scratch speed used to calculate optional event gain. Speeds must be finite
 and positive; reactions are integers from 0 to 150. Shift-seek stays at its
 existing sensitivity 20 and is not exposed by this increment.
 
-These mapping parameters do not implement released-platter scratch continuation
-or change hardware tension; tension is a separate runtime preference stored in
+Backspin detection keeps qualified released motion on its original scratch
+owner until rest, reversal, retouch or Stop. Optional motor assistance overlays
+the normal force law without changing the saved tension preference in
 `~/Library/Application Support/S4 MK3 Bridge/tension-config.json`.
+Nonzero assist opt-in selects the paced motor runtime even if no tension file is
+supplied, using neutral as the normal selection. Minimal MIDI never accepts these options.
 See [the jog investigation](jog-wheel-investigation.md).
 
 ## Useful future control settings

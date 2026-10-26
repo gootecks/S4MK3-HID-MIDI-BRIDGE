@@ -97,6 +97,7 @@ pub(super) fn pages(translator: &Translator, feedback: &FeedbackState) -> [Page;
                 }
             }
         }
+        let backspin = translator.backspin_deck(side);
         match translator.pads[side] {
             PadMode::Hotcue | PadMode::Samples => {
                 let deck = usize::from(translator.decks[side].channel());
@@ -108,6 +109,7 @@ pub(super) fn pages(translator: &Translator, feedback: &FeedbackState) -> [Page;
                     tempo_range: feedback.info.tempo_range,
                     selecting: translator.move_selecting[deck],
                     fx,
+                    backspin,
                 })
             }
             PadMode::Stems => {
@@ -119,6 +121,7 @@ pub(super) fn pages(translator: &Translator, feedback: &FeedbackState) -> [Page;
                 Page::Stems {
                     shifted,
                     fx,
+                    backspin,
                     pads: std::array::from_fn(|index| {
                         let number = [56_u8, 57, 58, 59, 60, 61, 62, 63][index];
                         let exclusive = shifted && index < 4;
@@ -226,8 +229,100 @@ pub fn write_previews(path: &std::path::Path) -> anyhow::Result<()> {
     }
     write_info_previews(path, &mut frame)?;
     write_fx_previews(path, &mut frame)?;
+    write_backspin_previews(path, &mut frame)?;
     page::stopped(&mut frame);
     frame.write_ppm(&path.join("stopped.ppm"))?;
+    Ok(())
+}
+
+fn write_backspin_previews(
+    path: &std::path::Path,
+    frame: &mut s4mk3_hid_midi_bridge::screens::Frame,
+) -> anyhow::Result<()> {
+    use s4mk3_hid_midi_bridge::screens::page;
+    for (name, mode, has_fx) in [
+        ("backspin-info", PadMode::Hotcue, false),
+        ("backspin-stems", PadMode::Stems, false),
+        ("backspin-fx-info", PadMode::Hotcue, true),
+        ("backspin-fx-stems", PadMode::Stems, true),
+    ] {
+        let mut translator = Translator {
+            decks: [super::Deck::C, super::Deck::B],
+            fx: [super::Deck::A; 2],
+            fx_positions: [[Some(0); 4]; 2],
+            pads: [mode; 2],
+            ..Translator::default()
+        };
+        translator.move_selecting[0] = true;
+        let mut report = [0_u8; 60];
+        report[0] = 3;
+        let mut snap = |state: &mut Translator, time_ms: u64, counter: u32| -> anyhow::Result<()> {
+            for offset in [8, 36] {
+                report[offset..offset + 4]
+                    .copy_from_slice(&u32::try_from(time_ms + 1)?.to_le_bytes());
+            }
+            report[12..16].copy_from_slice(&counter.to_le_bytes());
+            state.observe_jog(
+                Some(&report),
+                std::time::Duration::from_millis(time_ms),
+                &mut Vec::new(),
+            )
+        };
+        snap(&mut translator, 0, 1_000)?;
+        translator.translate(
+            &[super::Control::Button("left_wheel_touch", true)],
+            None,
+            &mut Vec::new(),
+        )?;
+        for time in [10, 20, 30] {
+            snap(&mut translator, time, 1_000)?;
+        }
+        for time in [40, 50, 60] {
+            snap(
+                &mut translator,
+                time,
+                1_000 - u32::try_from(time - 30)? * 10,
+            )?;
+            translator.translate(
+                &[super::Control::Jog("left_jog_wheel", -0.1)],
+                None,
+                &mut Vec::new(),
+            )?;
+        }
+        translator.translate(
+            &[
+                super::Control::Button("left_wheel_touch", false),
+                super::Control::Button("left_deck_switch_a", true),
+            ],
+            None,
+            &mut Vec::new(),
+        )?;
+        snap(&mut translator, 70, 600)?;
+        let mut feedback = FeedbackState::default();
+        feedback.info.key_raw[0] = Some(81);
+        feedback.info.tempo_range = Some(8);
+        feedback.notes[0][6] = Some(127);
+        for (index, state) in feedback.notes[0][56..64].iter_mut().enumerate() {
+            *state = Some(if index % 2 == 0 { 127 } else { 0 });
+        }
+        for number in [86, 98] {
+            feedback.apply(
+                super::feedback::Message {
+                    status: 0xb0,
+                    number,
+                    value: 127,
+                },
+                std::time::Duration::ZERO,
+            );
+        }
+        if has_fx {
+            feedback.fx_values[0] = [Some(127); 6];
+        } else {
+            translator.fx = [super::Deck::B; 2];
+        }
+        page::render(&pages(&translator, &feedback)[0], frame);
+        frame.write_ppm(&path.join(format!("{name}.ppm")))?;
+    }
     Ok(())
 }
 

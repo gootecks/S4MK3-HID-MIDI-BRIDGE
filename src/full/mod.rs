@@ -1,5 +1,6 @@
 //! Full input translation, isolated from the verified minimal MIDI profile.
 
+mod backspin;
 pub mod catalog;
 pub mod feedback;
 pub mod jog;
@@ -82,6 +83,7 @@ impl Address {
 struct WheelOwner {
     deck: Deck,
     action: &'static str,
+    coasting: bool,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -127,6 +129,7 @@ impl FxPickup {
 }
 
 struct Translator {
+    jog_config: jog::Config,
     decks: [Deck; 2],
     shifted: [bool; 2],
     pads: [PadMode; 2],
@@ -135,6 +138,8 @@ struct Translator {
     vinyl: [bool; 2],
     grid: [bool; 2],
     wheels: [Option<WheelOwner>; 2],
+    wheel_motion: [backspin::Motion; 2],
+    jog_now: Duration,
     residuals: [f64; 2],
     held: HashMap<&'static str, Vec<Address>>,
     switches: [Option<u8>; 5],
@@ -157,6 +162,7 @@ struct Translator {
 impl Default for Translator {
     fn default() -> Self {
         Self {
+            jog_config: jog::DEFAULT,
             decks: [Deck::A, Deck::B],
             shifted: [false; 2],
             pads: [PadMode::Hotcue; 2],
@@ -165,6 +171,8 @@ impl Default for Translator {
             vinyl: [true; 2],
             grid: [false; 2],
             wheels: [None; 2],
+            wheel_motion: std::array::from_fn(|_| backspin::Motion::default()),
+            jog_now: Duration::ZERO,
             residuals: [0.0; 2],
             held: HashMap::new(),
             switches: [None; 5],
@@ -197,7 +205,12 @@ pub struct FullBridge {
 }
 
 impl FullBridge {
-    pub fn new(screen_output: bool, screen_control: bool) -> anyhow::Result<Self> {
+    pub fn new(
+        screen_output: bool,
+        screen_control: bool,
+        jog_config: jog::Config,
+    ) -> anyhow::Result<Self> {
+        jog_config.validate()?;
         // Djay can return initial state as soon as the source appears.
         let feedback_input = feedback::FeedbackInput::new(mapping::PORT_NAME)?;
         let connection = MidiOutput::new("S4 MK3 full bridge")?
@@ -208,7 +221,10 @@ impl FullBridge {
             feedback_input,
             feedback: feedback::FeedbackState::default(),
             connection,
-            translator: Translator::default(),
+            translator: Translator {
+                jog_config,
+                ..Translator::default()
+            },
             controls: Vec::with_capacity(160),
             messages: Vec::with_capacity(160),
             screens: if screen_control {
@@ -226,6 +242,7 @@ impl FullBridge {
     pub fn drain_feedback(&mut self, now: Duration) -> anyhow::Result<(usize, usize)> {
         let received = self.feedback_input.drain(&mut self.feedback, now)?;
         self.messages.clear();
+        self.translator.observe_jog(None, now, &mut self.messages)?;
         self.translator
             .sync_front_panel(&self.feedback, &mut self.messages)?;
         let sent = self.send_messages()?;
@@ -244,6 +261,10 @@ impl FullBridge {
         self.translator.local_led_state()
     }
 
+    pub fn backspin_assist(&self) -> [bool; 2] {
+        self.translator.backspin_assist()
+    }
+
     pub fn seed_analog(&mut self, events: &[Event]) -> anyhow::Result<()> {
         self.controls.clear();
         self.controls
@@ -254,7 +275,7 @@ impl FullBridge {
     pub fn send_report(
         &mut self,
         events: &[Event],
-        buttons: Option<&[u8; 22]>,
+        report: &[u8],
         now: Duration,
     ) -> anyhow::Result<(usize, usize)> {
         let received = self.feedback_input.drain(&mut self.feedback, now)?;
@@ -262,6 +283,15 @@ impl FullBridge {
         self.controls
             .extend(events.iter().filter_map(Control::from_event));
         self.messages.clear();
+        self.translator
+            .observe_jog(Some(report), now, &mut self.messages)?;
+        let buttons = (report.first() == Some(&1))
+            .then(|| {
+                report[1..]
+                    .try_into()
+                    .context("full button payload must have 22 bytes")
+            })
+            .transpose()?;
         self.translator
             .sync_front_panel(&self.feedback, &mut self.messages)?;
         self.translator
@@ -300,6 +330,80 @@ impl Drop for FullBridge {
 }
 
 impl Translator {
+    fn observe_jog(
+        &mut self,
+        report: Option<&[u8]>,
+        now: Duration,
+        output: &mut Vec<[u8; 3]>,
+    ) -> anyhow::Result<()> {
+        let previous = [self.backspin_deck(0), self.backspin_deck(1)];
+        self.jog_now = now;
+        if let Some(report) = report
+            && report.first() == Some(&3)
+        {
+            ensure!(report.len() == 60, "full jog report must have 60 bytes");
+            for (side, offset) in [(0, 8), (1, 36)] {
+                let timer = u32::from_le_bytes(report[offset..offset + 4].try_into()?);
+                let counter = u32::from_le_bytes(report[offset + 4..offset + 8].try_into()?);
+                self.wheel_motion[side].observe(
+                    counter,
+                    timer,
+                    now,
+                    self.jog_config.backspin_acceleration,
+                );
+            }
+        }
+        for (side, previous) in previous.into_iter().enumerate() {
+            if self.wheels[side].is_some_and(|owner| owner.coasting)
+                && !self.wheel_motion[side].continues(now)
+            {
+                self.end_backspin(side, output);
+            }
+            let active = self.backspin_deck(side);
+            if active != previous {
+                self.residuals[side] = 0.0;
+                info!(
+                    side,
+                    deck = active.map(|deck| deck + 1),
+                    active = active.is_some(),
+                    "BACKSPIN_STATE"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    fn backspin_deck(&self, side: usize) -> Option<u8> {
+        let owner = self.wheels[side]?;
+        (self.jog_config.backspin_enabled
+            && owner.action == "jog_scratch"
+            && !self.grid[side]
+            && self.vinyl[side]
+            && self.wheel_motion[side].qualifies(self.jog_now))
+        .then_some(owner.deck.channel())
+    }
+
+    fn backspin_assist(&self) -> [bool; 2] {
+        std::array::from_fn(|side| {
+            self.jog_config.motor_assist_enabled() && self.backspin_deck(side).is_some()
+        })
+    }
+
+    fn end_backspin(&mut self, side: usize, output: &mut Vec<[u8; 3]>) {
+        self.release(
+            if side == 0 {
+                "left_wheel_touch"
+            } else {
+                "right_wheel_touch"
+            },
+            output,
+        );
+        self.wheels[side] = None;
+        self.residuals[side] = 0.0;
+        self.wheel_motion[side].reset_window();
+        info!(side, "BACKSPIN_ENDED");
+    }
+
     fn observe_analog(&mut self, controls: &[Control]) -> anyhow::Result<()> {
         for control in controls {
             if let Control::Slider(name, value) = *control {
@@ -417,6 +521,21 @@ impl Translator {
         // Thus descriptor item order cannot choose a simultaneous Shift+Play route.
         for control in controls {
             if let Control::Button(name, false) = control {
+                if let Some((side, "wheel_touch")) = side_name(name)
+                    && let Some(owner) = &mut self.wheels[side]
+                    && (owner.coasting
+                        || (self.jog_config.backspin_enabled
+                            && owner.action == "jog_scratch"
+                            && !self.grid[side]
+                            && self.vinyl[side]
+                            && self.wheel_motion[side].qualifies(self.jog_now)))
+                {
+                    if !owner.coasting {
+                        owner.coasting = true;
+                        info!(side, deck = owner.deck.channel() + 1, "BACKSPIN_COAST");
+                    }
+                    continue;
+                }
                 self.release(name, output);
             }
         }
@@ -601,6 +720,7 @@ impl Translator {
         for (side, prefix) in [(0, "left"), (1, "right")] {
             let old_shift = self.shifted[side];
             let old_grid = self.grid[side];
+            let old_vinyl = self.vinyl[side];
             for control in controls {
                 if let Control::Button(name, pressed) = *control {
                     if name
@@ -678,12 +798,19 @@ impl Translator {
             ) {
                 self.vinyl[side] = true;
             }
-            self.wheel_touch(side, controls);
+            if self.wheels[side].is_some_and(|owner| owner.coasting)
+                && (self.grid[side] || !self.vinyl[side])
+            {
+                self.end_backspin(side, output);
+            } else if self.grid[side] != old_grid || self.vinyl[side] != old_vinyl {
+                self.wheel_motion[side].reset_window();
+            }
+            self.wheel_touch(side, controls, output);
         }
         self.fx_targets(controls, output);
     }
 
-    fn wheel_touch(&mut self, side: usize, controls: &[Control]) {
+    fn wheel_touch(&mut self, side: usize, controls: &[Control], output: &mut Vec<[u8; 3]>) {
         let touch = if side == 0 {
             "left_wheel_touch"
         } else {
@@ -693,8 +820,7 @@ impl Translator {
             if let Control::Button(name, touched) = *input
                 && name == touch
             {
-                self.residuals[side] = 0.0;
-                self.wheels[side] = touched.then_some(WheelOwner {
+                let next = WheelOwner {
                     deck: self.decks[side],
                     action: if self.shifted[side] {
                         "jog_seek"
@@ -703,7 +829,27 @@ impl Translator {
                     } else {
                         "jog_bend"
                     },
-                });
+                    coasting: false,
+                };
+                if touched {
+                    if let Some(owner) = &mut self.wheels[side] {
+                        if !owner.coasting {
+                            continue; // Repeated touch snapshots retain their original owner.
+                        }
+                        if owner.deck == next.deck && owner.action == next.action {
+                            owner.coasting = false;
+                            self.wheel_motion[side].reset_window();
+                            continue;
+                        }
+                        self.end_backspin(side, output);
+                    }
+                    self.wheel_motion[side].reset_window();
+                    self.wheels[side] = Some(next);
+                } else if self.wheels[side].is_none_or(|owner| !owner.coasting) {
+                    self.wheels[side] = None;
+                    self.wheel_motion[side].reset_window();
+                }
+                self.residuals[side] = 0.0;
             }
         }
     }
@@ -899,6 +1045,11 @@ impl Translator {
 
     fn release_all(&mut self, output: &mut Vec<[u8; 3]>) {
         self.eq_selecting = false;
+        self.wheels = [None; 2];
+        self.residuals = [0.0; 2];
+        for motion in &mut self.wheel_motion {
+            motion.reset_window();
+        }
         self.release("left_library_play", output);
         self.release("right_library_play", output);
         let mut addresses: Vec<_> = self
@@ -921,12 +1072,19 @@ impl Translator {
             } else {
                 "jog_bend"
             },
+            coasting: false,
         });
         // Encdr divides integer S4 counter deltas by 1000 into f32.
         // Recover those integers before truncation can defer a count to a
         // later report (or cancel it when the direction reverses).
         let counts = (delta * 1000.0).round();
-        let scale = if self.grid[side] { 0.125 } else { 1.0 };
+        let scale = if self.grid[side] {
+            0.125
+        } else if self.backspin_deck(side).is_some() {
+            1.0 + self.jog_config.backspin_speed_increase / self.jog_config.scratch_speed
+        } else {
+            1.0
+        };
         let accumulated = counts.mul_add(scale, self.residuals[side]);
         let steps = accumulated
             .trunc()
@@ -1517,6 +1675,304 @@ mod tests {
         let output = run(&mut state, &[Control::Jog("left_jog_wheel", 0.002)])?;
         // Then scratch movement remains on its touch owner A.
         assert_eq!(output, [[0xb0, 5, 66]]);
+        Ok(())
+    }
+
+    pub(super) fn jog_snapshot(
+        state: &mut Translator,
+        side: usize,
+        time_ms: u64,
+        counter: u32,
+    ) -> anyhow::Result<Vec<[u8; 3]>> {
+        let mut report = [0_u8; 60];
+        report[0] = 3;
+        for offset in [8, 36] {
+            report[offset..offset + 4].copy_from_slice(&u32::try_from(time_ms + 1)?.to_le_bytes());
+        }
+        let offset = if side == 0 { 12 } else { 40 };
+        report[offset..offset + 4].copy_from_slice(&counter.to_le_bytes());
+        let mut output = Vec::new();
+        state.observe_jog(Some(&report), Duration::from_millis(time_ms), &mut output)?;
+        Ok(output)
+    }
+
+    pub(super) fn prime_backspin(state: &mut Translator, side: usize) -> anyhow::Result<()> {
+        let (touch, wheel) = if side == 0 {
+            ("left_wheel_touch", "left_jog_wheel")
+        } else {
+            ("right_wheel_touch", "right_jog_wheel")
+        };
+        jog_snapshot(state, side, 0, 1_000)?;
+        run(state, &[Control::Button(touch, true)])?;
+        for time in [10, 20, 30] {
+            jog_snapshot(state, side, time, 1_000)?;
+        }
+        for time in [40, 50, 60] {
+            jog_snapshot(state, side, time, 1_000 - u32::try_from(time - 30)? * 10)?;
+            run(state, &[Control::Jog(wheel, -0.1)])?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn assist_qualification_follows_the_detected_wheel_and_cancels_on_retouch() -> anyhow::Result<()>
+    {
+        for (side, touch, deck, shift) in [
+            (0, "left_wheel_touch", "left_deck_switch_c", "left_shift"),
+            (1, "right_wheel_touch", "right_deck_switch_d", "right_shift"),
+        ] {
+            for enabled in [false, true] {
+                // Given a real qualified gesture and an explicit assist preference.
+                let mut state = Translator::default();
+                state.jog_config.backspin_assist_enabled = enabled;
+                prime_backspin(&mut state, side)?;
+                let mut expected = [false; 2];
+                expected[side] = enabled;
+                assert_eq!(state.backspin_assist(), expected);
+                // When release, deck selection and Shift change the presentation.
+                run(&mut state, &[Control::Button(touch, false)])?;
+                run(
+                    &mut state,
+                    &[Control::Button(deck, true), Control::Button(shift, true)],
+                )?;
+                // Then assistance still follows only its original physical wheel.
+                assert_eq!(state.backspin_assist(), expected);
+                // When physical touch returns, then the old event is not qualified.
+                run(&mut state, &[Control::Button(touch, true)])?;
+                assert_eq!(state.backspin_assist(), [false; 2]);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn mode_cancellation_removes_motor_qualification_with_the_midi_hold() -> anyhow::Result<()> {
+        for mode in ["left_jog_mode", "left_grid"] {
+            // Given an opted-in released backspin.
+            let mut state = Translator::default();
+            state.jog_config.backspin_assist_enabled = true;
+            prime_backspin(&mut state, 0)?;
+            run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+            assert_eq!(state.backspin_assist(), [true, false]);
+            // When a current input cancels its wheel mode,
+            let output = run(&mut state, &[Control::Button(mode, true)])?;
+            // Then the same event loses motor permission and releases its original note.
+            assert_eq!(state.backspin_assist(), [false; 2]);
+            assert!(output.contains(&[0x80, 7, 0]));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn released_backspin_keeps_scratch_until_measured_motion_stops() -> anyhow::Result<()> {
+        for (side, touch, wheel, channel) in [
+            (0, "left_wheel_touch", "left_jog_wheel", 0),
+            (1, "right_wheel_touch", "right_jog_wheel", 1),
+        ] {
+            // Given a touched platter with sustained backward movement.
+            let mut state = Translator::default();
+            prime_backspin(&mut state, side)?;
+            // When the hand releases but the physical platter keeps spinning.
+            let release = run(&mut state, &[Control::Button(touch, false)])?;
+            // Then no touch-off is sent and real movement remains scratch.
+            assert!(
+                release.is_empty(),
+                "backspin released scratch mode: {release:?}"
+            );
+            jog_snapshot(&mut state, side, 70, 600)?;
+            let movement = run(&mut state, &[Control::Jog(wheel, -0.1)])?;
+            assert_eq!(movement, [[0xb0 | channel, 5, 1], [0xb0 | channel, 5, 27]]);
+            for time in [80, 90] {
+                assert!(jog_snapshot(&mut state, side, time, 600)?.is_empty());
+            }
+            assert_eq!(
+                jog_snapshot(&mut state, side, 100, 600)?,
+                [[0x80 | channel, 7, 0]]
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn ordinary_scratch_release_still_returns_immediately_to_nudge() -> anyhow::Result<()> {
+        // Given an ordinary slow backward scratch.
+        let mut state = Translator::default();
+        jog_snapshot(&mut state, 0, 0, 1_000)?;
+        run(&mut state, &[Control::Button("left_wheel_touch", true)])?;
+        for time in [10, 20, 30, 40, 50, 60] {
+            jog_snapshot(&mut state, 0, time, 1_000 - u32::try_from(time)?)?;
+        }
+        // When its top touch releases and movement continues.
+        let mut output = run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+        output.extend(run(&mut state, &[Control::Jog("left_jog_wheel", -0.01)])?);
+        // Then touch releases normally and only nudge receives the new motion.
+        assert_eq!(output, [[0x80, 7, 0], [0xb0, 4, 54]]);
+        assert_eq!(state.backspin_deck(0), None);
+        Ok(())
+    }
+
+    #[test]
+    fn immediate_flick_uses_measured_pre_touch_rest_as_its_acceleration_baseline()
+    -> anyhow::Result<()> {
+        // Given a measured stationary wheel before the hand touches it.
+        let mut state = Translator::default();
+        for time in [0, 10, 20, 30] {
+            jog_snapshot(&mut state, 0, time, 1_000)?;
+        }
+        run(&mut state, &[Control::Button("left_wheel_touch", true)])?;
+        // When a backward flick starts immediately and releases after 30 ms.
+        for time in [40, 50, 60] {
+            jog_snapshot(&mut state, 0, time, 1_000 - u32::try_from(time - 30)? * 10)?;
+        }
+        let output = run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+        // Then detection uses the real rest baseline rather than waiting for a second flick.
+        assert!(output.is_empty());
+        assert_eq!(state.backspin_deck(0), Some(0));
+        Ok(())
+    }
+
+    #[test]
+    fn backspin_detection_respects_disable_threshold_and_wheel_modes() -> anyhow::Result<()> {
+        for variant in 0..5 {
+            // Given disabled detection, a higher threshold, seek, JOG, or GRID.
+            let mut state = Translator::default();
+            match variant {
+                0 => state.jog_config.backspin_enabled = false,
+                1 => state.jog_config.backspin_acceleration = 1_000_000.0,
+                2 => {
+                    run(&mut state, &[Control::Button("left_shift", true)])?;
+                }
+                3 => {
+                    run(&mut state, &[Control::Button("left_jog_mode", true)])?;
+                }
+                _ => {
+                    run(&mut state, &[Control::Button("left_grid", true)])?;
+                }
+            }
+            prime_backspin(&mut state, 0)?;
+            // When an otherwise fast backward gesture releases.
+            let release = run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+            // Then it cannot retain a synthetic scratch hold.
+            assert_eq!(state.backspin_deck(0), None, "variant {variant}");
+            assert!(state.wheels[0].is_none(), "variant {variant}");
+            assert_eq!(release.is_empty(), variant == 3);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn coasting_backspin_retains_ownership_across_deck_and_shift_changes() -> anyhow::Result<()> {
+        // Given a released backspin owned by A.
+        let mut state = Translator::default();
+        prime_backspin(&mut state, 0)?;
+        run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+        run(
+            &mut state,
+            &[
+                Control::Button("left_deck_switch_c", true),
+                Control::Button("left_shift", true),
+            ],
+        )?;
+        jog_snapshot(&mut state, 0, 70, 600)?;
+        // When the released wheel continues and the independent right wheel nudges.
+        let output = run(
+            &mut state,
+            &[
+                Control::Jog("left_jog_wheel", -0.01),
+                Control::Jog("right_jog_wheel", 0.01),
+            ],
+        )?;
+        // Then only the original A scratch owner receives the left motion.
+        assert_eq!(output, [[0xb0, 5, 54], [0xb1, 4, 74]]);
+        assert_eq!(state.backspin_deck(0), Some(0));
+        assert_eq!(state.backspin_deck(1), None);
+        Ok(())
+    }
+
+    #[test]
+    fn retouch_clears_backspin_and_reacquires_the_current_deck_without_stuck_notes()
+    -> anyhow::Result<()> {
+        for select_c in [false, true] {
+            // Given a released A backspin, optionally with C selected afterward.
+            let mut state = Translator::default();
+            prime_backspin(&mut state, 0)?;
+            run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+            if select_c {
+                run(&mut state, &[Control::Button("left_deck_switch_c", true)])?;
+            }
+            // When the hand catches the wheel.
+            let output = run(&mut state, &[Control::Button("left_wheel_touch", true)])?;
+            // Then the same deck stays held without a blip, or ownership transfers.
+            assert_eq!(
+                output,
+                if select_c {
+                    vec![[0x80, 7, 0], [0x92, 7, 127]]
+                } else {
+                    Vec::new()
+                }
+            );
+            assert_eq!(state.backspin_deck(0), None);
+            assert_eq!(
+                run(&mut state, &[Control::Button("left_wheel_touch", false)])?,
+                [[if select_c { 0x82 } else { 0x80 }, 7, 0]]
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn reversal_discontinuity_freshness_and_stop_release_backspin_once() -> anyhow::Result<()> {
+        for variant in 0..4 {
+            // Given a released and still-moving backspin.
+            let mut state = Translator::default();
+            prime_backspin(&mut state, 0)?;
+            run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+            // When it reverses, jumps, loses fresh input, or the bridge stops.
+            let output = match variant {
+                0 => jog_snapshot(&mut state, 0, 70, 702)?,
+                1 => jog_snapshot(&mut state, 0, 70, 5_000)?,
+                2 => {
+                    let mut output = Vec::new();
+                    state.observe_jog(None, Duration::from_millis(111), &mut output)?;
+                    output
+                }
+                _ => {
+                    let mut output = Vec::new();
+                    state.release_all(&mut output);
+                    output
+                }
+            };
+            // Then scratch releases exactly once and no continuation remains.
+            assert_eq!(output, [[0x80, 7, 0]]);
+            assert!(state.wheels[0].is_none());
+            let mut repeated = Vec::new();
+            state.release_all(&mut repeated);
+            assert!(repeated.is_empty());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn backspin_speed_increase_is_additive_and_does_not_leak_into_normal_motion()
+    -> anyhow::Result<()> {
+        // Given an increase equal to the normal speed, hence double event travel.
+        let mut state = Translator {
+            jog_config: jog::Config {
+                backspin_speed_increase: jog::DEFAULT.scratch_speed,
+                ..jog::DEFAULT
+            },
+            ..Translator::default()
+        };
+        prime_backspin(&mut state, 0)?;
+        run(&mut state, &[Control::Button("left_wheel_touch", false)])?;
+        jog_snapshot(&mut state, 0, 70, 600)?;
+        // When event motion is followed by retouch and an ordinary slow scratch.
+        let boosted = run(&mut state, &[Control::Jog("left_jog_wheel", -0.01)])?;
+        run(&mut state, &[Control::Button("left_wheel_touch", true)])?;
+        let normal = run(&mut state, &[Control::Jog("left_jog_wheel", -0.01)])?;
+        // Then only the active backspin receives twice the normal count gain.
+        assert_eq!(boosted, [[0xb0, 5, 44]]);
+        assert_eq!(normal, [[0xb0, 5, 54]]);
         Ok(())
     }
 

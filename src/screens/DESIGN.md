@@ -5,9 +5,10 @@
 The fixed 320 x 240 screens show useful Djay feedback or bridge-owned values
 not already indicated by an LED. STEMS is the exception: its reactive legend
 preserves the physical four-column, two-row pad arrangement. No deck, pad-mode,
-Shift, jog, or encoder-role bars surround ordinary content. An FX pickup warning
-is the exception: reserve a 24-pixel header only while a targeted deck has
-mismatched or unknown physical/software FX positions.
+Shift, jog, or encoder-role bars surround ordinary content. Status headers are
+the exception: reserve a 24-pixel header for an active wheel backspin
+(`BACKSPIN A` through `BACKSPIN D`) and a 24-pixel header while a targeted deck
+has mismatched or unknown physical/software FX positions (`FX SYNC`).
 
 ## 2. Color
 
@@ -59,12 +60,17 @@ Both physical screens use the same geometry.
 The approved info page divides 320 x 240 into four equal 160 x 120 quadrants:
 JUMP upper left, LOOP upper right, KEY lower left, RANGE lower right.
 Use 12-pixel label insets, values centered horizontally at y+44, and one-pixel
-dividers at x=160 and y=120. Without an FX warning, there are no surrounding headers or footers.
-While `FX SYNC` is present, the Info quadrants reflow into the remaining 216
-pixels, with labels at y+8, values at y+34, and SELECT at y+88. STEMS names
-and tiles move down 24 pixels and each tile row loses 12 pixels. The amber header
+dividers at x=160 and y=120. Without status headers, there are no surrounding headers or footers.
+While `BACKSPIN` or `FX SYNC` is present, each active header reserves 24 pixels
+at the top (24 pixels when one is active, 48 pixels when both are active, with
+`BACKSPIN` on the top row and `FX SYNC` below it). Info quadrants reflow into
+the remaining height (labels at y+8, values at y+34, SELECT at y+88 for one
+header; labels at y+6, values at y+28, SELECT at y+76 for two headers). STEMS
+names and tiles move down by the reserved header height and each tile row loses
+half of that height. The amber `BACKSPIN` header names the zero-based owning
+deck (`A`-`D`) on that physical wheel. The amber `FX SYNC` header
 names the affected deck, strip L/R, parameters 1-3 and W for dry/wet; `?` marks
-missing feedback. Removing the warning restores the original geometry.
+missing feedback. Removing active headers restores the original geometry.
 The user-approved mockup is
 `generated-images/ig_0c2d859c8ec5ece2016ad955282cc087d1a22fb13f87b3fc35.png`,
 with the user's subsequent active-loop green/black amendment.

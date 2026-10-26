@@ -6,6 +6,7 @@ fn pages(active: Option<bool>) -> [page::Page; 2] {
     [page::Page::Stems {
         shifted: false,
         fx: page::FxWarning::default(),
+        backspin: None,
         pads: [page::PadState {
             active,
             held: false,

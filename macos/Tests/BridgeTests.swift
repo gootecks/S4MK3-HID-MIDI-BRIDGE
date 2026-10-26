@@ -63,19 +63,20 @@ final class BridgeTests: XCTestCase {
 
     func testLaunchArgumentsMatchProfilesAndDuration() throws {
         let path = URL(fileURLWithPath: "/tmp/LED config with spaces.json")
+        let jogPath = URL(fileURLWithPath: "/tmp/Jog config with spaces.json")
         let tensionPath = URL(fileURLWithPath: "/tmp/Tension config with spaces.json")
         var settings = RunPreferences()
-        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), [
+        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), [
             "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", path.path,
-            "--tension-config", tensionPath.path, "--until-stopped"
+            "--jog-config", jogPath.path, "--tension-config", tensionPath.path, "--until-stopped"
         ])
         settings.profile = .minimal
         settings.limitDuration = true
         settings.durationSeconds = 60
         settings.rawReports = true
-        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), ["--midi", "minimal", "--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), ["--midi", "minimal", "--seconds", "60", "--raw"])
         settings.profile = .probe
-        XCTAssertEqual(settings.arguments(ledURL: path, tensionURL: tensionPath), ["--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), ["--seconds", "60", "--raw"])
         settings.durationSeconds = 0
         XCTAssertThrowsError(try settings.validate())
     }
@@ -128,8 +129,10 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(model.isBusy)
         XCTAssertEqual(model.state, .stopped)
         XCTAssertTrue(model.log.contains("CHECK:--list"))
+        XCTAssertFalse(model.log.contains("--jog-config"))
         XCTAssertFalse(model.log.contains("--tension-config"))
         XCTAssertFalse(model.log.contains("--screens"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: model.jogURL.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: model.tensionURL.path))
         XCTAssertTrue(model.log.contains("EXIT: 0"))
     }
@@ -174,7 +177,7 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: argumentsURL, encoding: .utf8)
             .split(separator: "\n").map(String.init), [
                 "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", model.ledURL.path,
-                "--tension-config", model.tensionURL.path, "--until-stopped"
+                "--jog-config", model.jogURL.path, "--tension-config", model.tensionURL.path, "--until-stopped"
             ])
         model.stop()
         await fulfillment(of: [exited], timeout: 10)
@@ -191,25 +194,84 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(base.scratchReaction, 150)
         XCTAssertEqual(base.pitchBendSpeed, 2.7)
         XCTAssertEqual(base.pitchBendReaction, 17)
+        XCTAssertTrue(base.backspinEnabled)
+        XCTAssertEqual(base.backspinAcceleration, 150000.0)
+        XCTAssertEqual(base.backspinSpeedIncrease, 0.0)
+        XCTAssertFalse(base.backspinAssistEnabled)
+        XCTAssertEqual(base.backspinAssistStrength, 100)
         XCTAssertEqual(base, try JogPreferences.decode(base.encoded(), defaults: defaults))
-        let override = Data(#"{"scratch_speed":3.5,"pitch_bend_reaction":42}"#.utf8)
+        let fourFieldSaved = Data(#"{"scratch_speed":3.5,"scratch_reaction":140,"pitch_bend_speed":2.2,"pitch_bend_reaction":42}"#.utf8)
+        let mergedFourField = try JogPreferences.decode(fourFieldSaved, defaults: defaults)
+        XCTAssertEqual(mergedFourField.scratchSpeed, 3.5)
+        XCTAssertEqual(mergedFourField.scratchReaction, 140)
+        XCTAssertEqual(mergedFourField.pitchBendSpeed, 2.2)
+        XCTAssertEqual(mergedFourField.pitchBendReaction, 42)
+        XCTAssertTrue(mergedFourField.backspinEnabled)
+        XCTAssertEqual(mergedFourField.backspinAcceleration, 150000.0)
+        XCTAssertEqual(mergedFourField.backspinSpeedIncrease, 0.0)
+        XCTAssertFalse(mergedFourField.backspinAssistEnabled)
+        let sevenFieldSaved = Data(#"{"scratch_speed":2.7,"scratch_reaction":150,"pitch_bend_speed":2.7,"pitch_bend_reaction":17,"backspin_enabled":true,"backspin_acceleration":150000.0,"backspin_speed_increase":5.2}"#.utf8)
+        let mergedSevenField = try JogPreferences.decode(sevenFieldSaved, defaults: defaults)
+        XCTAssertEqual(mergedSevenField.scratchSpeed, 2.7)
+        XCTAssertEqual(mergedSevenField.scratchReaction, 150)
+        XCTAssertEqual(mergedSevenField.pitchBendSpeed, 2.7)
+        XCTAssertEqual(mergedSevenField.pitchBendReaction, 17)
+        XCTAssertTrue(mergedSevenField.backspinEnabled)
+        XCTAssertEqual(mergedSevenField.backspinAcceleration, 150000.0)
+        XCTAssertEqual(mergedSevenField.backspinSpeedIncrease, 5.2)
+        XCTAssertFalse(mergedSevenField.backspinAssistEnabled)
+        XCTAssertEqual(mergedSevenField.backspinAssistStrength, 100)
+        let override = Data(#"{"scratch_speed":3.5,"pitch_bend_reaction":42,"backspin_enabled":false,"backspin_acceleration":200000.0,"backspin_speed_increase":5.2,"backspin_assist_enabled":true,"backspin_assist_strength":37}"#.utf8)
         let changed = try JogPreferences.decode(override, defaults: defaults)
         XCTAssertEqual(changed.scratchSpeed, 3.5)
         XCTAssertEqual(changed.pitchBendReaction, 42)
+        XCTAssertFalse(changed.backspinEnabled)
+        XCTAssertEqual(changed.backspinAcceleration, 200000.0)
+        XCTAssertEqual(changed.backspinSpeedIncrease, 5.2)
+        XCTAssertTrue(changed.backspinAssistEnabled)
+        XCTAssertEqual(changed.backspinAssistStrength, 37)
         XCTAssertEqual(changed.scratchReaction, base.scratchReaction)
         XCTAssertEqual(changed.pitchBendSpeed, base.pitchBendSpeed)
         let keys = try XCTUnwrap(JSONSerialization.jsonObject(with: base.encoded()) as? [String: Any])
         XCTAssertNotNil(keys["scratch_speed"])
         XCTAssertNotNil(keys["pitch_bend_reaction"])
+        XCTAssertNotNil(keys["backspin_enabled"])
+        XCTAssertNotNil(keys["backspin_acceleration"])
+        XCTAssertNotNil(keys["backspin_speed_increase"])
+        XCTAssertNotNil(keys["backspin_assist_enabled"])
+        XCTAssertEqual(keys["backspin_assist_strength"] as? Int, 100)
         XCTAssertNil(keys["scratchSpeed"])
+        XCTAssertNil(keys["backspinEnabled"])
+        XCTAssertNil(keys["backspinAssistEnabled"])
+        XCTAssertNil(keys["backspinAssistStrength"])
         for input in [
             #"{"scratch_speed":0}"#, #"{"scratch_speed":-2.5}"#,
             #"{"pitch_bend_speed":0}"#, #"{"scratch_reaction":-1}"#,
             #"{"scratch_reaction":151}"#, #"{"pitch_bend_reaction":151}"#,
-            #"{"scratch_reaction":1.5}"#, #"{"unknown":true}"#
+            #"{"scratch_reaction":1.5}"#, #"{"unknown":true}"#,
+            #"{"backspin_enabled":1}"#, #"{"backspin_enabled":"true"}"#,
+            #"{"backspin_acceleration":0}"#, #"{"backspin_acceleration":-1000}"#,
+            #"{"backspin_speed_increase":-0.1}"#,
+            #"{"backspin_assist_enabled":1}"#, #"{"backspin_assist_enabled":"true"}"#,
+            #"{"backspin_assist_enabled":null}"#,
+            #"{"backspin_assist_strength":-1}"#, #"{"backspin_assist_strength":101}"#,
+            #"{"backspin_assist_strength":1.5}"#, #"{"backspin_assist_strength":1.0}"#,
+            #"{"backspin_assist_strength":1e2}"#, #"{"backspin_assist_strength":true}"#,
+            #"{"backspin_assist_strength":false}"#, #"{"backspin_assist_strength":"50"}"#,
+            #"{"backspin_assist_strength":null}"#
         ] {
-            XCTAssertThrowsError(try JogPreferences.decode(Data(input.utf8), defaults: defaults))
+            XCTAssertThrowsError(try JogPreferences.decode(Data(input.utf8), defaults: defaults), input)
         }
+        var overflow = base
+        overflow.scratchSpeed = .greatestFiniteMagnitude
+        overflow.backspinSpeedIncrease = .greatestFiniteMagnitude
+        XCTAssertThrowsError(try overflow.validate())
+        var nonFiniteAccel = base
+        nonFiniteAccel.backspinAcceleration = .infinity
+        XCTAssertThrowsError(try nonFiniteAccel.validate())
+        var nonFiniteIncrease = base
+        nonFiniteIncrease.backspinSpeedIncrease = .nan
+        XCTAssertThrowsError(try nonFiniteIncrease.validate())
     }
 
     @MainActor
@@ -222,16 +284,29 @@ final class BridgeTests: XCTestCase {
         let fixture = try makeFixture()
         let support = fixture.appendingPathComponent("support")
         try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
-        try Data(#"{"scratch_speed":3.5,"pitch_bend_reaction":42}"#.utf8)
+        try Data(#"{"scratch_speed":2.7,"scratch_reaction":150,"pitch_bend_speed":2.7,"pitch_bend_reaction":17,"backspin_enabled":true,"backspin_acceleration":150000.0,"backspin_speed_increase":5.2}"#.utf8)
             .write(to: support.appendingPathComponent("jog-config.json"))
         let persisted = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertFalse(persisted.requiresReset)
-        XCTAssertEqual(persisted.jog.scratchSpeed, 3.5)
-        XCTAssertEqual(persisted.jog.pitchBendReaction, 42)
+        XCTAssertEqual(persisted.jog.scratchSpeed, 2.7)
+        XCTAssertEqual(persisted.jog.pitchBendReaction, 17)
         XCTAssertEqual(persisted.jog.scratchReaction, 150)
+        XCTAssertTrue(persisted.jog.backspinEnabled)
+        XCTAssertEqual(persisted.jog.backspinAcceleration, 150000.0)
+        XCTAssertEqual(persisted.jog.backspinSpeedIncrease, 5.2)
+        XCTAssertFalse(persisted.jog.backspinAssistEnabled)
+        XCTAssertEqual(persisted.jog.backspinAssistStrength, 100)
+        persisted.jog.backspinAssistEnabled = true
+        persisted.jog.backspinAssistStrength = 37
+        persisted.jog.backspinEnabled = false
+        XCTAssertTrue(persisted.jog.backspinAssistEnabled)
         try persisted.save()
         let reloaded = try testController(resourceURL: fixture, supportURL: support)
         XCTAssertEqual(reloaded.jog, persisted.jog)
+        XCTAssertFalse(reloaded.jog.backspinEnabled)
+        XCTAssertEqual(reloaded.jog.backspinSpeedIncrease, 5.2)
+        XCTAssertTrue(reloaded.jog.backspinAssistEnabled)
+        XCTAssertEqual(reloaded.jog.backspinAssistStrength, 37)
 
         let invalid = Data(#"{"scratch_reaction":151}"#.utf8)
         try invalid.write(to: support.appendingPathComponent("jog-config.json"))

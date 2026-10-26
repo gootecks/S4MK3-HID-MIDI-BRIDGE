@@ -205,7 +205,8 @@ run while the bridge is running. **Saving or restarting alone doesn't apply
 jog mapping changes.** Keep existing custom mappings under their original names.
 
 Speed and Reaction adjust Djay's response, independently of hardware tension.
-Neither setting resolves released-backspin behavior.
+Current-source builds handle released backspin through the separate
+[Backspin controls](docs/user-guide.md#backspin-detection), not these mapping parameters.
 
 ![Jog settings showing Hardware Jog Wheel Tension and separate scratch and pitch-bend controls](docs/images/jog-settings.png)
 
@@ -223,9 +224,14 @@ and remaining checks.
 
 Open bugs and unresolved behavior:
 
-- **Jog feel and backspin:** backspin still ends on touch release. Slow/fast
-  response and final stop behavior need further work; the new tension setting
-  isn't full Traktor jog parity.
+- **Jog feel and backspin:** current source adds experimental backspin detection,
+  an adjustable threshold and optional scratch-speed increase, with an owning-deck
+  screen indicator. Tune the threshold and boost to your gestures; ordinary
+  scratch response still depends on Djay's Speed/Reaction settings. A separate,
+  default-off motor-assist trial has its own 0-100% strength control and continues
+  after release with a one-second fade, preserving normal tension. Save/restart
+  lets you compare settings yourself. It is not playback-driven rotation.
+  See [Backspin controls](docs/user-guide.md#backspin-detection).
 - **Sensor-time safety exit:** reversed wheel-sensor time stops the bridge.
   Keep the exact Diagnostics error if this occurs; it is separate from the
   automatically recovering 50 ms input-gap path.
@@ -252,7 +258,7 @@ without automatic Slip are design choices, not outstanding fixes.
 
 ## Roadmap
 
-- Refine jog feel and released backspin, and resolve the open FX, recording,
+- Broaden backspin validation and refine jog feel, and resolve the open FX, recording,
   preview, pad, and external-input questions.
 - Consider jog-ring touch/rotation polish separately. Playback-driven motor
   rotation, other haptics, additional screen pages and pad legends, and an

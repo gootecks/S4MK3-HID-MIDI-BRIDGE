@@ -63,7 +63,7 @@ fn real_preview_export_is_offline_and_refuses_overwriting_images() -> anyhow::Re
         );
         assert!(!String::from_utf8_lossy(&output.stdout).contains("S4_USB_FOUND"));
         let files = std::fs::read_dir(&path)?.collect::<Result<Vec<_>, _>>()?;
-        assert_eq!(files.len(), 44);
+        assert_eq!(files.len(), 48);
         for file in &files {
             let bytes = std::fs::read(file.path())?;
             assert!(bytes.starts_with(b"P6\n320 240\n255\n"));

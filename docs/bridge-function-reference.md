@@ -7,11 +7,39 @@ snapshot retained later in this document.
 
 ## Logic implemented inside the bridge
 
-Jog Speed/Reaction are mapping-generation preferences, not count scaling in
+Ordinary jog Speed/Reaction are mapping-generation preferences, not count scaling in
 the translator. Calibrated defaults are scratch 2.7% / 150% and pitch bend
 2.7% / 17%, configurable through the app's Jog tab and CLI `--jog-config`
 mapping export. Installing/selecting the generated mapping in Djay applies
-them; restart alone does not. Seek and released-touch routing are unchanged.
+them; restart alone does not.
+
+Current-source backspin detection uses two 24 ms movement windows to recognize
+backward acceleration while a Turntable-mode scratch owns the wheel. The
+runtime options share `jog-config.json`: enabled, acceleration threshold
+150000 counts/s^2, and additive speed increase 0.0%. A detected event retains
+its deck/scratch ownership after release until measured near-rest, reversal,
+retouch, mode cancellation or Stop. Input freshness loss also releases the
+synthetic hold. Default gain preserves all measured counts; optional gain is
+`(scratch_speed + backspin_speed_increase) / scratch_speed`, with fractional
+residuals confined to the event. JOG, seek and grid actions cannot start it.
+Both screen pages show the original owning deck, independently of current deck
+selection. Physical touch data remains unchanged.
+See [backspin evidence and live checks](backspin-detection-validation.md).
+
+Optional `backspin_assist_enabled` defaults false. A separately gated per-wheel
+override uses the existing maximum assist ceiling, 7000, and force qualification/
+smoothing. `backspin_assist_strength` is an integer 0-100, default 100, scaling
+only that override. Zero behaves as assist off; old saved files retain 100.
+Real release starts a fixed one-second linear fade on the motor output
+clock. Driven motion cannot renew it; retouch, measured stop/reversal, event/mode
+cancellation, Stop or the 50 ms freshness cutoff cancels it. One real touch gesture
+can produce only one pulse. The normal-tension histories continue independently,
+and the saved tension selection is never rewritten. The ordinary recovery path
+cannot resume an old pulse after freshness loss. See
+[assist implementation and attended checks](backspin-assist-validation.md).
+Existing bounded assist event logs include selected strength, requested release
+torque and the latest decoded sample/age at a motion-stop cancellation. Requested
+torque and accepted native writes do not establish physical force or feel.
 
 ### Current encoder overlay
 

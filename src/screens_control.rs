@@ -56,8 +56,13 @@ pub fn start(control: Control, stop: Sender<()>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn bridge(args: &crate::Args, stop: Sender<()>) -> anyhow::Result<crate::full::FullBridge> {
-    let bridge = crate::full::FullBridge::new(args.screens.enabled, args.screens.control_stdin)?;
+pub fn bridge(
+    args: &crate::Args,
+    stop: Sender<()>,
+    jog: crate::full::jog::Config,
+) -> anyhow::Result<crate::full::FullBridge> {
+    let bridge =
+        crate::full::FullBridge::new(args.screens.enabled, args.screens.control_stdin, jog)?;
     if let Some(control) = bridge.screen_control() {
         start(control, stop)?;
     }

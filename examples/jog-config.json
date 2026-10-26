@@ -2,5 +2,10 @@
   "scratch_speed": 2.7,
   "scratch_reaction": 150,
   "pitch_bend_speed": 2.7,
-  "pitch_bend_reaction": 17
+  "pitch_bend_reaction": 17,
+  "backspin_enabled": true,
+  "backspin_assist_enabled": false,
+  "backspin_assist_strength": 100,
+  "backspin_acceleration": 150000.0,
+  "backspin_speed_increase": 0.0
 }

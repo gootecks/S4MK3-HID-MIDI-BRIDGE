@@ -22,15 +22,16 @@ pub fn run(
     parser: &mut PacketParser,
     leds: &mut LedBuilder,
     config: Config,
+    jog: full::jog::Config,
 ) -> anyhow::Result<()> {
     let led_config = full::leds::LedConfig::load(args.led_config.as_deref())?;
     let (stop_tx, stop) = crate::stop_signal()?;
-    let mut bridge = crate::screens_control::bridge(args, stop_tx)?;
+    let mut bridge = crate::screens_control::bridge(args, stop_tx, jog)?;
     let mut output = None;
     let mut counts = ProbeCounts::default();
     let mut events = Vec::with_capacity(128);
     let started = Instant::now();
-    let mut engine = Engine::new(config);
+    let mut engine = Engine::with_backspin_strength(config, jog.backspin_assist_strength)?;
     let mut service = paced::Output::new(|action| {
         match action {
             Action::Initialize => {
@@ -48,7 +49,7 @@ pub fn run(
                     debug!("TENSION_NEUTRAL");
                 }
             }
-            Action::Frame(frame) => {
+            Action::Frame(frame, backspin) => {
                 for index in 0..3 {
                     let report = frame.report(index);
                     if report.is_empty() {
@@ -73,6 +74,7 @@ pub fn run(
                         started.elapsed(),
                     )?;
                 }
+                *backspin = bridge.backspin_assist();
             }
             Action::Feedback(now_us) => {
                 let now = Duration::from_micros(now_us);
@@ -100,6 +102,8 @@ pub fn run(
     let mut reader = Reader::start(reader_hid, started)?;
     info!(
         tension = config.value(),
+        backspin_assist = jog.motor_assist_enabled(),
+        backspin_assist_strength = jog.backspin_assist_strength,
         "TENSION_ACTIVE: shared physical wheels; mixer faders unchanged"
     );
     let duration_us = (!args.until_stopped).then(|| args.seconds.get().saturating_mul(1_000_000));
