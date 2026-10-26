@@ -151,8 +151,8 @@ struct JogPreferences: Codable, Equatable {
     var pitchBendReaction = 17
     var backspinEnabled = true
     var backspinAcceleration = 150000.0
-    var backspinSpeedIncrease = 0.0
-    var backspinAssistEnabled = false
+    var backspinSpeedIncrease = 5.6
+    var backspinAssistEnabled = true
     var backspinAssistStrength = 100
 
     static func decode(_ data: Data, defaults: Data) throws -> JogPreferences {

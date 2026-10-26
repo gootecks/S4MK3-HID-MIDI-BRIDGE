@@ -16,17 +16,17 @@ them; restart alone does not.
 Current-source backspin detection uses two 24 ms movement windows to recognize
 backward acceleration while a Turntable-mode scratch owns the wheel. The
 runtime options share `jog-config.json`: enabled, acceleration threshold
-150000 counts/s^2, and additive speed increase 0.0%. A detected event retains
+150000 counts/s^2, and additive speed increase 5.6%. A detected event retains
 its deck/scratch ownership after release until measured near-rest, reversal,
 retouch, mode cancellation or Stop. Input freshness loss also releases the
-synthetic hold. Default gain preserves all measured counts; optional gain is
+synthetic hold. Zero increase preserves measured counts; event gain is
 `(scratch_speed + backspin_speed_increase) / scratch_speed`, with fractional
 residuals confined to the event. JOG, seek and grid actions cannot start it.
 Both screen pages show the original owning deck, independently of current deck
 selection. Physical touch data remains unchanged.
 See [backspin evidence and live checks](backspin-detection-validation.md).
 
-Optional `backspin_assist_enabled` defaults false. A separately gated per-wheel
+`backspin_assist_enabled` defaults true. A separately gated per-wheel
 override uses the existing maximum assist ceiling, 7000, and force qualification/
 smoothing. `backspin_assist_strength` is an integer 0-100, default 100, scaling
 only that override. Zero behaves as assist off; old saved files retain 100.

@@ -3,14 +3,14 @@
 Use this guide to DJ with the S4 MK3, understand the custom mappings, and
 recognize what its lights and screens are telling you.
 
-**Build coverage:** this guide follows the full-controller 0.2.0-beta.1 build.
+**Build coverage:** this guide follows the full-controller 0.2.0-beta.2 build.
 Version 0.1.1-beta.3 and older downloads lack its screens and updated control workflows.
 Use the app and mapping supplied together; check the [download notes](../README.md#download-and-install)
 for what the published package includes.
-The backspin controls below are a current-source experiment; earlier packaged
-builds do not include them.
-The lamp-intensity and FX-warning corrections below also require a
-current-source build rather than an older test bundle.
+Backspin continuation, optional motor assistance, the lamp/FX-warning corrections
+and Shift + effect-knob browsing are new in beta.2. Earlier published builds
+do not include them. Install beta.2's newly generated mapping under a new name,
+preserving custom maps, for Shift + effect-knob browsing.
 
 The DJ laptop needs the standalone app, not Rust, Cargo or this repository.
 
@@ -355,16 +355,22 @@ In **Jog > Backspin**:
   Higher values need a sharper flick; lower values detect more easily.
   The starting value is **150000 counts/s^2**, using filtered wheel movement.
 - **Scratch speed increase** adds to the normal Scratch speed only during a
-  detected event. **0.0%** preserves normal travel. For example, a **1.0%**
+  detected event. It defaults to **5.6%**; **0.0%** preserves normal travel.
+  For example, a **1.0%**
   increase over **2.7%** gives an effective **3.7%** during the backspin.
   Keep the app's normal Scratch speed matched to the mapping selected in Djay.
-- **Motor assistance** is a separate, experimental option, **off by default**.
+- **Motor assistance** is a separate, experimental option, **on by default
+  at 100% strength**.
   **Motor assist strength** selects **0-100%** of the existing maximum, only
   for the wheel in a detected backspin. **100%** is the original maximum;
   **0%** bypasses the override, just like switching motor assistance off.
   After you lift your hand, assistance fades to zero over one second. Continued
   spinning cannot extend that deadline or start another pulse without a new
   touch gesture. Your saved Jog Wheel Tension setting is not changed.
+
+These defaults apply to fresh preferences and missing fields in older files.
+Explicit saved settings, including zero speed increase or motor assistance off,
+are preserved when upgrading.
 
 The wheel's screen shows **BACKSPIN** and its owning deck while detection is
 active, including before release. Use that indicator to spot unwanted

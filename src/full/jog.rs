@@ -25,10 +25,10 @@ pub const DEFAULT: Config = Config {
     pitch_bend_speed: 2.7,
     pitch_bend_reaction: 17,
     backspin_enabled: true,
-    backspin_assist_enabled: false,
+    backspin_assist_enabled: true,
     backspin_assist_strength: 100,
     backspin_acceleration: 150_000.0,
-    backspin_speed_increase: 0.0,
+    backspin_speed_increase: 5.6,
 };
 
 impl Default for Config {
@@ -100,6 +100,9 @@ mod tests {
         shipped.validate()?;
         let partial: Config = serde_json::from_str(r#"{"scratch_speed":4.5}"#)?;
         // Then shipped defaults agree and omitted user fields retain those defaults.
+        assert!((shipped.backspin_speed_increase - 5.6).abs() < f64::EPSILON);
+        assert!(shipped.backspin_assist_enabled);
+        assert_eq!(shipped.backspin_assist_strength, 100);
         assert_eq!(
             serde_json::to_value(shipped)?,
             serde_json::to_value(DEFAULT)?
@@ -131,11 +134,17 @@ mod tests {
     }
 
     #[test]
-    fn motor_output_requires_detection_opt_in_and_nonzero_strength() -> Result<()> {
+    fn motor_output_requires_detection_enabled_setting_and_nonzero_strength() -> Result<()> {
         // Given all combinations, including a legacy saved configuration.
         let legacy: Config = serde_json::from_str(r#"{"backspin_speed_increase":5.2}"#)?;
-        assert!(!legacy.backspin_assist_enabled);
+        assert!(legacy.backspin_assist_enabled);
         assert_eq!(legacy.backspin_assist_strength, 100);
+        let saved: Config = serde_json::from_str(
+            r#"{"backspin_speed_increase":0.0,"backspin_assist_enabled":false,"backspin_assist_strength":37}"#,
+        )?;
+        assert!(!saved.motor_assist_enabled());
+        assert!(saved.backspin_speed_increase.abs() < f64::EPSILON);
+        assert_eq!(saved.backspin_assist_strength, 37);
         for detection in [false, true] {
             for assist in [false, true] {
                 for strength in [0, 37, 100] {

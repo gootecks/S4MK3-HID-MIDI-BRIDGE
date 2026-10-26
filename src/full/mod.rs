@@ -1817,7 +1817,16 @@ mod tests {
             );
             jog_snapshot(&mut state, side, 70, 600)?;
             let movement = run(&mut state, &[Control::Jog(wheel, -0.1)])?;
-            assert_eq!(movement, [[0xb0 | channel, 5, 1], [0xb0 | channel, 5, 27]]);
+            assert_eq!(
+                movement,
+                [
+                    [0xb0 | channel, 5, 1],
+                    [0xb0 | channel, 5, 1],
+                    [0xb0 | channel, 5, 1],
+                    [0xb0 | channel, 5, 1],
+                    [0xb0 | channel, 5, 9],
+                ]
+            );
             for time in [80, 90] {
                 assert!(jog_snapshot(&mut state, side, time, 600)?.is_empty());
             }
@@ -1919,7 +1928,7 @@ mod tests {
             ],
         )?;
         // Then only the original A scratch owner receives the left motion.
-        assert_eq!(output, [[0xb0, 5, 54], [0xb1, 4, 74]]);
+        assert_eq!(output, [[0xb0, 5, 34], [0xb1, 4, 74]]);
         assert_eq!(state.backspin_deck(0), Some(0));
         assert_eq!(state.backspin_deck(1), None);
         Ok(())

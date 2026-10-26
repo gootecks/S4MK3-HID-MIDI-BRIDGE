@@ -28,10 +28,9 @@ screens without requiring MIDI or development knowledge.
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
 
-**0.2.0-beta.1 (build 5)** is prepared for release; see
-[what changed since 0.1.1-beta.3](docs/release-0.2.0-beta.1.md).
-Until it is published, the available download remains
-[0.1.1-beta.3 (build 4)](docs/release-0.1.1-beta.3.md).
+**0.2.0-beta.2 (build 6)** adds backspin continuation and motor assistance,
+Shift + FX knob effect browsing, and clearer LED/FX feedback. See
+[what changed and how to use it](docs/release-0.2.0-beta.2.md).
 Version 0.2.0 adds screens, updated Preview/CUE/library controls, startup channel
 synchronization, FX pickup and jump-size restoration. Use the app and mapping
 supplied together; beta.3's older mapping does not provide these additions.
@@ -91,7 +90,8 @@ _Bridge controls and mapping installation._
 ## Controls and differences from Traktor
 
 This section and the [user guide](docs/user-guide.md) describe the current
-0.2.0-beta.1 build. The published 0.1.1-beta.3 download has the older behavior noted above.
+0.2.0-beta.2 build. Backspin continuation, Shift + FX knob browsing and the latest
+lamp/FX-warning corrections require beta.2; beta.1 lacks them.
 
 The mapping covers four-deck transport, touch scratching and pitch bending,
 mixing, EQ, headphone cue, loops, browsing, hotcues, samples, Neural Mix, and
@@ -112,7 +112,7 @@ thing.
 | **REV**                            | Reverse only while held. Release ends reverse. It doesn't automatically enable Slip as Traktor enables Flux; use FLUX to control Slip independently.                                                                                  |
 | **Sync / Shift+Sync**              | Normal Sync is deck-specific. Shift+Sync on either side cycles Djay's tempo-fader range **globally for all decks**, rather than locking one deck's tempo fader as in Traktor. Djay determines the ranges and their order.             |
 | **Channel FX1 / FX2**              | Choose the deck controlled by the left / right FX strip. These are per-deck control targets, not Traktor's shared FX buses or audio-routing assignments.                                                                              |
-| **FX strips**                      | Control three manual effects on the target deck; Shift with an effect button selects the next effect. See the bank-enable limitation below.                                                                                           |
+| **FX strips**                      | Control three manual effects on the target deck. Current-source app + mapping: Shift + parameter knob browses previous/next effects; release Shift for parameter pickup. Shift + effect button retains next-effect selection. See the bank-enable limitation below. |
 | **Channel ON and mixer FX**        | ON selects the Instant FX target. ON is white for normal EQ, cyan for Neural Mix EQ, and brighter on the target deck. An active Instant FX overrides that deck's ON with its effect-button color. |
 | **Filter, then channel ON**        | Filter flashes cyan awaiting a deck; the next ON toggles only that deck's Neural Mix EQ without changing the Instant FX target. Filter again cancels. Idle Filter is dim cyan; it no longer resets a filter. |
 | **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
@@ -227,10 +227,12 @@ Open bugs and unresolved behavior:
 - **Jog feel and backspin:** current source adds experimental backspin detection,
   an adjustable threshold and optional scratch-speed increase, with an owning-deck
   screen indicator. Tune the threshold and boost to your gestures; ordinary
-  scratch response still depends on Djay's Speed/Reaction settings. A separate,
-  default-off motor-assist trial has its own 0-100% strength control and continues
+  scratch response still depends on Djay's Speed/Reaction settings. A separate
+  motor-assist option defaults on at 100% strength, with its own 0-100% control. It continues
   after release with a one-second fade, preserving normal tension. Save/restart
   lets you compare settings yourself. It is not playback-driven rotation.
+  The default backspin-only scratch speed increase is 5.6%; explicit saved
+  settings are preserved when upgrading.
   See [Backspin controls](docs/user-guide.md#backspin-detection).
 - **Sensor-time safety exit:** reversed wheel-sensor time stops the bridge.
   Keep the exact Diagnostics error if this occurs; it is separate from the

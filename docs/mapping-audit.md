@@ -51,7 +51,7 @@ count gain and a deck-owned screen indicator. Ordinary nudge/seek, native
 Speed/Reaction bindings and MIDI addresses are unchanged. Zero speed increase
 preserves normal count gain. Save/restart applies backspin settings; no new
 mapping is required unless ordinary Speed/Reaction also changes.
-The optional default-off motor-assist flag and independent 0-100% strength also
+The default-on motor-assist flag and independent 0-100% strength also
 change runtime behavior only: no new MIDI addresses or mapping parameters.
 Zero strength bypasses the override. Its released pulse has an independent
 one-second cutoff and does not prolong the MIDI hold beyond measured motion.

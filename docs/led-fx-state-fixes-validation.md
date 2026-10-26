@@ -158,3 +158,8 @@ The user tested this follow-up build and reported "Much better now" on
 October 26, 2026, accepting the revised REV/FLX idle contrast and requesting
 the changes be committed. This confirms that brightness refinement, not
 a separate physical acceptance result for Shift or FX behavior.
+
+The subsequent October 26 report, "Tested on the DJ laptop. All checks out
+good.", establishes general acceptance of the current LED/FX build on the
+intended laptop. This supersedes the pending general physical status above,
+without claiming exhaustive per-control or fault-path coverage.

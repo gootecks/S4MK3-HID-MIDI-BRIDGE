@@ -19,12 +19,12 @@ backspin controls affect runtime detection and event-only scratch routing/gain.
   Speed becomes `rotarySensitivity`; Reaction becomes `rotaryAcceleration`.
 - Current-source Jog > Backspin controls: detection enabled by default,
   filtered backward-acceleration threshold **150000 counts/s^2**, and additive
-  scratch-speed increase **0.0%**. Save/restart applies these without exporting
+  scratch-speed increase **5.6%**. Save/restart applies these without exporting
   a mapping. Zero increase preserves ordinary count gain; nonzero increase uses
   `(scratch_speed + backspin_speed_increase) / scratch_speed` only during a
   detected event. The normal Scratch speed must match the selected Djay mapping.
-- Current-source **Motor assistance** is a separate default-off Backspin option.
-  `backspin_assist_enabled` opts in; `backspin_assist_strength` is an integer
+- Current-source **Motor assistance** is a separate default-on Backspin option.
+  `backspin_assist_enabled` controls it; `backspin_assist_strength` is an integer
   **0-100%**, default **100**, scaling the existing maximum on only the detected
   wheel. Zero is equivalent to assist off and preserves ordinary tension.
   Save/restart lets the user repeat their own level comparisons. After touch

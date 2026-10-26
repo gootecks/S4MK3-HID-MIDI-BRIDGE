@@ -158,10 +158,11 @@ Keep completed items and add their completion date and a short evidence note.
   A 1.0% boost was not noticeable to them; 5.2% was closer to the desired feel.
   General slow/fast calibration remains open; optional boost deliberately changes
   event travel rather than guaranteeing a fixed distance per revolution.
-  The normal motor-tension setting is preserved. A subsequent default-off
+  The normal motor-tension setting is preserved. A subsequent
   released-assist trial provides independent on/off and 0-100% strength with a
   non-renewable one-second fade. The user confirmed useful assistance at 100%,
-  both-wheel operation, catching and wheel isolation. Earlier short motion-stop
+  both-wheel operation, catching and wheel isolation, then requested default-on
+  assistance at 100% with a 5.6% software boost for beta.2. Earlier short motion-stop
   cancellations remain unexplained, not a claimed fix; see the
   [focused physical results and limits](backspin-assist-validation.md).
   See [the experiment and ordered checks](backspin-detection-validation.md).

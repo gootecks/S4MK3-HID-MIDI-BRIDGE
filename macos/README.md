@@ -15,15 +15,15 @@ bash macos/build-app.sh
 
 The results are `dist/S4 MK3 Bridge.app`, the transfer archive
 `dist/S4 MK3 Bridge-arm64.zip`, and the versioned release disk image
-`dist/S4 MK3 Bridge-0.2.0-beta.1-arm64.dmg`. The script compiles
+`dist/S4 MK3 Bridge-0.2.0-beta.2-arm64.dmg`. The script compiles
 `macos/S4BridgeApp.swift` against the installed Apple macOS SDK, builds
 `s4mk3-hid-midi-bridge` with `cargo build --locked --release`, copies
 `examples/led-config.json`, `examples/jog-config.json`, and
 `examples/tension-config.json` into the app resources as `default-led-config.json`,
 `default-jog-config.json`, and `default-tension-config.json`, and creates
 `S4 MK3 Bridge.djayMidiMapping` by running that same release bridge with
-`--generate-mapping`. Cargo identifies this release as `0.2.0-beta.1`;
-the bundle uses numeric version `0.2.0`, build `5`, and records the complete
+`--generate-mapping`. Cargo identifies this release as `0.2.0-beta.2`;
+the bundle uses numeric version `0.2.0`, build `6`, and records the complete
 release in `S4BridgeReleaseVersion`. The script checks alignment with Cargo.
 It generates `AppIcon.icns` from `macos/Assets/AppIcon.png` and includes an
 Applications shortcut in the compressed read-only DMG.
@@ -93,7 +93,7 @@ support off and no previous app ownership. See the
 Screen failures turn the running status icon red while MIDI/LEDs/tension continue.
 The app's Stop/Quit path also stops screen service.
 
-Screen support is included in the prepared 0.2.0-beta.1, not the published 0.1.1-beta.3.
+Screen support is included in 0.2.0-beta.1 and newer.
 Build into a separate folder with `S4_BRIDGE_OUTPUT_DIR=/absolute/output/path`
 when invoking `macos/build-app.sh`.
 

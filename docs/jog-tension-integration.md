@@ -31,7 +31,7 @@ movement and touch. Negative values select assistance while touching the metal
 top, zero selects neutral, and positive values select braking. Full assistance
 is -100 (ceiling 7000); full braking is +100 (ceiling 30000).
 
-Current-source **Jog > Backspin > Motor assistance** is a separate default-off
+Current-source **Jog > Backspin > Motor assistance** is a separate default-on
 experiment. When enabled with detection, it can override that wheel's ordinary
 tension during a detected gesture and through a one-second fade after release.
 The independent **Motor assist strength** slider selects 0-100% of the existing
