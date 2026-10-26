@@ -50,6 +50,89 @@ fn fx_warnings_follow_target_decks_on_info_and_stems_without_cached_value_replay
     Ok(())
 }
 
+#[test]
+fn acquired_fx_turn_does_not_warn_while_software_feedback_catches_up() -> anyhow::Result<()> {
+    // Given a physical knob and its target deck start at the same confirmed value.
+    let mut translator = Translator::default();
+    translator.observe_analog(&[
+        Control::Slider("fx1_knob_1", 64.0 / 127.0),
+        Control::Slider("fx1_knob_2", 64.0 / 127.0),
+        Control::Slider("fx1_knob_3", 64.0 / 127.0),
+        Control::Slider("fx1_dry_wet", 64.0 / 127.0),
+    ])?;
+    let mut feedback = FeedbackState::default();
+    let Page::Info(info) = pages(&translator, &feedback)[0] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(info.fx.unknown, [15, 0]);
+    feed(
+        &mut feedback,
+        &[0xb0, 32, 64, 33, 64, 34, 64, 35, 64, 36, 64, 37, 64],
+    );
+    translator.sync_front_panel(&feedback, &mut Vec::new())?;
+
+    // When the acquired knob turns, Djay has not yet returned its own new value.
+    let mut output = Vec::new();
+    translator.translate(
+        &[Control::Slider("fx1_knob_1", 80.0 / 127.0)],
+        None,
+        &mut output,
+    )?;
+
+    // Then the emitted control is not presented as a pickup warning during feedback lag.
+    assert_eq!(output, [[0xb0, 32, 80]]);
+    let Page::Info(info) = pages(&translator, &feedback)[0] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(info.fx.mismatch, [0; 2]);
+    assert_eq!(info.fx.unknown, [0; 2]);
+
+    // When dry/wet moves, all three independent slots acquire without warning.
+    output.clear();
+    translator.translate(
+        &[Control::Slider("fx1_dry_wet", 80.0 / 127.0)],
+        None,
+        &mut output,
+    )?;
+    assert_eq!(output, [[0xb0, 35, 80], [0xb0, 36, 80], [0xb0, 37, 80]]);
+    let Page::Info(info) = pages(&translator, &feedback)[0] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(info.fx.mismatch, [0; 2]);
+
+    // When feedback catches up one message at a time, including partial wet echoes.
+    for message in [
+        [0xb0, 32, 80],
+        [0xb0, 35, 80],
+        [0xb0, 36, 80],
+        [0xb0, 37, 80],
+    ] {
+        feed(&mut feedback, &message);
+        translator.sync_front_panel(&feedback, &mut Vec::new())?;
+        let Page::Info(info) = pages(&translator, &feedback)[0] else {
+            anyhow::bail!("expected info");
+        };
+        // Then no intermediate mixture of old/new echoes invents a warning.
+        assert_eq!(info.fx.mismatch, [0; 2]);
+    }
+
+    // But a mouse edit to one wet slot re-arms only that slot's pickup.
+    feed(&mut feedback, &[0xb0, 35, 100]);
+    translator.sync_front_panel(&feedback, &mut Vec::new())?;
+    let Page::Info(info) = pages(&translator, &feedback)[0] else {
+        anyhow::bail!("expected info");
+    };
+    assert_eq!(info.fx.mismatch, [8, 0]);
+    let mut output = Vec::new();
+    translator.translate(
+        &[Control::Slider("fx1_dry_wet", 85.0 / 127.0)],
+        None,
+        &mut output,
+    )?;
+    assert_eq!(output, [[0xb0, 36, 85], [0xb0, 37, 85]]);
+    Ok(())
+}
+
 fn pads(
     translator: &Translator,
     feedback: &FeedbackState,

@@ -170,6 +170,19 @@ until Djay actually sends state. Local deck/mode/FX selectors light immediately.
 
 ## Change preferences afterward
 
+Current-source fixed-color Play, Shift, REV and FLX lamps encode the configured
+brightness into the controller's packed intensity format. Known-off REV/FLX
+states instead use `palette_inactive_intensity`, matching JOG's idle backlight;
+real Djay feedback controls their active level through `active_brightness`.
+Shift uses its physical held state. Unknown software state stays dark.
+This correction does not require a new MIDI mapping.
+
+The 0-127 brightness preference is quantized to four hardware steps: 1-31 is
+the dimmest lit level, 32-63 the next, 64-95 the next, and 96-127 the brightest.
+Zero is dark. This avoids interpreting a saved value such as 50 as a native
+intensity byte. REV/FLX idle is the exception above; their active level and
+Play/Shift brightness retain this quantization.
+
 Use `examples/led-config.json` as the editable starting point, or pass your own
 JSON file with `--led-config PATH`. Omit the flag for built-in defaults.
 Partial files are allowed; missing fields keep their defaults. Restart the
@@ -195,8 +208,8 @@ For example:
 | `fixed_hotcue_colors` | Eight colors for the optional fixed-slot policy |
 | `stem_colors`, `mute_color` | Stem/solo colors and the engaged-mute color |
 | `stem_mute_bright` | True: bright means muted; false: bright means unmuted, not effective audibility under other solo states |
-| `active_brightness`, `inactive_brightness` | Fixed-color lamp levels, 1-127 active and 0-127 inactive |
-| `palette_active_intensity`, `palette_inactive_intensity` | Palette lamp/pad/ring intensities, 0-3 |
+| `active_brightness`, `inactive_brightness` | Fixed-color lamp levels, 1-127 active and 0-127 inactive, quantized to four hardware intensity steps; REV/FLX use only the active value |
+| `palette_active_intensity`, `palette_inactive_intensity` | Palette lamp/pad/ring intensities, 0-3; the inactive value also controls REV/FLX idle |
 | `inactive_display` | `dim` or `dark`; applies to software and local inactive indicators |
 | `quantize_mixed` | `dim` or `dark`; bright means all four known deck states are on |
 | `tempo_center_tolerance` | Disabled (`null`) until physical center tolerance is calibrated |

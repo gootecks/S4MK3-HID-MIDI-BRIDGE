@@ -38,8 +38,14 @@ until each control reaches or crosses its software position.
 - Blink-on uses the target deck's color; blink-off is dark.
 - After pickup, normal effect-enable feedback returns.
 - Dry/wet controls three software slots. Each slot picks up independently;
-  the warning clears when all three agree with the physical knob.
+  the warning clears when all three have acquired pickup.
 - Unknown software values are not treated as synchronized.
+
+Warnings follow the same acquisition gates that control MIDI emission.
+Once a knob has acquired its target, ordinary movement and individual returning
+wet-slot updates do not briefly re-display a warning while feedback catches up.
+An external software edit can still re-arm pickup for the affected slot, and
+retargeting still requires the new deck's actual feedback.
 
 The optional screen header follows the affected logical deck, even when an FX
 strip targets a deck on the other side. `C FX SYNC L13W` means deck C needs

@@ -470,7 +470,7 @@ mod tests {
         let buttons = render_buttons(&config, &feedback, &LocalState::default());
         // Then stale continuous levels clear, Play remains lit.
         assert!(meter[1..].iter().all(|byte| *byte == 0));
-        assert_eq!(buttons[56], 127);
+        assert_eq!(buttons[56], 0x47);
     }
 
     #[test]

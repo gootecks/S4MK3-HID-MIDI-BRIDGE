@@ -127,10 +127,13 @@ and raw 0 for genuinely dark/unknown. Reference bases: red 4, orange 12,
 yellow 20, green 28, cyan 36, blue 44, purple 48, white 68.
 These are S4 palette bytes, not outgoing MIDI velocities.
 
-For fixed-color Play/Reverse/Flux/Shift lamps, propose raw brightness 16 dim,
-127 active, 0 dark. Active 127 is already tested for left Play; dim intensity
-and each other lamp need hardware verification. Do not send palette color
-bytes to fixed-color lamps or assume every descriptor `single` means grayscale.
+The original fixed-color Play/Reverse/Flux/Shift proposal used raw brightness
+16 dim, 127 active and 0 dark, without verifying their dim-level encoding.
+Current source instead converts the 0-127 preferences into valid NI
+white-base/intensity bytes, retaining the lamps' fixed physical colors.
+The descriptor's `single` label is not a guarantee of raw grayscale encoding.
+See [current behavior and brightness steps](led-feedback.md#change-preferences-afterward);
+the user accepted the REV/FLX idle refinement on October 26, 2026.
 
 ### Changeable presentation settings
 

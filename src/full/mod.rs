@@ -476,6 +476,9 @@ impl Translator {
             move_selecting: self.move_selecting,
             eq_selecting: self.eq_selecting,
             fx_positions: self.fx_positions,
+            fx_acquired: self
+                .fx_pickup
+                .map(|strip| strip.map(|pickup| pickup.acquired)),
         }
     }
 

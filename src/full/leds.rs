@@ -231,6 +231,8 @@ pub struct LocalState {
     pub eq_selecting: bool,
     /// Parameter knobs 1-3 and dry/wet, by physical FX strip.
     pub fx_positions: [[Option<u8>; 4]; 2],
+    /// Per-slot acquisition gates, by physical FX strip.
+    pub fx_acquired: [[bool; 6]; 2],
 }
 
 impl Default for LocalState {
@@ -248,6 +250,7 @@ impl Default for LocalState {
             move_selecting: [false; 4],
             eq_selecting: false,
             fx_positions: [[None; 4]; 2],
+            fx_acquired: [[false; 6]; 2],
         }
     }
 }
@@ -258,13 +261,13 @@ pub fn fx_pickup(feedback: &FeedbackState, local: &LocalState, side: usize) -> [
     std::array::from_fn(|knob| {
         let physical = local.fx_positions[side][knob]?;
         if knob < 3 {
-            return Some(values[knob]?.abs_diff(physical) > 1);
+            let value = values[knob]?;
+            return Some(!local.fx_acquired[side][knob] && value.abs_diff(physical) > 1);
         }
-        if values[3..]
-            .iter()
-            .flatten()
-            .any(|value| value.abs_diff(physical) > 1)
-        {
+        if (3..6).any(|slot| {
+            !local.fx_acquired[side][slot]
+                && values[slot].is_some_and(|value| value.abs_diff(physical) > 1)
+        }) {
             Some(true)
         } else if values[3..].iter().all(Option::is_some) {
             Some(false)
@@ -326,13 +329,19 @@ impl ButtonRenderer<'_> {
 
     fn state_raw(&self, value: Option<u8>) -> u8 {
         value.map_or(0, |value| {
-            if value != 0 {
+            let brightness = if value != 0 {
                 self.config.active_brightness
             } else {
                 match self.config.inactive_display {
                     InactiveDisplay::Dim => self.config.inactive_brightness,
                     InactiveDisplay::Dark => 0,
                 }
+            };
+            if brightness == 0 {
+                0
+            } else {
+                // Fixed-color lamps also consume NI base + two-bit intensity.
+                Color::White.base() + (brightness >> 5)
             }
         })
     }
@@ -351,10 +360,12 @@ impl ButtonRenderer<'_> {
             );
         }
         for (offsets, note) in [([55, 66], 0), ([60, 71], 3), ([61, 72], 4)] {
-            self.set(
-                offsets[side],
-                self.state_raw(self.feedback.notes[deck][note]),
-            );
+            let state = self.feedback.notes[deck][note];
+            let value = match (note, state) {
+                (3 | 4, Some(0)) => self.palette(Color::White, false),
+                _ => self.state_raw(state),
+            };
+            self.set(offsets[side], value);
         }
         for (offsets, mode, color) in [
             ([9, 32], PadMode::Hotcue, color),
@@ -561,6 +572,12 @@ mod tests {
             fx_pickup(&feedback, &local, 0),
             [Some(false), Some(true), Some(false), None]
         );
+        // Acquired controls stay clear while their own feedback echoes lag.
+        local.fx_acquired[0][1] = true;
+        assert_eq!(
+            fx_pickup(&feedback, &local, 0),
+            [Some(false), Some(false), Some(false), None]
+        );
         feedback.fx_values[0][5] = Some(64);
         assert_eq!(fx_pickup(&feedback, &local, 0)[3], Some(false));
         feedback.fx_values[0][4] = Some(0);
@@ -582,12 +599,72 @@ mod tests {
     }
 
     #[test]
+    fn fixed_color_lamps_encode_mode_and_modifier_intensity() -> anyhow::Result<()> {
+        // Given the user's saved brightness levels and C/D selected on the two sides.
+        let config = LedConfig {
+            active_brightness: 127,
+            inactive_brightness: 50,
+            ..config()
+        };
+        for (active, expected, idle) in [(false, 0x45, 0), (false, 0x45, 2), (true, 0x47, 0)] {
+            let config = LedConfig {
+                palette_inactive_intensity: idle,
+                ..config.clone()
+            };
+            let mut local = LocalState {
+                decks: [2, 3],
+                shifted: [active; 2],
+                ..LocalState::default()
+            };
+            let mut feedback = feedback();
+            let mut decoder = super::super::feedback::Decoder::default();
+            for deck in local.decks {
+                for note in [0, 3, 4] {
+                    decoder.feed(
+                        &[
+                            0x90 | u8::try_from(deck)?,
+                            note,
+                            if active { 127 } else { 0 },
+                        ],
+                        |message| {
+                            feedback.apply(message, std::time::Duration::ZERO);
+                        },
+                    );
+                }
+            }
+            // When real feedback and physical Shift state reach the native report renderer.
+            let report = render_buttons(&config, &feedback, &local);
+            // Then fixed-color Play/Shift/REV/FLX use NI white-base intensity bytes,
+            // not raw MIDI-like brightness values that obscure the mode distinction.
+            for offset in [55, 59, 60, 61, 66, 70, 71, 72] {
+                if !active && [60, 61, 71, 72].contains(&offset) {
+                    let jog_offset = if offset < 66 { 16 } else { 39 };
+                    assert_eq!(
+                        report[1 + offset] & 3,
+                        report[1 + jog_offset] & 3,
+                        "REV/FLX idle must match JOG at payload offset {offset}"
+                    );
+                } else {
+                    assert_eq!(report[1 + offset], expected, "lamp payload offset {offset}");
+                }
+            }
+            // Selecting decks without feedback cannot inherit C/D's REV or FLX state.
+            local.decks = [0, 1];
+            let unknown = render_buttons(&config, &feedback, &local);
+            for offset in [60, 61, 71, 72] {
+                assert_eq!(unknown[1 + offset], 0);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn unknown_software_state_renders_dark_and_known_off_dim() {
         let mut feedback = feedback();
         let mut local = LocalState::default();
         feedback.notes[0][0] = Some(0);
         let report = render_buttons(&config(), &feedback, &local);
-        assert_eq!(report[1 + 55], 16);
+        assert_eq!(report[1 + 55], 0x44);
         assert_eq!(report[1 + 66], 0);
 
         local.pads[0] = PadMode::Samples;
@@ -604,7 +681,7 @@ mod tests {
         let mut local = LocalState::default();
         local.decks[0] = 2;
         let report = render_buttons(&config(), &feedback, &local);
-        assert_eq!(report[1 + 55], 127);
+        assert_eq!(report[1 + 55], 0x47);
         assert_eq!(report[1 + 12], Color::Red.base());
         assert_eq!(report[1 + 13], Color::Yellow.base() + 2);
     }

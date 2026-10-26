@@ -9,6 +9,8 @@ Use the app and mapping supplied together; check the [download notes](../README.
 for what the published package includes.
 The backspin controls below are a current-source experiment; earlier packaged
 builds do not include them.
+The lamp-intensity and FX-warning corrections below also require a
+current-source build rather than an older test bundle.
 
 The DJ laptop needs the standalone app, not Rust, Cargo or this repository.
 
@@ -129,6 +131,12 @@ not Traktor's per-deck tempo-fader lock.
 QUANT toggles each deck; it does not force already-mixed quantize states into
 one uniform state.
 
+FLX and REV have dim red backlights when Djay reports them off and bright
+red indicators when Slip or reverse is active. They stay dark until their
+software state is known. Their idle intensity follows the same palette
+backlight setting as JOG, rather than the separate fixed-lamp inactive
+brightness. Shift has a dim white backlight and brightens while held.
+
 ## Browse, preview and load
 
 1. Select the destination deck with A/C or B/D.
@@ -246,9 +254,13 @@ the software position.
 - A blinking strip ON means dry/wet needs pickup.
 - Move toward and through the value shown in Djay until the blink stops.
 - Dry/wet reaches three software slots; each picks up independently. Its
-  warning clears when all three agree with the knob.
+  warning clears when all three have been picked up.
 - An `FX SYNC` screen header identifies the affected deck and controls.
   A `?` there means feedback is missing, not a confirmed mismatch.
+
+After pickup, ordinary knob movement does not flash a new warning while
+Djay returns the updated values. A mouse edit in Djay or a different FX
+target can require pickup again.
 
 The strip's main **ON is not a reliable whole-bank bypass**: the current
 binding duplicates slot 1. Use the individual effect buttons or Djay's UI
