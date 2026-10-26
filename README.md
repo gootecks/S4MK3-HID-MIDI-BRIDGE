@@ -28,9 +28,9 @@ screens without requiring MIDI or development knowledge.
    the disk image.
 4. Open **S4 MK3 Bridge** from Applications.
 
-**0.2.0-beta.2 (build 6)** adds backspin continuation and motor assistance,
+**0.2.1-beta.1 (build 7)** adds backspin continuation and motor assistance,
 Shift + FX knob effect browsing, and clearer LED/FX feedback. See
-[what changed and how to use it](docs/release-0.2.0-beta.2.md).
+[what changed and how to use it](docs/release-0.2.1-beta.1.md).
 Version 0.2.0 adds screens, updated Preview/CUE/library controls, startup channel
 synchronization, FX pickup and jump-size restoration. Use the app and mapping
 supplied together; beta.3's older mapping does not provide these additions.
@@ -90,8 +90,8 @@ _Bridge controls and mapping installation._
 ## Controls and differences from Traktor
 
 This section and the [user guide](docs/user-guide.md) describe the current
-0.2.0-beta.2 build. Backspin continuation, Shift + FX knob browsing and the latest
-lamp/FX-warning corrections require beta.2; beta.1 lacks them.
+0.2.1-beta.1 build. Backspin continuation, Shift + FX knob browsing and the latest
+lamp/FX-warning corrections are not included in 0.2.0-beta.1.
 
 The mapping covers four-deck transport, touch scratching and pitch bending,
 mixing, EQ, headphone cue, loops, browsing, hotcues, samples, Neural Mix, and
@@ -205,12 +205,27 @@ run while the bridge is running. **Saving or restarting alone doesn't apply
 jog mapping changes.** Keep existing custom mappings under their original names.
 
 Speed and Reaction adjust Djay's response, independently of hardware tension.
-Current-source builds handle released backspin through the separate
-[Backspin controls](docs/user-guide.md#backspin-detection), not these mapping parameters.
 
-![Jog settings showing Hardware Jog Wheel Tension and separate scratch and pitch-bend controls](docs/images/jog-settings.png)
+#### Backspins
 
-_Jog settings at Neutral (0), with the calibrated scratch and pitch-bend defaults._
+A sharp backward flick in Turntable mode can continue scratching after you
+release the platter, following its remaining real movement. Catching or stopping
+the wheel ends the backspin.
+
+In **Jog > Backspin**, adjust the detection threshold, **Scratch speed increase**
+and **Motor assist strength**. The defaults are **5.6%** extra scratch speed and
+motor assistance **on at 100%**. Software speed and motor help are independent
+of your normal scratch response and Jog Wheel Tension. Motor help fades out
+within one second after release; this is not playback-driven platter rotation.
+
+Use **Save and restart** to apply changes. No mapping export is needed for
+backspin options, and upgrading preserves explicit saved choices. See the
+[Backspin guide](docs/user-guide.md#backspin-detection) for tuning and details.
+
+![Jog settings showing Hardware tension, Backspin detection, scratch speed increase and motor assist controls, plus scratch and pitch-bend mapping settings](docs/images/jog-settings.png)
+
+_Jog settings with the Backspin controls, 5.6% speed increase and motor assistance
+enabled at 100%, alongside neutral tension and calibrated scratch/pitch-bend defaults._
 
 The menu-bar icon turns green while the bridge is running. In source builds,
 it turns red if requested screens are blocked or fail while the bridge keeps
@@ -224,16 +239,6 @@ and remaining checks.
 
 Open bugs and unresolved behavior:
 
-- **Jog feel and backspin:** current source adds experimental backspin detection,
-  an adjustable threshold and optional scratch-speed increase, with an owning-deck
-  screen indicator. Tune the threshold and boost to your gestures; ordinary
-  scratch response still depends on Djay's Speed/Reaction settings. A separate
-  motor-assist option defaults on at 100% strength, with its own 0-100% control. It continues
-  after release with a one-second fade, preserving normal tension. Save/restart
-  lets you compare settings yourself. It is not playback-driven rotation.
-  The default backspin-only scratch speed increase is 5.6%; explicit saved
-  settings are preserved when upgrading.
-  See [Backspin controls](docs/user-guide.md#backspin-detection).
 - **Sensor-time safety exit:** reversed wheel-sensor time stops the bridge.
   Keep the exact Diagnostics error if this occurs; it is separate from the
   automatically recovering 50 ms input-gap path.

@@ -3,13 +3,13 @@
 Use this guide to DJ with the S4 MK3, understand the custom mappings, and
 recognize what its lights and screens are telling you.
 
-**Build coverage:** this guide follows the full-controller 0.2.0-beta.2 build.
+**Build coverage:** this guide follows the full-controller 0.2.1-beta.1 build.
 Version 0.1.1-beta.3 and older downloads lack its screens and updated control workflows.
 Use the app and mapping supplied together; check the [download notes](../README.md#download-and-install)
 for what the published package includes.
 Backspin continuation, optional motor assistance, the lamp/FX-warning corrections
-and Shift + effect-knob browsing are new in beta.2. Earlier published builds
-do not include them. Install beta.2's newly generated mapping under a new name,
+and Shift + effect-knob browsing are new since 0.2.0-beta.1. Install the
+0.2.1-beta.1 mapping under a new name,
 preserving custom maps, for Shift + effect-knob browsing.
 
 The DJ laptop needs the standalone app, not Rust, Cargo or this repository.
