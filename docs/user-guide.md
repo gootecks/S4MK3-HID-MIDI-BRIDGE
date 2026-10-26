@@ -236,10 +236,20 @@ They are **control targets**, not Traktor-style shared FX audio buses.
 1. Press a channel's **FX1** button to target it from the left FX strip, or
    **FX2** for the right strip.
 2. Use strip buttons **1-3** for individual effects.
-3. Hold Shift on the strip's physical side and press an effect button to choose
-   its next effect.
-4. Turn parameter knobs 1-3 for those slots.
+3. Hold Shift on the strip's physical side and turn parameter knob 1, 2 or 3
+   clockwise for next effects or counterclockwise for previous effects in that
+   slot. Movement is relative, not an absolute position in the effect list.
+   Shift + an effect button still chooses its next effect as a shortcut.
+4. Release Shift to adjust parameters with knobs 1-3. After browsing, move
+   through the software parameter's pickup position before it responds.
 5. Use the shared dry/wet knob for their wet/dry amounts.
+
+Each browsing step uses about 1/32 of the knob's travel. Small movements
+accumulate; a larger turn can scroll several effects. These knobs have end
+stops: release Shift, reposition, then hold Shift again to continue browsing.
+Repositioning does not select effects, but crossing the software parameter
+value picks it up and resumes parameter adjustment. Dry/wet remains a wet/dry
+control even with Shift held.
 
 Defaults are A for the left strip and B for the right. Changing A/C or B/D
 deck focus does not automatically change these targets.

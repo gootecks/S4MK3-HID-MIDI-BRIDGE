@@ -60,6 +60,7 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
     for bindings in [FX_LEFT_BINDINGS, FX_RIGHT_BINDINGS, QUICK_BINDINGS] {
         push_deck_bindings(bindings, &mut controls, &mut addresses)?;
     }
+    push_fx_browsing(&mut controls, &mut addresses)?;
     push_jump_restores(&mut controls, &mut addresses)?;
     for mode in [PadMode::Hotcue, PadMode::Samples, PadMode::Stems] {
         for index in 0_u8..8 {
@@ -150,6 +151,19 @@ fn push_deck_bindings(
     for binding in bindings {
         for deck in 1_u8..=4 {
             push_deck(controls, addresses, *binding, deck)?;
+        }
+    }
+    Ok(())
+}
+
+fn push_fx_browsing(
+    controls: &mut Vec<Value>,
+    addresses: &mut BTreeSet<(u8, u8, u8)>,
+) -> Result<()> {
+    for binding in super::catalog::FX_BROWSE_BINDINGS {
+        for deck in 1_u8..=4 {
+            let target = binding.target.replace(DECK_MARKER, &deck.to_string());
+            push_control(controls, addresses, *binding, &target, deck + 7)?;
         }
     }
     Ok(())
@@ -947,6 +961,43 @@ mod tests {
         }
         for data in 0..=3 {
             assert!(addresses.contains(&(4, 1, data)));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_fx_browsing_maps_relative_selectors_without_pickup() -> anyhow::Result<()> {
+        // Given the serialized mapping that Djay consumes.
+        let controls = generated_controls()?;
+        // When resolving each emitted browse address for all target decks.
+        for deck in 1_u64..=4 {
+            for slot in 1_u64..=3 {
+                let matches: Vec<_> = controls
+                    .iter()
+                    .filter(|control| {
+                        field(control, "midiChannel").and_then(Value::as_unsigned_integer)
+                            == Some(deck + 7)
+                            && field(control, "midiMessageType")
+                                .and_then(Value::as_unsigned_integer)
+                                == Some(3)
+                            && field(control, "midiData").and_then(Value::as_unsigned_integer)
+                                == Some(31 + slot)
+                    })
+                    .collect();
+                // Then precisely one native stepped selector owns the rotary-64 address.
+                assert_eq!(matches.len(), 1);
+                let control = matches[0];
+                assert_eq!(
+                    field(control, "keyPath").and_then(Value::as_string),
+                    Some(format!("turntable{deck}.fx{slot}SelectRotary").as_str())
+                );
+                assert_eq!(
+                    field(control, "controlType").and_then(Value::as_string),
+                    Some("rotary-64")
+                );
+                assert!(field(control, "pickupMode").is_none());
+                assert!(field(control, "output").is_none());
+            }
         }
         Ok(())
     }

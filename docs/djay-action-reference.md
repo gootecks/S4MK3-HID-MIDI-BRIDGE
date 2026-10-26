@@ -147,6 +147,17 @@ Deck C here means `turntable3` (MIDI CH3 in this bridge). If “C2” means the 
 | Jog and tempo-fader handling | Catalog maps jog bend/scratch/seek to relative CC controls; the tempo fader is pickup-enabled and flipped, with a shifted `speedRelative` target. | `relative()` translates motion into signed chunks up to 63 rather than discarding larger deltas. No maximum speed cap is established by the inspected bridge behavior. |
 | Front-panel startup | Startup state uses default `switches=[None; 5]`; the front-panel translator emits the first snapshot once, then emits only changes and advances its cache even if Djay has not attached. | Physical switch positions are not entirely ignored. Whether a listener-readiness replay is needed remains unproven at runtime. |
 
+## Current-source FX browsing overlay
+
+Shift + FX parameter knobs use the metadata's native stepped rotary actions
+`turntable1..4.fx1SelectRotary`, `fx2SelectRotary` and `fx3SelectRotary`.
+The generated input addresses on **S4 MK3 MIDI Full** are CC 32, 33 and 34
+on user-facing channels 9-12 (plist channels 8-11), with `controlType=rotary-64`
+and no pickup on these relative selectors. Both physical strips address their
+selected target deck through these canonical addresses. Parameter and wet/dry
+addresses and feedback remain unchanged; shifted effect-button next actions
+remain available. The historical usage inventory below predates this overlay.
+
 ## Complete metadata input/action catalog
 
 One row per dictionary entry in `MidiModelMetadata.plist` (944 total). The key path is the Djay-side mapping identifier. “S4 MIDI usage” is blank for keys not assigned in the generated bundle. If the metadata entry has no `type`, the raw metadata column preserves the fields as shipped; do not infer a button behavior from the name alone.

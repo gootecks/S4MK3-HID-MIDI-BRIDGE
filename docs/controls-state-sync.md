@@ -29,6 +29,20 @@ new session; automatic mapping-reconnect detection is not available.
 
 ## Shared FX controls
 
+Current-source builds add relative effect selection: hold the strip-side Shift
+and turn parameter knobs 1-3 clockwise/next or counterclockwise/previous.
+Install the same build's new mapping under a new name; older maps do not
+contain these rotary selectors. Shift + effect-button next selection remains.
+Dry/wet is unchanged.
+
+Browsing uses four seven-bit position units per effect step, retaining partial
+movement. Shift changes and target changes rebase the travel origin so old
+movement cannot select an effect on another target. With no physical baseline,
+the first sample only establishes one. Shifted knob movement re-arms its
+parameter pickup; it never sends a parameter value. Release Shift to reposition
+at an end stop, then hold it again to continue. Repositioning resumes parameter
+control only once it reaches or crosses the software value.
+
 Selecting a new FX target does not apply the old deck's knob positions. The
 bridge waits for that deck's actual parameter feedback and blocks movement
 until each control reaches or crosses its software position.

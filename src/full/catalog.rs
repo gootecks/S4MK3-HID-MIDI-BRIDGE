@@ -224,6 +224,13 @@ pub const DECK_BINDINGS: &[Binding] = &[
     note("grid_right", 30, "turntable{deck}.shiftDownBeatRight", None),
 ];
 
+/// Both strips browse the target deck on channels 9-12, separate from parameter CCs.
+pub const FX_BROWSE_BINDINGS: &[Binding; 3] = &[
+    relative("knob_1", 32, "turntable{deck}.fx1SelectRotary", None),
+    relative("knob_2", 33, "turntable{deck}.fx2SelectRotary", None),
+    relative("knob_3", 34, "turntable{deck}.fx3SelectRotary", None),
+];
+
 /// Left strip suffixes are shared by button and knob event families.
 pub const FX_LEFT_BINDINGS: &[Binding] = &[
     note("fx_on", 32, "turntable{deck}.fxActive", None),

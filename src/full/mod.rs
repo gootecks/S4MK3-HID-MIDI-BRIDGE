@@ -156,6 +156,7 @@ struct Translator {
     fx_positions: [[Option<u8>; 4]; 2],
     fx_values: [[Option<u8>; 6]; 4],
     fx_pickup: [[FxPickup; 6]; 2],
+    fx_browse_anchors: [[Option<u8>; 3]; 2],
     eq_selecting: bool,
 }
 
@@ -189,6 +190,7 @@ impl Default for Translator {
             fx_positions: [[None; 4]; 2],
             fx_values: [[None; 6]; 4],
             fx_pickup: [[FxPickup::default(); 6]; 2],
+            fx_browse_anchors: [[None; 3]; 2],
             eq_selecting: false,
         }
     }
@@ -518,6 +520,7 @@ impl Translator {
     ) -> anyhow::Result<()> {
         let previous_fx = self.fx_positions;
         let previous_targets = self.fx;
+        let previous_shift = self.shifted;
         self.observe_analog(controls)?;
         self.observe_led_inputs(controls);
         // All releases precede selectors; selectors precede new presses/movement.
@@ -550,6 +553,9 @@ impl Translator {
         for (side, previous) in previous_targets.into_iter().enumerate() {
             if self.fx[side] != previous {
                 self.fx_pickup[side] = [FxPickup::default(); 6];
+            }
+            if self.fx[side] != previous || self.shifted[side] != previous_shift[side] {
+                self.fx_browse_anchors[side] = std::array::from_fn(|slot| previous_fx[side][slot]);
             }
         }
         self.move_selection(controls);
@@ -593,6 +599,10 @@ impl Translator {
                             {
                                 let slot = usize::from(binding.number % 8);
                                 let knob = if slot < 3 { slot } else { 3 };
+                                if slot < 3 && self.shifted[side] {
+                                    self.browse_fx(side, slot, value, output)?;
+                                    continue;
+                                }
                                 if !self.fx_pickup[side][slot].accepts(
                                     previous_fx[side][knob],
                                     value,
@@ -612,6 +622,29 @@ impl Translator {
             }
         }
         self.emit_mixer(output)
+    }
+
+    fn browse_fx(
+        &mut self,
+        side: usize,
+        slot: usize,
+        value: u8,
+        output: &mut Vec<[u8; 3]>,
+    ) -> anyhow::Result<()> {
+        // Four MIDI position units per effect retain sub-step movement
+        // and provide hysteresis around the last emitted position.
+        let anchor = self.fx_browse_anchors[side][slot].get_or_insert(value);
+        let steps = (i32::from(value) - i32::from(*anchor)) / 4;
+        *anchor = u8::try_from(i32::from(*anchor) + steps * 4)?;
+        self.fx_pickup[side][slot] = FxPickup::default();
+        relative(
+            Address {
+                channel: self.fx[side].channel() + 8,
+                number: catalog::FX_BROWSE_BINDINGS[slot].number,
+            },
+            steps,
+            output,
+        )
     }
 
     fn move_selection(&mut self, controls: &[Control]) {
@@ -2625,6 +2658,153 @@ mod tests {
             state.translate(&[Control::Slider("ch1_fader", 0.5)], None, &mut output)?;
             assert_eq!(output, [[0xb4, 16, 64]]);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_fx_knobs_browse_relative_steps_on_each_target() -> anyhow::Result<()> {
+        for side in 0..2 {
+            for deck in [Deck::A, Deck::B, Deck::C, Deck::D] {
+                for (slot, name) in [
+                    ["fx1_knob_1", "fx1_knob_2", "fx1_knob_3"],
+                    ["fx2_knob_1", "fx2_knob_2", "fx2_knob_3"],
+                ][side]
+                    .into_iter()
+                    .enumerate()
+                {
+                    // Given a known physical position, independent FX target and Shift.
+                    let mut state = Translator::default();
+                    state.fx[side] = deck;
+                    state.observe_analog(&[Control::Slider(name, 64.0 / 127.0)])?;
+                    run(
+                        &mut state,
+                        &[Control::Button(
+                            if side == 0 {
+                                "left_shift"
+                            } else {
+                                "right_shift"
+                            },
+                            true,
+                        )],
+                    )?;
+                    // When small movement accumulates, then whole relative steps are emitted.
+                    assert!(run(&mut state, &[Control::Slider(name, 67.0 / 127.0)])?.is_empty());
+                    let address = [0xb8 | deck.channel(), 32 + u8::try_from(slot)?, 65];
+                    assert_eq!(
+                        run(&mut state, &[Control::Slider(name, 68.0 / 127.0)])?,
+                        [address]
+                    );
+                    assert!(run(&mut state, &[Control::Slider(name, 68.0 / 127.0)])?.is_empty());
+                    assert_eq!(
+                        run(&mut state, &[Control::Slider(name, 80.0 / 127.0)])?,
+                        [[address[0], address[1], 67]]
+                    );
+                    assert_eq!(
+                        run(&mut state, &[Control::Slider(name, 72.0 / 127.0)])?,
+                        [[address[0], address[1], 62]]
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_fx_browsing_rebases_on_shift_and_target_changes() -> anyhow::Result<()> {
+        // Given a partial step on A while Shift is held.
+        let mut state = Translator::default();
+        state.observe_analog(&[Control::Slider("fx1_knob_1", 64.0 / 127.0)])?;
+        run(&mut state, &[Control::Button("left_shift", true)])?;
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 67.0 / 127.0)])?.is_empty());
+        // When retargeting and moving together, only new travel belongs to C.
+        assert!(
+            run(
+                &mut state,
+                &[
+                    Control::Slider("fx1_knob_1", 68.0 / 127.0),
+                    Control::Button("mixer_ch3_fx1", true),
+                ]
+            )?
+            .is_empty()
+        );
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 71.0 / 127.0)])?,
+            [[0xba, 32, 65]]
+        );
+        // Then releasing Shift permits repositioning; reholding starts a new origin.
+        run(&mut state, &[Control::Button("left_shift", false)])?;
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 0.0)])?.is_empty());
+        run(&mut state, &[Control::Button("left_shift", true)])?;
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 1.0)])?,
+            [[0xba, 32, 95]]
+        );
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 1.0)])?.is_empty());
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 0.0)])?,
+            [[0xba, 32, 33]]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_fx_first_sample_only_seeds_browsing_and_dry_wet_stays_absolute() -> anyhow::Result<()>
+    {
+        // Given Shift before any physical knob baseline and known wet/dry feedback.
+        let mut state = Translator::default();
+        run(&mut state, &[Control::Button("right_shift", true)])?;
+        let mut feedback = feedback::FeedbackState::default();
+        feedback::Decoder::default().feed(&[0xb1, 35, 0, 36, 0, 37, 0], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        // When initial positions arrive, then no effect is selected by absolute position.
+        assert_eq!(
+            run(
+                &mut state,
+                &[
+                    Control::Slider("fx2_knob_2", 1.0),
+                    Control::Slider("fx2_dry_wet", 0.0),
+                ]
+            )?,
+            [[0xb1, 43, 0], [0xb1, 44, 0], [0xb1, 45, 0]]
+        );
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx2_knob_2", 123.0 / 127.0)])?,
+            [[0xb9, 33, 63]]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn shifted_fx_browsing_rearms_parameter_pickup() -> anyhow::Result<()> {
+        // Given an acquired parameter at 64 and a matching real feedback cache.
+        let mut state = Translator::default();
+        state.observe_analog(&[Control::Slider("fx1_knob_1", 64.0 / 127.0)])?;
+        let mut feedback = feedback::FeedbackState::default();
+        feedback::Decoder::default().feed(&[0xb0, 32, 64], |message| {
+            feedback.apply(message, Duration::ZERO);
+        });
+        state.sync_front_panel(&feedback, &mut Vec::new())?;
+        run(&mut state, &[Control::Slider("fx1_knob_1", 64.0 / 127.0)])?;
+        // When Shift and movement arrive together, browsing replaces parameter output.
+        assert_eq!(
+            run(
+                &mut state,
+                &[
+                    Control::Slider("fx1_knob_1", 80.0 / 127.0),
+                    Control::Button("left_shift", true),
+                ]
+            )?,
+            [[0xb8, 32, 68]]
+        );
+        run(&mut state, &[Control::Button("left_shift", false)])?;
+        // Then repositioning away from the software value cannot alter the parameter.
+        assert!(run(&mut state, &[Control::Slider("fx1_knob_1", 100.0 / 127.0)])?.is_empty());
+        assert_eq!(
+            run(&mut state, &[Control::Slider("fx1_knob_1", 60.0 / 127.0)])?,
+            [[0xb0, 32, 60]]
+        );
         Ok(())
     }
 

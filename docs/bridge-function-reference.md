@@ -107,6 +107,14 @@ and matching/crossing movement, retaining ownership through ordinary feedback la
 and reacquiring after confirmed external edits. Native pickup flags remain enabled.
 Known mismatch blinks the corresponding FX button; dry/wet uses main ON.
 Info/STEMS adds an affected-deck `FX SYNC` header only while needed.
+Current-source Shift + FX parameter knobs use native `fx1SelectRotary` through
+`fx3SelectRotary` on the strip's target deck. Both strips share canonical browse
+CCs 32-34 on channels 9-12 (Djay plist channels 8-11), encoded as rotary-64.
+Four seven-bit physical position units produce one relative step. Shift or
+target changes reset the travel origin; the first unknown position seeds only.
+Browsing suppresses parameter output and re-arms that knob's pickup. Dry/wet,
+effect-button held ownership and the existing Shift + button next-effect
+shortcuts are unchanged. A newly generated mapping is required.
 See [operation](controls-state-sync.md) and
 [verification boundaries](controls-state-sync-validation.md).
 

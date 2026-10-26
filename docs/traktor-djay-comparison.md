@@ -62,6 +62,13 @@ description of the corrected full-profile physical naming.
 | **Browse direction** | The Browse encoder scrolls/selects tracks and its press loads the selected track (§5.1.1, p. 23; §7.1, pp. 39–40). While Preview is held, turning Browse seeks within the preview (§7.15, p. 68); the manual does not state clockwise/forward polarity or which direction moves down/up the browser list. | The relative encoder routes to `musicLibrary.libraryRotary` (Shift: `sectionRotary`) (`src/full/catalog.rs`). | Browser navigation is mapped, but direction polarity in Djay is not proven by the action name or the manual. Verify clockwise/down-list and counterclockwise/up-list on the running target; do not silently flip the relative sign based on labels. |
 | **FX bank assignment and enable** | FX Unit 1/2 are the left/right banks. Each channel's FX Assign buttons route either/both units to that channel (§5.2.1, p. 28; §7.13, pp. 66–67). FX ON buttons 1–4 enable/disable individual effect parameters in the selected unit (§5.3, p. 29; §7.13, p. 70). | The two physical strip selectors choose the deck targeted by each Djay FX strip. FX ON maps to `fxActive`; buttons 1–3 map to `fx1Enabled`–`fx3Enabled` (Shift selects next effect). Mixer FX controls map to per-deck instant FX (`src/full/catalog.rs`). | Djay can approximate effect-bank control on a selected deck, but this does not reproduce Traktor's channel-to-shared-FX-unit audio routing. The current bridge intentionally selects a MIDI control target rather than connecting mixer channels to a common FX bus; it also exposes three manual effects, not Traktor's four per-unit buttons. A fourth button and true assignment semantics are not established equivalents. |
 
+Current-source FX browsing adds a custom Djay gesture: Shift + a strip's
+parameter knob selects previous/next effects in its slot using relative
+movement. Release Shift for parameter pickup; dry/wet and the old Shift +
+button next-effect shortcut remain. This requires the matching new mapping.
+It is an ergonomic adaptation for finite-travel knobs, not a claim of Traktor
+parity. See [manual FX operation](user-guide.md#manual-fx-strips).
+
 ## Historical shared loop-length and beat-jump proposal
 
 The user clarified the factory encoder coupling: turning LOOP with no active
