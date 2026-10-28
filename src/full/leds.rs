@@ -399,10 +399,10 @@ impl ButtonRenderer<'_> {
             [18, 41][side],
             self.palette(Color::White, self.local.grid[side]),
         );
-        if let Some(tolerance) = self.config.tempo_center_tolerance {
-            if self.local.tempo[side].is_some_and(|position| (position - 0.5).abs() <= tolerance) {
-                self.set([11, 34][side], self.palette(Color::White, true));
-            }
+        if let Some(tolerance) = self.config.tempo_center_tolerance
+            && self.local.tempo[side].is_some_and(|position| (position - 0.5).abs() <= tolerance)
+        {
+            self.set([11, 34][side], self.palette(Color::White, true));
         }
     }
 

@@ -32,7 +32,7 @@ fn coverage_blends_each_rgb565_channel_without_bleeding() {
             assert_eq!(blend(background, foreground, 15), foreground);
         }
     }
-    assert_eq!(blend(0, 0xffff, 7), (14 << 11) | (29 << 5) | 14);
+    assert_eq!(blend(0, 0xffff, 7), (0xe << 11) | (0x1d << 5) | 0xe);
 }
 
 #[test]

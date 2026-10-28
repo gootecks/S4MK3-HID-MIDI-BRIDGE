@@ -28,6 +28,10 @@ their detailed notes stay in `docs/release-*.md`.
 
 - README and `AGENTS.md` describe the fork, its project board and S8 hardware
   boundaries.
+- Clippy passes on Rust 1.99.1. Four findings are fixed in code; the new
+  `assert_is_empty` style lint is allowed crate-wide, because its suggested
+  rewrite (`assert_eq!(value, [] as [T; 0])`) is less readable than
+  `assert!(value.is_empty())`.
 
 ## [0.2.1-beta.1] - 2026-10-26
 
