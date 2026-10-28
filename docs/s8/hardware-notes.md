@@ -43,16 +43,13 @@ loaded and look abandoned). Level: **descriptor**.
 | `buttons` |   41 | Deck and mixer buttons (bit masks, bytes 4–25), pads (digital, not velocity), tempo encoder (byte 3, wrap16), touchstrip positions (bytes 28–29 left, 34–35 right, 10-bit) and touch bits |
 | `sliders` |  109 | Screen encoders (bytes 1–16, wrap16_wide), channel faders (17–42, 12-bit, max 4078), FX dials (43–58), mixer gain/EQ/filter (69–108) |
 
-Open questions for #10:
+Resolved by the macOS capture ([input-capture.md](input-capture.md)): report
+IDs 1 (41 bytes) and 2 (109 bytes) arrive in MIDI mode, the
+kontrol-s8-protocol offsets match for every button tested, and shared-mode
+reads coexist with NIHardwareAgent and Controller Editor.
 
-- Report IDs: Encdr docs say buttons = 1, sliders = 2, but the JSON has no
-  report-ID field. The S4 path in this bridge strips IDs before parsing
-  (`src/main.rs` `input_payload`), so sizes must be checked with the ID present
-  and absent.
-- Fader full scale (4078 vs the S4's 4095), touchstrip range, encoder
-  directions and every mixer control.
-- Coexistence with NIHardwareAgent and Controller Editor while reading
-  interface 5 in shared mode.
+Still open for #10: fader full scale (4078 vs the S4's 4095), touchstrip
+range, encoder directions and the remaining mixer controls.
 
 ## LED output (interface 5, OUT `0x03`)
 
@@ -84,6 +81,9 @@ test only worked with 119-byte `[prefix] + [118]` reports.
   payload + `40 00 <selector> 00`, big-endian RGB565 inside mandatory run/delta
   encoding, two selectors at 480×272 each. Selector-to-side mapping and the
   startup/shutdown contract were still open there.
+
+Current protocol summary, source conflicts and the first-frame test plan:
+[screens.md](screens.md).
 
 ## Not applicable
 
