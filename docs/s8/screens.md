@@ -1,7 +1,8 @@
 # S8 screens
 
-Research and first-frame test plan for #26. Nothing in this file has been
-sent to an S8 from this bridge yet.
+Research and first-frame test plan for #26, with results. Phases 2 and 4
+sent frames to the S8 from this bridge's tools
+([screen-frame-validation.md](screen-frame-validation.md)).
 
 ## What we know
 
@@ -14,15 +15,15 @@ shows a working macOS path.
 
 | Item | Value | Confidence |
 | ---- | ----- | ---------- |
-| Transport | Interface 6 (`FF/BD/00`), bulk OUT `0x04`, max packet 512 | Both sources agree |
-| Geometry | Two 480×272 panels; screen 0 left, screen 1 right | Both agree |
-| Header | `84 00 SS 60 00 00 00 00 00 00 00 00 01 E0 01 10` (16 bytes, `SS` = screen) | Observed payloads |
-| Body | Commands `OP 00 CNT_HI CNT_LO`, counts in pixel pairs, total `0xFF00` | Observed payloads |
-| Opcodes | `00` LITERAL (+4×CNT bytes), `01` REPEAT (+4 bytes), `02` SKIP | Observed payloads |
-| Footer | `03 00 00 00 40 00 SS 00` | Both agree |
-| Pixels | 16-bit big-endian, nominally RGB565 | Red/blue order unresolved |
-| Init | Optional feature SET_REPORT `0xF8` on interface 5, `E0 01 10 01 05 60 00 64 32 00`; byte 8 seen as `0x14`, `0x50`, `0x64` | Windows only; meaning and necessity unknown |
-| Shutdown, recovery, max frame size, refresh rate | Unknown | Not demonstrated |
+| Transport | Interface 6 (`FF/BD/00`), bulk OUT `0x04`, max packet 512 | Both sources agree; works on macOS (phases 2, 4) |
+| Geometry | Two 480×272 panels; screen 0 left, screen 1 right | Confirmed on macOS |
+| Header | `84 00 SS 60 00 00 00 00 00 00 00 00 01 E0 01 10` (16 bytes, `SS` = screen) | Observed payloads; works on macOS |
+| Body | Commands `OP 00 CNT_HI CNT_LO`, counts in pixel pairs, total `0xFF00` | Observed payloads; LITERAL and REPEAT work on macOS |
+| Opcodes | `00` LITERAL (+4×CNT bytes), `01` REPEAT (+4 bytes), `02` SKIP | Observed payloads; SKIP untested |
+| Footer | `03 00 00 00 40 00 SS 00` | Both agree; works on macOS |
+| Pixels | 16-bit big-endian RGB565 | Confirmed on macOS (phases 2, 4) |
+| Init | Optional feature SET_REPORT `0xF8` on interface 5, `E0 01 10 01 05 60 00 64 32 00`; byte 8 seen as `0x14`, `0x50`, `0x64` | Windows only; not needed on macOS |
+| Shutdown, max frame size, refresh rate | Unknown; a full 261,148-byte frame works | Not demonstrated |
 
 ### Reconciling Encdr and the protocol repo
 
@@ -30,7 +31,7 @@ Encdr describes a "raw" 20-byte header ending `00 00 FF 00`, while the
 protocol repo describes run-length commands after a 16-byte header. They
 agree: `00 00 FF 00` is a single LITERAL command covering all `0xFF00` pairs.
 A full uncompressed frame is therefore 16 + 4 + 261,120 + 8 = 261,148 bytes.
-This is a derivation from both documents, not a tested fact.
+Phase 4 confirmed that the S8 displays it.
 
 Encdr is wrong or stale in three places:
 
@@ -38,7 +39,7 @@ Encdr is wrong or stale in three places:
   audio.
 - Its `0x66`/`0x67` screen IDs at byte 3 are an old hypothesis; byte 2 holds
   the screen and byte 3 is `0x60`.
-- It states BGR565 as fact; the protocol repo leaves the order open.
+- It states BGR565; phases 2 and 4 showed RGB565.
 
 ### Differences from the S4 MK3 path
 
@@ -148,10 +149,20 @@ Left panel only, one frame each:
 3. The same two frames on the right panel (screen byte and footer byte
    `01`).
 
+`examples/s8-screen-frame.rs` builds and sends one frame per run (`black`,
+`f800` or `pattern`, `--screen left|right`) and refuses to run while
+NIHardwareAgent is running. `mise run s8:screen-frame first` runs the four
+steps during an attended agent stop with the passive recorder.
+
+Result: all four frames display as expected, and `F8 00` shows red, so the
+pixels are RGB565 ([screen-frame-validation.md](screen-frame-validation.md)).
+
 ### Phase 3: only if phase 2 shows nothing
 
 Send the `0xF8` feature report once, then repeat phase 2 step 1. This is
 the only interface 5 output in the plan.
+
+Result: not run; phase 2 frames displayed without it.
 
 ### Phase 4: full frame
 
@@ -159,6 +170,14 @@ One full LITERAL frame (261,148 bytes) with a test pattern: corner markers
 and labelled colour bars, like `screens::test_pattern` for the S4. This tests
 whether the S8 accepts uncompressed frames, which would let the bridge reuse
 the S4 rendering with a simpler encoder.
+
+`mise run s8:screen-frame pattern rgb` sends it to the left panel, then the
+right.
+
+Result: the S8 accepts uncompressed frames. The pattern displays exactly as
+intended on both panels, each transfer taking about 16 ms. The last frame
+stays after the interface is released, and the relaunched agent redraws its
+labels ([screen-frame-validation.md](screen-frame-validation.md)).
 
 ### What to record
 
@@ -168,8 +187,9 @@ Record in a validation file under `docs/s8/`, not in this plan.
 
 ## Still open after this plan
 
-- What the S8 shows when the bridge stops, and whether the agent redraws
-  its labels after relaunch.
-- Refresh rate and latency for partial updates.
+- Refresh rate and latency for repeated frames and partial updates (SKIP,
+  sub-rectangles).
+- What the panels should show when the bridge quits without relaunching the
+  agent: they keep the last frame.
 - What Djay can actually feed the panels: only MIDI feedback, as on the S4
   (mode legends and indicators, no waveforms or track titles).
