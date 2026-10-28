@@ -83,6 +83,15 @@ description = "Attended S8 screen phase 1: stop NIHardwareAgent, claim interface
 run = "bash docs/s8/screen-claim-check.sh"
 raw = true
 
+[tasks."s8:screen-frame"]
+description = "Attended S8 screen phases 2 and 4: stop NIHardwareAgent, send single frames, restore (#34, #35)"
+usage = '''
+arg "<phase>" help="first (phase 2) or pattern (phase 4)"
+arg "[order]" help="pattern colour order: rgb or bgr"
+'''
+run = 'bash docs/s8/screen-frame-check.sh "$usage_phase" ${usage_order:-}'
+raw = true
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
 run = "hk install"

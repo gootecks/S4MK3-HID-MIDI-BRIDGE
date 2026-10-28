@@ -41,6 +41,12 @@ their detailed notes stay in `docs/release-*.md`.
   during an attended agent stop. Result in
   `docs/s8/screen-claim-validation.md`: the claim succeeds and disturbs
   nothing.
+- S8 screen phases 2–4 (#34, #35): `examples/s8-screen-frame.rs` sends one
+  frame to one S8 panel (`black`, `f800` or a full-panel `pattern`);
+  `mise run s8:screen-frame first|pattern rgb` runs it during an attended
+  agent stop. Result in `docs/s8/screen-frame-validation.md`: both panels
+  display frames from the bridge's process, pixels are RGB565 and full
+  uncompressed frames work, so no init report is needed.
 
 ### Changed
 

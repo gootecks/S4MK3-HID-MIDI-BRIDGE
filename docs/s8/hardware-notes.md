@@ -72,15 +72,19 @@ test only worked with 119-byte `[prefix] + [118]` reports.
 ## Screens (interface 6)
 
 - Two 480×272 displays, `bgr565_be` with full-blit headers per side in the
-  Encdr descriptor (right footer byte 6 = `0x01`). Level: descriptor.
+  Encdr descriptor (right footer byte 6 = `0x01`). Level: descriptor. The
+  bridge's tests on macOS showed RGB565 big-endian, not BGR565, and full
+  uncompressed frames display
+  ([screen-frame-validation.md](screen-frame-validation.md)).
 - Encdr v0.8.4 (`3698b09`, after this bridge's pin) adds an S8 route through
   the NI hardware service (CFMessagePort via `NIHostIntegrationAgent`), used
   when interface 6 cannot be claimed; `ENCDR_FORCE_SERVICE` forces it.
 - Earlier passive capture research (see [README.md](README.md#prior-research-outside-this-repo))
   found the envelope `84 00 <selector> 60 00 00 00 00 <x> <y> <w> <h>` + encoded
   payload + `40 00 <selector> 00`, big-endian RGB565 inside mandatory run/delta
-  encoding, two selectors at 480×272 each. Selector-to-side mapping and the
-  startup/shutdown contract were still open there.
+  encoding, two selectors at 480×272 each. Phase 4 showed the encoding is
+  not mandatory: one LITERAL command covering the panel works. Selector 0 is
+  the left panel, selector 1 the right.
 
 Current protocol summary, source conflicts and the first-frame test plan:
 [screens.md](screens.md).
