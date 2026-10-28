@@ -78,6 +78,11 @@ description = "Attended S8 screen phase 0: stop NIHardwareAgent, check MIDI, res
 run = "bash docs/s8/agent-stop-check.sh"
 raw = true
 
+[tasks."s8:screen-claim"]
+description = "Attended S8 screen phase 1: stop NIHardwareAgent, claim interface 6 for 5 s, restore (#33)"
+run = "bash docs/s8/screen-claim-check.sh"
+raw = true
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
 run = "hk install"
