@@ -8,10 +8,10 @@ upstream pull request.
 
 | Area                | State                                                                 |
 | ------------------- | --------------------------------------------------------------------- |
-| S4 MK3              | Unchanged from upstream `v0.2.1-beta.1` (`ee12026`).                  |
-| S8 detection        | Enumerated by macOS only; the bridge has no S8 profile yet.           |
+| S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
+| S8 detection        | Listed and identified by the bridge (`--device s8`); never opened.    |
 | S8 input            | Encdr has a descriptor; not yet verified on this Mac (#10).           |
-| S8 Djay mapping     | Not started (#13, #14).                                               |
+| S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
 | S8 screens          | Encdr v0.8.4 has an NI-service route; transport undecided (#26).      |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
@@ -19,6 +19,21 @@ upstream pull request.
 
 Issue map: epics and milestones on the
 [Kontrol S8 Bridge](https://github.com/users/gootecks/projects/4) board.
+
+## Existing S8 setup with Djay
+
+The S8 already works in Djay without the bridge: NIHardwareAgent runs a
+Controller Editor MIDI template (based on Evan's Traktor Kontrol S8 layout),
+and a hand-tuned Djay mapping (`Evan's Traktor Kontrol S8 1.1`) binds the
+`Traktor Kontrol S8` MIDI endpoint. Both live in a separate, private settings
+repository and are in regular use for sets.
+
+- The bridge must not disturb that setup. Its S8 endpoint
+  (`Kontrol S8 MIDI Full`) and mapping file name
+  (`Kontrol S8 Bridge.djayMidiMapping`) differ from it; a unit test enforces
+  this.
+- That mapping is the reference for which controls and Djay actions the
+  bridge's S8 catalog should cover (#13, #14).
 
 ## Upstream projects
 
