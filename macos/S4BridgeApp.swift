@@ -44,7 +44,7 @@ struct RunPreferences: Codable, Equatable {
     }
 
     func arguments(ledURL: URL, jogURL: URL, tensionURL: URL, screens: Bool = true) -> [String] {
-        var arguments: [String] = []
+        var arguments = ["--device", "s4mk3"]
         if profile != .probe { arguments += ["--midi", profile.rawValue] }
         if profile == .full {
             arguments += ["--screen-control-stdin"]

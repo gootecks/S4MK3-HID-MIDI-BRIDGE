@@ -67,16 +67,18 @@ final class BridgeTests: XCTestCase {
         let tensionPath = URL(fileURLWithPath: "/tmp/Tension config with spaces.json")
         var settings = RunPreferences()
         XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), [
-            "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", path.path,
-            "--jog-config", jogPath.path, "--tension-config", tensionPath.path, "--until-stopped"
+            "--device", "s4mk3", "--midi", "full", "--screen-control-stdin", "--screens", "--led-config",
+            path.path, "--jog-config", jogPath.path, "--tension-config", tensionPath.path, "--until-stopped"
         ])
         settings.profile = .minimal
         settings.limitDuration = true
         settings.durationSeconds = 60
         settings.rawReports = true
-        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), ["--midi", "minimal", "--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath),
+                       ["--device", "s4mk3", "--midi", "minimal", "--seconds", "60", "--raw"])
         settings.profile = .probe
-        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath), ["--seconds", "60", "--raw"])
+        XCTAssertEqual(settings.arguments(ledURL: path, jogURL: jogPath, tensionURL: tensionPath),
+                       ["--device", "s4mk3", "--seconds", "60", "--raw"])
         settings.durationSeconds = 0
         XCTAssertThrowsError(try settings.validate())
     }
@@ -176,8 +178,9 @@ final class BridgeTests: XCTestCase {
         await fulfillment(of: [ready], timeout: 10)
         XCTAssertEqual(try String(contentsOf: argumentsURL, encoding: .utf8)
             .split(separator: "\n").map(String.init), [
-                "--midi", "full", "--screen-control-stdin", "--screens", "--led-config", model.ledURL.path,
-                "--jog-config", model.jogURL.path, "--tension-config", model.tensionURL.path, "--until-stopped"
+                "--device", "s4mk3", "--midi", "full", "--screen-control-stdin", "--screens", "--led-config",
+                model.ledURL.path, "--jog-config", model.jogURL.path,
+                "--tension-config", model.tensionURL.path, "--until-stopped"
             ])
         model.stop()
         await fulfillment(of: [exited], timeout: 10)
