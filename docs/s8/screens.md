@@ -72,6 +72,13 @@ So the hybrid setup is out. Two routes remain:
   `NIHostIntegrationAgent`), used when interface 6 cannot be claimed. There
   is no macOS evidence yet that it works for the S8.
 
+**Decision (#26): full bridge control.** The bridge stops the agent, claims
+interface 6 and translates every S8 control from HID with its own Djay
+mapping, as the S4 app does. Evan's layout and ideas carry over into the S8
+catalog (#13, #14); his Controller Editor template and mapping file do not.
+This removes the dependency on Controller Editor and NI's agent, which no
+longer receive S8 support. The NI-service route is not pursued.
+
 ## First-frame test plan
 
 Each phase needs separate approval. Stop at the first unexpected result and
