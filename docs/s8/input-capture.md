@@ -74,6 +74,7 @@ indicators in step with the hardware latch.
 - Report 2 fields were recorded but not checked control by control. One
   unidentified analog movement produced ch 1 CC 67 alongside report 2.
 - Touchstrips, encoders, pads and the remaining mixer buttons.
-- Behaviour with `NIHardwareAgent` stopped (see [screens.md](screens.md),
-  phase 0).
+- Controls pressed while `NIHardwareAgent` is stopped. Interface ownership
+  and MIDI endpoints after a stop are in
+  [agent-stop-validation.md](agent-stop-validation.md).
 - Long sessions and reconnects.

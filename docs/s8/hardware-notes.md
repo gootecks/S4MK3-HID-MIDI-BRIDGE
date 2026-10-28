@@ -24,7 +24,7 @@ Nothing below has been verified by this bridge yet. Input verification is
 | --------- | ---------------------- | ------------------------------------------------------------- |
 | 0         | Audio control          | Core Audio                                                     |
 | 1, 2      | Audio streaming        | Core Audio (Djay audio goes here, not through the bridge)      |
-| 3         | MIDI streaming         | `MIDIServer` (Controller Editor MIDI mode)                     |
+| 3         | MIDI streaming         | `MIDIServer`; silent in MIDI mode: the agent's virtual port carries the MIDI |
 | 4         | DFU (`0xFE`)           | **Never touch**                                                |
 | 5         | HID                    | Controls in, LEDs out (Encdr: IN `0x84`, OUT `0x03` interrupt) |
 | 6         | Vendor (`0xFF`)        | Screens (Encdr: bulk OUT `0x04`); NIHardwareAgent holds it     |
