@@ -1,0 +1,71 @@
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Builtins.pkl"
+
+// Never pass build output, local captures, or secrets to checks.
+exclude = List(
+    ".omp/**",
+    ".agents/**",
+    "target/**",
+    "dist/**",
+    "macos/.build/**",
+    "fnox.local.toml",
+    "**/*.age",
+    "**/age.txt"
+)
+
+steps {
+    ["cargo_fmt"] = Builtins.cargo_fmt
+    ["cargo_clippy"] {
+        glob = List("**/*.rs", "Cargo.toml", "Cargo.lock")
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("cargo", "clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings")
+            }
+            effect = "read"
+        }
+    }
+    ["plist_lint"] {
+        glob = "**/*.plist"
+        batch = true
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("plutil", "-lint", "{{files}}")
+            }
+            effect = "read"
+        }
+    }
+    ["bash_syntax"] {
+        glob = "**/*.sh"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("bash", "-n", "{{files}}")
+            }
+            effect = "read"
+        }
+    }
+    ["check_merge_conflict"] = Builtins.check_merge_conflict
+}
+
+// Checks and Git hooks never rewrite or stage files. Fixing is opt-in.
+hooks {
+    ["check"] {
+        fix = false
+        stage = false
+        stash = "none"
+    }
+    ["pre-commit"] {
+        fix = false
+        stage = false
+        stash = "none"
+    }
+    ["fix"] {
+        fix = true
+        stage = false
+        stash = "none"
+    }
+    ["commit-msg"] {
+        steps {
+            ["check_conventional_commit"] = Builtins.check_conventional_commit
+        }
+    }
+}

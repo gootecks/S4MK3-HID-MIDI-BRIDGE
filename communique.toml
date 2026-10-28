@@ -1,0 +1,9 @@
+context = "S4 MK3 Bridge is a macOS menu-bar app with a Rust HID-to-MIDI bridge for Native Instruments Traktor Kontrol controllers in Djay Pro. gootecks/S4MK3-HID-MIDI-BRIDGE forks jtoronto/S4MK3-HID-MIDI-BRIDGE to add Kontrol S8 support."
+system_extra = "Write concise, factual release notes grounded in the selected commit range. Distinguish S4 MK3 and Kontrol S8 changes, and do not claim hardware behaviour the commits do not state."
+
+[defaults]
+model = "openai/gpt-6-luna"
+provider = "openai"
+base_url = "https://api.llmgateway.io/v1"
+max_tokens = 16384
+repo = "gootecks/S4MK3-HID-MIDI-BRIDGE"

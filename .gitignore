@@ -6,3 +6,5 @@
 .omo
 generated-images
 .vscode
+fnox.local.toml
+/.omp/

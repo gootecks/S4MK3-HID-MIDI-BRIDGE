@@ -1,0 +1,24 @@
+# Commit references and age ciphertext only; never plaintext credentials.
+# Default to encryption so an interactive `fnox set NAME` cannot store plaintext.
+default_provider = "age"
+
+# Use full op:// references and adjust this vault for other 1Password accounts.
+[providers.onepass]
+type = "1password"
+vault = "Developer"
+
+# This public recipient belongs to the current workstation, not the whole team.
+# The private identity stays outside the repository; do not commit or share it.
+[providers.age]
+type = "age"
+recipients = ["age1t0czu858kfs3wvwjv3qw200cnc7vuuk6w20z633097dhd8yyjezsffjnru"]
+key_file = "~/.config/fnox/age.txt"
+
+# Explicitly select plain only for non-sensitive literals.
+[providers.plain]
+type = "plain"
+
+# Communiqué authenticates to LLMGateway with this 1Password reference.
+# GitHub release authentication is separate and comes from GITHUB_TOKEN or gh.
+[secrets]
+LLM_GATEWAY = { provider = "onepass", value = "op://Developer/LLMGateway/github" }
