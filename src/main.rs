@@ -14,18 +14,15 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, bail, ensure};
 use clap::{Parser, ValueEnum};
-use encdr::core::descriptor::{ButtonItemDesc, HexU16, InputItemDesc, SliderItemDesc};
 use encdr::device::led_builder::LedBuilder;
 use encdr::device::loader::DescriptorRegistry;
 use encdr::device::parser::PacketParser;
 use encdr::usb::hotplug;
-use encdr::{DeviceDescriptor, Event, LedValue};
+use encdr::{Event, LedValue};
 use hidapi::{HidApi, HidDevice};
+use s4mk3_hid_midi_bridge::device::{self, Device, DeviceProfile};
 use tracing::{debug, info, warn};
 use tracing_subscriber::EnvFilter;
-
-const S4_VENDOR_ID: u16 = 0x17cc;
-const S4_PRODUCT_ID: u16 = 0x1720;
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
 enum MidiProfile {
@@ -40,9 +37,13 @@ enum MidiProfile {
     group(clap::ArgGroup::new("jog_context").args(["generate_mapping", "midi"]))
 )]
 struct Args {
-    /// List attached S4 MK3 devices without opening their USB interfaces.
+    /// List attached supported controllers without opening their USB interfaces.
     #[arg(long)]
     list: bool,
+
+    /// Controller to use; detected when omitted. Mapping export defaults to s4mk3.
+    #[arg(long, value_enum, conflicts_with = "generate_screen_previews")]
+    device: Option<Device>,
 
     /// Log every complete input HID report in hex, including its report ID.
     #[arg(long)]
@@ -63,7 +64,8 @@ struct Args {
     #[command(flatten)]
     screens: ScreenArgs,
 
-    /// Export the full native Djay mapping without opening HID or MIDI.
+    /// Export the full native Djay mapping without opening HID or MIDI; a
+    /// directory receives the controller's standard mapping file name.
     #[arg(long, value_name = "PATH", conflicts_with_all = ["midi", "list", "raw"])]
     generate_mapping: Option<PathBuf>,
 
@@ -145,6 +147,9 @@ fn main() -> anyhow::Result<()> {
         .map_err(|error| anyhow::anyhow!("initialize logging: {error}"))?;
 
     if let Some(path) = &args.generate_mapping {
+        let profile = args.device.unwrap_or(Device::S4Mk3).profile();
+        require_full_catalog(profile)?;
+        let path = &mapping_path(path, profile);
         full::mapping::write(path, args.jog_config.as_deref())?;
         for control in full::catalog::LOCAL_CONTROLS {
             info!(
@@ -188,52 +193,49 @@ fn open_and_run(
 ) -> anyhow::Result<()> {
     let mut registry = DescriptorRegistry::new();
     registry.load_builtins().context("load Encdr descriptors")?;
-    let devices: Vec<_> = hotplug::scan_devices(&registry)
-        .into_iter()
-        .filter(|device| {
-            device.descriptor.vendor_id.0 == S4_VENDOR_ID
-                && device.descriptor.product_id.0 == S4_PRODUCT_ID
-        })
-        .collect();
-
-    for device in &devices {
-        info!(device = %device.device_id, "S4_USB_FOUND: 17cc:1720");
-    }
+    let scanned = hotplug::scan_devices(&registry);
     if args.list {
-        info!(
-            count = devices.len(),
-            "S4 enumeration complete; no interfaces opened"
+        let listed = args.device.map_or_else(
+            || device::PROFILES.to_vec(),
+            |device| vec![device.profile()],
         );
+        for profile in listed {
+            let count = found(profile, &scanned).len();
+            info!(
+                count,
+                "{} enumeration complete; no interfaces opened", profile.tag
+            );
+        }
         return Ok(());
     }
-    let mut devices = devices.into_iter();
-    let device = devices.next().context(
-        "no S4 MK3 found; connect USB and the S4 power adapter, then run the probe again",
-    )?;
-    ensure!(
-        devices.next().is_none(),
-        "multiple S4 MK3 devices found; connect just one for this probe"
-    );
+    let (profile, device) = select_device(args.device, &scanned)?;
+    let Some(corrections) = profile.descriptor else {
+        return identify(profile);
+    };
     let descriptor = if matches!(args.midi, Some(MidiProfile::Full)) {
-        full_control_descriptor(&device.descriptor)?
+        require_full_catalog(profile)?;
+        (corrections.full)(&device.descriptor)?
     } else {
-        control_descriptor(&device.descriptor)
+        (corrections.control)(&device.descriptor)
     };
     let names = registry.intern_descriptor_names(&descriptor);
     let mut parser = PacketParser::new(device.device_id, &descriptor, names);
     let api = HidApi::new().context("initialize macOS-native HID access")?;
-    let mut collections = api.device_list().filter(|collection| {
-        collection.vendor_id() == S4_VENDOR_ID && collection.product_id() == S4_PRODUCT_ID
-    });
-    let collection = collections.next().context("no S4 HID collection found")?;
+    let mut collections = api
+        .device_list()
+        .filter(|collection| profile.matches(collection.vendor_id(), collection.product_id()));
+    let collection = collections
+        .next()
+        .with_context(|| format!("no {} HID collection found", profile.tag))?;
     ensure!(
         collections.next().is_none(),
-        "multiple S4 HID collections found; collection selection requires investigation"
+        "multiple {} HID collections found; collection selection requires investigation",
+        profile.tag
     );
     ownership::check()?;
     let hid = api
         .open_path(collection.path())
-        .context("open S4 HID collection")?;
+        .with_context(|| format!("open {} HID collection", profile.tag))?;
     let tension = tension
         .map(|config| {
             api.open_path(collection.path())
@@ -249,7 +251,10 @@ fn open_and_run(
         .first()
         .context("button LED layout missing")?;
     let mut leds = LedBuilder::new(buttons, interface);
-    info!("S4_HID_OPEN: native HID access; audio interfaces are not claimed");
+    info!(
+        "{}_HID_OPEN: native HID access; audio interfaces are not claimed",
+        profile.tag
+    );
     if let Some((reader, config)) = tension {
         bridge_runtime::run(
             args,
@@ -261,12 +266,100 @@ fn open_and_run(
             jog.context("motor output requires the full MIDI profile")?,
         )
     } else {
-        run_probe(args, &hid, &mut parser, &mut leds, jog)
+        run_probe(args, profile, &hid, &mut parser, &mut leds, jog)
     }
+}
+
+/// Log and return the scanned devices that are this controller.
+fn found<'a>(
+    profile: &DeviceProfile,
+    scanned: &'a [hotplug::DetectedDevice],
+) -> Vec<&'a hotplug::DetectedDevice> {
+    let devices: Vec<_> = scanned
+        .iter()
+        .filter(|found| {
+            profile.matches(found.descriptor.vendor_id.0, found.descriptor.product_id.0)
+        })
+        .collect();
+    for found in &devices {
+        info!(
+            device = %found.device_id,
+            "{}_USB_FOUND: {:04x}:{:04x}", profile.tag, profile.vendor_id, profile.product_id
+        );
+    }
+    devices
+}
+
+fn select_device(
+    forced: Option<Device>,
+    scanned: &[hotplug::DetectedDevice],
+) -> anyhow::Result<(&'static DeviceProfile, &hotplug::DetectedDevice)> {
+    let profile = device::select(
+        forced,
+        scanned
+            .iter()
+            .map(|found| (found.descriptor.vendor_id.0, found.descriptor.product_id.0)),
+    )?;
+    let mut devices = found(profile, scanned).into_iter();
+    let device = devices.next().with_context(|| {
+        format!(
+            "no {} found; connect USB and the {} power adapter, then run the probe again",
+            profile.name, profile.tag
+        )
+    })?;
+    ensure!(
+        devices.next().is_none(),
+        "multiple {} devices found; connect just one for this probe",
+        profile.name
+    );
+    Ok((profile, device))
+}
+
+/// Report a controller the bridge cannot drive yet from enumeration alone.
+fn identify(profile: &DeviceProfile) -> anyhow::Result<()> {
+    let api = HidApi::new().context("initialize macOS-native HID access")?;
+    let mut collections = 0_usize;
+    for collection in api
+        .device_list()
+        .filter(|collection| profile.matches(collection.vendor_id(), collection.product_id()))
+    {
+        collections += 1;
+        info!(
+            product = ?collection.product_string(),
+            manufacturer = ?collection.manufacturer_string(),
+            release = %format_args!("{:04x}", collection.release_number()),
+            interface = collection.interface_number(),
+            usage_page = %format_args!("{:04x}", collection.usage_page()),
+            usage = %format_args!("{:04x}", collection.usage()),
+            "{}_HID_IDENTIFIED: enumerated only; not opened", profile.tag
+        );
+    }
+    bail!(
+        "{} identified ({collections} HID collections); the bridge cannot translate its input yet, so nothing was opened or sent",
+        profile.name
+    )
+}
+
+fn mapping_path(path: &std::path::Path, profile: &DeviceProfile) -> PathBuf {
+    if path.is_dir() {
+        path.join(profile.mapping_file_name)
+    } else {
+        path.to_path_buf()
+    }
+}
+
+fn require_full_catalog(profile: &DeviceProfile) -> anyhow::Result<()> {
+    ensure!(
+        profile.device == full::PROFILE.device,
+        "no Djay mapping catalog for {} yet",
+        profile.name
+    );
+    Ok(())
 }
 
 fn run_probe(
     args: &Args,
+    profile: &DeviceProfile,
     hid: &HidDevice,
     parser: &mut PacketParser,
     leds: &mut LedBuilder,
@@ -316,7 +409,7 @@ fn run_probe(
             if args.raw {
                 info!(length, bytes = %format_args!("{report:02x?}"), "HID_RAW");
             }
-            let Some(payload) = input_payload(report)? else {
+            let Some(payload) = profile.input_payload(report)? else {
                 continue;
             };
             events.clear();
@@ -491,138 +584,6 @@ fn record_event(
     Ok(())
 }
 
-fn control_descriptor(original: &DeviceDescriptor) -> DeviceDescriptor {
-    let mut descriptor = original.clone();
-    descriptor
-        .interfaces
-        .retain(|interface| interface.id == "control");
-    descriptor.screens.clear();
-    descriptor.leds.retain(|group| group.id == "buttons");
-    // Payload sizes from this S4's HID report descriptor (report ID excluded).
-    // The pinned Encdr descriptor has incorrect sizes for buttons and jogs.
-    for packet in &mut descriptor.input_packets {
-        match packet.id.as_str() {
-            "buttons" => packet.size = 22,
-            "jogwheels" => packet.size = 59,
-            _ => {}
-        }
-        // S4 mixer faders use 12-bit values in 16-bit fields (Mixxx: 4095).
-        // Correct only this stage's mapped faders, not the broader descriptor.
-        for item in &mut packet.items {
-            if let InputItemDesc::Slider(slider) = item
-                && matches!(
-                    slider.name.as_str(),
-                    "ch1_fader" | "ch2_fader" | "ch3_fader" | "ch4_fader" | "crossfader"
-                )
-            {
-                slider.max_value = Some(4095);
-            }
-        }
-    }
-    descriptor
-}
-
-fn input_payload(report: &[u8]) -> anyhow::Result<Option<&[u8]>> {
-    let (id, payload) = report.split_first().context("empty HID report")?;
-    let expected = match id {
-        1 => 22,
-        2 => 78,
-        3 => 59,
-        _ => return Ok(None),
-    };
-    ensure!(
-        payload.len() == expected,
-        "unexpected S4 report {id} payload length: {} (expected {expected})",
-        payload.len()
-    );
-    Ok(Some(payload))
-}
-
-fn full_control_descriptor(original: &DeviceDescriptor) -> anyhow::Result<DeviceDescriptor> {
-    let mut descriptor = control_descriptor(original);
-    descriptor.leds.extend(
-        original
-            .leds
-            .iter()
-            .filter(|group| matches!(group.id.as_str(), "vu_meters" | "wheel_leds"))
-            .cloned(),
-    );
-    for packet in &mut descriptor.input_packets {
-        for item in &mut packet.items {
-            match item {
-                InputItemDesc::Slider(slider) => slider.max_value = Some(4095),
-                InputItemDesc::Button(button) => {
-                    // Captured physical presses: only the LEFT names are reversed.
-                    match button.name.as_str() {
-                        "left_loop_encoder_press" => {
-                            "left_move_encoder_press".clone_into(&mut button.name);
-                        }
-                        "left_move_encoder_press" => {
-                            "left_loop_encoder_press".clone_into(&mut button.name);
-                        }
-                        _ => {}
-                    }
-                    if button.name.starts_with("left_pad_") || button.name.starts_with("right_pad_")
-                    {
-                        let index = button
-                            .name
-                            .rsplit('_')
-                            .next()
-                            .context("pad number missing")?
-                            .parse::<usize>()?
-                            .checked_sub(1)
-                            .context("pad numbers start at 1")?;
-                        let bit = [5_u8, 4, 7, 6, 3, 2, 1, 0]
-                            .get(index)
-                            .context("pad number outside 1-8")?;
-                        button.mask = HexU16(1_u16 << bit);
-                    }
-                }
-                InputItemDesc::Encoder(encoder) => {
-                    // All four rotation names are reversed; preserve wire polarity.
-                    let name = match encoder.name.as_str() {
-                        "left_loop_encoder" => Some("left_move_encoder"),
-                        "left_move_encoder" => Some("left_loop_encoder"),
-                        "right_loop_encoder" => Some("right_move_encoder"),
-                        "right_move_encoder" => Some("right_loop_encoder"),
-                        _ => None,
-                    };
-                    if let Some(name) = name {
-                        name.clone_into(&mut encoder.name);
-                    }
-                }
-                InputItemDesc::EncoderFine(_) | InputItemDesc::Touch(_) => {}
-            }
-        }
-        if packet.id == "buttons" {
-            for (name, byte, mask) in [
-                ("mixer_ch3_ext", 2, 0x02),
-                ("mixer_ch1_ext", 11, 0x01),
-                ("mixer_ch2_ext", 11, 0x02),
-                ("mixer_ch4_ext", 11, 0x04),
-            ] {
-                packet.items.push(InputItemDesc::Button(ButtonItemDesc {
-                    name: name.to_owned(),
-                    byte,
-                    mask: HexU16(mask),
-                    category: None,
-                }));
-            }
-        }
-        if packet.id == "sliders" {
-            packet.items.push(InputItemDesc::Slider(SliderItemDesc {
-                name: "headphone_gain".to_owned(),
-                byte: None,
-                bytes: Some(vec![26, 27]),
-                bits: 16,
-                normalize: true,
-                max_value: Some(4095),
-            }));
-        }
-    }
-    Ok(descriptor)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -649,78 +610,36 @@ mod tests {
     }
 
     #[test]
-    fn full_descriptor_corrects_all_pots_and_physical_pad_order() -> anyhow::Result<()> {
-        // Given the pinned hardware layout.
-        let mut registry = DescriptorRegistry::new();
-        registry.load_builtins()?;
-        let original = registry
-            .find(S4_VENDOR_ID, S4_PRODUCT_ID)
-            .context("S4 descriptor missing")?;
-        // When the full profile prepares it.
-        let descriptor = full_control_descriptor(original)?;
-        let mut pads = 0;
-        let mut fields = 0;
-        // Then every pot uses full ADC range and pad masks follow physical order.
-        for item in descriptor
-            .input_packets
-            .iter()
-            .flat_map(|packet| &packet.items)
+    fn device_choice_parses_and_only_the_s4_has_a_djay_catalog() -> anyhow::Result<()> {
+        // Given each forced controller, for runtime and mapping export.
+        for (name, device, has_catalog) in
+            [("s4mk3", Device::S4Mk3, true), ("s8", Device::S8, false)]
         {
-            fields += 1;
-            match item {
-                InputItemDesc::Slider(slider) => assert_eq!(slider.max_value, Some(4095)),
-                InputItemDesc::Button(button)
-                    if button.name.starts_with("left_pad_")
-                        || button.name.starts_with("right_pad_") =>
-                {
-                    let index = button
-                        .name
-                        .rsplit('_')
-                        .next()
-                        .context("pad suffix missing")?
-                        .parse::<usize>()?
-                        - 1;
-                    assert_eq!(button.mask.0, 1 << [5, 4, 7, 6, 3, 2, 1, 0][index]);
-                    pads += 1;
-                }
-                _ => {}
-            }
+            let args = Args::try_parse_from(["probe", "--device", name, "--list"])?;
+            assert_eq!(args.device, Some(device));
+            let export = Args::try_parse_from([
+                "probe",
+                "--generate-mapping",
+                "mapping.djayMidiMapping",
+                "--device",
+                name,
+            ])?;
+            // Then only a controller with a catalog may export or run the full profile.
+            let device = export.device.context("device missing")?;
+            assert_eq!(require_full_catalog(device.profile()).is_ok(), has_catalog);
         }
-        assert_eq!(pads, 16);
-        assert_eq!(fields, 147);
-        Ok(())
-    }
-
-    #[test]
-    fn mapped_mixer_faders_use_the_s4_adc_range() -> anyhow::Result<()> {
-        // Given the pinned S4 descriptor.
-        let mut registry = DescriptorRegistry::new();
-        registry.load_builtins()?;
-        let original = registry
-            .find(S4_VENDOR_ID, S4_PRODUCT_ID)
-            .context("S4 descriptor missing")?;
-        // When the probe prepares its control descriptor.
-        let descriptor = control_descriptor(original);
-        // Then the five mapped faders normalize 12-bit full scale to 1.0.
-        let mut checked = 0_u8;
-        for item in descriptor
-            .input_packets
-            .iter()
-            .flat_map(|packet| &packet.items)
-        {
-            if let InputItemDesc::Slider(slider) = item
-                && matches!(
-                    slider.name.as_str(),
-                    "ch1_fader" | "ch2_fader" | "ch3_fader" | "ch4_fader" | "crossfader"
-                )
-            {
-                assert!(slider.normalize);
-                assert_eq!(slider.bits, 16);
-                assert_eq!(slider.max_value, Some(4095));
-                checked = checked.saturating_add(1);
-            }
-        }
-        assert_eq!(checked, 5);
+        // Screen previews are S4 artwork, independent of any controller choice.
+        assert!(
+            Args::try_parse_from([
+                "probe",
+                "--generate-screen-previews",
+                "previews",
+                "--device",
+                "s8"
+            ])
+            .is_err()
+        );
+        assert!(Args::try_parse_from(["probe", "--device", "s3"]).is_err());
         Ok(())
     }
 
@@ -792,64 +711,5 @@ mod tests {
         let bounded = Args::try_parse_from(["probe", "--midi", "full", "--seconds", "60"])?;
         assert!(report_probe_counts(&bounded, &ProbeCounts::default()).is_err());
         Ok(())
-    }
-
-    #[test]
-    fn probe_restricts_usb_access_and_output_to_controls() -> anyhow::Result<()> {
-        // Given the actual descriptor from the pinned dependency.
-        let mut registry = DescriptorRegistry::new();
-        registry.load_builtins()?;
-        let original = registry
-            .find(S4_VENDOR_ID, S4_PRODUCT_ID)
-            .context("S4 descriptor missing")?;
-
-        // When the probe narrows it for this stage.
-        let descriptor = control_descriptor(original);
-
-        // Then audio/screens/motor outputs cannot be claimed or written.
-        assert_eq!(descriptor.interfaces.len(), 1);
-        let interface = descriptor
-            .interfaces
-            .first()
-            .context("control interface missing")?;
-        assert_eq!(interface.number, 3);
-        assert!(descriptor.screens.is_empty());
-        assert_eq!(descriptor.leds.len(), 1);
-        assert!(descriptor.leds.iter().all(|group| group.id == "buttons"));
-        assert!(
-            descriptor
-                .input_packets
-                .iter()
-                .all(|packet| packet.interface == interface.id)
-        );
-        assert!(descriptor.quirks.init_writes.is_empty());
-        assert!(descriptor.quirks.feature_report_leds.is_none());
-        Ok(())
-    }
-
-    #[test]
-    fn numbered_reports_are_stripped_and_checked_before_parsing() -> anyhow::Result<()> {
-        // Given numbered S4 reports with their descriptor-defined payload sizes.
-        for (id, size) in [(1, 22), (2, 78), (3, 59)] {
-            let mut report = vec![id];
-            report.resize(size + 1, 0x40);
-
-            // When framing is decoded.
-            let payload = input_payload(&report)?.context("known report ignored")?;
-
-            // Then only the payload is exposed to Encdr.
-            assert_eq!(payload, vec![0x40; size]);
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn malformed_known_reports_fail_instead_of_silently_losing_input() {
-        // Given a truncated button report.
-        let report = [1, 0];
-        // When framing is decoded.
-        let result = input_payload(&report);
-        // Then malformed input is rejected.
-        assert!(result.is_err());
     }
 }

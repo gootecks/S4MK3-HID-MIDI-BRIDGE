@@ -10,7 +10,7 @@ Encdr 0.7.0 is pinned to commit
 dependencies. Use `--locked` to reproduce them.
 
 The probe uses Encdr's descriptor registry, packet parser, and LED builder.
-It selects only the S4 MK3 (`17cc:1720`) and opens its HID collection by path using
+It selects the S4 MK3 (`17cc:1720`) and opens its HID collection by path using
 `hidapi` with shared macOS access, then decodes reports using Encdr:
 
 - Only the `control` interface, USB interface 3, is retained in the descriptor.
@@ -66,6 +66,13 @@ cargo run --locked -- --list
 `S4_USB_FOUND: 17cc:1720` means the USB device was enumerated. No interfaces are
 opened in this mode. A zero-device listing succeeds but does not prove
 connectivity; use the input probe next.
+
+The bridge also recognises the Traktor Kontrol S8 (`17cc:1370`) and lists it as
+`S8_USB_FOUND`. `--device s4mk3` or `--device s8` limits the listing, and every
+other mode, to one controller. Without `--device`, the bridge picks the single
+kind of supported controller that is connected and stops with an error when
+there are none or both. The S8 is identification only: the bridge logs its HID
+collections as `S8_HID_IDENTIFIED`, then exits without opening or writing to it.
 
 ## Input and LED test
 

@@ -19,7 +19,12 @@ use midir::{MidiOutput, MidiOutputConnection};
 use num_traits::ToPrimitive as _;
 use tracing::{debug, info, warn};
 
+use s4mk3_hid_midi_bridge::device::{self, DeviceProfile};
+
 use catalog::{Binding, Kind, PadMode};
+
+/// The controller whose physical controls this catalog and mapping describe.
+pub const PROFILE: &DeviceProfile = &device::S4_MK3;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Deck {
@@ -214,11 +219,11 @@ impl FullBridge {
     ) -> anyhow::Result<Self> {
         jog_config.validate()?;
         // Djay can return initial state as soon as the source appears.
-        let feedback_input = feedback::FeedbackInput::new(mapping::PORT_NAME)?;
+        let feedback_input = feedback::FeedbackInput::new(PROFILE.full_endpoint)?;
         let connection = MidiOutput::new("S4 MK3 full bridge")?
-            .create_virtual(mapping::PORT_NAME)
+            .create_virtual(PROFILE.full_endpoint)
             .map_err(|error| anyhow::anyhow!("create full MIDI source: {error}"))?;
-        info!(port = mapping::PORT_NAME, "MIDI_FULL_READY");
+        info!(port = PROFILE.full_endpoint, "MIDI_FULL_READY");
         Ok(Self {
             feedback_input,
             feedback: feedback::FeedbackState::default(),
@@ -1289,6 +1294,15 @@ mod tests {
         Ok(output)
     }
 
+    fn corrected_descriptor(
+        registry: &encdr::device::loader::DescriptorRegistry,
+    ) -> anyhow::Result<encdr::DeviceDescriptor> {
+        let original = registry
+            .find(PROFILE.vendor_id, PROFILE.product_id)
+            .context("S4 descriptor missing")?;
+        (PROFILE.descriptor.context("S4 corrections missing")?.full)(original)
+    }
+
     #[test]
     fn physical_routes_exist_in_the_generated_mapping_on_every_layer() -> anyhow::Result<()> {
         // Given actual physical names from the pinned, corrected descriptor.
@@ -1296,10 +1310,7 @@ mod tests {
         use encdr::device::loader::DescriptorRegistry;
         let mut registry = DescriptorRegistry::new();
         registry.load_builtins()?;
-        let original = registry
-            .find(crate::S4_VENDOR_ID, crate::S4_PRODUCT_ID)
-            .context("S4 descriptor missing")?;
-        let descriptor = crate::full_control_descriptor(original)?;
+        let descriptor = corrected_descriptor(&registry)?;
         let mapping = mapping::generate()?;
         let controls = mapping
             .as_dictionary()
@@ -1376,10 +1387,7 @@ mod tests {
             ] {
                 let mut registry = DescriptorRegistry::new();
                 registry.load_builtins()?;
-                let original = registry
-                    .find(crate::S4_VENDOR_ID, crate::S4_PRODUCT_ID)
-                    .context("S4 descriptor missing")?;
-                let descriptor = crate::full_control_descriptor(original)?;
+                let descriptor = corrected_descriptor(&registry)?;
                 let names = registry.intern_descriptor_names(&descriptor);
                 let encoder = descriptor
                     .input_packets

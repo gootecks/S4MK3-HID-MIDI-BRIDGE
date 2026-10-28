@@ -11,7 +11,7 @@ use s4mk3_hid_midi_bridge::tension::{Config, Engine};
 use std::time::{Duration, Instant};
 use tracing::{debug, info};
 
-use crate::{Args, ProbeCounts, full, input_payload, record_event};
+use crate::{Args, ProbeCounts, full, record_event};
 use input::Reader;
 use paced::Action;
 
@@ -58,7 +58,7 @@ pub fn run(
                     if args.raw {
                         info!(length = report.len(), bytes = %format_args!("{report:02x?}"), "HID_RAW");
                     }
-                    let Some(payload) = input_payload(report)? else {
+                    let Some(payload) = full::PROFILE.input_payload(report)? else {
                         continue;
                     };
                     events.clear();
