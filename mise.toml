@@ -73,6 +73,10 @@ unzip -tq "dist/S4 MK3 Bridge-arm64.zip"
 hdiutil verify "dist/S4 MK3 Bridge-$version-arm64.dmg"
 """
 
+[tasks."s8:agent-stop"]
+description = "Attended S8 screen phase 0: stop NIHardwareAgent, check MIDI, restore (#32)"
+run = "bash docs/s8/agent-stop-check.sh"
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
 run = "hk install"

@@ -13,7 +13,7 @@ upstream pull request.
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI ([input-capture.md](input-capture.md), #10). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
-| S8 screens          | Frame format known from Windows evidence; macOS first-frame plan awaiting approval ([screens.md](screens.md), #26). |
+| S8 screens          | Frame format known from Windows evidence. Phase 0 agent stop: ownership and recovery verified, MIDI-survival press test pending ([agent-stop-validation.md](agent-stop-validation.md), #32). Frame phases await approval ([screens.md](screens.md), #26). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
 | Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
@@ -79,6 +79,9 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   Controller Editor MIDI mode: which controls lack MIDI, undocumented bytes.
 - [screens.md](screens.md) — display protocol summary, source conflicts,
   macOS ownership, and the phased first-frame test plan.
+- [agent-stop-validation.md](agent-stop-validation.md) — phase 0: what
+  changes when NIHardwareAgent stops, and the attended check
+  (`agent-stop-check.sh`).
 - [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
   and Mixxx survey, with licensing notes.
 

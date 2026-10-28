@@ -60,6 +60,14 @@ agent is gone. If it does, the hybrid setup works: Evan's mapping on the MIDI
 port, the bridge on HID input and the screens. If not, the bridge must take
 over every S8 control, as it does for the S4.
 
+The unattended part of phase 0 is done
+([agent-stop-validation.md](agent-stop-validation.md)). After SIGKILL,
+interface 6 has no client, the S8 stays enumerated, nothing relaunches the
+agent within 30 seconds, and `open -g` restores it. The device MIDI port
+`Traktor Kontrol S8`, which Evan's mapping uses, stays; only the agent's
+virtual `Input` and `Output` ports go. Whether the S8 still sends on the
+device port needs presses at the S8 (`mise run s8:agent-stop`).
+
 Encdr v0.8.4 also has a route that sends frames through NI's own service
 (CFMessagePort to `NIHostIntegrationAgent`) instead of claiming interface 6.
 It would leave the agent running, but there is no macOS evidence that it
@@ -105,6 +113,9 @@ record it here before going further.
 
 This decides the architecture: if MIDI survives, continue with phase 1;
 if not, re-plan around full bridge control or the NI-service route.
+
+Steps 1, 3 and 4 and the `ioreg` part of step 2 are done. Panel contents and
+the MIDI presses wait for the attended check, which runs all four steps.
 
 ### Phase 1: claim only
 
