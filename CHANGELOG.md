@@ -23,6 +23,12 @@ their detailed notes stay in `docs/release-*.md`.
   Swift files added by the fork.
 - Communiqué release-note and changelog tasks for this fork, with the LLM
   Gateway token supplied through fnox and 1Password.
+- `--device s4mk3|s8` chooses the controller; without it the bridge uses the
+  one kind of supported controller that is connected. `--list` also reports a
+  connected Kontrol S8, and the bridge identifies its HID collections, but it
+  does not open or write to the S8 yet.
+- Device profiles (`src/device.rs`) hold each controller's USB identity, input
+  report sizes, descriptor corrections, MIDI endpoint and mapping file name.
 
 ### Changed
 
@@ -32,6 +38,8 @@ their detailed notes stay in `docs/release-*.md`.
   `assert_is_empty` style lint is allowed crate-wide, because its suggested
   rewrite (`assert_eq!(value, [] as [T; 0])`) is less readable than
   `assert!(value.is_empty())`.
+- The macOS app starts the bridge with `--device s4mk3`, so a connected S8
+  does not stop it from finding the S4 MK3.
 
 ## [0.2.1-beta.1] - 2026-10-26
 
