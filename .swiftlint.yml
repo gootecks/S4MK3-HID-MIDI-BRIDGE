@@ -1,0 +1,11 @@
+# Keep SwiftLint's default rules; only the macOS app package is in scope.
+# Upstream violations are grandfathered in .swiftlint-baseline.json; new ones fail.
+included:
+  - macos
+
+excluded:
+  - macos/.build
+  - target
+  - dist
+  - .omp
+  - .agents

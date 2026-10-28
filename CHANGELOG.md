@@ -15,9 +15,12 @@ their detailed notes stay in `docs/release-*.md`.
 - Kontrol S8 project notes in `docs/s8/`: status, hardware evidence, S4 MK3
   coupling audit and the upstream contribution workflow.
 - Pinned mise tooling with named tasks for the existing Rust, Swift and
-  packaging checks.
+  packaging checks. Rust is pinned in `mise.toml` instead of
+  `rust-toolchain.toml`.
 - hk hooks running formatting, Clippy, plist and shell checks, plus
   conventional-commit messages; hooks never rewrite files.
+- SwiftLint with a baseline for existing upstream code, and SwiftFormat for
+  Swift files added by the fork.
 - Communiqué release-note and changelog tasks for this fork, with the LLM
   Gateway token supplied through fnox and 1Password.
 

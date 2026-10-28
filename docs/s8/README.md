@@ -15,7 +15,7 @@ upstream pull request.
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
 | S8 screens          | Encdr v0.8.4 has an NI-service route; transport undecided (#26).      |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
-| Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.97; tests pass (#28).   |
+| Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
 Issue map: epics and milestones on the
 [Kontrol S8 Bridge](https://github.com/users/gootecks/projects/4) board.

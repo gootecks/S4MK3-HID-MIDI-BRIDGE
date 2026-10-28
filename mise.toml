@@ -5,6 +5,9 @@ fnox = "1.28.0"
 hk = "2.4.0"
 op = "2.32.1"
 pkl = "0.32.1"
+rust = { version = "1.99.1", profile = "default", components = ["rust-src"] }
+swiftformat = { version = "0.64.1", no_app = true, rename_exe = "swiftformat" }
+swiftlint = "0.65.1"
 
 [env]
 CARGO_NET_GIT_FETCH_WITH_CLI = "true"
@@ -20,6 +23,17 @@ run = "cargo fmt --all -- --check"
 [tasks.lint]
 description = "Run Clippy with warnings denied"
 run = "cargo clippy --locked --all-targets --all-features -- -D warnings"
+
+[tasks."lint:swift"]
+description = "Run SwiftLint; violations not in the baseline fail"
+run = "swiftlint lint --strict --quiet --no-cache --baseline .swiftlint-baseline.json"
+
+[tasks."lint:swift:baseline"]
+description = "Rewrite the SwiftLint baseline after deliberately accepting violations"
+run = [
+  "swiftlint lint --quiet --no-cache --write-baseline .swiftlint-baseline.json > /dev/null || test -s .swiftlint-baseline.json",
+  "swiftlint lint --strict --quiet --no-cache --baseline .swiftlint-baseline.json",
+]
 
 [tasks.build]
 description = "Build all Rust targets"

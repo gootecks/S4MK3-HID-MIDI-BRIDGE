@@ -45,7 +45,7 @@ Classify each change before writing it. Issue labels record the class.
 
 | Class             | Label             | Examples                                                    |
 | ----------------- | ----------------- | ----------------------------------------------------------- |
-| Fork-only         | `fork-only`       | `docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`, `communique.toml`, `fnox.toml`, fork sections of README/AGENTS |
+| Fork-only         | `fork-only`       | `docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`, `communique.toml`, `fnox.toml`, `.swiftlint.yml`, `.swiftlint-baseline.json`, `.swiftformat`, removal of `rust-toolchain.toml`, fork sections of README/AGENTS |
 | Bridge candidate  | `upstream:bridge` | Device-profile seam, bug fixes, S4-neutral refactors         |
 | Encdr candidate   | `upstream:encdr`  | S8 descriptor corrections, LED/screen protocol fixes         |
 | S8 feature        | `device:s8`       | S8 catalog, mapping, app integration                         |
@@ -66,6 +66,10 @@ Rules:
 5. Large refactors of files over 500 lines (`src/full/mod.rs`,
    `src/full/mapping.rs`, `macos/S4BridgeApp.swift`, …) are out of scope unless
    a feature needs them; discuss with upstream first.
+6. The fork pins Rust in `mise.toml` and has no `rust-toolchain.toml`.
+   Upstream branches start from `upstream/main`, which keeps that file; never
+   carry the deletion or other tooling commits into them. Fix Swift lint only
+   on lines the change touches.
 
 ## Offering a change upstream
 

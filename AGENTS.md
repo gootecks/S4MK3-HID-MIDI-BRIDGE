@@ -210,3 +210,12 @@ This section is fork-only. Keep it out of upstream pull requests.
 - Tooling: `mise tasks` lists named tasks. `mise run check` runs the hk gates
   read-only; `mise run ci` adds the full test suites. Install hooks with
   `mise run hooks:install`. Release notes: `mise run release:notes`.
+- Toolchains: `mise.toml` pins Rust (replacing upstream's
+  `rust-toolchain.toml`), SwiftLint and SwiftFormat. Swift itself comes from
+  Xcode, not mise: the swift.org toolchain mise installs is separate from the
+  Xcode SDK and XCTest the app needs.
+- Swift style: SwiftLint grandfathers upstream violations in
+  `.swiftlint-baseline.json`; new violations fail. SwiftFormat checks only
+  Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
+  not reformat upstream Swift. Regenerate the baseline only for deliberately
+  accepted violations (`mise run lint:swift:baseline`).
