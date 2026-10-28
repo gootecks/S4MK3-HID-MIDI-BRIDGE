@@ -13,7 +13,7 @@ upstream pull request.
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI ([input-capture.md](input-capture.md), #10). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
-| S8 screens          | Frame format known from Windows evidence. Phase 0 agent stop: ownership and recovery verified, MIDI-survival press test pending ([agent-stop-validation.md](agent-stop-validation.md), #32). Frame phases await approval ([screens.md](screens.md), #26). |
+| S8 screens          | Frame format known from Windows evidence. Phase 0: S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control ([agent-stop-validation.md](agent-stop-validation.md), #32). Route choice in #26; frame phases await approval ([screens.md](screens.md)). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
 | Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
@@ -23,9 +23,10 @@ Issue map: epics and milestones on the
 ## Existing S8 setup with Djay
 
 The S8 already works in Djay without the bridge: NIHardwareAgent runs a
-Controller Editor MIDI template (based on Evan's Traktor Kontrol S8 layout),
-and a hand-tuned Djay mapping (`Evan's Traktor Kontrol S8 1.1`) binds the
-`Traktor Kontrol S8` MIDI endpoint. Both live in a separate, private settings
+Controller Editor MIDI template (based on Evan's Traktor Kontrol S8 layout)
+and publishes the control MIDI on its virtual `Traktor Kontrol S8 Input` port;
+a hand-tuned Djay mapping (`Evan's Traktor Kontrol S8 1.1`, endpoint name
+`Traktor Kontrol S8`) receives it. Both live in a separate, private settings
 repository and are in regular use for sets.
 
 - The bridge must not disturb that setup. Its S8 endpoint

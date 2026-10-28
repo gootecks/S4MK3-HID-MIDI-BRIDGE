@@ -55,24 +55,22 @@ on the panels. A direct claim of interface 6 needs that client gone. The S4
 app does this by force-quitting the agent (SIGKILL, because a clean NI shutdown
 blanks S4 panels) and relaunching it afterwards.
 
-What nobody knows yet is whether the S8 keeps sending Evan's MIDI when the
-agent is gone. If it does, the hybrid setup works: Evan's mapping on the MIDI
-port, the bridge on HID input and the screens. If not, the bridge must take
-over every S8 control, as it does for the S4.
+Phase 0 settled whether the S8 keeps sending Evan's MIDI when the agent is
+gone ([agent-stop-validation.md](agent-stop-validation.md)): it does not. The
+agent turns HID input into MIDI on its virtual `Traktor Kontrol S8 Input`
+port; the controller's own MIDI port stays silent. With the agent stopped,
+HID input keeps flowing, interface 6 is free and the panels keep the last
+labels, but Djay gets no MIDI. `open -g` restores everything.
 
-The unattended part of phase 0 is done
-([agent-stop-validation.md](agent-stop-validation.md)). After SIGKILL,
-interface 6 has no client, the S8 stays enumerated, nothing relaunches the
-agent within 30 seconds, and `open -g` restores it. The device MIDI port
-`Traktor Kontrol S8`, which Evan's mapping uses, stays; only the agent's
-virtual `Input` and `Output` ports go. Whether the S8 still sends on the
-device port needs presses at the S8 (`mise run s8:agent-stop`).
+So the hybrid setup is out. Two routes remain:
 
-Encdr v0.8.4 also has a route that sends frames through NI's own service
-(CFMessagePort to `NIHostIntegrationAgent`) instead of claiming interface 6.
-It would leave the agent running, but there is no macOS evidence that it
-works for the S8. It stays the fallback if phase 0 shows MIDI mode needs the
-agent.
+- **Full bridge control:** stop the agent, claim interface 6 and translate
+  every S8 control from HID with the bridge's own Djay mapping (#13, #14), as
+  the S4 app does.
+- **NI-service screens:** keep the agent and Evan's mapping, and send frames
+  through NI's own service. Encdr v0.8.4 has such a route (CFMessagePort to
+  `NIHostIntegrationAgent`), used when interface 6 cannot be claimed. There
+  is no macOS evidence yet that it works for the S8.
 
 ## First-frame test plan
 
@@ -111,17 +109,14 @@ record it here before going further.
    the agent.
 4. Run recovery.
 
-This decides the architecture: if MIDI survives, continue with phase 1;
-if not, re-plan around full bridge control or the NI-service route.
-
-Steps 1, 3 and 4 and the `ioreg` part of step 2 are done. Panel contents and
-the MIDI presses wait for the attended check, which runs all four steps.
+Result: MIDI does not survive. Full bridge control or the NI-service route,
+chosen in #26, decides whether phase 1 runs.
 
 ### Phase 1: claim only
 
 Claim interface 6 with `nusb` (the same way `UsbScreens::open` claims the S4
-interface), hold for 5 seconds, release. No transfers. Observe that MIDI
-and HID still flow.
+interface), hold for 5 seconds, release. No transfers. Observe that HID
+still flows; MIDI is already gone while the agent is stopped.
 
 ### Phase 2: first frames
 
