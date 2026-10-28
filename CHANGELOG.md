@@ -33,8 +33,9 @@ their detailed notes stay in `docs/release-*.md`.
   endpoint to JSONL, following endpoints that appear or vanish, and sends
   nothing to the S8.
 - S8 screen phase 0 (#32): `mise run s8:agent-stop` stops NIHardwareAgent,
-  asks for presses at the S8 and restores the agent. The unattended results
-  are in `docs/s8/agent-stop-validation.md`.
+  asks for presses at the S8 and restores the agent. Result in
+  `docs/s8/agent-stop-validation.md`: S8 MIDI needs the agent, so driving
+  the screens directly means the bridge must handle every S8 control.
 
 ### Changed
 
