@@ -176,3 +176,46 @@ The working tree is shared and can contain user edits and unfinished work.
 - Preserve user-edited Djay mappings under their existing names.
 - Keep generated bundles, local capture logs, and large packet captures out
   of commits.
+
+## Fork context (gootecks)
+
+This section is fork-only. Keep it out of upstream pull requests.
+
+- Repository: <https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE>, a fork of
+  <https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE> (remote `upstream`).
+  Encdr research fork: `../Encdr` (gootecks/Encdr; upstream RufusIbiza/Encdr).
+- Goal: add Traktor Kontrol S8 (`0x17CC:0x1370`) support without changing
+  S4 MK3 behaviour. Start with `docs/s8/README.md`,
+  `docs/s8/hardware-notes.md` and `docs/s8/s4-coupling-audit.md`.
+- Project board: **Kontrol S8 Bridge**, gootecks project #4
+  (<https://github.com/users/gootecks/projects/4>). Use the `gootecks` gh
+  account for issues and the board.
+- Labels: `feat`, `fix`, `chore`, `docs`, `research`, `epic`,
+  `priority:high|medium|low`, `device:s8`, `device:s4mk3`, `upstream:bridge`,
+  `upstream:encdr`, `fork-only`, `hardware-write`.
+- Workflow: issue, then a `type/N-description` branch from `main`,
+  conventional commits, PR into the fork with `Closes #N`. Never commit on
+  `main` directly.
+- Upstream friendliness: follow `docs/s8/upstream-workflow.md`. Never mix
+  fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`,
+  `hk.pkl`, `communique.toml`, `fnox.toml`, this section) with feature
+  changes in one commit. Do not reformat or rename upstream code or docs
+  without need.
+- Record user-visible changes under `Unreleased` in `CHANGELOG.md` in a
+  separate commit from upstream-candidate feature commits.
+- S8 hardware: reading interface 5 HID input in shared mode is allowed for
+  scoped work. Any S8 output (LED reports, feature reports, control transfers,
+  screen/bulk traffic) needs a written test plan and explicit approval. Never
+  touch interface 4 (DFU), firmware or USB mode.
+- Tooling: `mise tasks` lists named tasks. `mise run check` runs the hk gates
+  read-only; `mise run ci` adds the full test suites. Install hooks with
+  `mise run hooks:install`. Release notes: `mise run release:notes`.
+- Toolchains: `mise.toml` pins Rust (replacing upstream's
+  `rust-toolchain.toml`), SwiftLint and SwiftFormat. Swift itself comes from
+  Xcode, not mise: the swift.org toolchain mise installs is separate from the
+  Xcode SDK and XCTest the app needs.
+- Swift style: SwiftLint grandfathers upstream violations in
+  `.swiftlint-baseline.json`; new violations fail. SwiftFormat checks only
+  Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
+  not reformat upstream Swift. Regenerate the baseline only for deliberately
+  accepted violations (`mise run lint:swift:baseline`).

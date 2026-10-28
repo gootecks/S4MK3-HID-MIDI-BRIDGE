@@ -1,0 +1,123 @@
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Builtins.pkl"
+
+// Never pass build output, local captures, or secrets to checks.
+exclude = List(
+    ".omp/**",
+    ".agents/**",
+    "target/**",
+    "dist/**",
+    "macos/.build/**",
+    "fnox.local.toml",
+    "**/*.age",
+    "**/age.txt"
+)
+
+steps {
+    ["cargo_fmt"] = Builtins.cargo_fmt
+    ["cargo_clippy"] {
+        glob = List("**/*.rs", "Cargo.toml", "Cargo.lock")
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("cargo", "clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings")
+            }
+            effect = "read"
+        }
+    }
+    ["plist_lint"] {
+        glob = "**/*.plist"
+        batch = true
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("plutil", "-lint", "{{files}}")
+            }
+            effect = "read"
+        }
+    }
+    ["bash_syntax"] {
+        glob = "**/*.sh"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("bash", "-n", "{{files}}")
+            }
+            effect = "read"
+        }
+    }
+    // Upstream violations are grandfathered by the baseline; new violations fail.
+    ["swiftlint"] {
+        glob = "macos/**/*.swift"
+        batch = true
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("swiftlint", "lint", "--strict", "--quiet", "--force-exclude", "--no-cache", "--baseline", ".swiftlint-baseline.json", "{{files}}")
+            }
+            effect = "read"
+        }
+    }
+    // Formatting applies to fork-added Swift files; upstream files keep upstream style.
+    ["swiftformat"] {
+        glob = "macos/**/*.swift"
+        exclude = List(
+            "macos/BridgeController+Screens.swift",
+            "macos/BridgeStatusMenu.swift",
+            "macos/NIHardwareAgent.swift",
+            "macos/NIHardwareAgentNative.swift",
+            "macos/Package.swift",
+            "macos/S4BridgeApp.swift",
+            "macos/ScreenPreferences.swift",
+            "macos/ScreenPrompts.swift",
+            "macos/ScreenSettingsView.swift",
+            "macos/ScreenSupport+Control.swift",
+            "macos/ScreenSupport.swift",
+            "macos/Tests/BridgeTests.swift",
+            "macos/Tests/NIHardwareAgentNativeTests.swift",
+            "macos/Tests/NIHardwareAgentTests.swift",
+            "macos/Tests/ScreenControlTests.swift",
+            "macos/Tests/ScreenMenuTests.swift",
+            "macos/Tests/ScreenPreferencesTests.swift",
+            "macos/Tests/ScreenProcessTests.swift",
+            "macos/Tests/ScreenRestoreConfirmationTests.swift",
+            "macos/Tests/ScreenStatusIconTests.swift",
+            "macos/Tests/ScreenSupportTests.swift",
+            "macos/Tests/ScreenTestSupport.swift"
+        )
+        batch = true
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("swiftformat", "--lint", "--quiet", "{{files}}")
+            }
+            effect = "read"
+        }
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("swiftformat", "--quiet", "{{files}}")
+            }
+            effect = "write"
+        }
+    }
+    ["check_merge_conflict"] = Builtins.check_merge_conflict
+}
+
+// Checks and Git hooks never rewrite or stage files. Fixing is opt-in.
+hooks {
+    ["check"] {
+        fix = false
+        stage = false
+        stash = "none"
+    }
+    ["pre-commit"] {
+        fix = false
+        stage = false
+        stash = "none"
+    }
+    ["fix"] {
+        fix = true
+        stage = false
+        stash = "none"
+    }
+    ["commit-msg"] {
+        steps {
+            ["check_conventional_commit"] = Builtins.check_conventional_commit
+        }
+    }
+}

@@ -1,5 +1,10 @@
 # S4 MK3 HID-MIDI Bridge
 
+> **gootecks fork:** this fork is adding Traktor Kontrol S8 support. S8 work
+> is in progress and not usable yet; the S4 MK3 behaviour below matches
+> upstream. See [Kontrol S8 support](docs/s8/README.md) and the
+> [changelog](CHANGELOG.md).
+
 Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
 Djay sends audio directly to the S4. No development tools are needed.
@@ -295,3 +300,4 @@ for the S4 MK3 protocol documentation and controller support this bridge builds 
 - [LED feedback](docs/led-feedback.md)
 - [Standalone hardware research and board shortlist](docs/hardware-bridge-research.md)
 - [Design history](docs/design.md)
+- [Kontrol S8 support (fork notes)](docs/s8/README.md)
