@@ -10,10 +10,10 @@ upstream pull request.
 | ------------------- | --------------------------------------------------------------------- |
 | S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
 | S8 detection        | Listed and identified by the bridge (`--device s8`); never opened.    |
-| S8 input            | Encdr has a descriptor; not yet verified on this Mac (#10).           |
+| S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI ([input-capture.md](input-capture.md), #10). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
-| S8 screens          | Encdr v0.8.4 has an NI-service route; transport undecided (#26).      |
+| S8 screens          | Frame format known from Windows evidence; macOS first-frame plan awaiting approval ([screens.md](screens.md), #26). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
 | Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
@@ -75,9 +75,15 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   bridge with file anchors, and the proposed device-profile seam.
 - [upstream-workflow.md](upstream-workflow.md) — remotes, branches, commit
   separation, upstream PR procedure.
+- [input-capture.md](input-capture.md) — passive HID and MIDI capture in
+  Controller Editor MIDI mode: which controls lack MIDI, undocumented bytes.
+- [screens.md](screens.md) — display protocol summary, source conflicts,
+  macOS ownership, and the phased first-frame test plan.
+- [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
+  and Mixxx survey, with licensing notes.
 
-Future notes (created by their issues): `input-capture.md` (#10),
-`mapping.md` (#13, #14), `led-output.md` (#21, #24), `screens.md` (#26).
+Future notes (created by their issues): `mapping.md` (#13, #14),
+`led-output.md` (#21, #24).
 
 ## Prior research outside this repo
 
