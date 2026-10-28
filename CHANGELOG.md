@@ -36,8 +36,11 @@ their detailed notes stay in `docs/release-*.md`.
   asks for presses at the S8 and restores the agent. Result in
   `docs/s8/agent-stop-validation.md`: S8 MIDI needs the agent, so driving
   the screens directly means the bridge must handle every S8 control.
-- `examples/s8-screen-claim.rs` prepares screen phase 1 (#33): it claims S8
-  interface 6 for 5 seconds with no transfers. Not yet run against an S8.
+- S8 screen phase 1 (#33): `examples/s8-screen-claim.rs` claims S8 interface
+  6 for 5 seconds with no transfers; `mise run s8:screen-claim` runs it
+  during an attended agent stop. Result in
+  `docs/s8/screen-claim-validation.md`: the claim succeeds and disturbs
+  nothing.
 
 ### Changed
 

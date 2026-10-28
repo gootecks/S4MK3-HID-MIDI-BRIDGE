@@ -127,13 +127,13 @@ still flows; MIDI is already gone while the agent is stopped.
 
 `examples/s8-screen-claim.rs` does exactly this and nothing else: it refuses
 to run while NIHardwareAgent is running, opens the one connected S8, claims
-interface 6, holds it for 5 seconds and releases it. Phase 0 showed
-interface 6 has no client once the agent is stopped. With approval, during
-an attended agent stop and with `examples/s8-passive-recorder.rs` running:
+interface 6, holds it for 5 seconds and releases it. `mise run
+s8:screen-claim` runs it during an attended agent stop with the passive
+recorder.
 
-       cargo run --locked --example s8-screen-claim
-
-Only the refusal path has been run, with the agent running.
+Result: the claim succeeds and disturbs nothing; HID keeps flowing and the
+agent takes interface 6 back on relaunch
+([screen-claim-validation.md](screen-claim-validation.md)).
 
 ### Phase 2: first frames
 
