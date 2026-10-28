@@ -13,9 +13,8 @@ use super::catalog::{
     MIXER_BINDINGS, PadMode, QUICK_BINDINGS, pad_binding,
 };
 use super::feedback::{PAD_COLOR_TOKENS, PAD_WHITE_TOKEN};
-use super::jog;
+use super::{PROFILE, jog};
 
-pub const PORT_NAME: &str = "S4 MK3 MIDI Full";
 const DECK_MARKER: &str = "{deck}";
 
 pub fn write(path: &Path, config_path: Option<&Path>) -> Result<()> {
@@ -118,7 +117,7 @@ pub fn generate_with_jog(jog: &jog::Config) -> Result<Value> {
     let mut root = Dictionary::new();
     root.insert(
         String::from("endpointName"),
-        Value::String(PORT_NAME.to_owned()),
+        Value::String(PROFILE.full_endpoint.to_owned()),
     );
     root.insert(String::from("schemeVersion"), Value::Integer(1.into()));
     root.insert(String::from("version"), Value::Integer(0.into()));
@@ -476,7 +475,7 @@ mod tests {
         let root = mapping.as_dictionary().context("root is a dictionary")?;
         assert_eq!(
             root.get("endpointName").and_then(Value::as_string),
-            Some(PORT_NAME)
+            Some(PROFILE.full_endpoint)
         );
         assert_eq!(
             root.get("schemeVersion")

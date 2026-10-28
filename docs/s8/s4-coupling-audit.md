@@ -65,15 +65,23 @@ Over the 500-line guideline: `src/full/mod.rs` (3060),
 `src/full/catalog.rs` (598). These are upstream files; add S8 code in new
 modules rather than growing them.
 
-## Proposed seam (#5)
+## Device-profile seam (#5)
 
-1. `DeviceProfile` with identity, display/endpoint names, input report sizes
-   and a descriptor-correction hook. `S4_MK3` keeps today's values.
-2. Replace the identity sites above with profile lookups; S4 output stays
-   byte-identical.
-3. Detection plus a `--device` override, modelled on `MidiProfile`.
-4. Per-profile catalog and mapping identity; the S8 catalog lives in its own
-   module.
-5. Leave LED, motor and screen byte layouts S4-specific until the S8
+1. Done (#6): `src/device.rs` defines `DeviceProfile` with identity,
+   display and endpoint names, input report sizes, mapping file name and a
+   descriptor-correction hook. `S4_MK3` keeps upstream values; the S4
+   corrections moved to `src/device/s4mk3.rs`.
+2. Done (#7): the identity sites in the tables above use profile lookups
+   (`S4_MK3.matches`, `full::PROFILE`). The generated S4 mapping is
+   byte-identical to upstream, written to a file or a directory.
+3. Done (#8): `--device s4mk3|s8` overrides detection; without it the bridge
+   uses the single kind of supported controller connected. The S8 profile is
+   identification only: the bridge logs its HID collections and exits without
+   opening it. The macOS app passes `--device s4mk3`.
+4. Open: per-profile catalog and mapping identity. The S8 profile reserves
+   `Kontrol S8 MIDI Full` and `Kontrol S8 Bridge.djayMidiMapping`;
+   `--generate-mapping --device s8` fails until the S8 catalog exists (#13,
+   #14).
+5. Open: leave LED, motor and screen byte layouts S4-specific until the S8
    equivalents are verified (#21, #26); then add S8 renderers alongside rather
    than generalising the S4 ones.

@@ -179,9 +179,9 @@ fn create_log(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
 
 fn open(motor: bool) -> anyhow::Result<(HidDevice, Option<HidDevice>)> {
     let api = HidApi::new().context("initialize native HID")?;
-    let mut devices = api
-        .device_list()
-        .filter(|device| device.vendor_id() == 0x17cc && device.product_id() == 0x1720);
+    let mut devices = api.device_list().filter(|device| {
+        s4mk3_hid_midi_bridge::device::S4_MK3.matches(device.vendor_id(), device.product_id())
+    });
     let device = devices.next().context("no S4 MK3 HID collection found")?;
     ensure!(
         devices.next().is_none(),

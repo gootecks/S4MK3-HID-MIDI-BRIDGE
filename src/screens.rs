@@ -154,9 +154,9 @@ impl UsbScreens {
     /// # Errors
     /// Returns an error for enumeration, ambiguous devices, or unavailable interface access.
     pub fn open() -> anyhow::Result<Self> {
-        let mut devices = nusb::list_devices()
-            .wait()?
-            .filter(|device| device.vendor_id() == 0x17cc && device.product_id() == 0x1720);
+        let mut devices = nusb::list_devices().wait()?.filter(|device| {
+            crate::device::S4_MK3.matches(device.vendor_id(), device.product_id())
+        });
         let info = devices.next().context("no connected S4 MK3 for screens")?;
         ensure!(
             devices.next().is_none(),
