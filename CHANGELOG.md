@@ -29,6 +29,12 @@ their detailed notes stay in `docs/release-*.md`.
   does not open or write to the S8 yet.
 - Device profiles (`src/device.rs`) hold each controller's USB identity, input
   report sizes, descriptor corrections, MIDI endpoint and mapping file name.
+- `examples/s8-passive-recorder.rs` records S8 HID input and every S8 MIDI
+  endpoint to JSONL, following endpoints that appear or vanish, and sends
+  nothing to the S8.
+- S8 screen phase 0 (#32): `mise run s8:agent-stop` stops NIHardwareAgent,
+  asks for presses at the S8 and restores the agent. The unattended results
+  are in `docs/s8/agent-stop-validation.md`.
 
 ### Changed
 
