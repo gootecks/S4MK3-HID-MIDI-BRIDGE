@@ -125,6 +125,16 @@ Claim interface 6 with `nusb` (the same way `UsbScreens::open` claims the S4
 interface), hold for 5 seconds, release. No transfers. Observe that HID
 still flows; MIDI is already gone while the agent is stopped.
 
+`examples/s8-screen-claim.rs` does exactly this and nothing else: it refuses
+to run while NIHardwareAgent is running, opens the one connected S8, claims
+interface 6, holds it for 5 seconds and releases it. Phase 0 showed
+interface 6 has no client once the agent is stopped. With approval, during
+an attended agent stop and with `examples/s8-passive-recorder.rs` running:
+
+       cargo run --locked --example s8-screen-claim
+
+Only the refusal path has been run, with the agent running.
+
 ### Phase 2: first frames
 
 Left panel only, one frame each:
