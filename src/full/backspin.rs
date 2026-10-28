@@ -55,7 +55,7 @@ impl Motion {
             let timer_advances = timer > previous_timer
                 || (previous_timer > u32::MAX - 1_000_000 && timer < 1_000_000);
             if now <= time
-                || now - time > FRESHNESS
+                || now.saturating_sub(time) > FRESHNESS
                 || !timer_advances
                 || delta.unsigned_abs() > 512
             {

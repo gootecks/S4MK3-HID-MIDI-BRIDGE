@@ -153,7 +153,7 @@ impl Decoder {
     }
 }
 
-fn word(report: &[u8], offset: usize) -> u32 {
+const fn word(report: &[u8], offset: usize) -> u32 {
     u32::from_le_bytes([
         report[offset],
         report[offset + 1],
