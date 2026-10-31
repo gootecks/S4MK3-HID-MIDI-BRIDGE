@@ -23,7 +23,7 @@ snapshot per tab.
 | Read rows | Yes: title, artist, BPM, key, time, date headers, the "Show More" button, per-row `AXSelected`. |
 | Which tab is active | **Not exposed** by the buttons. Infer it from the content area's title. |
 | Latency | Tab press to new content: median 120 ms, p95 126 ms, max 212 ms. Snapshot read: median 18 ms, p95 36 ms. |
-| Does a sidebar row select the library row that load/queue act on? | **No.** Only the main library table does. See [Row selection](#row-selection). |
+| Does selecting a sidebar row retarget load/queue? | A **click** does: djay treats a clicked sidebar row like a library row (user-confirmed). Setting `AXSelected` through AX does **not**. See [Row selection](#row-selection). |
 
 ## Reaching the window
 
@@ -234,11 +234,14 @@ Experiments (library, Anybody selected in the main table to start):
 | `Library > Add Selection to Queue` with sidebar row 1 (Cheeni) selected and main row 2 (Diwali) selected | Diwali was queued (the Queue showed `1 Song`, Diwali) |
 | select the Queue row through the sidebar, then `Library > Remove Selection from Queue` | the Queue returned to empty |
 
-So a sidebar row's selection state is real and writable, but it does not
-retarget the main-library actions that `Add Selection to Queue` and, by the
-issue's account, MIDI load use. The main library `AXTable` (`Playlist`, x=311)
-is the target, and its rows accept `AXSelected`/`AXSelectedRows`. Sidebar rows
-expose no actions (no `AXPress`, no double-click equivalent).
+Setting `AXSelected` on a sidebar row changes its highlight but does not
+retarget `Add Selection to Queue`. A real click does: djay treats a clicked
+sidebar row like a main-table row for queue and load (confirmed by the user
+in normal use). So the AX attribute is not equivalent to a click. The main
+library `AXTable` (`Playlist`, x=311) accepts `AXSelected`/`AXSelectedRows`
+and does retarget. Sidebar rows expose no actions (no `AXPress`). Selecting
+sidebar rows through AX (e.g. `AXSelectedRows` on the sidebar table, or
+focusing the table first) is open for #51.
 
 MIDI load itself was not exercised (see [Not exercised](#not-exercised)).
 
