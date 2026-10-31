@@ -28,14 +28,16 @@ Nothing here talks to the S8 or to djay: it consumes sidebar snapshot JSON
 
 ## Selection model
 
-#48 found that MIDI load and queue act on djay's **main library table**
-selection, not on sidebar rows, and that Info and Related follow that main
-selection. The screen encoder therefore means "move djay's main library
-selection": `SidebarNavigator.move(by:)` steps the main selection (the
-fixtures' library tracks stand in for the main table), the right panel always
-shows it, and the Library tab's highlight follows it. Other tabs keep their
-rows unselected. The live bridge should apply the move through AX
-(`AXSelectedRows` on the main table) rather than clicking sidebar rows.
+djay's load and queue act on the selected row, and a row clicked in the
+sidebar counts just like a row in the main library table. Info and Related
+follow the main selection. #48 found that setting `AXSelected` on a sidebar
+row through AX does not retarget queueing, while `AXSelectedRows` on the main
+table does, so a real click and the AX attribute differ. For now the screen
+encoder means "move djay's main library selection":
+`SidebarNavigator.move(by:)` steps the main selection (the fixtures' library
+tracks stand in for the main table), the right panel always shows it, and the
+Library tab's highlight follows it. Other tabs keep their rows unselected.
+Selecting sidebar rows (Queue, History, Related) through AX is open for #51.
 
 ## Display-button mapping
 
