@@ -82,26 +82,47 @@ longer receive S8 support. The NI-service route is not pursued.
 
 ## Page content and rendering
 
-The S4 pages show only what Djay sends as MIDI feedback. The S8 pages can show
-more: an earlier prototype, `djay-phrase-tool` (MIT, built on
+The S4 pages show only what Djay sends as MIDI feedback. The S8 panels can
+show more, read from Djay's own data. Library views come first: the laptop
+already shows waveforms, while some library views are hard to reach in Djay
+or do not exist there.
+
+**Decision: the app renders, the bridge transports.** The menu-bar app builds
+each 480×272 panel offscreen at 1x, converts it to RGB565 big-endian and hands
+frames to the Rust child. The bridge owns interface 6 and paces transfers
+(#44). Views on the panels: #27.
+
+### Library views first
+
+Views: playlists, tracks related to the one on a deck, tracks played before
+or after it, and Djay's queue. The display buttons and screen encoders
+navigate them (#51); a 960×272 window prototype comes first (#50).
+
+| Source | Data | Limits |
+| ------ | ---- | ------ |
+| `MediaLibrary.db` snapshot (db, `-wal`, `-shm` together), read-only (#49) | Tracks, playlists and items, queue, history sessions and plays | YapDatabase with TSAF objects; the decoder exists in djaykit (Python) and needs a Swift port |
+| djaykit related index, exported between sets (prime-optimal/djaykit#81) | Related tracks per track: co-play transitions, harmonic, BPM and artist scores; before/after counts | Built from play history; the views must work without it |
+
+Acting on a chosen track is the open problem (#48). Djay's MIDI load and
+Add to Queue act only on Djay's selected row, and its MIDI feedback carries no
+library state, so the app needs Accessibility to find and select the track.
+Writing Djay's own Related links from the same index is djaykit work
+(prime-optimal/djaykit#80, #82), with Djay quit.
+
+### Deck and waveform pages later
+
+An earlier prototype, `djay-phrase-tool` (MIT, built on
 [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge)),
-reads Djay directly and already lays out two 480×272 surfaces in a window.
+reads Djay's decks and lays out two 480×272 surfaces in a window (#45). One
+use: decks 3 and 4 while Djay shows its two-deck layout.
 
 | Source | Data | Limits |
 | ------ | ---- | ------ |
 | Accessibility, Djay's window (about 8 polls/s) | Title, artist, BPM, key, elapsed/remaining, playing | View-dependent: time can vanish with the library expanded; BPM has one decimal |
 | `MediaLibrary.db` and the analysis cache, read-only | Overview waveform envelope, 3-band samples, beats, bars, cue points | About 2–11 waveform samples/s: an overview, not a zoomed scrolling waveform; key in the blob undecoded |
 
-**Decision: the app renders, the bridge transports.** The menu-bar app ports
-the prototype's data layer, renders each panel offscreen at 1x, converts to
-RGB565 big-endian and hands frames to the Rust child (#45). The bridge owns
-interface 6 and paces transfers (#44). Pages: #27. Left panel = decks A/C,
-right = B/D.
-
-The prototype's layout is the starting point: a header with deck binding,
-title, artist, BPM, key and time; an overview waveform; a phrase, next-cue and
-section row. Traktor's own S8 screens (title/artist header, overview stripe
-with cue markers and playhead, beatgrid) are a layout reference only.
+Its layout is the starting point: a header with title, artist, BPM, key and
+time; an overview waveform; a phrase, next-cue and section row.
 
 ## First-frame test plan
 
