@@ -9,7 +9,10 @@ let package = Package(
         .executableTarget(
             name: "S4Bridge",
             path: ".",
-            exclude: ["build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests"],
+            exclude: [
+                "build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests", "S8Views", "S8Preview",
+                "S8ViewsTests"
+            ],
             sources: [
                 "S4BridgeApp.swift", "ScreenPreferences.swift", "ScreenSupport.swift",
                 "ScreenSupport+Control.swift", "ScreenSettingsView.swift",
@@ -24,6 +27,14 @@ let package = Package(
             path: "DjayLibraryTests",
             resources: [.copy("Fixtures")]
         ),
-        .testTarget(name: "S4BridgeTests", dependencies: ["S4Bridge"], path: "Tests")
+        .testTarget(name: "S4BridgeTests", dependencies: ["S4Bridge"], path: "Tests"),
+        .target(name: "S8Views", path: "S8Views", exclude: ["README.md"]),
+        .executableTarget(name: "S8Preview", dependencies: ["S8Views"], path: "S8Preview"),
+        .testTarget(
+            name: "S8ViewsTests",
+            dependencies: ["S8Views"],
+            path: "S8ViewsTests",
+            resources: [.copy("Fixtures")]
+        )
     ]
 )
