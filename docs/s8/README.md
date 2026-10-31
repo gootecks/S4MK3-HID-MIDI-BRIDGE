@@ -90,6 +90,8 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   (`screen-frame-check.sh`).
 - [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
   and Mixxx survey, with licensing notes.
+- [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching
+  djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
 
 Future notes (created by their issues): `mapping.md` (#13, #14),
 `led-output.md` (#21, #24).

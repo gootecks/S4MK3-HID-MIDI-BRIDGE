@@ -4,6 +4,8 @@ Research and first-frame test plan for #26, with results. Phases 2 and 4
 sent frames to the S8 from this bridge's tools
 ([screen-frame-validation.md](screen-frame-validation.md)).
 
+Sidebar mirroring: [djay-sidebar-access.md](djay-sidebar-access.md) (#48).
+
 ## What we know
 
 Sources: [kontrol-s8-protocol](https://github.com/gusgustavodj/kontrol-s8-protocol)

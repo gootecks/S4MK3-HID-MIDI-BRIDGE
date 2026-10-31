@@ -1,0 +1,112 @@
+{
+  "capturedAt" : "2026-10-31T02:37:47Z",
+  "heading" : "Info",
+  "rows" : [
+    {
+      "artist" : "Skrillex, ISOxo",
+      "bpm" : "150",
+      "key" : "7A",
+      "kind" : "track",
+      "selected" : true,
+      "time" : "02:43",
+      "title" : "Anybody"
+    },
+    {
+      "kind" : "header",
+      "text" : "TITLE: Anybody"
+    },
+    {
+      "kind" : "header",
+      "text" : "ARTIST: Skrillex, ISOxo"
+    },
+    {
+      "kind" : "header",
+      "text" : "GENRE: Electronic"
+    },
+    {
+      "kind" : "header",
+      "text" : "ALBUM: SOMA"
+    },
+    {
+      "kind" : "header",
+      "text" : "TIME: 02:43"
+    },
+    {
+      "kind" : "header",
+      "text" : "BPM: 150"
+    },
+    {
+      "kind" : "header",
+      "text" : "KEY: 7A"
+    },
+    {
+      "kind" : "header",
+      "text" : "RATING: 0"
+    },
+    {
+      "kind" : "header",
+      "text" : "EXPLICIT: 0"
+    },
+    {
+      "kind" : "header",
+      "text" : "YEAR: 2026"
+    },
+    {
+      "kind" : "header",
+      "text" : "ADDED: 7/21/26"
+    },
+    {
+      "kind" : "header",
+      "text" : "ALBUM TRACK #: 11"
+    },
+    {
+      "kind" : "header",
+      "text" : "BIT RATE: 283 kbps"
+    },
+    {
+      "kind" : "header",
+      "text" : "SAMPLE RATE: 44.100 kHz"
+    }
+  ],
+  "schema" : 1,
+  "sidebarOpen" : true,
+  "subtabs" : [
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : true
+    },
+    {
+      "id" : "related",
+      "label" : "Related",
+      "selected" : false
+    }
+  ],
+  "tabs" : [
+    {
+      "id" : "library",
+      "label" : "Library",
+      "selected" : false
+    },
+    {
+      "id" : "queue",
+      "label" : "Queue",
+      "selected" : false
+    },
+    {
+      "id" : "match",
+      "label" : "Match",
+      "selected" : false
+    },
+    {
+      "id" : "session",
+      "label" : "History",
+      "selected" : false
+    },
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : true
+    }
+  ]
+}

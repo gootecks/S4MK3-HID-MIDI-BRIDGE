@@ -1,0 +1,60 @@
+{
+  "capturedAt" : "2026-10-31T02:37:48Z",
+  "heading" : "Related",
+  "rows" : [
+    {
+      "artist" : null,
+      "bpm" : "150",
+      "key" : "7A",
+      "kind" : "track",
+      "selected" : true,
+      "time" : "02:43",
+      "title" : "Anybody"
+    },
+    {
+      "kind" : "header",
+      "text" : "Drop song here to link songs"
+    }
+  ],
+  "schema" : 1,
+  "sidebarOpen" : true,
+  "subtabs" : [
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : false
+    },
+    {
+      "id" : "related",
+      "label" : "Related",
+      "selected" : true
+    }
+  ],
+  "tabs" : [
+    {
+      "id" : "library",
+      "label" : "Library",
+      "selected" : false
+    },
+    {
+      "id" : "queue",
+      "label" : "Queue",
+      "selected" : false
+    },
+    {
+      "id" : "match",
+      "label" : "Match",
+      "selected" : false
+    },
+    {
+      "id" : "session",
+      "label" : "History",
+      "selected" : false
+    },
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : true
+    }
+  ]
+}

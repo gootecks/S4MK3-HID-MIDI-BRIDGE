@@ -1,0 +1,155 @@
+{
+  "capturedAt" : "2026-10-31T02:37:41Z",
+  "heading" : "Music",
+  "rows" : [
+    {
+      "artist" : "Skrillex, ISOxo",
+      "bpm" : "150",
+      "key" : "7A",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "02:43",
+      "title" : "Anybody"
+    },
+    {
+      "artist" : "Skrillex, Naisha",
+      "bpm" : "140",
+      "key" : "7B",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:06",
+      "title" : "Cheeni"
+    },
+    {
+      "artist" : "Skrillex, Naisha, BEAM",
+      "bpm" : "135",
+      "key" : "2A",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:07",
+      "title" : "Diwali"
+    },
+    {
+      "artist" : "Skrillex, Young Miko",
+      "bpm" : "150",
+      "key" : "5B",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:04",
+      "title" : "Duro"
+    },
+    {
+      "artist" : "Skrillex, Chris Lake, RHR",
+      "bpm" : "130",
+      "key" : "5A",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "04:42",
+      "title" : "É o Bonde"
+    },
+    {
+      "artist" : "Skrillex, Chris Lake, Anita B Queen",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "02:25",
+      "title" : "La Noche 2"
+    },
+    {
+      "artist" : "Skrillex, Feid",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:24",
+      "title" : "Noche Without You"
+    },
+    {
+      "artist" : "Skrillex, Dismantle, MC Dricka",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:39",
+      "title" : "Pente Rala"
+    },
+    {
+      "artist" : "Skrillex, ROM",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "02:58",
+      "title" : "Scut 2"
+    },
+    {
+      "artist" : "Skrillex, ISOxo, Cristale, TeeZandos",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "02:31",
+      "title" : "Smoke"
+    },
+    {
+      "artist" : "Skrillex, Nitepunk",
+      "bpm" : "140",
+      "key" : "12A",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:25",
+      "title" : "Soma"
+    },
+    {
+      "artist" : "Skrillex, Randomer, Blawan, MC Dricka",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:55",
+      "title" : "Thistle"
+    },
+    {
+      "artist" : "Skrillex, Tracey, TAICHU, Anita B Queen",
+      "bpm" : null,
+      "key" : null,
+      "kind" : "track",
+      "selected" : false,
+      "time" : "03:18",
+      "title" : "Tranki"
+    }
+  ],
+  "schema" : 1,
+  "sidebarOpen" : true,
+  "subtabs" : [
+
+  ],
+  "tabs" : [
+    {
+      "id" : "library",
+      "label" : "Library",
+      "selected" : true
+    },
+    {
+      "id" : "queue",
+      "label" : "Queue",
+      "selected" : false
+    },
+    {
+      "id" : "match",
+      "label" : "Match",
+      "selected" : false
+    },
+    {
+      "id" : "session",
+      "label" : "History",
+      "selected" : false
+    },
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : false
+    }
+  ]
+}
