@@ -45,8 +45,8 @@ Encdr is wrong or stale in three places:
 
 `src/screens.rs` sends 320×240 raw pixels on interface 4, endpoint `0x03`,
 header byte 3 `0x21`, a 4-byte footer, and no commands. The S8 needs its own
-packet builder. The raster, text and layout code (`Frame`, `rect`, `text`)
-can be reused once it takes the panel size as a parameter.
+packet builder (#44). Its pages are rendered by the app, not by the S4
+raster and text code (see [Page content and rendering](#page-content-and-rendering)).
 
 ### macOS ownership
 
@@ -79,6 +79,50 @@ mapping, as the S4 app does. Evan's layout and ideas carry over into the S8
 catalog (#13, #14); his Controller Editor template and mapping file do not.
 This removes the dependency on Controller Editor and NI's agent, which no
 longer receive S8 support. The NI-service route is not pursued.
+
+## Page content and rendering
+
+The S4 pages show only what Djay sends as MIDI feedback. The S8 panels can
+show more, read from Djay's own data. Library views come first: the laptop
+already shows waveforms, while some library views are hard to reach in Djay
+or do not exist there.
+
+**Decision: the app renders, the bridge transports.** The menu-bar app builds
+each 480×272 panel offscreen at 1x, converts it to RGB565 big-endian and hands
+frames to the Rust child. The bridge owns interface 6 and paces transfers
+(#44). Views on the panels: #27.
+
+### Library views first
+
+Views: playlists, tracks related to the one on a deck, tracks played before
+or after it, and Djay's queue. The display buttons and screen encoders
+navigate them (#51); a 960×272 window prototype comes first (#50).
+
+| Source | Data | Limits |
+| ------ | ---- | ------ |
+| `MediaLibrary.db` snapshot (db, `-wal`, `-shm` together), read-only (#49) | Tracks, playlists and items, queue, history sessions and plays | YapDatabase with TSAF objects; the decoder exists in djaykit (Python) and needs a Swift port |
+| djaykit related index, exported between sets (prime-optimal/djaykit#81) | Related tracks per track: co-play transitions, harmonic, BPM and artist scores; before/after counts | Built from play history; the views must work without it |
+
+Acting on a chosen track is the open problem (#48). Djay's MIDI load and
+Add to Queue act only on Djay's selected row, and its MIDI feedback carries no
+library state, so the app needs Accessibility to find and select the track.
+Writing Djay's own Related links from the same index is djaykit work
+(prime-optimal/djaykit#80, #82), with Djay quit.
+
+### Deck and waveform pages later
+
+An earlier prototype, `djay-phrase-tool` (MIT, built on
+[kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge)),
+reads Djay's decks and lays out two 480×272 surfaces in a window (#45). One
+use: decks 3 and 4 while Djay shows its two-deck layout.
+
+| Source | Data | Limits |
+| ------ | ---- | ------ |
+| Accessibility, Djay's window (about 8 polls/s) | Title, artist, BPM, key, elapsed/remaining, playing | View-dependent: time can vanish with the library expanded; BPM has one decimal |
+| `MediaLibrary.db` and the analysis cache, read-only | Overview waveform envelope, 3-band samples, beats, bars, cue points | About 2–11 waveform samples/s: an overview, not a zoomed scrolling waveform; key in the blob undecoded |
+
+Its layout is the starting point: a header with title, artist, BPM, key and
+time; an overview waveform; a phrase, next-cue and section row.
 
 ## First-frame test plan
 
@@ -187,9 +231,8 @@ Record in a validation file under `docs/s8/`, not in this plan.
 
 ## Still open after this plan
 
-- Refresh rate and latency for repeated frames and partial updates (SKIP,
-  sub-rectangles).
+- Refresh rate and latency for repeated frames, holding interface 6 across
+  frames, and partial updates (SKIP, sub-rectangles): phase 5, #43.
 - What the panels should show when the bridge quits without relaunching the
-  agent: they keep the last frame.
-- What Djay can actually feed the panels: only MIDI feedback, as on the S4
-  (mode legends and indicators, no waveforms or track titles).
+  agent: they keep the last frame (#27).
+- How Djay's four-deck layouts appear through Accessibility (#45).
