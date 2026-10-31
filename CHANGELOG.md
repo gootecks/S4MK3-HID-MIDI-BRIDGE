@@ -32,6 +32,10 @@ their detailed notes stay in `docs/release-*.md`.
 - `examples/s8-passive-recorder.rs` records S8 HID input and every S8 MIDI
   endpoint to JSONL, following endpoints that appear or vanish, and sends
   nothing to the S8.
+- `examples/s8-input-diff` diffs S8 HID input reports per field with names from
+  kontrol-s8-protocol and Encdr, step markers and a JSONL log, read-only on
+  interface 5; `docs/s8/capture-checklist.md` lists every control for the
+  agent-stopped capture (#10).
 - S8 screen phase 0 (#32): `mise run s8:agent-stop` stops NIHardwareAgent,
   asks for presses at the S8 and restores the agent. Result in
   `docs/s8/agent-stop-validation.md`: S8 MIDI needs the agent, so driving
