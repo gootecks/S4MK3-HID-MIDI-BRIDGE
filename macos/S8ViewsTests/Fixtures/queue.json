@@ -1,0 +1,42 @@
+{
+  "capturedAt" : "2026-10-31T02:37:43Z",
+  "heading" : "Queue",
+  "rows" : [
+    {
+      "kind" : "header",
+      "text" : "Drop songs here"
+    }
+  ],
+  "schema" : 1,
+  "sidebarOpen" : true,
+  "subtabs" : [
+
+  ],
+  "tabs" : [
+    {
+      "id" : "library",
+      "label" : "Library",
+      "selected" : false
+    },
+    {
+      "id" : "queue",
+      "label" : "Queue",
+      "selected" : true
+    },
+    {
+      "id" : "match",
+      "label" : "Match",
+      "selected" : false
+    },
+    {
+      "id" : "session",
+      "label" : "History",
+      "selected" : false
+    },
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : false
+    }
+  ]
+}

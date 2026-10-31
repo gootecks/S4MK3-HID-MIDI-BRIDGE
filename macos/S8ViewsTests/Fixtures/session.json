@@ -1,0 +1,55 @@
+{
+  "capturedAt" : "2026-10-31T02:37:45Z",
+  "heading" : "History",
+  "rows" : [
+    {
+      "kind" : "header",
+      "text" : "10/28/26, 12:40 AM"
+    },
+    {
+      "artist" : "Skrillex, ISOxo",
+      "bpm" : "150",
+      "key" : "7A",
+      "kind" : "track",
+      "selected" : false,
+      "time" : "02:43",
+      "title" : "Anybody"
+    },
+    {
+      "kind" : "action",
+      "text" : "Show More"
+    }
+  ],
+  "schema" : 1,
+  "sidebarOpen" : true,
+  "subtabs" : [
+
+  ],
+  "tabs" : [
+    {
+      "id" : "library",
+      "label" : "Library",
+      "selected" : false
+    },
+    {
+      "id" : "queue",
+      "label" : "Queue",
+      "selected" : false
+    },
+    {
+      "id" : "match",
+      "label" : "Match",
+      "selected" : false
+    },
+    {
+      "id" : "session",
+      "label" : "History",
+      "selected" : true
+    },
+    {
+      "id" : "info",
+      "label" : "Info",
+      "selected" : false
+    }
+  ]
+}

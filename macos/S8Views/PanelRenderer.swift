@@ -151,18 +151,15 @@ enum DetailPanel {
         PanelRenderer.drawStrip(canvas, tabs: snapshot.subtabs)
         let labelBaseline = Metrics.headingTop + 20
         let label = TextStyle(size: 12, bold: true, color: Palette.amber)
-        canvas.text("SELECTED", at: CGPoint(x: 12, y: labelBaseline), label)
-        guard let track = state.selectedTrack else {
+        canvas.text("LIBRARY SELECTION", at: CGPoint(x: 12, y: labelBaseline), label)
+        guard let main = state.main else {
             let style = TextStyle(size: 18, bold: true, color: Palette.dim, align: .center, maxWidth: 440)
-            canvas.text(state.selectedRow?.text ?? "No track selected", at: CGPoint(x: 240, y: 168), style)
+            canvas.text("No track selected", at: CGPoint(x: 240, y: 168), style)
             return
         }
-        if let index = state.selectedIndex {
-            let tracks = snapshot.rows.filter { $0.kind == .track }.count
-            let position = snapshot.rows[...index].filter { $0.kind == .track }.count
-            let count = TextStyle(size: 12, color: Palette.dim, align: .right)
-            canvas.text("\(position) of \(tracks)", at: CGPoint(x: 468, y: labelBaseline), count)
-        }
+        let count = TextStyle(size: 12, color: Palette.dim, align: .right)
+        canvas.text("\(main.position) of \(main.total)", at: CGPoint(x: 468, y: labelBaseline), count)
+        let track = main.row
         drawTitle(canvas, track)
         drawTiles(canvas, track)
     }

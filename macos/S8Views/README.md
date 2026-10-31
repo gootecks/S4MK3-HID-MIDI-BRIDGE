@@ -22,10 +22,20 @@ Nothing here talks to the S8 or to djay: it consumes sidebar snapshot JSON
   action rows (for example "Show More") are outlined buttons, track rows show
   title and artist with BPM, key and time columns. A thin scrollbar appears
   when rows overflow.
-- **Right panel: detail.** The selected track at a glance: title (two
-  lines), artist and large BPM, key and time tiles, plus "n of m". Its strip
-  shows the active tab's sub-tabs (for Info, "Related"). Right-panel
-  selection follows the left list, so the screen encoder moves both.
+- **Right panel: detail.** The djay main-library selection at a glance:
+  title (two lines), artist and large BPM, key and time tiles, plus "n of m".
+  Its strip shows the active tab's sub-tabs (for Info, "Related").
+
+## Selection model
+
+#48 found that MIDI load and queue act on djay's **main library table**
+selection, not on sidebar rows, and that Info and Related follow that main
+selection. The screen encoder therefore means "move djay's main library
+selection": `SidebarNavigator.move(by:)` steps the main selection (the
+fixtures' library tracks stand in for the main table), the right panel always
+shows it, and the Library tab's highlight follows it. Other tabs keep their
+rows unselected. The live bridge should apply the move through AX
+(`AXSelectedRows` on the main table) rather than clicking sidebar rows.
 
 ## Display-button mapping
 
@@ -76,12 +86,14 @@ writes matching PNGs, for every snapshot in the library at startup.
 
 ## Fixtures
 
-`macos/S8ViewsTests/Fixtures/` holds hand-written snapshots using the 13-track
-SOMA library (Anybody, Cheeni, Diwali, Duro, É o Bonde, Soma with BPM, key
-and time; seven tracks without). The tab ids and labels (`track`, `list`,
-`browse`, `history`, `info`) are placeholders until the #48 probe reports
-djay's real ones. Swap in `docs/s8/fixtures/sidebar/` when it lands; the
-preview picks a tab's snapshot by matching its selected tab and sub-tab ids.
+`macos/S8ViewsTests/Fixtures/` is a copy of the real snapshots #48 captured
+from djay (`docs/s8/fixtures/sidebar/`): `library`, `queue`, `match`,
+`session` (labelled History), `info` and `info-related`, using the 13-track
+SOMA library. Tab ids are `library`, `queue`, `match`, `session`, `info`;
+Info's sub-tabs are `info` and `related`. The navigator picks a tab's
+snapshot by its selected tab and sub-tab ids and lands on the Info sub-tab
+that is first in the strip. Info shows its fields as header rows
+(`TITLE: …`); an empty queue, match or Related shows a `Drop …` hint row.
 
 ## Tests
 

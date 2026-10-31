@@ -120,25 +120,38 @@ final class RenderTests: XCTestCase {
     }
 
     func testRenderedPanelHasBackgroundAndHighlight() throws {
-        var navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
-        XCTAssertTrue(navigator.pressLeft(slot: 3))
+        let navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
         let bitmap = PanelRenderer.render(.left, navigator.state)
         XCTAssertEqual(bitmap.width, 480)
         XCTAssertEqual(bitmap.height, 272)
         XCTAssertEqual(bitmap.pixel(column: 479, row: 271), Pixel(red: 8, green: 10, blue: 14))
         let rowY = Int(Metrics.listTop) + 32
         XCTAssertEqual(bitmap.pixel(column: 200, row: rowY), Pixel(red: 18, green: 84, blue: 164))
-        XCTAssertEqual(bitmap.pixel(column: 125, row: 5), Pixel(red: 0, green: 168, blue: 255))
+        XCTAssertEqual(bitmap.pixel(column: 70, row: 5), Pixel(red: 0, green: 168, blue: 255))
     }
 
     func testRightPanelDiffersFromLeftAndChangesWithSelection() throws {
         var navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
-        navigator.pressLeft(slot: 3)
         let before = PanelRenderer.render(.right, navigator.state)
         navigator.move(by: 1)
         let after = PanelRenderer.render(.right, navigator.state)
         XCTAssertNotEqual(before, after)
         XCTAssertNotEqual(before, PanelRenderer.render(.left, navigator.state))
+    }
+
+    func testMainSelectionDrivesDetailAcrossTabs() throws {
+        var navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
+        XCTAssertEqual(navigator.state.main?.row.title, "Anybody")
+        navigator.move(by: 3)
+        XCTAssertEqual(navigator.state.main?.row.title, "Duro")
+        XCTAssertEqual(navigator.state.main?.row.artist, "Skrillex, Young Miko")
+        XCTAssertEqual(navigator.state.main?.position, 4)
+        XCTAssertEqual(navigator.state.main?.total, 13)
+        XCTAssertEqual(try navigator.state.snapshot.rows[XCTUnwrap(navigator.state.selectedIndex)].title, "Duro")
+        XCTAssertTrue(navigator.pressLeft(slot: 7))
+        XCTAssertEqual(navigator.state.main?.row.title, "Duro")
+        navigator.move(by: -100)
+        XCTAssertEqual(navigator.state.main?.row.title, "Anybody")
     }
 
     func testSlotMappingSkipsNativeInstrumentsButtons() {
@@ -152,27 +165,25 @@ final class RenderTests: XCTestCase {
 
     func testNavigatorTabsSubtabsAndSelection() throws {
         var navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
-        XCTAssertEqual(navigator.state.snapshot.selectedTabID, "track")
+        XCTAssertEqual(navigator.state.snapshot.selectedTabID, "library")
         XCTAssertFalse(navigator.pressLeft(slot: 1))
         XCTAssertFalse(navigator.pressLeft(slot: 4))
+        XCTAssertFalse(navigator.pressLeft(slot: 8))
         XCTAssertTrue(navigator.pressLeft(slot: 6))
-        XCTAssertEqual(navigator.state.snapshot.selectedTabID, "history")
-        XCTAssertEqual(navigator.state.selectedIndex, 1)
-        navigator.move(by: 3)
-        XCTAssertEqual(navigator.state.selectedIndex, 5)
-        navigator.move(by: 100)
-        XCTAssertEqual(navigator.state.selectedIndex, 8)
-        XCTAssertEqual(navigator.state.selectedRow?.kind, .action)
+        XCTAssertEqual(navigator.state.snapshot.selectedTabID, "session")
+        XCTAssertEqual(navigator.state.snapshot.tabs[3].label, "History")
         XCTAssertTrue(navigator.pressLeft(slot: 7))
-        XCTAssertTrue(navigator.pressRight(slot: 2))
+        XCTAssertEqual(navigator.state.snapshot.selectedTabID, "info")
+        XCTAssertEqual(navigator.state.snapshot.selectedSubtabID, "info")
+        XCTAssertTrue(navigator.pressRight(slot: 3))
         XCTAssertEqual(navigator.state.snapshot.selectedSubtabID, "related")
+        XCTAssertFalse(navigator.pressRight(slot: 3))
         XCTAssertTrue(navigator.pressRight(slot: 2))
-        XCTAssertNil(navigator.state.snapshot.selectedSubtabID)
+        XCTAssertEqual(navigator.state.snapshot.selectedSubtabID, "info")
     }
 
     func testScrollKeepsSelectionVisible() throws {
         var navigator = try XCTUnwrap(try SidebarNavigator(library: library()))
-        navigator.pressLeft(slot: 3)
         XCTAssertEqual(navigator.state.scrollTop, 0)
         navigator.move(by: 12)
         let state = navigator.state

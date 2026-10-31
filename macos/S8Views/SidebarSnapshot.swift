@@ -80,6 +80,12 @@ public struct SidebarSnapshot: Equatable {
     }
 }
 
+public extension SidebarSnapshot.Row {
+    func sameTrack(as other: SidebarSnapshot.Row) -> Bool {
+        kind == .track && other.kind == .track && title == other.title && artist == other.artist
+    }
+}
+
 public enum SnapshotError: Error, Equatable {
     case unsupportedSchema(Int)
 }

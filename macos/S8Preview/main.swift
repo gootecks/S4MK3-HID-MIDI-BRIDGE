@@ -142,7 +142,7 @@ guard let navigator = SidebarNavigator(library: library) else {
 }
 
 for (index, snapshot) in library.snapshots.enumerated() {
-    dump(ViewState(snapshot: snapshot), prefix: String(format: "%02d", index), options: options)
+    dump(navigator.state(showing: snapshot), prefix: String(format: "%02d", index), options: options)
 }
 
 if options.windowless {

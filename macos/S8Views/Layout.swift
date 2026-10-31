@@ -41,10 +41,33 @@ public enum Metrics {
     }
 }
 
+public struct MainSelection: Equatable {
+    public let row: SidebarSnapshot.Row
+    public let position: Int
+    public let total: Int
+
+    public init(row: SidebarSnapshot.Row, position: Int, total: Int) {
+        self.row = row
+        self.position = position
+        self.total = total
+    }
+}
+
 public struct ViewState: Equatable {
     public private(set) var snapshot: SidebarSnapshot
     public private(set) var selectedIndex: Int?
     public private(set) var scrollTop: CGFloat = 0
+    public private(set) var main: MainSelection?
+
+    public mutating func setMain(_ selection: MainSelection?) {
+        main = selection
+    }
+
+    public mutating func select(rowIndex: Int) {
+        guard snapshot.rows.indices.contains(rowIndex), snapshot.rows[rowIndex].isSelectable else { return }
+        selectedIndex = rowIndex
+        revealSelection()
+    }
 
     public init(snapshot: SidebarSnapshot) {
         self.snapshot = snapshot
