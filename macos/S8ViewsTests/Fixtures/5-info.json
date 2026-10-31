@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-30T19:22:00Z",
+  "sidebarOpen": true,
+  "tabs": [
+    {
+      "id": "track",
+      "label": "Track",
+      "selected": false
+    },
+    {
+      "id": "list",
+      "label": "List",
+      "selected": false
+    },
+    {
+      "id": "browse",
+      "label": "Browse",
+      "selected": false
+    },
+    {
+      "id": "history",
+      "label": "History",
+      "selected": false
+    },
+    {
+      "id": "info",
+      "label": "Info",
+      "selected": true
+    }
+  ],
+  "subtabs": [
+    {
+      "id": "related",
+      "label": "Related",
+      "selected": false
+    }
+  ],
+  "heading": "Info",
+  "rows": [
+    {
+      "kind": "header",
+      "text": "Anybody"
+    },
+    {
+      "kind": "track",
+      "title": "Anybody",
+      "artist": "Skrillex, ISOxo",
+      "bpm": "150",
+      "key": "7A",
+      "time": "02:43",
+      "selected": true
+    }
+  ]
+}

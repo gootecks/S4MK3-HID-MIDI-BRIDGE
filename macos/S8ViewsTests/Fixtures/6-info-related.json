@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-30T19:22:00Z",
+  "sidebarOpen": true,
+  "tabs": [
+    {
+      "id": "track",
+      "label": "Track",
+      "selected": false
+    },
+    {
+      "id": "list",
+      "label": "List",
+      "selected": false
+    },
+    {
+      "id": "browse",
+      "label": "Browse",
+      "selected": false
+    },
+    {
+      "id": "history",
+      "label": "History",
+      "selected": false
+    },
+    {
+      "id": "info",
+      "label": "Info",
+      "selected": true
+    }
+  ],
+  "subtabs": [
+    {
+      "id": "related",
+      "label": "Related",
+      "selected": true
+    }
+  ],
+  "heading": "Info",
+  "rows": [
+    {
+      "kind": "header",
+      "text": "Related to Anybody"
+    },
+    {
+      "kind": "track",
+      "title": "Duro",
+      "artist": "Soma",
+      "bpm": "150",
+      "key": "5B",
+      "time": "03:04",
+      "selected": true
+    },
+    {
+      "kind": "track",
+      "title": "Cheeni",
+      "artist": "Soma",
+      "bpm": "140",
+      "key": "7B",
+      "time": "03:06",
+      "selected": false
+    },
+    {
+      "kind": "track",
+      "title": "Soma",
+      "artist": "Soma",
+      "bpm": "140",
+      "key": "12A",
+      "time": "03:25",
+      "selected": false
+    },
+    {
+      "kind": "action",
+      "text": "Show More"
+    }
+  ]
+}

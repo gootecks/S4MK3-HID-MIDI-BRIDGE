@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-30T19:22:00Z",
+  "sidebarOpen": true,
+  "tabs": [
+    {
+      "id": "track",
+      "label": "Track",
+      "selected": false
+    },
+    {
+      "id": "list",
+      "label": "List",
+      "selected": false
+    },
+    {
+      "id": "browse",
+      "label": "Browse",
+      "selected": false
+    },
+    {
+      "id": "history",
+      "label": "History",
+      "selected": true
+    },
+    {
+      "id": "info",
+      "label": "Info",
+      "selected": false
+    }
+  ],
+  "subtabs": [],
+  "heading": "History",
+  "rows": [
+    {
+      "kind": "header",
+      "text": "10/28/26, 12:40 AM"
+    },
+    {
+      "kind": "track",
+      "title": "Anybody",
+      "artist": "Skrillex, ISOxo",
+      "bpm": "150",
+      "key": "7A",
+      "time": "02:43",
+      "selected": true
+    },
+    {
+      "kind": "track",
+      "title": "Diwali",
+      "artist": "Soma",
+      "bpm": "135",
+      "key": "2A",
+      "time": "03:07",
+      "selected": false
+    },
+    {
+      "kind": "track",
+      "title": "Duro",
+      "artist": "Soma",
+      "bpm": "150",
+      "key": "5B",
+      "time": "03:04",
+      "selected": false
+    },
+    {
+      "kind": "header",
+      "text": "10/27/26, 9:15 PM"
+    },
+    {
+      "kind": "track",
+      "title": "Cheeni",
+      "artist": "Soma",
+      "bpm": "140",
+      "key": "7B",
+      "time": "03:06",
+      "selected": false
+    },
+    {
+      "kind": "track",
+      "title": "É o Bonde",
+      "artist": "Soma",
+      "bpm": "130",
+      "key": "5A",
+      "time": "04:42",
+      "selected": false
+    },
+    {
+      "kind": "track",
+      "title": "Soma",
+      "artist": "Soma",
+      "bpm": "140",
+      "key": "12A",
+      "time": "03:25",
+      "selected": false
+    },
+    {
+      "kind": "action",
+      "text": "Show More"
+    }
+  ]
+}
