@@ -17,6 +17,13 @@ let package = Package(
                 "NIHardwareAgentNative.swift", "BridgeStatusMenu.swift"
             ]
         ),
+        .target(name: "DjayLibrary", path: "DjayLibrary", exclude: ["README.md"]),
+        .testTarget(
+            name: "DjayLibraryTests",
+            dependencies: ["DjayLibrary"],
+            path: "DjayLibraryTests",
+            resources: [.copy("Fixtures")]
+        ),
         .testTarget(name: "S4BridgeTests", dependencies: ["S4Bridge"], path: "Tests")
     ]
 )

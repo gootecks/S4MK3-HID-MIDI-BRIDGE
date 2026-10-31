@@ -1,0 +1,389 @@
+{
+ "plays": [
+  {
+   "artist": "Skrillex, Chris Lake, RHR",
+   "deck": null,
+   "idx": 0,
+   "play_key": "9321870D-3066-4F69-BC72-72AFFD76DF9F",
+   "session_id": "76F7FD81-2481-4A03-AF59-C7A162E54AC7",
+   "title": "\u00c9 o Bonde",
+   "track_id": "81a52d015fa4aac8eda14754a7ddc32c"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "BCA8DA11-9B29-4C63-862C-3080BA3DE90E",
+   "session_id": "1028F644-B7D0-4030-937E-31FA4C16FFC4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, Chris Lake, RHR",
+   "deck": 2,
+   "idx": 1,
+   "play_key": "2AF8F8C1-41A0-4631-A7F7-1D40066F4C10",
+   "session_id": "1028F644-B7D0-4030-937E-31FA4C16FFC4",
+   "title": "\u00c9 o Bonde",
+   "track_id": "81a52d015fa4aac8eda14754a7ddc32c"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "6BD4DF95-33D4-4D1C-9179-D7222ADFD9E6",
+   "session_id": "43A333C6-E949-4883-A1D7-938BA8208DC5",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, Naisha, BEAM",
+   "deck": 2,
+   "idx": 1,
+   "play_key": "5529E112-E2B4-484A-9A66-221F92758638",
+   "session_id": "43A333C6-E949-4883-A1D7-938BA8208DC5",
+   "title": "Diwali",
+   "track_id": "7248de50c17104aaeee2de2c216b1cce"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "CDF1990D-9FD7-402E-A30E-55D2B0F4A2A9",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 1,
+   "play_key": "EFEC2BA5-9E60-4092-B106-11A5F3B100F7",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 2,
+   "play_key": "1DB99AF1-EB92-40ED-B6AD-C4449D3388C5",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 3,
+   "play_key": "7850D825-7608-42AA-AB23-ECC626B6E510",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 4,
+   "play_key": "5AD06FCD-EA08-4BEA-A553-0C657DF26532",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, Young Miko",
+   "deck": 2,
+   "idx": 5,
+   "play_key": "66988580-0C0E-40E0-B766-FA01E14BC01B",
+   "session_id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "title": "Duro",
+   "track_id": "1b157daf11c42b691022acd8fe6aaf37"
+  },
+  {
+   "artist": "Skrillex, Nitepunk",
+   "deck": null,
+   "idx": 0,
+   "play_key": "13BBB462-BCA9-4C6F-8B95-146EF42C465D",
+   "session_id": "F13C49C3-6E4C-45B6-97A2-2AC8E3B76916",
+   "title": "Soma",
+   "track_id": "13bce5297cd61df2a4cebfd2f779ceba"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 1,
+   "play_key": "02B8C995-CC0B-4789-A41D-0C1318A9F669",
+   "session_id": "F13C49C3-6E4C-45B6-97A2-2AC8E3B76916",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "2E0A74BB-92E5-4D1E-8EEB-F00E7DB08D54",
+   "session_id": "57D1253E-84D9-449E-BB17-69D4EE31D290",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "72EBA798-8025-4C6D-8B9A-AA8A526BA94C",
+   "session_id": "F6600225-8F41-4CF9-BE86-559C923E2B02",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": 2,
+   "idx": 1,
+   "play_key": "98E652A8-515B-4D3E-ADCD-F389D1BD78B3",
+   "session_id": "F6600225-8F41-4CF9-BE86-559C923E2B02",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "B017B1F2-A83C-44BC-BCE4-18560AB31BA8",
+   "session_id": "AA86909B-B0AC-4118-85F9-1279D7C29276",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  },
+  {
+   "artist": "Skrillex, Naisha",
+   "deck": 2,
+   "idx": 1,
+   "play_key": "C086D679-1F29-47D1-A7BE-7BE25E54EC98",
+   "session_id": "AA86909B-B0AC-4118-85F9-1279D7C29276",
+   "title": "Cheeni",
+   "track_id": "dccf62b3ae537c0f74cfd5dd5527398a"
+  },
+  {
+   "artist": "Skrillex, ISOxo",
+   "deck": null,
+   "idx": 0,
+   "play_key": "B8590E6C-FB11-4F97-9C83-21E13AF79341",
+   "session_id": "FA64593C-E6CC-488D-80CD-801894465D05",
+   "title": "Anybody",
+   "track_id": "0e496f3a2a54d2edf10048bb80467009"
+  }
+ ],
+ "sessions": [
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "76F7FD81-2481-4A03-AF59-C7A162E54AC7",
+   "start": "2026-07-21T18:45:45.522864-07:00",
+   "track_count": 1
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "1028F644-B7D0-4030-937E-31FA4C16FFC4",
+   "start": "2026-08-28T19:46:55.808204-07:00",
+   "track_count": 2
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "43A333C6-E949-4883-A1D7-938BA8208DC5",
+   "start": "2026-08-28T20:03:01.632599-07:00",
+   "track_count": 2
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "449BD7D8-D9BC-42B9-B13E-A1C058F9CAE4",
+   "start": "2026-08-29T15:48:55.691296-07:00",
+   "track_count": 6
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "F13C49C3-6E4C-45B6-97A2-2AC8E3B76916",
+   "start": "2026-08-29T23:02:05.844081-07:00",
+   "track_count": 2
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "57D1253E-84D9-449E-BB17-69D4EE31D290",
+   "start": "2026-08-30T18:51:43.738171-07:00",
+   "track_count": 1
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "F6600225-8F41-4CF9-BE86-559C923E2B02",
+   "start": "2026-10-11T16:01:44.552072-07:00",
+   "track_count": 2
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "AA86909B-B0AC-4118-85F9-1279D7C29276",
+   "start": "2026-10-27T20:54:26.716656-07:00",
+   "track_count": 2
+  },
+  {
+   "device_name": "suboptimal\u2019s Mac mini",
+   "id": "FA64593C-E6CC-488D-80CD-801894465D05",
+   "start": "2026-10-28T00:40:07.886825-07:00",
+   "track_count": 1
+  }
+ ],
+ "tracks": [
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, ISOxo",
+   "bpm": 150.0,
+   "duration_sec": 162.69061279296875,
+   "genre": "Electronic",
+   "id": "0e496f3a2a54d2edf10048bb80467009",
+   "key_camelot": "7A",
+   "key_index": 11,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/11-skrillex_x_isoxo-anybody-389ed9.mp3",
+   "title": "Anybody"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Nitepunk",
+   "bpm": 140.0,
+   "duration_sec": 204.9044952392578,
+   "genre": "Electronic",
+   "id": "13bce5297cd61df2a4cebfd2f779ceba",
+   "key_camelot": "12A",
+   "key_index": 9,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/01-skrillex_x_nitepunk-soma-c4fa2e.mp3",
+   "title": "Soma"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Young Miko",
+   "bpm": 150.0,
+   "duration_sec": 184.03265380859375,
+   "genre": "Electronic",
+   "id": "1b157daf11c42b691022acd8fe6aaf37",
+   "key_camelot": "5B",
+   "key_index": 6,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/12-skrillex_x_young_miko-duro-53caba.mp3",
+   "title": "Duro"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Tracey, TAICHU, Anita B Queen",
+   "bpm": null,
+   "duration_sec": 198.24327087402344,
+   "genre": "Electronic",
+   "id": "25965c2ceba0c5e1838c71da2058caf8",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/03-skrillex_x_tracey_x_taichu_x_anita_b_queen-tranki-2094f1.mp3",
+   "title": "Tranki"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Chris Lake, Anita B Queen",
+   "bpm": null,
+   "duration_sec": 144.61387634277344,
+   "genre": "Electronic",
+   "id": "2e58d474908f3c0ac7b76eaa3a614fa9",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/10-skrillex_x_chris_lake_x_anita_b_queen-la_noche_2-b8ca0e.mp3",
+   "title": "La Noche 2"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Dismantle, MC Dricka",
+   "bpm": null,
+   "duration_sec": 219.45469665527344,
+   "genre": "Electronic",
+   "id": "3f020b3dceedfbb67f82b04812c69142",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/08-skrillex_x_dismantle_x_mc_dricka-pente_rala-a3242d.mp3",
+   "title": "Pente Rala"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Naisha, BEAM",
+   "bpm": 135.0,
+   "duration_sec": 186.6971435546875,
+   "genre": "Electronic",
+   "id": "7248de50c17104aaeee2de2c216b1cce",
+   "key_camelot": "2A",
+   "key_index": 13,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/13-skrillex_x_naisha_x_beam-diwali-7dfb96.mp3",
+   "title": "Diwali"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Chris Lake, RHR",
+   "bpm": 130.0,
+   "duration_sec": 282.0440673828125,
+   "genre": "Electronic",
+   "id": "81a52d015fa4aac8eda14754a7ddc32c",
+   "key_camelot": "5A",
+   "key_index": 7,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/09-skrillex_x_chris_lake_x_rhr-e_o_bonde-ed039e.mp3",
+   "title": "\u00c9 o Bonde"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, ISOxo, Cristale, TeeZandos",
+   "bpm": null,
+   "duration_sec": 150.70040893554688,
+   "genre": "Electronic",
+   "id": "8b9823b4ea280062c18d72ef33c02248",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/04-skrillex_x_isoxo_x_cristale_x_teezandos-smoke-7ba05c.mp3",
+   "title": "Smoke"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, ROM",
+   "bpm": null,
+   "duration_sec": 178.33795166015625,
+   "genre": "Electronic",
+   "id": "aa0649fb74d956908cdee156bfe465d8",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/06-skrillex_x_rom-scut_2-44ed4d.mp3",
+   "title": "Scut 2"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Feid",
+   "bpm": null,
+   "duration_sec": 203.59837341308594,
+   "genre": "Electronic",
+   "id": "c1c5370582694f092d91aca2844cb2a3",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/05-skrillex_x_feid-noche_without_you-b0650e.mp3",
+   "title": "Noche Without You"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Naisha",
+   "bpm": 140.0,
+   "duration_sec": 185.91346740722656,
+   "genre": "Electronic",
+   "id": "dccf62b3ae537c0f74cfd5dd5527398a",
+   "key_camelot": "7B",
+   "key_index": 10,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/07-skrillex_x_naisha-cheeni-eddd76.mp3",
+   "title": "Cheeni"
+  },
+  {
+   "album": "SOMA",
+   "artist": "Skrillex, Randomer, Blawan, MC Dricka",
+   "bpm": null,
+   "duration_sec": 235.07591247558594,
+   "genre": "Electronic",
+   "id": "f42294576ef12b8c8fa512eec293332e",
+   "key_camelot": null,
+   "key_index": null,
+   "path": "/Users/prime/Music/Skrillex-SOMA-24BIT-WEBFLAC-2026-GARLICKNOTS/02-skrillex_x_randomer_x_blawan_x_mc_dricka-thistle-8b4da6.mp3",
+   "title": "Thistle"
+  }
+ ]
+}
