@@ -13,7 +13,7 @@ upstream pull request.
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI ([input-capture.md](input-capture.md), #10). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
-| S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Pages: #27. |
+| S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Next: repeated frames (#43), bridge transport (#44), app-rendered pages from Djay's own deck data (#45, #27; [screens.md](screens.md)). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
 | Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
@@ -99,4 +99,5 @@ Future notes (created by their issues): `mapping.md` (#13, #14),
 An earlier passive-capture investigation of S8 screens with Djay lives in a
 separate local research workspace (`djay-pro`: S8 screen investigation, Djay
 architecture, NI frame-format audit, protocol capture plan). Its G1–G10 write
-gates and display envelope findings feed #26.
+gates and display envelope findings fed #26. Its `djay-phrase-tool` prototype
+(Djay deck data and 480×272 page layouts) is the starting point for #45.
