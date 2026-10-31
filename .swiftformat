@@ -1,3 +1,4 @@
 # Language mode follows macos/Package.swift (swift-tools-version 5.9).
 --swiftversion 5.9
 --exclude macos/.build,target,dist
+--disable trailingCommas
