@@ -3,7 +3,7 @@ import Foundation
 extension DjayLibrarySnapshot {
     static let camelot = [
         "8B", "8A", "3B", "3A", "10B", "10A", "5B", "5A", "12B", "12A", "7B", "7A",
-        "2B", "2A", "9B", "9A", "4B", "4A", "11B", "11A", "6B", "6A", "1B", "1A",
+        "2B", "2A", "9B", "9A", "4B", "4A", "11B", "11A", "6B", "6A", "1B", "1A"
     ]
 
     private static func nonZero(_ value: DjayValue?) -> Double? {
@@ -35,7 +35,7 @@ extension DjayLibrarySnapshot {
         let titleID = item["titleID"]
         let bpm = nonZero(user?["manualBPM"]) ?? nonZero(analyzed?["bpm"]) ?? nonZero(item["bpm"])
         let keyCandidates = [
-            user?["manualKeySignatureIndex2"], analyzed?["keySignatureIndex"], item["musicalKeySignatureIndex"],
+            user?["manualKeySignatureIndex2"], analyzed?["keySignatureIndex"], item["musicalKeySignatureIndex"]
         ]
         let keyIndex = keyCandidates
             .compactMap { $0?.intValue }.first.flatMap { camelot.indices.contains($0) ? $0 : nil }

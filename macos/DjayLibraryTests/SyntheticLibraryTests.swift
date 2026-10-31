@@ -24,7 +24,7 @@ final class SyntheticLibraryTests: XCTestCase {
         row(key, djayObject([
             "sessionUUID": .string(session),
             "startTime": .date(Date(timeIntervalSinceReferenceDate: time)),
-            "titleID": titleID(uuid: nil, title: title, artist: artist),
+            "titleID": titleID(uuid: nil, title: title, artist: artist)
         ]))
     }
 
@@ -35,14 +35,14 @@ final class SyntheticLibraryTests: XCTestCase {
             "mediaItemPlaylistItems": [
                 row("pi1", djayObject(["mediaItemUUID": .string("a")])),
                 row("pi2", djayObject(["mediaItemUUID": .string("b")])),
-                row("pi3", djayObject(["mediaItemUUID": .string("c")])),
+                row("pi3", djayObject(["mediaItemUUID": .string("c")]))
             ],
             "mediaItemPlaylists": [
                 row("list", djayObject(["name": .string("Set"), "itemUUIDs": djayStrings(["pi3", "pi1", "pi2"])])),
                 row("folder", djayObject([
-                    "name": .string("Dir"), "type": .int(1), "childUUIDs": djayStrings(["list"]),
-                ])),
-            ],
+                    "name": .string("Dir"), "type": .int(1), "childUUIDs": djayStrings(["list"])
+                ]))
+            ]
         ])
         XCTAssertEqual(snapshot.playlist(id: "list")?.trackIDs, ["c", "a", "b"])
         XCTAssertEqual(snapshot.playlist(id: "list")?.kind, .playlist)
@@ -59,8 +59,8 @@ final class SyntheticLibraryTests: XCTestCase {
             "queues": [row("queue-default", djayObject(["itemUUIDs": djayStrings(["q2", "q1"])]))],
             "queueItems": [
                 row("q1", djayObject(["titleID": titleID(uuid: "a", title: "Alpha", artist: "X")])),
-                row("q2", djayObject(["titleID": titleID(uuid: nil, title: "Beta", artist: "x")])),
-            ],
+                row("q2", djayObject(["titleID": titleID(uuid: nil, title: "Beta", artist: "x")]))
+            ]
         ])
         XCTAssertEqual(snapshot.queue.map(\.trackID), ["b", "a"])
         XCTAssertEqual(snapshot.queue.map(\.title), ["Beta", "Alpha"])
@@ -70,17 +70,17 @@ final class SyntheticLibraryTests: XCTestCase {
         let itemFields: [String: DjayValue] = [
             "title": .string("A"),
             "bpm": .double(100),
-            "musicalKeySignatureIndex": .int(0),
+            "musicalKeySignatureIndex": .int(0)
         ]
         let userFields: [String: DjayValue] = [
             "manualBPM": .double(0),
-            "manualKeySignatureIndex2": .int(11),
+            "manualKeySignatureIndex2": .int(11)
         ]
         let analyzedFields: [String: DjayValue] = ["bpm": .double(120.456), "keySignatureIndex": .int(1)]
         let snapshot = DjayLibrarySnapshot(collections: [
             "mediaItems": [row("a", djayObject(itemFields))],
             "mediaItemAnalyzedData": [row("a", djayObject(analyzedFields))],
-            "mediaItemUserData": [row("a", djayObject(userFields))],
+            "mediaItemUserData": [row("a", djayObject(userFields))]
         ])
         let track = snapshot.track(id: "a")
         XCTAssertEqual(track?.bpm, 120.46)
@@ -90,9 +90,9 @@ final class SyntheticLibraryTests: XCTestCase {
     func testCoPlayNeighboursRankByCountThenRecency() {
         var collections: [String: [CollectionRow]] = [
             "mediaItems": [
-                item("t", "Target", "X"), item("p", "Prev", "X"), item("q", "Other", "X"), item("n", "Next", "X"),
+                item("t", "Target", "X"), item("p", "Prev", "X"), item("q", "Other", "X"), item("n", "Next", "X")
             ],
-            "mediaArtists": artists(["X"]),
+            "mediaArtists": artists(["X"])
         ]
         collections["historySessions"] = [session("s1", at: 100), session("s2", at: 200), session("s3", at: 300)]
         collections["historySessionItems"] = [
@@ -104,7 +104,7 @@ final class SyntheticLibraryTests: XCTestCase {
             play("p6", session: "s2", at: 203, title: "Other", artist: "X"),
             play("p7", session: "s3", at: 301, title: "Other", artist: "X"),
             play("p8", session: "s3", at: 302, title: "Target", artist: "X"),
-            play("p9", session: "s3", at: 303, title: "Unrelated", artist: "Y"),
+            play("p9", session: "s3", at: 303, title: "Unrelated", artist: "Y")
         ]
         let snapshot = DjayLibrarySnapshot(collections: collections)
         let neighbours = snapshot.coPlayNeighbours(of: "t")
@@ -119,12 +119,12 @@ final class SyntheticLibraryTests: XCTestCase {
     func testCoPlayDoesNotCrossSessions() {
         var collections: [String: [CollectionRow]] = [
             "mediaItems": [item("t", "Target", "X"), item("n", "Next", "X")],
-            "mediaArtists": artists(["X"]),
+            "mediaArtists": artists(["X"])
         ]
         collections["historySessions"] = [session("s1", at: 100), session("s2", at: 200)]
         collections["historySessionItems"] = [
             play("p1", session: "s1", at: 101, title: "Target", artist: "X"),
-            play("p2", session: "s2", at: 201, title: "Next", artist: "X"),
+            play("p2", session: "s2", at: 201, title: "Next", artist: "X")
         ]
         let neighbours = DjayLibrarySnapshot(collections: collections).coPlayNeighbours(of: "t")
         XCTAssertTrue(neighbours.before.isEmpty)

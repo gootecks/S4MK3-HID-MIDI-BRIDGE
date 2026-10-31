@@ -14,7 +14,7 @@ public struct DjayLibrarySnapshot {
     public static let collectionNames = [
         "mediaItems", "mediaItemUserData", "mediaItemAnalyzedData", "mediaArtists", "mediaAlbums", "mediaGenres",
         "localMediaItemLocations", "globalMediaItemLocations", "mediaItemPlaylists", "mediaItemPlaylistItems",
-        "queues", "queueItems", "historySessions", "historySessionItems",
+        "queues", "queueItems", "historySessions", "historySessionItems"
     ]
 
     public static func load(databaseURL: URL) throws -> DjayLibrarySnapshot {
