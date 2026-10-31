@@ -78,6 +78,8 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   separation, upstream PR procedure.
 - [input-capture.md](input-capture.md) — passive HID and MIDI capture in
   Controller Editor MIDI mode: which controls lack MIDI, undocumented bytes.
+- [capture-checklist.md](capture-checklist.md) — recorder usage and the ordered
+  control-by-control checklist for the agent-stopped input capture (#10).
 - [screens.md](screens.md) — display protocol summary, source conflicts,
   macOS ownership, and the phased first-frame test plan.
 - [agent-stop-validation.md](agent-stop-validation.md) — phase 0: what
