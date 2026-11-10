@@ -280,10 +280,9 @@ and a second run of `b-play` with the reworded questions.
 
 ### Time inside djay's second (#83)
 
-Not seen on the S8 and not run against a live djay. Checked on 2026-11-10 at
-`a6a9b36` with `swift test --package-path macos` only. Both test classes feed
-`DeckTracker` a poll every 0.25 s at five poll phases and read the page every
-0.1 s.
+Automated: checked on 2026-11-10 at `0c3264e` with
+`swift test --package-path macos`. Both test classes feed `DeckTracker` a
+poll every 0.25 s at five poll phases and read the page every 0.1 s.
 
 `DeckTimeReplayTests` replays the djay side of capture C
 (`captures/deck-pages-20261110/c-two-decks-play-djay.txt.gz`, copied to
@@ -311,11 +310,37 @@ way, with presses that fall at other moments in the second and the blink at
 other phases. It holds the same bounds, and bounds the time before playing
 is confirmed: at most 0.75 s ahead and at most 0.7 s plus two polls behind.
 
-Not checked: the page on the S8, a live djay, a layout that shows the elapsed
-label, a changed pitch, a jump, scratching and looping. In capture C the
-label moved 0.07 s and 0.22 s after the two resumes, which confirmed playing
-early. A resume that falls early in a second waits longer and gives a larger
-forward move (#87); the observer has not seen either at this revision.
+On the S8: run once on 2026-11-10 with `mise run s8:deck-page b-play` at
+`71470ad`, the same code before it was rebased onto `main`. Answers and logs:
+`captures/deck-page-20261110T201431Z/`.
 
-The runner now asks whether the time stepped back on pause and names #87 as
-the known move on resume.
+| Step | Bridge | Records sent | The observer reported |
+| ---- | ------ | ------------ | --------------------- |
+| `b-play` | `pending`, `active`, `inactive`; exit status 0 | 102 | `y` to all four questions: while deck 1 played the left panel said PLAYING and its time moved with djay's; on pause the left time stopped without stepping back and stood still; on resume it did not jump by the length of the pause; the right panel stood still. |
+| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 120 | `y` to both questions: deck 3 left and deck 4 right; each time moved only while its own deck played, and on pause it stopped without stepping back and stood still. |
+
+Both resume questions named one move forward of less than 1 s as known
+(#87). Nothing else was reported on the panels: "everything looked good".
+After recovery the panels showed the Controller Editor labels and djay
+reacted to the left PLAY button.
+
+What the stream logs show was sent (sent, not seen):
+
+| Deck | Event | Page elapsed |
+| ---- | ----- | ------------ |
+| 1 | First PLAYING record | 79.41 s to 79.91 s (+0.50 s) |
+| 1 | PAUSED record | 91.76 s to 91.91 s (+0.15 s) |
+| 1 | First PLAYING record after 15.9 s paused | 91.91 s to 92.76 s (+0.85 s) |
+| 1 | PAUSED record | 111.33 s to 111.66 s (+0.33 s) |
+| 2 | One record, at the start of its track | 0.00 s |
+| 3 | First PLAYING record | 80.54 s to 81.23 s (+0.69 s) |
+| 3 | PAUSED record | 99.22 s to 99.54 s (+0.32 s) |
+| 4 | First PLAYING record | 44.84 s to 45.34 s (+0.50 s) |
+| 4 | PAUSED record | 60.05 s to 60.09 s (+0.04 s) |
+
+No record stepped back. The moves when PLAYING appears, 0.50 s to 0.85 s,
+are the step of #87.
+
+Not checked: the page time against djay's true position on a live djay, a
+layout that shows the elapsed label, a changed pitch, a jump, scratching and
+looping.

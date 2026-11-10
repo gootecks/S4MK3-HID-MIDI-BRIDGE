@@ -1,0 +1,48 @@
+warning: 'macos': found 19 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/Assets/AppIcon.png
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DatabaseSnapshot.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayCuePoint.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayLibraryModels.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayLibrarySnapshot+Build.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayLibrarySnapshot+History.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayLibrarySnapshot.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/DjayValue.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/KeyedArchive.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/README.md
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/TSAFDecoder.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibrary/TrackIndex.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/CuePointTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/Fixtures/djaykit-expected.json
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/Fixtures/real-library.json
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/RealLibraryTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/SyntheticLibraryTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/DjayLibraryTests/TestSupport.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-83/macos/build-jog-diagnostic.sh
+Building for production...
+[Planning deferred tasks]
+[26 / 52]
+[28 / 54] DjayLibrary
+[40 / 99]
+[46 / 99]
+[50 / 99]
+[54 / 99]
+[57 / 99]
+[62 / 99]
+[64 / 99]
+[67 / 99]
+[68 / 99]
+[73 / 99]
+[74 / 99]
+[75 / 99] S8Views
+[81 / 99] DjayLibrary
+[88 / 100] DjayDecks
+[104 / 123]
+[107 / 123]
+[109 / 123]
+[110 / 123]
+[112 / 123] DjayDecks
+[119 / 124] S8Preview-product
+[121 / 125] S8Preview-product
+[123 / 125] S8Preview-product
+[124 / 125] S8Preview-product
+Build complete! (10.57 sec)
