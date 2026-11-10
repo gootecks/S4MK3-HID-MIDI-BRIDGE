@@ -152,8 +152,8 @@ their detailed notes stay in `docs/release-*.md`.
   screens with a latest-wins slot per panel and a 30 frames per
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
   in `docs/s8/screen-transport.md`. Checked on the S8 in an attended run
-  ([record](docs/s8/screen-transport-validation.md)); stopping it with
-  Ctrl-C while it streams failed there, see Fixed (#44).
+  ([record](docs/s8/screen-transport-validation.md)), including a stop with
+  Ctrl-C while it streams after the fix below (#44).
 - `examples/s8-screen-feed.rs` writes `S8FR` records of the phase 5 test
   pattern to stdout (`--dry-run` touches nothing), and `mise run
   s8:screen-transport [first-step]` runs the attended check of the screen
@@ -179,7 +179,7 @@ their detailed notes stay in `docs/release-*.md`.
   are dropped, on the S4 MK3 as well. With `--s8-screens-stdin` or
   `--app-events` the S8 bridge stops cleanly when a status or `S8_CONTROL`
   line cannot be written: exit frames, release, exit status 0. Covered by
-  tests; not yet run on the S8 (#44).
+  tests; Ctrl-C while streaming then passed on the S8 (#44).
 
 ## [0.2.1-beta.1] - 2026-10-26
 
