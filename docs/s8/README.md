@@ -100,6 +100,9 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 - [screen-frame-validation.md](screen-frame-validation.md) — phases 2–4:
   first frames, colour order and a full uncompressed frame
   (`screen-frame-check.sh`).
+- [screens.md](screens.md) phase 5 — planned repeated-frame, held-claim and
+  partial-update steps, run by `screen-stream-check.sh` (shared helpers in
+  `screen-lib.sh`); results will go to `screen-stream-validation.md`.
 - [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
   and Mixxx survey, with licensing notes.
 - [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching

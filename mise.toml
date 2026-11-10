@@ -92,6 +92,11 @@ arg "[order]" help="pattern colour order: rgb or bgr"
 run = 'bash docs/s8/screen-frame-check.sh "$usage_phase" ${usage_order:-}'
 raw = true
 
+[tasks."s8:screen-stream"]
+description = "Attended S8 screen phase 5: stop NIHardwareAgent, stream frames, partial updates, exit state, restore (#43)"
+run = "bash docs/s8/screen-stream-check.sh"
+raw = true
+
 [tasks."s8:input-capture"]
 description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
 usage = '''

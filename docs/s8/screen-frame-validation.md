@@ -2,7 +2,7 @@
 
 Validation record for #34 and #35 ([screens.md](screens.md), phases 2–4).
 Every frame was a single bulk OUT transfer on interface 6, endpoint `0x04`,
-with a 500 ms timeout and no retries, sent by `examples/s8-screen-frame.rs`.
+with a 500 ms timeout and no retries, sent by `examples/s8-screen-frame/`.
 Nothing was sent on interface 5. No transfer touched the configuration, did a
 reset or changed the alternate setting.
 
@@ -119,4 +119,5 @@ The script checks for one S8 and one verified NIHardwareAgent, starts the
 recorder, stops the agent with SIGKILL, prints each frame's size and hash,
 sends it after Enter, asks what the panels show and for a PLAY press, then
 relaunches the agent with `open -g`. Answering `stop` at any prompt skips to
-recovery. Per-window counts go to `target/s8-captures/`.
+recovery. Per-window counts go to `docs/s8/captures/screen-<phase>-<UTC>/`
+(earlier runs wrote to `target/s8-captures/`).
