@@ -37,7 +37,8 @@ pub enum Scope {
     DeckSelect,
 }
 
-/// The pad layers, named after the buttons that select them.
+/// The pad layers. HOTCUE, FREEZE and REMIX select theirs; Shift + HOTCUE
+/// selects `Loop`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PadMode {
     Hotcue,
@@ -53,7 +54,8 @@ impl PadMode {
 /// One MIDI address and the Djay action bound to it.
 ///
 /// A control with a Shift row uses it while Shift is held; a control without
-/// one keeps its base row.
+/// one keeps its base row. Rows of one control and layer share their address:
+/// Djay runs every action bound to it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Binding {
     /// Decoder name; deck-scoped inputs omit the `left_` / `right_` prefix.
@@ -178,8 +180,8 @@ pub const DECK: &[Binding] = &[
     note("loop_encoder_press", 6, "turntable{deck}.reloop").shift(),
     note("touchstrip_touch", 7, "turntable{deck}.scratchingMode"),
     note("touchstrip_touch", 7, "turntable{deck}.jogSeekMode").shift(),
-    note("back", 9, "musicLibrary.libraryBack"),
-    note("back", 9, "musicLibrary.toggleLibrarySource").shift(),
+    note("back", 9, "musicLibrary.toggleLibrarySource"),
+    note("back", 9, "musicLibrary.libraryBack").shift(),
     note("browse_encoder_press", 12, "musicLibrary.load{deck}"),
     note(
         "browse_encoder_press",
@@ -188,9 +190,15 @@ pub const DECK: &[Binding] = &[
     )
     .shift(),
     note("edit", 13, "musicLibrary.togglePreview"),
+    note("fx_select", 14, "musicLibrary.toggleLibraryVisible"),
     note("capture", 22, "turntable{deck}.recordSample"),
+    note("hotcue", 25, "turntable{deck}.padModeHotCue"),
+    note("hotcue", 25, "turntable{deck}.padModeBounceLoop").shift(),
+    note("loop", 26, "looper.toggleLooperShown"),
     note("freeze", 27, "turntable{deck}.padModeSlicer"),
     note("freeze", 27, "turntable{deck}.slicerLoopModeToggle").shift(),
+    note("remix", 28, "turntable{deck}.padModeSampler"),
+    note("remix", 28, "sampler.toggleSamplerShown"),
     note("on_1", 56, "turntable{deck}.unmixerFourTrackChannel1Muted"),
     note("on_2", 57, "turntable{deck}.unmixerFourTrackChannel2Muted"),
     note("on_3", 58, "turntable{deck}.unmixerFourTrackChannel3Muted"),
@@ -237,39 +245,39 @@ pub const DECK: &[Binding] = &[
     .with_pickup(),
 ];
 
-/// The left FX unit; the deck it targets supplies the channel. Dial 1 is
-/// dry/wet for all three effect slots.
+/// The left FX unit; the deck it targets supplies the channel. Controls 1-3
+/// are the three effect slots; dial 4 is dry/wet for all of them.
 pub const FX_LEFT: &[Binding] = &[
-    note("fx_1", 32, "turntable{deck}.fxActive"),
-    note("fx_2", 33, "turntable{deck}.fx1Enabled"),
-    note("fx_3", 34, "turntable{deck}.fx2Enabled"),
-    note("fx_4", 35, "turntable{deck}.fx3Enabled"),
-    note("fx_2", 33, "turntable{deck}.fx1SelectNext").shift(),
-    note("fx_3", 34, "turntable{deck}.fx2SelectNext").shift(),
-    note("fx_4", 35, "turntable{deck}.fx3SelectNext").shift(),
-    cc("fx_dial_2", 32, "turntable{deck}.fx1ParameterValue").with_pickup(),
-    cc("fx_dial_3", 33, "turntable{deck}.fx2ParameterValue").with_pickup(),
-    cc("fx_dial_4", 34, "turntable{deck}.fx3ParameterValue").with_pickup(),
-    cc("fx_dial_1", 35, "turntable{deck}.fx1WetDryValue").with_pickup(),
-    cc("fx_dial_1", 36, "turntable{deck}.fx2WetDryValue").with_pickup(),
-    cc("fx_dial_1", 37, "turntable{deck}.fx3WetDryValue").with_pickup(),
+    note("fx_1", 32, "turntable{deck}.fx1Enabled"),
+    note("fx_2", 33, "turntable{deck}.fx2Enabled"),
+    note("fx_3", 34, "turntable{deck}.fx3Enabled"),
+    note("fx_4", 35, "turntable{deck}.fxActive"),
+    note("fx_1", 32, "turntable{deck}.fx1SelectNext").shift(),
+    note("fx_2", 33, "turntable{deck}.fx2SelectNext").shift(),
+    note("fx_3", 34, "turntable{deck}.fx3SelectNext").shift(),
+    cc("fx_dial_1", 32, "turntable{deck}.fx1ParameterValue").with_pickup(),
+    cc("fx_dial_2", 33, "turntable{deck}.fx2ParameterValue").with_pickup(),
+    cc("fx_dial_3", 34, "turntable{deck}.fx3ParameterValue").with_pickup(),
+    cc("fx_dial_4", 35, "turntable{deck}.fx1WetDryValue").with_pickup(),
+    cc("fx_dial_4", 35, "turntable{deck}.fx2WetDryValue").with_pickup(),
+    cc("fx_dial_4", 35, "turntable{deck}.fx3WetDryValue").with_pickup(),
 ];
 
 /// The right FX unit, on its own numbers so both units can target one deck.
 pub const FX_RIGHT: &[Binding] = &[
-    note("fx_1", 36, "turntable{deck}.fxActive"),
-    note("fx_2", 37, "turntable{deck}.fx1Enabled"),
-    note("fx_3", 38, "turntable{deck}.fx2Enabled"),
-    note("fx_4", 39, "turntable{deck}.fx3Enabled"),
-    note("fx_2", 37, "turntable{deck}.fx1SelectNext").shift(),
-    note("fx_3", 38, "turntable{deck}.fx2SelectNext").shift(),
-    note("fx_4", 39, "turntable{deck}.fx3SelectNext").shift(),
-    cc("fx_dial_2", 40, "turntable{deck}.fx1ParameterValue").with_pickup(),
-    cc("fx_dial_3", 41, "turntable{deck}.fx2ParameterValue").with_pickup(),
-    cc("fx_dial_4", 42, "turntable{deck}.fx3ParameterValue").with_pickup(),
-    cc("fx_dial_1", 43, "turntable{deck}.fx1WetDryValue").with_pickup(),
-    cc("fx_dial_1", 44, "turntable{deck}.fx2WetDryValue").with_pickup(),
-    cc("fx_dial_1", 45, "turntable{deck}.fx3WetDryValue").with_pickup(),
+    note("fx_1", 36, "turntable{deck}.fx1Enabled"),
+    note("fx_2", 37, "turntable{deck}.fx2Enabled"),
+    note("fx_3", 38, "turntable{deck}.fx3Enabled"),
+    note("fx_4", 39, "turntable{deck}.fxActive"),
+    note("fx_1", 36, "turntable{deck}.fx1SelectNext").shift(),
+    note("fx_2", 37, "turntable{deck}.fx2SelectNext").shift(),
+    note("fx_3", 38, "turntable{deck}.fx3SelectNext").shift(),
+    cc("fx_dial_1", 40, "turntable{deck}.fx1ParameterValue").with_pickup(),
+    cc("fx_dial_2", 41, "turntable{deck}.fx2ParameterValue").with_pickup(),
+    cc("fx_dial_3", 42, "turntable{deck}.fx3ParameterValue").with_pickup(),
+    cc("fx_dial_4", 43, "turntable{deck}.fx1WetDryValue").with_pickup(),
+    cc("fx_dial_4", 43, "turntable{deck}.fx2WetDryValue").with_pickup(),
+    cc("fx_dial_4", 43, "turntable{deck}.fx3WetDryValue").with_pickup(),
 ];
 
 const HOTCUE_PADS: &[Binding] = &[
@@ -404,12 +412,24 @@ pub const MIXER: &[Binding] = &[
     relative("tempo_encoder", 26, "turntableSelected.speed")
         .tuned(3.5, 0)
         .mixer(),
+    cc("mixer_cue_volume", 25, "mixer.monitorLevel").mixer(),
+    cc("mixer_cue_mix", 27, "mixer.monitorMix").mixer(),
+    cc("mixer_booth", 28, "mixer.boothLevel").mixer(),
+    cc("mixer_main", 29, "mixer.masterLevel").mixer(),
     note("mixer_cue_a", 0, "mixer.monitorActive1").mixer(),
     note("mixer_cue_b", 1, "mixer.monitorActive2").mixer(),
     note("mixer_cue_c", 2, "mixer.monitorActive3").mixer(),
     note("mixer_cue_d", 3, "mixer.monitorActive4").mixer(),
     note("mixer_mic_1", 4, "microphone.active").mixer(),
+    note("mixer_quantize", 7, "application.quantizeToggle").mixer(),
     note("mixer_tempo", 26, "turntableSelected.resetSpeed").mixer(),
+];
+
+/// Mixer buttons that send a note of their own with no Djay action, so they
+/// can be assigned in Djay. The generated mapping leaves them out.
+pub const UNBOUND: &[Binding] = &[
+    note("mixer_mic_2", 5, "").mixer(),
+    note("mixer_snap", 6, "").mixer(),
 ];
 
 /// Crossfader assign switch per mixer channel A-D: left, middle, right.
@@ -502,8 +522,9 @@ pub const LOCAL_CONTROLS: &[ControlNote] = &[
         reason: "switches its side between decks A/C or B/D, then sends the deck-select note",
     },
     ControlNote {
-        name: "hotcue, loop, freeze, remix",
-        reason: "select the pad layer of their side",
+        name: "hotcue, freeze, remix",
+        reason: "select the pad layer of their side, then send their Djay pad-mode note; \
+                 Shift + hotcue selects the bounce-loop pads",
     },
     ControlNote {
         name: "mixer_fx_X_1, mixer_fx_X_2",
@@ -518,20 +539,12 @@ pub const LOCAL_CONTROLS: &[ControlNote] = &[
 /// Decoded controls with no Djay assignment in this layout.
 pub const UNASSIGNED_CONTROLS: &[ControlNote] = &[
     ControlNote {
-        name: "mixer_snap, mixer_quantize",
-        reason: "left out of this prototype",
-    },
-    ControlNote {
-        name: "mixer_mic_2",
-        reason: "Djay has one microphone action",
+        name: "mixer_snap, mixer_mic_2",
+        reason: "send mixer notes 6 and 5 with no Djay action; assign them in Djay",
     },
     ControlNote {
         name: "deck_assign_X",
         reason: "Djay decks are fixed to their mixer channels",
-    },
-    ControlNote {
-        name: "fx_select",
-        reason: "reserved for an on-screen effect picker",
     },
     ControlNote {
         name: "screen_left_2, screen_left_3, screen_right_1..4, screen_encoder_1..4",

@@ -12,12 +12,13 @@ pub(super) fn side(name: &str) -> Option<(usize, &str)> {
         .or_else(|| name.strip_prefix("right_").map(|rest| (RIGHT, rest)))
 }
 
-pub(super) fn pad_mode(button: &str) -> Option<PadMode> {
-    match button {
-        "hotcue" => Some(PadMode::Hotcue),
-        "loop" => Some(PadMode::Loop),
-        "freeze" => Some(PadMode::Freeze),
-        "remix" => Some(PadMode::Remix),
+/// The pad layer a pad-mode button selects. LOOP selects none.
+pub(super) fn pad_mode(button: &str, shifted: bool) -> Option<PadMode> {
+    match (button, shifted) {
+        ("hotcue", false) => Some(PadMode::Hotcue),
+        ("hotcue", true) => Some(PadMode::Loop),
+        ("freeze", _) => Some(PadMode::Freeze),
+        ("remix", _) => Some(PadMode::Remix),
         _ => None,
     }
 }

@@ -14,7 +14,7 @@ use lookup::{AssignBit, LEFT, find};
 
 use super::catalog::{
     Binding, CROSSFADER_ASSIGN, DECK, DECK_SELECT, DECKS, FX_LEFT, FX_RIGHT, Kind, Layer, MIXER,
-    PadMode, Scope, pads,
+    PadMode, Scope, UNBOUND, pads,
 };
 use super::strip::{self, Owner, Strip};
 
@@ -181,7 +181,7 @@ impl Translator {
                 self.press_deck(name, side, out);
                 return;
             }
-            if let Some(mode) = lookup::pad_mode(suffix) {
+            if let Some(mode) = lookup::pad_mode(suffix, self.shift[side]) {
                 self.pad_mode[side] = mode;
             }
         } else if let Some((unit, channel)) = lookup::fx_assign(name) {
@@ -327,7 +327,9 @@ impl Translator {
         if let Some((side, suffix)) = lookup::side(name) {
             return self.side_row(side, suffix, kind);
         }
-        find(MIXER, name, kind, false).map(|row| (row, 0))
+        find(MIXER, name, kind, false)
+            .or_else(|| find(UNBOUND, name, kind, false))
+            .map(|row| (row, 0))
     }
 
     fn side_row(&self, side: usize, suffix: &str, kind: Kind) -> Option<(&'static Binding, u8)> {

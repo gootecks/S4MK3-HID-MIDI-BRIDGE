@@ -53,6 +53,14 @@ pub(super) fn tap(translator: &mut Translator, name: &'static str) -> Vec<[u8; 3
     out
 }
 
+/// Taps a left-side button with the left Shift held.
+fn shift_tap(translator: &mut Translator, name: &'static str) -> Vec<[u8; 3]> {
+    run(translator, &[button("left_shift", true)]);
+    let out = tap(translator, name);
+    run(translator, &[button("left_shift", false)]);
+    out
+}
+
 #[test]
 fn a_button_sends_note_on_then_note_off_on_its_deck_channel() {
     let mut translator = Translator::new();
@@ -181,7 +189,19 @@ fn each_pad_mode_hits_its_catalog_rows() {
         [[0x90, 47, 127], [0x80, 47, 0]]
     );
 
-    assert!(tap(&mut translator, "left_loop").is_empty());
+    assert_eq!(
+        tap(&mut translator, "left_loop"),
+        [[0x90, 26, 127], [0x80, 26, 0]]
+    );
+    assert_eq!(
+        tap(&mut translator, "left_pad_1"),
+        [[0x90, 40, 127], [0x80, 40, 0]],
+        "LOOP toggles the Looper and leaves the pad layer alone"
+    );
+    assert_eq!(
+        shift_tap(&mut translator, "left_hotcue"),
+        [[0x98, 25, 127], [0x88, 25, 0]]
+    );
     assert_eq!(
         tap(&mut translator, "left_pad_1"),
         [[0x90, 64, 127], [0x80, 64, 0]]
@@ -204,7 +224,10 @@ fn each_pad_mode_hits_its_catalog_rows() {
         [[0x90, 79, 127], [0x80, 79, 0]]
     );
 
-    assert!(tap(&mut translator, "left_remix").is_empty());
+    assert_eq!(
+        tap(&mut translator, "left_remix"),
+        [[0x90, 28, 127], [0x80, 28, 0]]
+    );
     assert_eq!(
         tap(&mut translator, "left_pad_1"),
         [[0x90, 48, 127], [0x80, 48, 0]]
@@ -214,7 +237,10 @@ fn each_pad_mode_hits_its_catalog_rows() {
         [[0x90, 55, 127], [0x80, 55, 0]]
     );
 
-    assert!(tap(&mut translator, "left_hotcue").is_empty());
+    assert_eq!(
+        tap(&mut translator, "left_hotcue"),
+        [[0x90, 25, 127], [0x80, 25, 0]]
+    );
     assert_eq!(
         tap(&mut translator, "left_pad_2"),
         [[0x90, 41, 127], [0x80, 41, 0]]
@@ -224,7 +250,7 @@ fn each_pad_mode_hits_its_catalog_rows() {
 #[test]
 fn pad_mode_is_kept_per_side_and_sampler_pads_follow_the_deck() {
     let mut translator = Translator::new();
-    tap(&mut translator, "left_loop");
+    shift_tap(&mut translator, "left_hotcue");
 
     assert_eq!(
         tap(&mut translator, "right_pad_1"),
@@ -262,7 +288,7 @@ fn shift_picks_the_shift_row_only_where_the_pad_layer_has_one() {
         [[0x98, 48, 127], [0x88, 48, 0]]
     );
 
-    tap(&mut translator, "left_loop");
+    tap(&mut translator, "left_hotcue");
     assert_eq!(
         tap(&mut translator, "left_pad_1"),
         [[0x90, 64, 127], [0x80, 64, 0]]
@@ -273,7 +299,7 @@ fn shift_picks_the_shift_row_only_where_the_pad_layer_has_one() {
 fn release_goes_to_the_pad_pressed_when_the_pad_mode_changes_in_between() {
     let mut translator = Translator::new();
     run(&mut translator, &[button("left_pad_1", true)]);
-    tap(&mut translator, "left_loop");
+    shift_tap(&mut translator, "left_hotcue");
 
     assert_eq!(
         run(&mut translator, &[button("left_pad_1", false)]),
@@ -345,7 +371,40 @@ fn the_fx_unit_target_is_independent_of_the_deck_of_its_side() {
     );
     assert_eq!(
         run(&mut translator, &[slider("left_fx_dial_2", 1.0)]),
-        [[0xb1, 32, 127]]
+        [[0xb1, 33, 127]]
+    );
+}
+
+#[test]
+fn a_control_with_several_actions_sends_one_message() {
+    let mut translator = Translator::new();
+
+    assert_eq!(
+        run(&mut translator, &[slider("left_fx_dial_4", 1.0)]),
+        [[0xb0, 35, 127]]
+    );
+    assert_eq!(
+        run(&mut translator, &[slider("right_fx_dial_4", 1.0)]),
+        [[0xb1, 43, 127]]
+    );
+    assert_eq!(
+        tap(&mut translator, "right_fx_select"),
+        [[0x91, 14, 127], [0x81, 14, 0]]
+    );
+
+    assert_eq!(
+        tap(&mut translator, "left_remix"),
+        [[0x90, 28, 127], [0x80, 28, 0]]
+    );
+
+    run(&mut translator, &[button("left_shift", true)]);
+    assert_eq!(
+        tap(&mut translator, "left_fx_4"),
+        [[0x90, 35, 127], [0x80, 35, 0]]
+    );
+    assert_eq!(
+        tap(&mut translator, "left_back"),
+        [[0x98, 9, 127], [0x88, 9, 0]]
     );
 }
 
@@ -410,6 +469,23 @@ fn sliders_send_only_when_the_seven_bit_value_changes() {
         run(&mut translator, &[slider("crossfader", 1.0)]),
         [[0xb4, 20, 127]]
     );
+    assert_eq!(
+        run(
+            &mut translator,
+            &[
+                slider("mixer_cue_volume", 1.0),
+                slider("mixer_cue_mix", 0.5),
+                slider("mixer_booth", 0.0),
+                slider("mixer_main", 1.0),
+            ]
+        ),
+        [
+            [0xb4, 25, 127],
+            [0xb4, 27, 64],
+            [0xb4, 28, 0],
+            [0xb4, 29, 127]
+        ]
+    );
 }
 
 #[test]
@@ -467,11 +543,7 @@ fn local_unassigned_and_unknown_controls_send_nothing() {
     let names = [
         "left_screen_left_1",
         "left_screen_right_3",
-        "left_fx_select",
         "deck_assign_a",
-        "mixer_snap",
-        "mixer_quantize",
-        "mixer_mic_2",
         "mixer_cue_a_latch",
         "mixer_filter_on_a_latch",
         "nonsense",
@@ -484,4 +556,16 @@ fn local_unassigned_and_unknown_controls_send_nothing() {
     assert!(run(&mut translator, &[touch("left_loop_encoder_touch", true)]).is_empty());
     assert!(run(&mut translator, &[slider("left_unknown", 1.0)]).is_empty());
     assert!(run(&mut translator, &[encoder("left_screen_encoder_1", 4)]).is_empty());
+}
+
+#[test]
+fn unbound_mixer_buttons_send_their_own_notes_for_djay_to_learn() {
+    let mut translator = Translator::new();
+    for (name, number) in [("mixer_mic_2", 5), ("mixer_snap", 6)] {
+        assert_eq!(
+            tap(&mut translator, name),
+            [[0x94, number, 127], [0x84, number, 0]],
+            "{name}"
+        );
+    }
 }
