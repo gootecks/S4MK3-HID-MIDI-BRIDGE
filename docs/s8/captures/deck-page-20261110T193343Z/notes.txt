@@ -1,0 +1,13 @@
+Deck page check. Bridge: target/release/s4mk3-hid-midi-bridge (release). Stream: macos/.build/release/S8Preview.
+Start and stop decks in djay's window. Ctrl-C ends a step early; the panels then go black.
+Starting at c-four-decks; earlier steps are skipped.
+c-four-decks: Switch djay to Four Decks with decks 3 and 4 loaded and paused. During the step: play deck 3 for about 10 s and pause it, then play deck 4 for about 10 s and pause it.
+Next: c-four-decks, 60 s, panels left=3,right=4. Enter to start, or 'stop'.: 
+c-four-decks: bridge exit status 0, 91 records written
+c-four-decks: status lines: pending,active,inactive
+c-four-decks: left panel showed deck 3 and right panel deck 4 (y, n or describe; 'stop' ends the run): y
+c-four-decks: each time moved only while its own deck played and stood still while it was paused (one step of up to about 1 s when PLAYING appears is expected) (y, n or describe; 'stop' ends the run): y
+Anything else seen on the panels (flicker, tearing, wrong colours, lag behind djay)? Describe, or Enter.: 
+After recovery: what do the panels show (Controller Editor labels again)?: Controller Editor labels
+Press left PLAY once. Did Djay react? y/n: y
+Recorded in docs/s8/captures/deck-page-20261110T193343Z

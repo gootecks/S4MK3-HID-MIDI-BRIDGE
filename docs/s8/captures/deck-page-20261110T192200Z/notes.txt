@@ -1,0 +1,20 @@
+Deck page check. Bridge: target/release/s4mk3-hid-midi-bridge (release). Stream: macos/.build/release/S8Preview.
+Start and stop decks in djay's window. Ctrl-C ends a step early; the panels then go black.
+a-paused: Load decks 1 and 2 and leave both paused. Touch nothing during the step.
+Next: a-paused, 20 s, panels left=1,right=2. Enter to start, or 'stop'.: 
+a-paused: bridge exit status 0, 2 records written
+a-paused: status lines: pending,active,inactive
+a-paused: left panel showed deck 1 and right panel deck 2, each with title, time, waveform and PAUSED (y, n or describe; 'stop' ends the run): y
+a-paused: both times and both playheads stood still for the whole 20 s (y, n or describe; 'stop' ends the run): y
+a-paused: both panels went black at the end (y, n or describe; 'stop' ends the run): y
+b-play: During the step: play deck 1 for about 10 s, pause it for about 10 s, play it again, then pause it. Leave deck 2 paused.
+Next: b-play, 60 s, panels left=1,right=2. Enter to start, or 'stop'.: 
+b-play: bridge exit status 0, 117 records written
+b-play: status lines: pending,active,inactive
+b-play: while deck 1 played, the left panel said PLAYING and its time moved with djay's (y, n or describe; 'stop' ends the run): y
+b-play: while deck 1 was paused, the left time stood still; on resume it went on from there, without a jump by the length of the pause (y, n or describe; 'stop' ends the run): on resume, there was a small jump in the time on the S8 display
+Stopped: b-play: observer answered 'on resume, there was a small jump in the time on the S8 display'.
+Anything else seen on the panels (flicker, tearing, wrong colours, lag behind djay)? Describe, or Enter.: 
+After recovery: what do the panels show (Controller Editor labels again)?: Controller Editor labels
+Press left PLAY once. Did Djay react? y/n: y
+Recorded in docs/s8/captures/deck-page-20261110T192200Z

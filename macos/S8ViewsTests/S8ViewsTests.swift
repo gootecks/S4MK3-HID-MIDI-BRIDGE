@@ -107,6 +107,18 @@ final class FrameTests: XCTestCase {
         let small = Bitmap(width: 2, height: 2, rgba: [UInt8](repeating: 0, count: 16))
         XCTAssertNil(S8Frame.make(screen: .left, bitmap: small))
     }
+
+    func testStdinRecordCarriesPanelLengthAndPixelsOnly() throws {
+        let record = try XCTUnwrap(S8Frame.record(screen: .right, bitmap: solid(255, 0, 0)))
+        XCTAssertEqual(record.count, 12 + 261_120)
+        XCTAssertEqual(Array(record[0 ..< 12]), [0x53, 0x38, 0x46, 0x52, 1, 0, 0, 0, 0x00, 0xFC, 0x03, 0x00])
+        XCTAssertEqual(Array(record[12 ..< 16]), [0xF8, 0x00, 0xF8, 0x00])
+        XCTAssertEqual(Array(record.suffix(2)), [0xF8, 0x00])
+        let left = try XCTUnwrap(S8Frame.record(screen: .left, bitmap: solid(0, 0, 0)))
+        XCTAssertEqual(left[4], 0)
+        let small = Bitmap(width: 2, height: 2, rgba: [UInt8](repeating: 0, count: 16))
+        XCTAssertNil(S8Frame.record(screen: .left, bitmap: small))
+    }
 }
 
 final class RenderTests: XCTestCase {
