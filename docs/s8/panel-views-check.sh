@@ -4,8 +4,9 @@
 # SENDS SCREEN FRAMES TO THE S8 (interface 6, through the bridge's
 # --s8-screens-stdin transport). Run it only with the approval that plan asks
 # for. Stops NIHardwareAgent with SIGKILL, runs S8Host --screens twice
-# (library views, then the deck page), asks one question per row and restores
-# the agent on every exit path. Answering "stop" goes to recovery.
+# (library views, then the deck page with the deck reads logged), asks one
+# question per row and restores the agent on every exit path. Answering
+# "stop" goes to recovery.
 set -euo pipefail
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 # shellcheck source=docs/s8/screen-lib.sh
@@ -16,6 +17,7 @@ host=""
 host_pid=""
 fifo=""
 log=""
+gap_from=0
 
 restore() {
     [ -z "$host_pid" ] || kill -INT "$host_pid" 2> /dev/null || true
@@ -132,18 +134,44 @@ if [ "$answer" != stop ]; then
     ask "17. After Ctrl-C, agent still stopped: what do the panels show? (expected: both black)"
 fi
 
+# gaps LABEL: the deck reads S8Host logged since the previous call.
+gaps() {
+    local now
+    now="$(perl -MTime::HiRes=time -e 'printf "%.3f", time')"
+    note "$1: $(awk -v from="$gap_from" -v to="$now" '
+        / deck poll gap=/ && $1 >= from && $1 < to {
+            reads++
+            split($5, gap, "=")
+            split($6, read, "=")
+            if (gap[2] != "-" && gap[2] + 0 > longest) longest = gap[2] + 0
+            if (gap[2] != "-" && gap[2] + 0 > 0.45) late++
+            if (read[2] + 0 > slowest) slowest = read[2] + 0
+        }
+        END {
+            printf "deck reads %d, longest gap %.3f s, gaps over 0.45 s %d, longest read %.3f s",
+                reads, longest, late, slowest
+        }
+    ' "$log")"
+    gap_from="$now"
+}
+
 deck_rows() {
     row "18. Right panel: deck 1 page with your track's title, time, BPM, key and waveform (layout as 10-deck)? Left panel: the library list? y/n, or describe" || return 0
-    row "19. Press PLAY on deck 1. Does the page say PLAYING and do the time and the playhead move? Press it again: PAUSED? y/n, or describe" || return 0
-    row "20. Turn a left screen encoder. Does the left panel still follow the selection while the deck page stays on the right? y/n, or describe" || return 0
+    gaps "18 start"
+    row "19. Press PLAY on deck 1. Does the page say PLAYING and do the time and the playhead move? Press it again: PAUSED? Then press PLAY once more and leave it playing. y/n, or describe" || return 0
+    gaps "19 play and pause"
+    row "20. Turn a left screen encoder through at least twenty rows. Does the left panel follow the selection while the deck page keeps moving on the right? y/n, or describe" || return 0
+    gaps "20 scrolling"
+    row "21. Press left button 3, then 6, then 2. Does the left panel show Queue, History and Library in turn while the deck page keeps moving? y/n, or describe" || return 0
+    gaps "21 tab switching"
 }
 
 if [ "$answer" != stop ]; then
-    start_host deck --deck 1
+    start_host deck --deck 1 --log-deck-polls
     note "Deck page is running."
     deck_rows
     stop_host deck eof
-    ask "21. After S8Host's stdin closed: what do the panels show? (expected: both black)"
+    ask "22. After S8Host's stdin closed: what do the panels show? (expected: both black)"
 fi
 [ -z "$host_pid" ] || stop_host recovery int
 
@@ -151,9 +179,9 @@ mark recover
 [ -n "$(agent_pid)" ] || open -g "$bundle"
 sleep 5
 snap "recovered+5s"
-ask "22. After recovery: what do the panels show (Controller Editor labels again)?"
-ask "23. Press left PLAY once. Did djay react? y/n"
-ask "24. Press display button 1 or 4. Does the NI action work again? y/n"
+ask "23. After recovery: what do the panels show (Controller Editor labels again)?"
+ask "24. Press left PLAY once. Did djay react? y/n"
+ask "25. Press display button 1 or 4. Does the NI action work again? y/n"
 mark end
 trap - EXIT INT
 note "Recorded in $run"

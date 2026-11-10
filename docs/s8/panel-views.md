@@ -32,6 +32,7 @@ attended check is planned at the end of this page and needs approval.
 | `--screens` | Draw the panels. Without it S8Host behaves as in #51 and sends nothing to the S8. |
 | `--deck N` | Right panel shows deck N (1 to 4) instead of the selection ([deck-pages.md](deck-pages.md)). Needs `--screens`. |
 | `--poll SECONDS` | How often the sidebar is read without a control event. Default 1, minimum 0.1. |
+| `--log-deck-polls` | One stderr line per deck read with the time since the previous read started and how long the read took. Needs `--deck`. |
 
 With `--screens` S8Host starts the bridge with
 `--device s8 --midi full --until-stopped --app-events --s8-screens-stdin` and
@@ -84,6 +85,11 @@ switch starts at the top.
   up by the poll, by default within 1 s.
 - With `--deck N` the deck is read every 0.25 s. The sidebar is not read
   again for a deck update.
+- Sidebar, deck and output each have their own queue
+  ([`macos/S8Host/README.md`](../../macos/S8Host/README.md#queues), #89). A
+  slow sidebar reading or a write the bridge does not take yet does not
+  delay the deck reads. Updates that arrive while a write is blocked are
+  not queued up: the next draw shows the newest sidebar and deck state.
 - A panel is sent only when its picture differs from the last one sent for
   that panel. An idle djay sends nothing.
 - The bridge paces transfers at 30 frames per second per panel and keeps
@@ -94,12 +100,13 @@ switch starts at the top.
 
 Decision for #27: **a clean stop leaves both panels black.**
 
-- On Ctrl-C, SIGTERM or when its own stdin closes, S8Host closes the
-  bridge's stdin. The bridge sends black exit frames to each panel that
-  received a frame, releases interface 6, prints `S8_SCREEN_STATUS inactive`
-  and exits; S8Host exits with the bridge's status (0). If the bridge is
-  still running 5 s after its stdin closed S8Host sends it SIGINT, and
-  SIGTERM after 10 s.
+- On Ctrl-C, SIGTERM or when its own stdin closes, S8Host first stops its
+  own timers and writes no further record, without waiting for a reading or
+  write in progress. Then it closes the bridge's stdin. The bridge sends
+  black exit frames to each panel that received a frame, releases
+  interface 6, prints `S8_SCREEN_STATUS inactive` and exits; S8Host exits
+  with the bridge's status (0). If the bridge is still running 5 s after
+  its stdin closed S8Host sends it SIGINT, and SIGTERM after 10 s.
 - The panels stay black until something else draws on them. Relaunching
   NIHardwareAgent brings back the Controller Editor labels
   ([screen-transport-validation.md](screen-transport-validation.md)).
@@ -117,8 +124,11 @@ Decision for #27: **a clean stop leaves both panels black.**
   are cut there, on the panel and for "n of m".
 - Only what djay's sidebar exposes through Accessibility is shown. With the
   sidebar hidden the left panel asks to open it.
-- Reading the sidebar takes Accessibility calls for every row, so a poll
-  under 1 s on a long list competes with the control events. Not measured.
+- Reading the sidebar takes Accessibility calls for every row. It no longer
+  holds up the deck reads inside S8Host, but both ask the same djay process,
+  so a long list or a poll under 1 s can still slow them. Measured only
+  without control events (see *Validation state*); the attended check
+  measures scrolling and tab switching.
 - One deck page at a time, on the right panel. Decks 3 and 4 depend on how
   djay's four-deck layouts appear through Accessibility (#45).
 - Buttons 1 and 4 stay with NI and do nothing while the agent is stopped.
@@ -162,6 +172,11 @@ question per row and relaunches the agent on every exit path. Answering
 that stays frozen or garbled, an S8 that goes dark, controls that stop
 reaching djay.
 
+The second run uses `--log-deck-polls`. After each of rows 18 to 21 the
+runner notes the deck reads since the previous row: how many, the longest
+gap between two reads, how many gaps were over 0.45 s (the limit the deck
+time interpolation of #84 allows for) and the longest read.
+
 | Row | Action | Expected |
 | --- | --- | --- |
 | 1 | Start (`--screens`) | Panels as `01-library` |
@@ -182,12 +197,13 @@ reaching djay.
 | 16 | Whole run | No flicker, tearing, wrong colours or frozen panel |
 | 17 | Runner sends SIGINT to S8Host | Both panels black, exit status 0 |
 | 18 | Start (`--screens --deck 1`) | Right: deck 1 page, layout as `10-deck`; left: library list |
-| 19 | PLAY on deck 1, then again | PLAYING with moving time and playhead, then PAUSED |
-| 20 | Left screen encoder | Left panel follows, deck page stays |
-| 21 | Runner closes S8Host's stdin | Both panels black, exit status 0 |
-| 22 | Agent relaunched | Controller Editor labels on the panels |
-| 23 | Left PLAY | djay reacts through the Controller Editor setup |
-| 24 | Display button 1 or 4 | NI action works again |
+| 19 | PLAY on deck 1, again, then once more | PLAYING with moving time and playhead, then PAUSED; left playing for rows 20 and 21 |
+| 20 | Left screen encoder through at least twenty rows | Left panel follows, deck page keeps moving |
+| 21 | Left buttons 3, 6 and 2 | Queue, History, Library on the left; deck page keeps moving |
+| 22 | Runner closes S8Host's stdin | Both panels black, exit status 0 |
+| 23 | Agent relaunched | Controller Editor labels on the panels |
+| 24 | Left PLAY | djay reacts through the Controller Editor setup |
+| 25 | Display button 1 or 4 | NI action works again |
 
 The record goes to `captures/panel-views-<UTC>/` (`notes.txt` with the
 answers, `library.log` and `deck.log` with S8Host's and the bridge's output)
@@ -200,8 +216,31 @@ the record layout, scroll kept per list and reset on a tab switch, the
 selection following djay's selected row, and that only changed panels
 produce records.
 
+Covered by tests (`--filter S8SessionTests`, #89), with stand-ins for djay
+and the bridge: deck reads continue while a sidebar reading is blocked and
+while a write is blocked; 30 sidebar states published during a blocked
+write produce the first state and then only the newest; a stop returns
+while a write is blocked and no record or sidebar reading follows it; the
+sidebar is read once after the last waiting control event.
+
 Checked without the S8: the replay and decode above, for the ten states.
+
+Measured without the S8 on 2026-11-10 (#89): S8Host
+`--screens --deck 1 --log-deck-polls` against the running djay Pro, with a
+script in place of the bridge, so nothing was sent to the S8 and no control
+event reached djay.
+
+| Stand-in for the bridge | Time | Deck reads | Mean gap | Gaps over 0.45 s | Longest read | Stop after SIGINT |
+| --- | --- | --- | --- | --- | --- | --- |
+| Reads and discards stdin | 20 s | 81 | 0.253 s | 1 (0.561 s) | 0.561 s | 0.04 s |
+| Never reads stdin, so the first record blocks | 12 s | 52 | 0.255 s | 1 (0.516 s) | 0.516 s | 5.35 s |
+
+In both runs the one long gap follows the first deck read, which was the
+long one. With the write blocked S8Host finished the deck read in progress
+at the signal, started no further one and exited when the stand-in got
+SIGINT after 5 s.
 
 Not checked, needs the S8 and djay together: everything in the attended
 check, including the live sidebar reading under `--screens`, the update
-delay and the panel state after a stop.
+delay, the deck read gaps during scrolling and tab switching, and the panel
+state after a stop.
