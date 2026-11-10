@@ -1,9 +1,10 @@
 # S4 MK3 HID-MIDI Bridge
 
-> **gootecks fork:** this fork is adding Traktor Kontrol S8 support. S8 work
-> is in progress and not usable yet; the S4 MK3 behaviour below matches
-> upstream. See [Kontrol S8 support](docs/s8/README.md) and the
-> [changelog](CHANGELOG.md).
+> **gootecks fork:** this fork exists to get the Traktor Kontrol S8 working
+> with Djay Pro. The S8 runs from source today; see
+> [Kontrol S8 with Djay](#kontrol-s8-with-djay). The S4 MK3 behaviour
+> described in the rest of this README matches upstream. See also the
+> [S8 notes](docs/s8/README.md) and the [changelog](CHANGELOG.md).
 
 Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
@@ -17,6 +18,34 @@ below before using it for a set.
 is the maintained starting point for the current full-controller build.
 It explains browsing/preview, loops and jumps, FX pickup, pads, jog feel and
 screens without requiring MIDI or development knowledge.
+
+## Kontrol S8 with Djay
+
+The S8 is supported from a source build only. No published download and no
+version of the menu-bar app runs it.
+
+- **Works:** the bridge translates the S8's buttons, pads, encoders, faders,
+  knobs and touchstrips to MIDI on the virtual port `Kontrol S8 MIDI Full`.
+  A generated Djay mapping assigns them: transport, loops, hot cues, Slicer,
+  sampler, FX units, browsing and the mixer.
+  [The S8 mapping](docs/s8/mapping.md) lists every control.
+- **Known limits:** the touchstrips register broad scrubbing only, CAPTURE has
+  no visible result in Djay, and the booth output is not checked. See the
+  [validation record](docs/s8/translator-validation.md).
+- **Missing:** LED feedback and the screens. The bridge sends nothing to the
+  S8, so its LEDs and displays do not follow Djay.
+
+To use it you need this repository, [mise](https://mise.jdx.dev) for the
+pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.
+
+1. Install the mapping that was checked on the S8, as described in
+   [docs/s8/mappings](docs/s8/mappings/README.md).
+2. Run `mise run s8:midi`. It stops Native Instruments' NIHardwareAgent, runs
+   the bridge until you press Ctrl-C, and then restores the agent.
+3. In Djay's MIDI settings, choose `Kontrol S8 MIDI Full` and the mapping.
+
+The first control you move after start only synchronises positions. Master,
+booth and headphone audio stay on the S8's own hardware.
 
 ## Requirements
 
