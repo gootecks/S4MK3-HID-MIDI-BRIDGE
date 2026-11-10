@@ -98,10 +98,12 @@ continue a stopped session.
    and **Verified** or **Unverified**.
 
 Motions: "press and release, twice" gives two distinct edges. "3 clicks CW then
-3 clicks CCW" shows the per-click delta and direction. "Full sweep" goes from
-physical minimum to maximum and back so range and monotonic direction are both
-visible; hold at each end for 1 s. Touch caps: touch with a fingertip without
-moving the control.
+3 clicks CCW" shows the per-click delta and direction. The four screen encoders
+under each display turn freely with no clicks: a quarter turn each way shows
+direction, and one slow full turn gives the counts per turn. "Full sweep" goes
+from physical minimum to maximum and back so range and monotonic direction are
+both visible; hold at each end for 1 s. Touch caps: rest a fingertip on the cap
+without moving the control. The screen encoder caps register a light touch.
 
 ## Discrepancies to settle
 
@@ -158,14 +160,14 @@ protocol dataset, `E=P` means both give the same location.
 | 6  | `L-disp-6`       | Left display button 6                                                  | press and release, twice                                                      | E=P r1 [5] 0x10                                                            | |
 | 7  | `L-disp-7`       | Left display button 7                                                  | press and release, twice                                                      | E=P r1 [5] 0x20                                                            | |
 | 8  | `L-disp-8`       | Left display button 8                                                  | press and release, twice                                                      | E=P r1 [5] 0x40                                                            | |
-| 9  | `L-senc-1-touch` | Left screen encoder 1 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [10] 0x02                                                             | |
-| 10 | `L-senc-1-turn`  | Left screen encoder 1 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [1..2] 16-bit; P r2 [1..2] ; confirm delta per click and direction    | |
-| 11 | `L-senc-2-touch` | Left screen encoder 2 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [10] 0x04                                                             | |
-| 12 | `L-senc-2-turn`  | Left screen encoder 2 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [3..4] 16-bit; P r2 [3..4] ; confirm delta per click and direction    | |
-| 13 | `L-senc-3-touch` | Left screen encoder 3 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [10] 0x08                                                             | |
-| 14 | `L-senc-3-turn`  | Left screen encoder 3 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [5..6] 16-bit; P r2 [5..6] ; confirm delta per click and direction    | |
-| 15 | `L-senc-4-touch` | Left screen encoder 4 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [10] 0x10                                                             | |
-| 16 | `L-senc-4-turn`  | Left screen encoder 4 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [7..8] 16-bit; P r2 [7..8] ; confirm delta per click and direction    | |
+| 9  | `L-senc-1-touch` | Left screen encoder 1 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [10] 0x02                                                             | |
+| 10 | `L-senc-1-turn`  | Left screen encoder 1 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [1..2] 16-bit; P r2 [1..2] ; confirm counts per turn and direction    | |
+| 11 | `L-senc-2-touch` | Left screen encoder 2 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [10] 0x04                                                             | |
+| 12 | `L-senc-2-turn`  | Left screen encoder 2 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [3..4] 16-bit; P r2 [3..4] ; confirm counts per turn and direction    | |
+| 13 | `L-senc-3-touch` | Left screen encoder 3 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [10] 0x08                                                             | |
+| 14 | `L-senc-3-turn`  | Left screen encoder 3 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [5..6] 16-bit; P r2 [5..6] ; confirm counts per turn and direction    | |
+| 15 | `L-senc-4-touch` | Left screen encoder 4 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [10] 0x10                                                             | |
+| 16 | `L-senc-4-turn`  | Left screen encoder 4 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [7..8] 16-bit; P r2 [7..8] ; confirm counts per turn and direction    | |
 | 17 | `L-browse-touch` | Left browse encoder touch                                              | touch, hold 2 s, release                                                      | P r1 [10] 0x20                                                             | |
 | 18 | `L-browse-push`  | Left browse encoder push                                               | press and release, twice                                                      | P r1 [4] 0x08                                                              | |
 | 19 | `L-browse-turn`  | Left browse encoder                                                    | 3 clicks CW, then 3 clicks CCW (protocol: CW decreases)                       | P r1 [1] 0xF0 high nibble, mod 16                                          | |
@@ -293,14 +295,14 @@ protocol dataset, `E=P` means both give the same location.
 | 131 | `R-disp-6`       | Right display button 6                                                  | press and release, twice                                                      | E=P r1 [13] 0x10                                                            | |
 | 132 | `R-disp-7`       | Right display button 7                                                  | press and release, twice                                                      | E=P r1 [13] 0x20                                                            | |
 | 133 | `R-disp-8`       | Right display button 8                                                  | press and release, twice                                                      | E=P r1 [13] 0x40                                                            | |
-| 134 | `R-senc-1-touch` | Right screen encoder 1 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [18] 0x02                                                              | |
-| 135 | `R-senc-1-turn`  | Right screen encoder 1 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [9..10] 16-bit; P r2 [9..10] ; confirm delta per click and direction   | |
-| 136 | `R-senc-2-touch` | Right screen encoder 2 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [18] 0x04                                                              | |
-| 137 | `R-senc-2-turn`  | Right screen encoder 2 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [11..12] 16-bit; P r2 [11..12] ; confirm delta per click and direction | |
-| 138 | `R-senc-3-touch` | Right screen encoder 3 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [18] 0x08                                                              | |
-| 139 | `R-senc-3-turn`  | Right screen encoder 3 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [13..14] 16-bit; P r2 [13..14] ; confirm delta per click and direction | |
-| 140 | `R-senc-4-touch` | Right screen encoder 4 touch                                            | touch the cap, hold 2 s, release                                              | P r1 [18] 0x10                                                              | |
-| 141 | `R-senc-4-turn`  | Right screen encoder 4 (wrap16_wide)                                    | 3 clicks CW, pause, 3 clicks CCW; then one slow full turn CW                  | E r2 [15..16] 16-bit; P r2 [15..16] ; confirm delta per click and direction | |
+| 134 | `R-senc-1-touch` | Right screen encoder 1 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [18] 0x02                                                              | |
+| 135 | `R-senc-1-turn`  | Right screen encoder 1 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [9..10] 16-bit; P r2 [9..10] ; confirm counts per turn and direction   | |
+| 136 | `R-senc-2-touch` | Right screen encoder 2 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [18] 0x04                                                              | |
+| 137 | `R-senc-2-turn`  | Right screen encoder 2 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [11..12] 16-bit; P r2 [11..12] ; confirm counts per turn and direction | |
+| 138 | `R-senc-3-touch` | Right screen encoder 3 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [18] 0x08                                                              | |
+| 139 | `R-senc-3-turn`  | Right screen encoder 3 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [13..14] 16-bit; P r2 [13..14] ; confirm counts per turn and direction | |
+| 140 | `R-senc-4-touch` | Right screen encoder 4 touch                                            | rest a fingertip on the cap without turning it, hold 2 s, lift off            | P r1 [18] 0x10                                                              | |
+| 141 | `R-senc-4-turn`  | Right screen encoder 4 (wrap16_wide)                                    | quarter turn CW, pause, quarter turn CCW; then one slow full turn CW          | E r2 [15..16] 16-bit; P r2 [15..16] ; confirm counts per turn and direction | |
 | 142 | `R-browse-touch` | Right browse encoder touch                                              | touch, hold 2 s, release                                                      | P r1 [18] 0x20                                                              | |
 | 143 | `R-browse-push`  | Right browse encoder push                                               | press and release, twice                                                      | P r1 [12] 0x08                                                              | |
 | 144 | `R-browse-turn`  | Right browse encoder                                                    | 3 clicks CW, then 3 clicks CCW (protocol: CW decreases)                       | P r1 [2] 0xF0 high nibble, mod 16                                           | |
