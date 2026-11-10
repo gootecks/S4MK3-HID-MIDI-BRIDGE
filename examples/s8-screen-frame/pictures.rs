@@ -1,15 +1,15 @@
 //! Pictures of what a dry run would put on the panels, drawn from the bytes
 //! the tool builds by applying them to a decoded framebuffer.
 
-use std::fs::{self, File};
-use std::io::{BufReader, BufWriter};
+use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context as _, bail};
 use s4mk3_hid_midi_bridge::device::s8::screen::decode::Panels;
 use s4mk3_hid_midi_bridge::device::s8::screen::stats::sample_positions;
-use s4mk3_hid_midi_bridge::device::s8::screen::{self, HEIGHT, Panel, WIDTH};
+use s4mk3_hid_midi_bridge::device::s8::screen::{self, Panel};
 
+use crate::picture_file::{compare, write};
 use crate::transport::StageInfo;
 
 /// Frames per panel to draw when a stage is the only one of the run.
@@ -150,33 +150,4 @@ impl Pictures {
             self.options.dir.display()
         )
     }
-}
-
-fn size() -> anyhow::Result<(u32, u32)> {
-    Ok((u32::try_from(WIDTH)?, u32::try_from(HEIGHT)?))
-}
-
-fn write(path: &PathBuf, rgb: &[u8]) -> anyhow::Result<()> {
-    let (width, height) = size()?;
-    let file = File::create(path).with_context(|| format!("write {}", path.display()))?;
-    let mut encoder = png::Encoder::new(BufWriter::new(file), width, height);
-    encoder.set_color(png::ColorType::Rgb);
-    encoder.set_depth(png::BitDepth::Eight);
-    encoder.write_header()?.write_image_data(rgb)?;
-    Ok(())
-}
-
-fn compare(path: &PathBuf, rgb: &[u8]) -> anyhow::Result<()> {
-    let file = File::open(path).with_context(|| format!("missing picture {}", path.display()))?;
-    let mut reader = png::Decoder::new(BufReader::new(file)).read_info()?;
-    let mut stored = vec![0; reader.output_buffer_size().unwrap_or(rgb.len())];
-    let info = reader.next_frame(&mut stored)?;
-    let (width, height) = size()?;
-    if (info.width, info.height) != (width, height)
-        || info.color_type != png::ColorType::Rgb
-        || stored[..info.buffer_size()] != *rgb
-    {
-        bail!("{} differs from what the tool produces now", path.display());
-    }
-    Ok(())
 }
