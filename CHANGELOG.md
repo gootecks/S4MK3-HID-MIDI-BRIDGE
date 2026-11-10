@@ -132,15 +132,21 @@ their detailed notes stay in `docs/release-*.md`.
 - S8 screen phase 5 plan (#43): `examples/s8-screen-frame/` gains `stream`,
   `burst` and `partial` modes on the shared frame encoder, and
   `mise run s8:screen-stream` runs the attended steps. The plan is in
-  `docs/s8/screens.md`; nothing has been run on hardware. The frame runner
-  now writes its logs to `docs/s8/captures/`.
+  `docs/s8/screens.md`. The frame runner now writes its logs to
+  `docs/s8/captures/`.
 - S8 screen phase 5 pictures (#43): `examples/s8-screen-frame/` gains `--png`,
   a dry run that decodes the frames it would send into PNGs;
   `mise run s8:phase5-images` regenerates or checks the expected pictures in
   `docs/s8/images/phase5/`.
+- S8 screen phase 5 result (#43), in `docs/s8/screen-stream-validation.md`:
+  the S8 takes about 60 full frames per second in total, so 60 on one panel
+  or 30 on each of two; 30 per panel on both held for 60 s without a transfer
+  error. Partial updates work with the SKIP command and with a sub-rectangle
+  header. A tool killed mid-stream left the S8's startup screens on the
+  panels, and the next frame displayed correctly.
 - `--s8-screens-stdin` (Kontrol S8 only, needs `--midi`): the bridge reads
   RGB565 frame records for each panel from stdin, sends them to the S8
-  screens with a latest-wins slot per panel and a provisional 30 frames per
+  screens with a latest-wins slot per panel and a 30 frames per
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
   in `docs/s8/screen-transport.md`; tested with a fake transport only, not
   on hardware (#44).
