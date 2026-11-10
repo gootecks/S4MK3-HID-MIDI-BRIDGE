@@ -131,8 +131,13 @@ with status 0 and the observer answers `y` to each question.
 | `b-play` | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses | While deck 1 plays the left panel says PLAYING and its time moves with djay's. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
 | `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays. |
 
-Expected and not a fault: PLAYING appears about 1 s after play, and the panel
-time is up to 1 s ahead of djay and steps back by up to 1 s on pause (#83).
+Expected and not a fault (#83):
+
+- PLAYING appears about 1 s after play. Until then the time stands still;
+  when PLAYING appears the time steps forward once by up to about 1 s, which
+  is the time played since the press.
+- The panel time is up to 1 s ahead of djay and steps back by up to 1 s on
+  pause.
 
 Fault: a time that runs on a paused deck, a page of the wrong deck, a garbled
 or frozen panel while its deck plays, a status line `failed`, or a bridge
@@ -208,5 +213,49 @@ Automated: `swift test --package-path macos` covers label parsing (English and
 French), splitting one walk by deck, time interpolation and debouncing
 including a blink sampled once per period, analysis decoding against a real
 trimmed `.djayMetadata` fixture, deck tracking and the page render including
-the empty state. Not verified: anything on the S8 hardware and frame upload of
-deck pages.
+the empty state. These checks sent nothing to the S8; the next section covers
+the panels.
+
+### Deck pages on the S8 (#85)
+
+Run once on 2026-11-10 at `23b8d28` with `mise run s8:deck-page`, following
+the plan in "Attended check on the S8" above. The observer's answers are in
+`captures/deck-page-20261110T192200Z/notes.txt`; the same folder holds the
+bridge output and the stream log of each step.
+
+| Step | Bridge | Records sent | The observer reported |
+| ---- | ------ | ------------ | --------------------- |
+| `a-paused` | `pending`, `active`, `inactive`; exit status 0 | 2 | `y` to all three questions: the left panel showed deck 1 and the right panel deck 2 with title, time, waveform and PAUSED; both times and playheads stood still for the 20 s; both panels went black at the end. |
+| `b-play` | `pending`, `active`, `inactive`; exit status 0 | 117 | `y`: while deck 1 played the left panel said PLAYING and its time moved with djay's. To the question whether the paused time stood still and went on without a jump by the length of the pause: "on resume, there was a small jump in the time on the S8 display". The runner took that as a fault and stopped; the question about the right panel was not asked. |
+| `c-four-decks` | Not run | | |
+
+After recovery the panels showed the Controller Editor labels and djay
+reacted to the left PLAY button.
+
+What the stream log of `b-play` shows was sent for deck 1 (sent, not seen):
+
+| Time in step | Event | Page elapsed |
+| ------------ | ----- | ------------ |
+| 0.0 s to 11.1 s | Paused, one record | 47.91 s |
+| 11.1 s | First PLAYING record | 48.78 s (+0.87 s) |
+| 25.0 s | Last PLAYING record | 62.39 s |
+| 25.1 s | PAUSED record | 61.91 s (-0.48 s) |
+| 25.1 s to 37.1 s | Paused for 12.0 s, no record | 61.91 s |
+| 37.1 s | First PLAYING record after resume | 62.83 s (+0.92 s) |
+| 52.8 s | Last PLAYING record | 78.75 s |
+| 52.9 s | PAUSED record | 77.91 s (-0.84 s) |
+
+Deck 2 was sent once, at 0.70 s, and never again.
+
+Reading of the reported jump, from the log and not confirmed by the observer:
+the step on resume was 0.92 s after a pause of 12.0 s, so it is not the jump
+by the length of the pause that #80 fixed. It has the size of the step #83
+describes when play is confirmed, and the steps back on pause are the
+cut-off label of #83. The observer saw it on the panel; whether a step of
+that size is acceptable is not decided.
+
+After this run the runner asks the paused time and the resume in separate
+questions and names the expected step.
+
+Not checked on the S8: decks 3 and 4 in Four Decks, whether the right panel
+stood still during `b-play`, and a second run with the reworded questions.

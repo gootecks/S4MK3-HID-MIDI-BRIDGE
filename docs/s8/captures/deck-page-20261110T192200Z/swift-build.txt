@@ -1,0 +1,28 @@
+warning: 'macos': found 19 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/Assets/AppIcon.png
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DatabaseSnapshot.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayCuePoint.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayLibraryModels.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayLibrarySnapshot+Build.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayLibrarySnapshot+History.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayLibrarySnapshot.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/DjayValue.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/KeyedArchive.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/README.md
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/TSAFDecoder.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibrary/TrackIndex.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/CuePointTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/Fixtures/djaykit-expected.json
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/Fixtures/real-library.json
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/RealLibraryTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/SyntheticLibraryTests.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/DjayLibraryTests/TestSupport.swift
+    /Users/prime/Working/kontrol-s8/S4MK3-wt-80/macos/build-jog-diagnostic.sh
+Building for production...
+[4 / 19]
+[6 / 21] DjayLibrary
+[9 / 23] S8Views
+[12 / 20] DjayLibrary
+[15 / 22] DjayDecks
+[17 / 23] DjayDecks
+Build complete! (5.24 sec)
