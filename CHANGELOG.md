@@ -120,6 +120,11 @@ their detailed notes stay in `docs/release-*.md`.
   agent stop. Result in `docs/s8/screen-frame-validation.md`: both panels
   display frames from the bridge's process, pixels are RGB565 and full
   uncompressed frames work, so no init report is needed.
+- S8 screen phase 5 plan (#43): `examples/s8-screen-frame/` gains `stream`,
+  `burst` and `partial` modes on the shared frame encoder, and
+  `mise run s8:screen-stream` runs the attended steps. The plan is in
+  `docs/s8/screens.md`; nothing has been run on hardware. The frame runner
+  now writes its logs to `docs/s8/captures/`.
 
 ### Changed
 
