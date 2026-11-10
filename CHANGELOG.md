@@ -49,12 +49,19 @@ their detailed notes stay in `docs/release-*.md`.
   `Kontrol S8 MIDI Full` and translates Kontrol S8 input to the default
   mapping (#15): deck and Shift layers, DECK switching, pad modes, FX unit
   targets, FILTER ON, crossfader assign and the touchstrips. It writes
-  nothing to the S8 and has no LED or screen feedback. Four attended checks
-  on 2026-11-10 covered the layout; the touchstrip's fine motion, CAPTURE and
-  the booth output remain open. `docs/s8/translator-validation.md` holds the
+  nothing to the S8 and has no LED or screen feedback. Five attended checks
+  on 2026-11-10 covered the layout; CAPTURE and the booth output remain
+  open. `docs/s8/translator-validation.md` holds the
   checks and their results, and `mise run s8:midi` runs one: it stops
   NIHardwareAgent, runs the bridge until Ctrl-C and restores the agent. The
   first control moved after start only synchronises positions.
+- The touchstrip encoding is settled (#13): an absolute 7-bit position that
+  Djay turns into scratch motion, or seek with Shift, and a note while
+  touched. A capture of NIHardwareAgent's MIDI next to the raw strip
+  position shows the agent sends the same value for the Controller Editor
+  template. The user reports that a small back-and-forth motion scratches as
+  it does with that setup. The capture is in
+  `docs/s8/captures/2026-11-10-agent-strip-midi/`.
 - The S8 CUE VOL, CUE MIX, BOOTH and MAIN knobs are decoded and mapped to
   Djay's monitor volume, cue/mix, booth volume and main volume (mixer channel
   CCs 25, 27, 28 and 29). Their report fields come from raw captures kept in
