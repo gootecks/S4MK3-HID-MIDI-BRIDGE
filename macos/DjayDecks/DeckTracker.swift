@@ -17,13 +17,12 @@ public struct DeckTracker {
     private var entry: CatalogEntry?
     private var reading: DeckReading?
     private var notice: String?
-    private var interpolator: TimeInterpolator
+    private var interpolator = TimeInterpolator()
     private var debouncer = PlayStateDebouncer()
     private var playing = false
 
-    public init(deck: Int, now: Date = Date()) {
+    public init(deck: Int) {
         self.deck = deck
-        interpolator = TimeInterpolator(now: now)
     }
 
     public var needsEntry: Bool {
@@ -35,14 +34,17 @@ public struct DeckTracker {
         if key != trackKey {
             trackKey = key
             entry = resolved
-            interpolator = TimeInterpolator(now: now)
+            interpolator = TimeInterpolator()
             debouncer = PlayStateDebouncer()
         } else if entry == nil {
             entry = resolved
         }
         self.reading = reading
         notice = nil
-        playing = debouncer.update(isPlaying: reading.isPlaying, now: now)
+        let advanced = interpolator.isNextSecond(
+            elapsedTime: reading.elapsedTime, remainingTime: reading.remainingTime
+        )
+        playing = debouncer.update(isPlaying: reading.isPlaying, timeAdvanced: advanced, now: now)
         interpolator.update(
             elapsedTime: reading.elapsedTime, remainingTime: reading.remainingTime,
             knownDuration: knownDuration, isPlaying: playing, playingSince: debouncer.activeSince,

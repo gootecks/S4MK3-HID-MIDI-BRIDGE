@@ -190,6 +190,12 @@ their detailed notes stay in `docs/release-*.md`.
   blink for playback. All decks are now read in one pass of djay's window,
   which keeps the page correct in the Four Decks layout. Checked against
   djay with two and four decks (#80).
+- The deck page time no longer runs up to 1 s ahead of djay and no longer
+  steps back on pause. A deck at the start of its track shows 0:00. djay
+  shows whole seconds, and the page now keeps its time inside the second
+  djay shows. Checked by replaying a recorded djay session and in one run
+  on the S8. The time still stands until playback is confirmed and then moves
+  forward once by less than 1 s (#83, #87).
 
 ## [0.2.1-beta.1] - 2026-10-26
 

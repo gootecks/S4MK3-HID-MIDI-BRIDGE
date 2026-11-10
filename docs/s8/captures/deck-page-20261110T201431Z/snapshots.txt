@@ -1,0 +1,181 @@
+### pre 20:14:54Z
+agent: 90272 
++-o Traktor Kontrol S8@03123000  <class IOUSBHostDevice, id 0x100007415, registered, matched, active, busy 0 (75 ms), retain 91>
+  +-o AppleUSBHostCompositeDevice  <class AppleUSBHostCompositeDevice, id 0x10000741a, !registered, !matched, active, busy 0, retain 5>
+  +-o Traktor Kontrol S8@0  <class IOUSBHostInterface, id 0x10000741b, registered, matched, active, busy 0 (7 ms), retain 11>
+  | |   "bInterfaceNumber" = 0
+  | +-o AppleUSBAudioControlNub  <class AppleUSBAudioControlNub, id 0x100007426, registered, matched, active, busy 0 (2 ms), retain 5>
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000742b, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Output@1  <class IOUSBHostInterface, id 0x10000741c, registered, matched, active, busy 0 (5 ms), retain 12>
+  | |   "bInterfaceNumber" = 1
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x100007446, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Input@2  <class IOUSBHostInterface, id 0x10000741e, registered, matched, active, busy 0 (6 ms), retain 11>
+  | |   "bInterfaceNumber" = 2
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000744a, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 MIDI@3  <class IOUSBHostInterface, id 0x10000741f, registered, matched, active, busy 0 (4 ms), retain 12>
+  | |   "bInterfaceNumber" = 3
+  | +-o MIDIServer  <class AppleUSBHostInterfaceUserClient, id 0x100007435, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o Traktor Kontrol S8 DFU@4  <class IOUSBHostInterface, id 0x100007420, registered, matched, active, busy 0 (6 ms), retain 6>
+  |     "bInterfaceNumber" = 4
+  +-o Traktor Kontrol S8 HID@5  <class IOUSBHostInterface, id 0x100007421, registered, matched, active, busy 0 (45 ms), retain 13>
+  | |   "bInterfaceNumber" = 5
+  | +-o AppleUserUSBHostHIDDevice  <class AppleUserHIDDevice, id 0x100007428, registered, matched, active, busy 0 (27 ms), retain 18>
+  |   +-o IOHIDInterface  <class IOHIDInterface, id 0x10000743b, registered, matched, active, busy 0 (5 ms), retain 6>
+  |   +-o IOHIDLibUserClient  <class IOHIDLibUserClient, id 0x10000fa92, !registered, !matched, active, busy 0, retain 6>
+  |         "IOUserClientCreator" = "pid 90272, NIHardwareAgent"
+  +-o Brave Browser  <class AppleUSBHostDeviceUserClient, id 0x100007422, !registered, !matched, active, busy 0, retain 8>
+  |     "IOUserClientCreator" = "pid 1160, Brave Browser"
+  +-o Traktor Kontrol S8 BD@6  <class IOUSBHostInterface, id 0x100007423, registered, matched, active, busy 0 (21 ms), retain 11>
+  | |   "bInterfaceNumber" = 6
+  | +-o NIHardwareAgent  <class AppleUSBHostInterfaceUserClient, id 0x10000fa95, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 90272, NIHardwareAgent"
+  +-o MIDIServer  <class AppleUSBHostDeviceUserClient, id 0x100007436, !registered, !matched, active, busy 0, retain 8>
+  |     "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o NIHardwareAgent  <class AppleUSBHostDeviceUserClient, id 0x10000fa93, !registered, !matched, active, busy 0, retain 7>
+  |     "IOUserClientCreator" = "pid 90272, NIHardwareAgent"
+  +-o NIHardwareAgent  <class AppleUSBHostDeviceUserClient, id 0x10000fa94, !registered, !matched, active, busy 0, retain 7>
+        "IOUserClientCreator" = "pid 90272, NIHardwareAgent"
+### stopped+1s 20:14:55Z
+agent: 
++-o Traktor Kontrol S8@03123000  <class IOUSBHostDevice, id 0x100007415, registered, matched, active, busy 0 (78 ms), retain 83>
+  +-o AppleUSBHostCompositeDevice  <class AppleUSBHostCompositeDevice, id 0x10000741a, !registered, !matched, active, busy 0, retain 4>
+  +-o Traktor Kontrol S8@0  <class IOUSBHostInterface, id 0x10000741b, registered, matched, active, busy 0 (7 ms), retain 10>
+  | |   "bInterfaceNumber" = 0
+  | +-o AppleUSBAudioControlNub  <class AppleUSBAudioControlNub, id 0x100007426, registered, matched, active, busy 0 (2 ms), retain 5>
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000742b, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Output@1  <class IOUSBHostInterface, id 0x10000741c, registered, matched, active, busy 0 (5 ms), retain 11>
+  | |   "bInterfaceNumber" = 1
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x100007446, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Input@2  <class IOUSBHostInterface, id 0x10000741e, registered, matched, active, busy 0 (6 ms), retain 10>
+  | |   "bInterfaceNumber" = 2
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000744a, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 MIDI@3  <class IOUSBHostInterface, id 0x10000741f, registered, matched, active, busy 0 (4 ms), retain 11>
+  | |   "bInterfaceNumber" = 3
+  | +-o MIDIServer  <class AppleUSBHostInterfaceUserClient, id 0x100007435, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o Traktor Kontrol S8 DFU@4  <class IOUSBHostInterface, id 0x100007420, registered, matched, active, busy 0 (6 ms), retain 5>
+  |     "bInterfaceNumber" = 4
+  +-o Traktor Kontrol S8 HID@5  <class IOUSBHostInterface, id 0x100007421, registered, matched, active, busy 0 (46 ms), retain 12>
+  | |   "bInterfaceNumber" = 5
+  | +-o AppleUserUSBHostHIDDevice  <class AppleUserHIDDevice, id 0x100007428, registered, matched, active, busy 0 (28 ms), retain 16>
+  |   +-o IOHIDInterface  <class IOHIDInterface, id 0x10000743b, registered, matched, active, busy 0 (5 ms), retain 6>
+  +-o Brave Browser  <class AppleUSBHostDeviceUserClient, id 0x100007422, !registered, !matched, active, busy 0, retain 7>
+  |     "IOUserClientCreator" = "pid 1160, Brave Browser"
+  +-o Traktor Kontrol S8 BD@6  <class IOUSBHostInterface, id 0x100007423, registered, matched, active, busy 0 (21 ms), retain 6>
+  |     "bInterfaceNumber" = 6
+  +-o MIDIServer  <class AppleUSBHostDeviceUserClient, id 0x100007436, !registered, !matched, active, busy 0, retain 7>
+        "IOUserClientCreator" = "pid 10459, MIDIServer"
+### b-play+1s 20:16:20Z
+agent: 
++-o Traktor Kontrol S8@03123000  <class IOUSBHostDevice, id 0x100007415, registered, matched, active, busy 0 (79 ms), retain 83>
+  +-o AppleUSBHostCompositeDevice  <class AppleUSBHostCompositeDevice, id 0x10000741a, !registered, !matched, active, busy 0, retain 4>
+  +-o Traktor Kontrol S8@0  <class IOUSBHostInterface, id 0x10000741b, registered, matched, active, busy 0 (7 ms), retain 10>
+  | |   "bInterfaceNumber" = 0
+  | +-o AppleUSBAudioControlNub  <class AppleUSBAudioControlNub, id 0x100007426, registered, matched, active, busy 0 (2 ms), retain 5>
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000742b, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Output@1  <class IOUSBHostInterface, id 0x10000741c, registered, matched, active, busy 0 (5 ms), retain 11>
+  | |   "bInterfaceNumber" = 1
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x100007446, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Input@2  <class IOUSBHostInterface, id 0x10000741e, registered, matched, active, busy 0 (6 ms), retain 10>
+  | |   "bInterfaceNumber" = 2
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000744a, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 MIDI@3  <class IOUSBHostInterface, id 0x10000741f, registered, matched, active, busy 0 (4 ms), retain 11>
+  | |   "bInterfaceNumber" = 3
+  | +-o MIDIServer  <class AppleUSBHostInterfaceUserClient, id 0x100007435, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o Traktor Kontrol S8 DFU@4  <class IOUSBHostInterface, id 0x100007420, registered, matched, active, busy 0 (6 ms), retain 5>
+  |     "bInterfaceNumber" = 4
+  +-o Traktor Kontrol S8 HID@5  <class IOUSBHostInterface, id 0x100007421, registered, matched, active, busy 0 (46 ms), retain 12>
+  | |   "bInterfaceNumber" = 5
+  | +-o AppleUserUSBHostHIDDevice  <class AppleUserHIDDevice, id 0x100007428, registered, matched, active, busy 0 (28 ms), retain 16>
+  |   +-o IOHIDInterface  <class IOHIDInterface, id 0x10000743b, registered, matched, active, busy 0 (5 ms), retain 6>
+  +-o Brave Browser  <class AppleUSBHostDeviceUserClient, id 0x100007422, !registered, !matched, active, busy 0, retain 7>
+  |     "IOUserClientCreator" = "pid 1160, Brave Browser"
+  +-o Traktor Kontrol S8 BD@6  <class IOUSBHostInterface, id 0x100007423, registered, matched, active, busy 0 (22 ms), retain 6>
+  |     "bInterfaceNumber" = 6
+  +-o MIDIServer  <class AppleUSBHostDeviceUserClient, id 0x100007436, !registered, !matched, active, busy 0, retain 7>
+        "IOUserClientCreator" = "pid 10459, MIDIServer"
+### c-four-decks+1s 20:18:02Z
+agent: 
++-o Traktor Kontrol S8@03123000  <class IOUSBHostDevice, id 0x100007415, registered, matched, active, busy 0 (80 ms), retain 83>
+  +-o AppleUSBHostCompositeDevice  <class AppleUSBHostCompositeDevice, id 0x10000741a, !registered, !matched, active, busy 0, retain 4>
+  +-o Traktor Kontrol S8@0  <class IOUSBHostInterface, id 0x10000741b, registered, matched, active, busy 0 (7 ms), retain 10>
+  | |   "bInterfaceNumber" = 0
+  | +-o AppleUSBAudioControlNub  <class AppleUSBAudioControlNub, id 0x100007426, registered, matched, active, busy 0 (2 ms), retain 5>
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000742b, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Output@1  <class IOUSBHostInterface, id 0x10000741c, registered, matched, active, busy 0 (5 ms), retain 11>
+  | |   "bInterfaceNumber" = 1
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x100007446, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Input@2  <class IOUSBHostInterface, id 0x10000741e, registered, matched, active, busy 0 (6 ms), retain 10>
+  | |   "bInterfaceNumber" = 2
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000744a, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 MIDI@3  <class IOUSBHostInterface, id 0x10000741f, registered, matched, active, busy 0 (4 ms), retain 11>
+  | |   "bInterfaceNumber" = 3
+  | +-o MIDIServer  <class AppleUSBHostInterfaceUserClient, id 0x100007435, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o Traktor Kontrol S8 DFU@4  <class IOUSBHostInterface, id 0x100007420, registered, matched, active, busy 0 (6 ms), retain 5>
+  |     "bInterfaceNumber" = 4
+  +-o Traktor Kontrol S8 HID@5  <class IOUSBHostInterface, id 0x100007421, registered, matched, active, busy 0 (46 ms), retain 12>
+  | |   "bInterfaceNumber" = 5
+  | +-o AppleUserUSBHostHIDDevice  <class AppleUserHIDDevice, id 0x100007428, registered, matched, active, busy 0 (29 ms), retain 16>
+  |   +-o IOHIDInterface  <class IOHIDInterface, id 0x10000743b, registered, matched, active, busy 0 (5 ms), retain 6>
+  +-o Brave Browser  <class AppleUSBHostDeviceUserClient, id 0x100007422, !registered, !matched, active, busy 0, retain 7>
+  |     "IOUserClientCreator" = "pid 1160, Brave Browser"
+  +-o Traktor Kontrol S8 BD@6  <class IOUSBHostInterface, id 0x100007423, registered, matched, active, busy 0 (22 ms), retain 6>
+  |     "bInterfaceNumber" = 6
+  +-o MIDIServer  <class AppleUSBHostDeviceUserClient, id 0x100007436, !registered, !matched, active, busy 0, retain 7>
+        "IOUserClientCreator" = "pid 10459, MIDIServer"
+### recovered+5s 20:18:29Z
+agent: 7133 
++-o Traktor Kontrol S8@03123000  <class IOUSBHostDevice, id 0x100007415, registered, matched, active, busy 0 (80 ms), retain 91>
+  +-o AppleUSBHostCompositeDevice  <class AppleUSBHostCompositeDevice, id 0x10000741a, !registered, !matched, active, busy 0, retain 5>
+  +-o Traktor Kontrol S8@0  <class IOUSBHostInterface, id 0x10000741b, registered, matched, active, busy 0 (7 ms), retain 11>
+  | |   "bInterfaceNumber" = 0
+  | +-o AppleUSBAudioControlNub  <class AppleUSBAudioControlNub, id 0x100007426, registered, matched, active, busy 0 (2 ms), retain 5>
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000742b, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Output@1  <class IOUSBHostInterface, id 0x10000741c, registered, matched, active, busy 0 (5 ms), retain 12>
+  | |   "bInterfaceNumber" = 1
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x100007446, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 Input@2  <class IOUSBHostInterface, id 0x10000741e, registered, matched, active, busy 0 (6 ms), retain 11>
+  | |   "bInterfaceNumber" = 2
+  | +-o usbaudiod@03123000  <class AppleUSBHostFrameworkInterfaceClient, id 0x10000744a, !registered, !matched, active, busy 0, retain 5>
+  |       "IOUserClientCreator" = "pid 7297, usbaudiod"
+  +-o Traktor Kontrol S8 MIDI@3  <class IOUSBHostInterface, id 0x10000741f, registered, matched, active, busy 0 (4 ms), retain 12>
+  | |   "bInterfaceNumber" = 3
+  | +-o MIDIServer  <class AppleUSBHostInterfaceUserClient, id 0x100007435, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o Traktor Kontrol S8 DFU@4  <class IOUSBHostInterface, id 0x100007420, registered, matched, active, busy 0 (6 ms), retain 6>
+  |     "bInterfaceNumber" = 4
+  +-o Traktor Kontrol S8 HID@5  <class IOUSBHostInterface, id 0x100007421, registered, matched, active, busy 0 (46 ms), retain 13>
+  | |   "bInterfaceNumber" = 5
+  | +-o AppleUserUSBHostHIDDevice  <class AppleUserHIDDevice, id 0x100007428, registered, matched, active, busy 0 (29 ms), retain 18>
+  |   +-o IOHIDInterface  <class IOHIDInterface, id 0x10000743b, registered, matched, active, busy 0 (5 ms), retain 6>
+  |   +-o IOHIDLibUserClient  <class IOHIDLibUserClient, id 0x100010da3, !registered, !matched, active, busy 0, retain 6>
+  |         "IOUserClientCreator" = "pid 7133, NIHardwareAgent"
+  +-o Brave Browser  <class AppleUSBHostDeviceUserClient, id 0x100007422, !registered, !matched, active, busy 0, retain 8>
+  |     "IOUserClientCreator" = "pid 1160, Brave Browser"
+  +-o Traktor Kontrol S8 BD@6  <class IOUSBHostInterface, id 0x100007423, registered, matched, active, busy 0 (22 ms), retain 11>
+  | |   "bInterfaceNumber" = 6
+  | +-o NIHardwareAgent  <class AppleUSBHostInterfaceUserClient, id 0x100010da6, !registered, !matched, active, busy 0, retain 6>
+  |       "IOUserClientCreator" = "pid 7133, NIHardwareAgent"
+  +-o MIDIServer  <class AppleUSBHostDeviceUserClient, id 0x100007436, !registered, !matched, active, busy 0, retain 8>
+  |     "IOUserClientCreator" = "pid 10459, MIDIServer"
+  +-o NIHardwareAgent  <class AppleUSBHostDeviceUserClient, id 0x100010da4, !registered, !matched, active, busy 0, retain 7>
+  |     "IOUserClientCreator" = "pid 7133, NIHardwareAgent"
+  +-o NIHardwareAgent  <class AppleUSBHostDeviceUserClient, id 0x100010da5, !registered, !matched, active, busy 0, retain 7>
+        "IOUserClientCreator" = "pid 7133, NIHardwareAgent"
