@@ -99,8 +99,13 @@ What the tester reported:
   started late, the tool stopped at its 60 s cap one frame short of 3,600,
   and both panels still averaged 30.0 and 29.98 frames per second. One left
   transfer took 25.1 ms; every other one stayed under 17.3 ms.
-- [INFERENCE] The constant 16.6 ms suggests the S8 takes one frame per
-  refresh of a 60 Hz panel. Nothing in the run measured the panel's refresh.
+- **Transfer time follows the byte count, not the frame.** 32 bytes took
+  0.11 ms, 25,628 bytes 1.7 ms, 130,592 bytes 8.2 ms and 261,148 bytes
+  16.6 ms: about 15.7 MB per second throughout. A full frame fitting one
+  60th of a second is therefore a byte-rate limit, not the S8 waiting for a
+  panel refresh. The run does not show whether the S8, the hubs or the host
+  sets that rate. The S8 was connected at High Speed (480 Mbit/s) behind two
+  hubs of a dock, sharing the second with a keyboard.
 - Run 1 measured the same for a-left: 10.17, 20.12, 30.09 and 59.98 frames
   per second, no late frames, medians 16.19 to 16.61 ms.
 
@@ -203,6 +208,7 @@ observation about LEDs or audio.
   judged steadiness, not individual frame numbers.
 - Rates above 60 per second, input-to-panel latency, and runs longer than
   60 s.
+- The same steps with the S8 on a port of the Mac itself, without the dock.
 - Why the panels show the startup screens after the kill, and whether a kill
   between two frames does the same.
 - Partial frames in a stream, and SKIP or sub-rectangles on the right panel.
