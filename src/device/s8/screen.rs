@@ -10,6 +10,9 @@
 pub mod decode;
 pub mod pattern;
 pub mod stats;
+pub mod usb;
+pub mod wire;
+pub mod worker;
 
 pub const INTERFACE: u8 = 6;
 pub const ENDPOINT: u8 = 0x04;

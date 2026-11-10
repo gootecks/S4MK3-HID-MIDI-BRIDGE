@@ -105,6 +105,10 @@ struct ScreenArgs {
     #[arg(long = "screen-control-stdin", requires = "midi", conflicts_with_all = ["list", "generate_mapping", "generate_screen_previews"])]
     control_stdin: bool,
 
+    /// Kontrol S8 only: accept screen frame records on stdin; EOF stops the bridge.
+    #[arg(long = "s8-screens-stdin", requires = "midi", conflicts_with_all = ["list", "generate_mapping", "generate_screen_previews"])]
+    s8_stdin: bool,
+
     /// Export screen routing, feedback, and held-pad rasters without USB or MIDI.
     #[arg(long, value_name = "DIR", conflicts_with_all = ["midi", "list", "raw", "generate_mapping", "jog_config"])]
     generate_screen_previews: Option<PathBuf>,
@@ -223,6 +227,7 @@ fn open_and_run(
         return Ok(());
     }
     let (profile, device) = select_device(args.device, &scanned)?;
+    s8::screens::check_device(args, profile.device)?;
     if args.midi.is_some() && profile.device == Device::S8 {
         s8::bridge::check_args(args)?;
     }
