@@ -74,7 +74,9 @@ S8_CONTROL screen_encoder <left|right> <1-4> <signed counts>
 
 Without the flag, output is unchanged. The flag is S8 only and needs `--midi`.
 The first report after start only records the resting state and emits
-nothing. Other stdout lines (logging, status) are not parsed.
+nothing. Other stdout lines (logging, status) are not parsed. When a line
+cannot be written because the reader of stdout is gone, the bridge stops as
+on Ctrl-C.
 
 ## Targets
 

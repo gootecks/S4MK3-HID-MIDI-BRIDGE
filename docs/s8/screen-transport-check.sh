@@ -101,7 +101,7 @@ run_step() {
         "$feeder" "$@" 2> "$run/$name.feeder.txt"
         if [ "$garbage" = 1 ]; then printf 'NOPE\0\0\0\0\0\0\0\0'; fi
         sleep "$hold"
-    } | "$bridge" --device s8 --midi full --s8-screens-stdin --until-stopped 2>&1 | tee "$run/$name.txt"
+    } | "$bridge" --device s8 --midi full --s8-screens-stdin --until-stopped 2>&1 | tee -i "$run/$name.txt"
     status=${PIPESTATUS[1]}
     set -e
     elapsed=$(( $(date +%s) - begin ))

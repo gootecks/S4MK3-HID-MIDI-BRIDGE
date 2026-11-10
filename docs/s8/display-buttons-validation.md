@@ -55,7 +55,7 @@ The "Reported" column is the user's answer, unchanged.
 
 | Row | Action | Expected | Reported |
 | --- | --- | --- | --- |
-| 1 | Left screen encoder 1, one small click, first movement after start: did the selection jump? | at most one row | "yes" |
+| 1 | Left screen encoder 1, one small click, first movement after start: did the selection jump? | at most one row | "yes"; asked again after the run: "1 row" |
 | 2 | Left button 3 | Queue | "Queue" |
 | 3 | Hold and release left button 3: did the release change anything? | no | "no" |
 | 4 | Left button 5 | Match | "Match" |
@@ -85,8 +85,10 @@ After the rows:
 
 Limits of this run:
 
-- Row 1 is not settled. The answer "yes" does not say how far the selection
-  moved, so the first movement after start is neither confirmed nor failed.
+- Row 1: the screen encoders have no clicks. The user: "they just go 360
+  degrees with no clicks or stops or center points". "One small click" in the
+  question therefore meant a small turn; the runner now asks for a few
+  degrees and for the number of rows.
 - Row 15: the selection lags a little behind a fast spin. Each step re-reads
   djay's sidebar tree. It was not measured.
 - Row 16 covers loading with the right Browse encoder press. Queueing a

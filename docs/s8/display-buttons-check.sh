@@ -67,7 +67,7 @@ mark started
 note "S8Host is running. In djay: sidebar open on Library, click the main track table once so no sidebar row is selected."
 
 rows() {
-    row "1. Turn the left screen encoder 1 by one small click. Did the sidebar selection jump? (expected: at most one row) Describe." || return 0
+    row "1. Turn the left screen encoder 1 a few degrees (it has no clicks). How many rows did the sidebar selection move? (expected: at most one)" || return 0
     row "2. Press left button 3. Which djay tab is showing? (expected: Queue)" || return 0
     row "3. Hold left button 3 again, then release it. Did the release change anything? (expected: no)" || return 0
     row "4. Press left button 5. Tab? (expected: Match)" || return 0

@@ -108,6 +108,11 @@ exactly one of `inactive` or `failed`. A failure before the first frame goes
 process, and frames arriving afterwards are discarded. To retry, restart the
 bridge.
 
+The reader of stdout MUST stay for as long as the bridge should run. When a
+status line or an `S8_CONTROL` line cannot be written because the reader is
+gone, the bridge stops as on Ctrl-C: exit frames, release, exit status 0.
+Log lines to a closed stdout are dropped.
+
 ## Worker behaviour
 
 Placement: `src/device/s8/screen/{wire,worker,usb}.rs` in the library next
@@ -173,7 +178,11 @@ Checked on the S8 through this channel on 2026-11-10
 
 Not validated on hardware (only a device can confirm):
 
-- Ctrl-C of the bridge while it streams: the attended step did not settle it.
+- Ctrl-C of the bridge while it streams. The attended step failed: exit
+  status 134 and no `inactive`
+  ([record](screen-transport-validation.md#failed-ctrl-c-while-streaming)).
+  The cause is fixed and covered by tests, and the step has not been run on
+  the S8 since.
 - What the panels show when the bridge is killed while it streams. The
   example tool killed mid-stream left the S8's startup screens on both
   panels.
