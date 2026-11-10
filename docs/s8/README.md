@@ -11,7 +11,7 @@ upstream pull request.
 | S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
 | S8 detection        | Listed and identified by the bridge (`--device s8`). `--device s8 --raw` opens interface 5 read-only and never writes (#12); `mise run s8:raw` runs it. |
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). The bridge applies those corrections and decodes every verified control in `--raw`; a fixture test replays the capture through the decoder (#12). |
-| S8 Djay mapping     | Catalog and generated default mapping (`--generate-mapping <path> --device s8`, [mapping.md](mapping.md), #14). `--device s8 --midi full` translates S8 input to that mapping's MIDI on `Kontrol S8 MIDI Full` and writes nothing to the S8 (#15); neither is checked in Djay or on hardware yet ([translator-validation.md](translator-validation.md)). A working Controller Editor setup exists (below). |
+| S8 Djay mapping     | Catalog and generated default mapping (`--generate-mapping <path> --device s8`, [mapping.md](mapping.md), #14). `--device s8 --midi full` translates S8 input to that mapping's MIDI on `Kontrol S8 MIDI Full` and writes nothing to the S8 (#15); `mise run s8:midi` runs it. Checked in Djay in four attended checks on 2026-11-10 ([translator-validation.md](translator-validation.md)); open: the touchstrip's fine motion, CAPTURE and the booth output. The checked mapping is kept in [mappings/](mappings/README.md). Source build only: the menu-bar app does not run the S8. A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
 | S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Next: app-rendered library views (#48–#51), repeated frames (#43) and bridge transport (#44); see [screens.md](screens.md). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
@@ -87,7 +87,9 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   catalog: addresses, pad modes, local and unassigned controls (#14).
 - [translator-validation.md](translator-validation.md) — what the S8
   input-to-MIDI translator tests cover, its limits, and the attended
-  hardware check that is still to be run (#15).
+  hardware checks of 2026-11-10 with their results (#15).
+- [mappings/](mappings/README.md) — frozen copies of Djay mappings that were
+  checked on the S8, with install steps.
 - [screens.md](screens.md) — display protocol summary, source conflicts,
   macOS ownership, and the phased first-frame test plan.
 - [agent-stop-validation.md](agent-stop-validation.md) — phase 0: what
