@@ -197,6 +197,13 @@ This section is fork-only. Keep it out of upstream pull requests.
 - Workflow: issue, then a `type/N-description` branch from `main`,
   conventional commits, PR into the fork with `Closes #N`. Never commit on
   `main` directly.
+- After a merge: check that the issue closed and move its card to Done.
+  Give each follow-up issue a card. Update status rows in
+  `docs/s8/README.md` that still name the issue as open. GitHub closes
+  neither a parent epic nor a milestone on its own. When the merge closes
+  the last sub-issue of an epic, say so, and close the epic with a summary
+  comment once the user agrees. Close a milestone once it has no open
+  issues.
 - Upstream friendliness: follow `docs/s8/upstream-workflow.md`. Never mix
   fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`,
   `hk.pkl`, `communique.toml`, `fnox.toml`, this section) with feature
