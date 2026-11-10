@@ -77,9 +77,14 @@ Accessibility permission, using `--deck 1 --no-window --png /tmp/deck`:
   playing false, 8 cue points, amplitude (22.05 samples/s), 3 band channels
   (5.56 samples/s), beats, bars. The playhead and cue markers matched djay's
   position and cue list on screen to the eye only; no frame-accurate comparison.
-  Image: [images/deck-page-live.png](images/deck-page-live.png).
+
+  ![Deck page for deck 1, loaded and paused](images/deck-page-live.png)
+
 - Decks 2, 3 and 4 produced no title or time through the same labels, so the
-  empty page was rendered ([images/deck-page-empty.png](images/deck-page-empty.png)).
+  empty page was rendered.
+
+  ![Deck page for a deck with no track](images/deck-page-empty.png)
+
   This cannot tell an empty deck from a deck that is not in djay's current
   layout, and how a four-deck layout appears in AX was not determined.
   djay's layout was not changed and no track was loaded.
