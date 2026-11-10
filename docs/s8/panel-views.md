@@ -255,4 +255,5 @@ during scrolling and tab switching, and the panel state after a stop.
 
 Not checked on the S8: a bridge that stops reading or is killed, djay
 quitting, the S8 unplugged, lists near the 300-row limit, `--poll` under
-1 s, and decks 2 to 4.
+1 s, and decks 3 and 4. `--deck 2` was run once on the S8 in
+[deck-data-validation.md](deck-data-validation.md).

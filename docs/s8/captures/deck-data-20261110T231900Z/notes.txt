@@ -1,0 +1,61 @@
+Deck data (#45). Stream: macos/.build/release/S8Preview, host: /Users/prime/Working/kontrol-s8/S4MK3-HID-MIDI-BRIDGE/macos/.build/out/Products/Debug/S8Host, bridge: target/release/s4mk3-hid-midi-bridge.
+Start, stop and load decks in djay's window.
+Before the stop: what do the two S8 panels show?: Controller Editor labels
+In djay: Two Decks layout, a track with cue points loaded and paused on decks 1 and 2, sidebar open on Library. Done?: yes
+Part A: decks 1 and 2 are on the panels.
+1. Left panel deck 1, right panel deck 2 (layout as 01-decks-1-2). Are title, artist, BPM and key on each panel the same as djay shows for that deck? y/n, or describe: y
+1: records since the previous row: left 1 (last: deck=1 elapsed=59.41 remaining=126.50 playing=false title=Cheeni); right 1 (last: deck=2 elapsed=7.20 remaining=179.50 playing=false title=Diwali)
+2. Is REMAINING on each panel the same as the remaining time in djay? y/n, or describe: y
+2: records since the previous row: left 0; right 0
+3. Cue flags above each waveform: the same number and colours, in the same order, as the deck's cue points in djay? Is the white playhead at the same place in the track as in djay's overview waveform? y/n, or describe: y
+3: records since the previous row: left 0; right 0
+4. Play both decks, wait about 15 s, then pause both. Did both panels say PLAYING and both times move with djay's, without a panel stalling? y/n, or describe: y
+4: records since the previous row: left 89 (last: deck=1 elapsed=87.91 remaining=98.00 playing=false title=Cheeni); right 80 (last: deck=2 elapsed=27.70 remaining=159.00 playing=false title=Diwali)
+5. Deck 1 paused: move it to another position (click in djay's overview waveform, or jump to a cue point). Do the time and the playhead on the left panel follow within about 1 s? y/n, or describe: y
+5: records since the previous row: left 2 (last: deck=1 elapsed=137.41 remaining=48.50 playing=false title=Cheeni); right 0
+6. Play deck 1 and jump again while it plays. Does the left panel follow the jump and go on moving with djay's time? Then pause deck 1. y/n, or describe: y
+6: records since the previous row: left 67 (last: deck=1 elapsed=100.41 remaining=85.50 playing=false title=Cheeni); right 0
+7. Move deck 2's tempo to about +8 %. Does BPM on the right panel change to the BPM djay shows? y/n, or describe: y
+7: records since the previous row: left 0; right 56 (last: deck=2 elapsed=27.70 remaining=159.00 playing=false title=Diwali)
+8. Play deck 2 for about 20 s at that tempo. Does REMAINING on the right panel stay the same as djay's? Then pause deck 2 and reset its tempo. y/n, or describe: y
+8: records since the previous row: left 0; right 47 (last: deck=2 elapsed=40.19 remaining=146.51 playing=true title=Diwali)
+9. Play deck 1, set a 4-beat loop for about 10 s, release it, pause. What did the left panel's time and playhead do during the loop? (looping is not modelled) Describe, or 'skip'.: looped as expected
+9: records since the previous row: left 107 (last: deck=1 elapsed=28.54 remaining=157.37 playing=true title=Cheeni); right 19 (last: deck=2 elapsed=45.51 remaining=141.19 playing=false title=Diwali)
+10. Load another track on deck 1. Does the left panel change to its title, artist, BPM, key, waveform and cue flags, with the playhead at the start? How long did it take? Describe.: yes, instant
+10: records since the previous row: left 23 (last: deck=1 elapsed=0.00 remaining=162.69 playing=false title=Anybody); right 0
+11. Optional: set a new cue point on deck 2. Does a new flag appear on the right panel? (expected: no; cue points are read when the track is loaded) y/n, or 'skip': n
+11: records since the previous row: left 0; right 3 (last: deck=2 elapsed=168.20 remaining=18.50 playing=false title=Diwali)
+12. Optional: load on deck 2 a track djay has not analysed, or one with a title in a non-Latin script. What does the right panel show? Describe, or 'skip'.: shows track name and artist, but the waveform says no analysis for this track
+12: records since the previous row: left 0; right 3 (last: deck=2 elapsed=0.00 remaining=235.08 playing=false title=Thistle)
+13. Optional: if djay has a view that hides the decks or their times (for example the library at full size), switch to it for about 10 s and back. What did the panels show meanwhile and afterwards? Describe, or 'skip'.: i switched to One Deck view and Deck 1 said no track on deck 1. then i loaded a track into deck 2 and it shows the track's info and waveform
+13: records since the previous row: left 1 (last: deck=1 elapsed=- remaining=- playing=false title=-); right 1 (last: deck=2 elapsed=0.00 remaining=178.34 playing=false title=Scut 2)
+14. Any flicker, tearing, wrong colours or a frozen panel so far? Describe, or 'no'.: no
+14: records since the previous row: left 0; right 0
+decks-1-2: bridge exit status 0 (expected 0), 500 records written.
+decks-1-2: status lines: S8_SCREEN_STATUS pending;S8_SCREEN_STATUS active;S8_SCREEN_STATUS inactive;
+decks-1-2: bridge processes left: 
+15. After the stream ended, agent still stopped: what do the panels show? (expected: both black): both black
+Part B: decks 3 and 4 are on the panels.
+16. djay in Two Decks: do the panels say 'No track on deck 3' and 'No track on deck 4' (as 02-decks-3-4-two-deck-layout)? y/n, or describe: y
+16: records since the previous row: left 1 (last: deck=3 elapsed=- remaining=- playing=false title=-); right 1 (last: deck=4 elapsed=- remaining=- playing=false title=-)
+17. Switch djay to Four Decks and load a track on decks 3 and 4 if they are empty. Do the panels fill with decks 3 and 4, with title, artist, BPM, key and remaining time as in djay? How long after the switch? Describe.: yes. instant
+17: records since the previous row: left 1 (last: deck=3 elapsed=99.54 remaining=182.50 playing=false title=É o Bonde); right 1 (last: deck=4 elapsed=59.84 remaining=118.50 playing=false title=Scut 2)
+18. Play deck 1 and deck 3 together for about 10 s, then pause both. Did the left panel move with deck 3's time, and did the right panel (deck 4) stand still? y/n, or describe: y
+18: records since the previous row: left 47 (last: deck=3 elapsed=114.53 remaining=167.52 playing=true title=É o Bonde); right 0
+19. Switch djay back to Two Decks. Do the panels return to 'No track on deck 3' and 'No track on deck 4'? y/n, or describe: y
+19: records since the previous row: left 30 (last: deck=3 elapsed=- remaining=- playing=false title=-); right 1 (last: deck=4 elapsed=- remaining=- playing=false title=-)
+decks-3-4: bridge exit status 0 (expected 0), 82 records written.
+decks-3-4: status lines: S8_SCREEN_STATUS pending;S8_SCREEN_STATUS active;S8_SCREEN_STATUS inactive;
+decks-3-4: bridge processes left: 
+20. After the stream ended: what do the panels show? (expected: both black): both black
+Part C: S8Host with the deck 2 page.
+21. Right panel: the deck 2 page. Left panel: the library list (layout as 10-deck)? y/n, or describe: y
+22. Play deck 2. PLAYING with a moving time and playhead on the right panel? Turn a left screen encoder through some rows: does the left panel follow while the deck page keeps moving? Then pause deck 2. y/n, or describe: y
+host-deck-2: S8Host exit status 0 (expected 0).
+host-deck-2: status lines: S8_SCREEN_STATUS pending;S8_SCREEN_STATUS active;S8_SCREEN_STATUS inactive;
+host-deck-2: bridge processes left: 
+23. After S8Host's stdin closed: what do the panels show? (expected: both black): both black
+24. After recovery: what do the panels show (Controller Editor labels again)?: Controller Editor labels
+25. Press left PLAY once. Did djay react? y/n: y
+26. Press display button 1 or 4. Does the NI action work again? y/n: y
+Recorded in docs/s8/captures/deck-data-20261110T231900Z
