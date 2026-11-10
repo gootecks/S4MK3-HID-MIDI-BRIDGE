@@ -6,9 +6,11 @@ panel is the selected track or, with `--deck N`, the page of one deck. The
 display buttons and screen encoders move through it
 ([display-buttons.md](display-buttons.md)).
 
-This is a source-build feature of the fork. **Not yet checked on the S8**:
-the pictures below come from the frame bytes, not from the panels. The
-attended check is planned at the end of this page and needs approval.
+This is a source-build feature of the fork. Checked once on the S8, on
+2026-11-10: [panel-views-validation.md](panel-views-validation.md) holds the
+answers and what that run did not cover. The pictures below come from the
+frame bytes, not from the panels. Each run of the attended check at the end
+of this page needs approval.
 
 ## Run
 
@@ -80,7 +82,9 @@ switch starts at the top.
 
 - A display button or screen encoder event is applied to djay first; the
   panels are drawn again from a fresh sidebar reading once no further event
-  is waiting. A fast encoder turn therefore draws once, at its end.
+  is waiting. A fast encoder turn therefore draws once, at its end: on the
+  S8 the panel jumps to the last row instead of passing through the rows as
+  djay does (#90).
 - Changes made in djay itself (mouse, keyboard, a track ending) are picked
   up by the poll, by default within 1 s.
 - With `--deck N` the deck is read every 0.25 s. The sidebar is not read
@@ -126,9 +130,10 @@ Decision for #27: **a clean stop leaves both panels black.**
   sidebar hidden the left panel asks to open it.
 - Reading the sidebar takes Accessibility calls for every row. It no longer
   holds up the deck reads inside S8Host, but both ask the same djay process,
-  so a long list or a poll under 1 s can still slow them. Measured only
-  without control events (see *Validation state*); the attended check
-  measures scrolling and tab switching.
+  so a long list or a poll under 1 s can still slow them. On the S8, with
+  the default poll, no gap between deck reads exceeded 0.45 s during
+  scrolling and tab switching
+  ([panel-views-validation.md](panel-views-validation.md)).
 - One deck page at a time, on the right panel. Decks 3 and 4 depend on how
   djay's four-deck layouts appear through Accessibility (#45).
 - Buttons 1 and 4 stay with NI and do nothing while the agent is stopped.
@@ -153,8 +158,10 @@ nothing and need neither djay nor the S8.
 
 ## Attended check
 
-Not run. It needs explicit approval because it stops NIHardwareAgent and
-sends screen frames to the S8.
+Run once, on 2026-11-10:
+[panel-views-validation.md](panel-views-validation.md). Every run needs
+explicit approval because it stops NIHardwareAgent and sends screen frames
+to the S8.
 
 `mise run s8:panel-views` (`panel-views-check.sh`), at the S8 with djay Pro
 and Controller Editor open, a track loaded on deck 1 and the sidebar on
@@ -206,8 +213,9 @@ time interpolation of #84 allows for) and the longest read.
 | 25 | Display button 1 or 4 | NI action works again |
 
 The record goes to `captures/panel-views-<UTC>/` (`notes.txt` with the
-answers, `library.log` and `deck.log` with S8Host's and the bridge's output)
-and the results into a validation record next to this page.
+answers, `library.log` and `deck.log` with S8Host's and the bridge's output,
+gzipped before a commit) and the results into
+[panel-views-validation.md](panel-views-validation.md).
 
 ## Validation state
 
@@ -240,7 +248,11 @@ long one. With the write blocked S8Host finished the deck read in progress
 at the signal, started no further one and exited when the stand-in got
 SIGINT after 5 s.
 
-Not checked, needs the S8 and djay together: everything in the attended
-check, including the live sidebar reading under `--screens`, the update
-delay, the deck read gaps during scrolling and tab switching, and the panel
-state after a stop.
+Checked on the S8 once, with djay (2026-11-10,
+[panel-views-validation.md](panel-views-validation.md)): the 25 rows above,
+including the live sidebar reading under `--screens`, the deck read gaps
+during scrolling and tab switching, and the panel state after a stop.
+
+Not checked on the S8: a bridge that stops reading or is killed, djay
+quitting, the S8 unplugged, lists near the 300-row limit, `--poll` under
+1 s, and decks 2 to 4.
