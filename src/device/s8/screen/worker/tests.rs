@@ -373,6 +373,32 @@ fn abort_parks_the_panels_and_reports_the_reason() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[test]
+fn a_panicking_status_callback_still_parks_releases_and_joins() -> anyhow::Result<()> {
+    let (events_tx, events) = channel();
+    let fake = Fake {
+        events: Some(events_tx),
+        ..Fake::default()
+    };
+    let worker = Worker::start(fake, Config::default(), |_| {
+        std::panic::resume_unwind(Box::new("stdout closed"));
+    })?;
+    let handle = worker.handle();
+    put(&handle, Panel::Left, 1)?;
+    loop {
+        if matches!(events.recv_timeout(WAIT)?, Event::Send(..)) {
+            break;
+        }
+    }
+    drop(worker);
+    let events: Vec<Event> = events.try_iter().collect();
+    let [Event::Send(black, _), Event::Release] = events.as_slice() else {
+        return Err(anyhow!("unexpected events {events:?}"));
+    };
+    assert_eq!(hex(black), BLACK_LEFT);
+    Ok(())
+}
+
 fn record(panel: u8, fill: u8) -> Vec<u8> {
     let mut bytes = wire::MAGIC.to_vec();
     bytes.extend_from_slice(&[panel, 0, 0, 0]);

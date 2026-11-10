@@ -155,6 +155,7 @@ fn main() -> anyhow::Result<()> {
         .with_env_filter(EnvFilter::try_from_default_env().or_else(|_| EnvFilter::try_new("info"))?)
         .with_target(false)
         .with_ansi(false)
+        .with_writer(s8::output::QuietStdout)
         .try_init()
         .map_err(|error| anyhow::anyhow!("initialize logging: {error}"))?;
 

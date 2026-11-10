@@ -10,9 +10,10 @@ use midir::MidiOutput;
 use midir::os::unix::VirtualOutput as _;
 use s4mk3_hid_midi_bridge::device::S8;
 use s4mk3_hid_midi_bridge::device::s8::ScreenEncoders;
-use tracing::info;
+use tracing::{info, warn};
 
 use super::app_events;
+use super::output;
 use super::translator::Translator;
 use crate::{Args, MidiProfile, ProbeCounts, record_event, report_probe_counts, stop_signal};
 
@@ -59,6 +60,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
     let mut events = Vec::with_capacity(128);
     let mut messages = Vec::with_capacity(32);
     let started = Instant::now();
+    let mut reader_gone = false;
     while args.until_stopped || started.elapsed() < Duration::from_secs(args.seconds.get()) {
         match stop_rx.try_recv() {
             Ok(()) => break,
@@ -92,7 +94,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         if args.app_events {
             for turn in screen_encoders.update(report) {
                 if let Some(line) = app_events::screen_encoder(&turn) {
-                    println!("{line}");
+                    reader_gone |= emit_line(&line);
                 }
             }
         }
@@ -102,7 +104,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             if args.app_events
                 && let Some(line) = app_events::display_button(event, resting)
             {
-                println!("{line}");
+                reader_gone |= emit_line(&line);
             }
         }
         translator.end_report(&mut messages);
@@ -113,6 +115,20 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         counts.midi_messages = counts
             .midi_messages
             .saturating_add(u64::try_from(messages.len())?);
+        if reader_gone {
+            break;
+        }
     }
     report_probe_counts(args, &S8, &counts)
+}
+
+/// True when stdout has no reader left.
+fn emit_line(line: &str) -> bool {
+    match output::emit(line) {
+        Ok(()) => false,
+        Err(error) => {
+            warn!(%error, "S8 control reader is gone, stopping");
+            true
+        }
+    }
 }

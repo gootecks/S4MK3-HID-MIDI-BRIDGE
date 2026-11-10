@@ -7,6 +7,7 @@
 //! `docs/s8/screen-transport.md`.
 
 use std::fmt;
+use std::panic::{self, AssertUnwindSafe};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -169,7 +170,7 @@ impl Worker {
         T: Transport,
         R: Fn(&Status) + Send + 'static,
     {
-        report(&Status::Pending);
+        notify(&report, &Status::Pending);
         let shared = Arc::new(Shared::default());
         let task = Arc::clone(&shared);
         let thread = thread::Builder::new()
@@ -242,7 +243,15 @@ fn run<T: Transport>(
         slots.stop = Some(Stop::Clean);
     }
     drop(slots);
-    report(&status);
+    notify(report, &status);
+}
+
+/// A callback that panics must not skip the exit frames or the release, and a
+/// panic must never reach `Worker`'s `Drop`.
+fn notify(report: &dyn Fn(&Status), status: &Status) {
+    if panic::catch_unwind(AssertUnwindSafe(|| report(status))).is_err() {
+        tracing::warn!("S8 screen status callback panicked");
+    }
 }
 
 fn serve<T: Transport>(
@@ -266,7 +275,7 @@ fn serve<T: Transport>(
         session.sent[index] = true;
         if !session.active {
             session.active = true;
-            report(&Status::Active);
+            notify(report, &Status::Active);
         }
     }
 }

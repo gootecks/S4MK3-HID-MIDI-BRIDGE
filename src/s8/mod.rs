@@ -4,6 +4,7 @@ mod app_events;
 pub mod bridge;
 pub mod catalog;
 mod mapping;
+pub mod output;
 pub mod screens;
 mod strip;
 mod translator;

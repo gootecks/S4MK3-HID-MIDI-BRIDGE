@@ -11,6 +11,7 @@ use s4mk3_hid_midi_bridge::device::s8::screen::usb::Usb;
 use s4mk3_hid_midi_bridge::device::s8::screen::wire;
 use s4mk3_hid_midi_bridge::device::s8::screen::worker::{Config, Worker};
 
+use super::output;
 use crate::Args;
 
 /// Refuse the flag for any controller but the S8.
@@ -26,8 +27,14 @@ pub fn check_device(args: &Args, device: Device) -> anyhow::Result<()> {
 /// the exit frames, releases the interface and reports the final status.
 /// Closing stdin asks the bridge to stop through `stop`.
 pub fn start(stop: Sender<()>) -> anyhow::Result<Worker> {
-    let worker = Worker::start(Usb::default(), Config::default(), |status| {
-        println!("S8_SCREEN_STATUS {status}");
+    let on_status = stop.clone();
+    let worker = Worker::start(Usb::default(), Config::default(), move |status| {
+        if let Err(error) = output::emit(format_args!("S8_SCREEN_STATUS {status}")) {
+            tracing::warn!(%error, "S8 status reader is gone, stopping");
+            if on_status.try_send(()).is_err() {
+                tracing::debug!("S8 stop already requested");
+            }
+        }
     })?;
     let handle = worker.handle();
     thread::Builder::new()
