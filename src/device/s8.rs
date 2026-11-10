@@ -7,7 +7,7 @@
 use encdr::DeviceDescriptor;
 use encdr::core::descriptor::{
     ButtonItemDesc, EncoderEncoding, EncoderItemDesc, HexU16, InputItemDesc, QuirksDesc,
-    TouchItemDesc,
+    SliderItemDesc, TouchItemDesc,
 };
 
 /// Touch caps of the left deck; the right deck repeats them eight bytes on.
@@ -123,6 +123,22 @@ fn correct_sliders(items: &mut Vec<InputItemDesc>) {
     // Screen encoders wrap at 1000 (`ScreenEncoders`). Encdr's FX dial touch
     // offsets are position bytes here; the caps are in the buttons report.
     items.retain(|item| matches!(item, InputItemDesc::Slider(_)));
+    // Encdr has no entry for the four knobs between the channel strips.
+    for (name, low_byte) in [
+        ("mixer_main", 59),
+        ("mixer_booth", 61),
+        ("mixer_cue_mix", 63),
+        ("mixer_cue_volume", 65),
+    ] {
+        items.push(InputItemDesc::Slider(SliderItemDesc {
+            name: name.to_owned(),
+            byte: None,
+            bytes: Some(vec![low_byte, low_byte + 1]),
+            bits: 12,
+            normalize: true,
+            max_value: None,
+        }));
+    }
     for item in items {
         let InputItemDesc::Slider(slider) = item else {
             continue;

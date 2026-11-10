@@ -1,7 +1,7 @@
 //! Generates the native Djay MIDI mapping plist of the Kontrol S8 from the
 //! S8 catalog. The assignments are described in `docs/s8/mapping.md`.
 
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::Path;
@@ -12,6 +12,9 @@ use plist::{Dictionary, Value};
 use s4mk3_hid_midi_bridge::device::S8;
 
 use super::catalog::{self, Entry, Kind};
+
+/// The control that owns each address, and the actions already bound to it.
+type Addresses = BTreeMap<(u8, u8, u8), (&'static str, Vec<String>)>;
 
 pub fn write(path: &Path) -> Result<()> {
     let mapping = generate()?;
@@ -29,7 +32,7 @@ pub fn write(path: &Path) -> Result<()> {
 
 fn generate() -> Result<Value> {
     let mut controls = Vec::new();
-    let mut addresses = BTreeSet::new();
+    let mut addresses = Addresses::new();
     for entry in catalog::entries() {
         push_control(&mut controls, &mut addresses, &entry)?;
     }
@@ -50,11 +53,7 @@ fn generate() -> Result<Value> {
     Ok(Value::Dictionary(root))
 }
 
-fn push_control(
-    controls: &mut Vec<Value>,
-    addresses: &mut BTreeSet<(u8, u8, u8)>,
-    entry: &Entry,
-) -> Result<()> {
+fn push_control(controls: &mut Vec<Value>, addresses: &mut Addresses, entry: &Entry) -> Result<()> {
     let binding = entry.binding;
     let channel = entry.channel();
     let key_path = entry.key_path();
@@ -66,11 +65,16 @@ fn push_control(
         channel <= 15 && binding.number <= 127 && !key_path.contains('{'),
         "invalid generated MIDI binding for {key_path}"
     );
+    let (owner, actions) = addresses
+        .entry((channel, message_type, binding.number))
+        .or_insert_with(|| (binding.input, Vec::new()));
     ensure!(
-        addresses.insert((channel, message_type, binding.number)),
-        "duplicate MIDI address: channel {channel}, type {message_type}, data {} ({key_path})",
-        binding.number
+        *owner == binding.input && !actions.contains(&key_path),
+        "MIDI address of {owner} reused: channel {channel}, type {message_type}, data {} ({} {key_path})",
+        binding.number,
+        binding.input
     );
+    actions.push(key_path.clone());
 
     let mut control = Dictionary::new();
     control.insert(String::from("keyPath"), Value::String(key_path));
@@ -120,7 +124,7 @@ fn push_control(
 mod tests {
     use super::*;
     use crate::s8::catalog::{Layer, Scope};
-    use std::collections::BTreeMap;
+    use std::collections::BTreeSet;
     use std::io::Cursor;
 
     fn reparsed() -> Result<Dictionary> {
@@ -149,22 +153,25 @@ mod tests {
         u8::try_from(value).with_context(|| format!("{key} fits a byte"))
     }
 
-    fn by_address<'a>(
-        controls: &[&'a Dictionary],
-    ) -> Result<BTreeMap<(u8, u8, u8), &'a Dictionary>> {
-        let mut map = BTreeMap::new();
+    type ByAddress<'a> = BTreeMap<(u8, u8, u8), Vec<&'a Dictionary>>;
+
+    fn by_address<'a>(controls: &[&'a Dictionary]) -> Result<ByAddress<'a>> {
+        let mut map = ByAddress::new();
         for control in controls {
             let address = (
                 uint(control, "midiChannel")?,
                 uint(control, "midiMessageType")?,
                 uint(control, "midiData")?,
             );
-            ensure!(
-                map.insert(address, *control).is_none(),
-                "address {address:?} appears twice"
-            );
+            map.entry(address).or_default().push(*control);
         }
         Ok(map)
+    }
+
+    fn has_key_path(controls: &[&Dictionary], key_path: &str) -> bool {
+        controls
+            .iter()
+            .any(|control| key_path_of(control) == Some(key_path))
     }
 
     fn message_type(kind: Kind) -> u8 {
@@ -188,13 +195,16 @@ mod tests {
                 message_type(entry.binding.kind),
                 entry.binding.number,
             );
-            let control = map
+            let at_address = map
                 .get(&address)
                 .with_context(|| format!("no control at {address:?}"))?;
-            assert_eq!(key_path_of(control), Some(entry.key_path().as_str()));
+            assert!(
+                has_key_path(at_address, &entry.key_path()),
+                "{} missing at {address:?}",
+                entry.key_path()
+            );
         }
         assert_eq!(controls.len(), count);
-        assert_eq!(map.len(), count);
         Ok(())
     }
 
@@ -224,8 +234,8 @@ mod tests {
                 let at_shift = map
                     .get(&(deck - 1 + 8, kind, shift.number))
                     .with_context(|| format!("{} shift missing", shift.input))?;
-                assert_eq!(key_path_of(at_base), Some(base.key_path(deck).as_str()));
-                assert_eq!(key_path_of(at_shift), Some(shift.key_path(deck).as_str()));
+                assert!(has_key_path(at_base, &base.key_path(deck)));
+                assert!(has_key_path(at_shift, &shift.key_path(deck)));
                 shifted += 1;
             }
         }
@@ -237,40 +247,55 @@ mod tests {
     fn encoders_are_relative_and_strips_and_faders_are_not() -> Result<()> {
         let root = reparsed()?;
         let map = by_address(&controls_of(&root)?)?;
-        let control_type = |address: (u8, u8, u8)| -> Result<Option<&str>> {
-            Ok(map
-                .get(&address)
-                .with_context(|| format!("no control at {address:?}"))?
-                .get("controlType")
-                .and_then(Value::as_string))
-        };
         let mut relative = 0;
         for entry in catalog::entries() {
             let binding = entry.binding;
             let address = (entry.channel(), message_type(binding.kind), binding.number);
-            let control = map.get(&address).context("entry generated")?;
-            match binding.kind {
-                Kind::Relative => {
-                    relative += 1;
-                    assert_eq!(control_type(address)?, Some("rotary-64"));
-                    assert_eq!(
-                        control.get("rotarySensitivity").and_then(Value::as_real),
-                        binding.sensitivity
-                    );
+            for control in map.get(&address).context("entry generated")? {
+                let control_type = control.get("controlType").and_then(Value::as_string);
+                match binding.kind {
+                    Kind::Relative => {
+                        relative += 1;
+                        assert_eq!(control_type, Some("rotary-64"));
+                        assert_eq!(
+                            control.get("rotarySensitivity").and_then(Value::as_real),
+                            binding.sensitivity
+                        );
+                    }
+                    Kind::Absolute | Kind::Note => assert_eq!(control_type, None),
+                    Kind::RotaryAbsolute => assert_ne!(control_type, Some("rotary-64")),
                 }
-                Kind::Absolute | Kind::Note => assert_eq!(control_type(address)?, None),
-                Kind::RotaryAbsolute => assert_ne!(control_type(address)?, Some("rotary-64")),
             }
         }
         assert!(relative > 0);
         let tempo = map
             .get(&(catalog::MIXER_CHANNEL, 3, 26))
+            .and_then(|controls| controls.first())
             .context("tempo encoder")?;
         assert_eq!(
             tempo.get("rotarySensitivity").and_then(Value::as_real),
             Some(3.5)
         );
         Ok(())
+    }
+
+    #[test]
+    fn rows_of_one_control_and_layer_share_one_address() {
+        let tables = [catalog::DECK, catalog::FX_LEFT, catalog::FX_RIGHT]
+            .into_iter()
+            .chain(catalog::PadMode::ALL.map(catalog::pads));
+        for table in tables {
+            let mut numbers = BTreeMap::new();
+            let mut actions = BTreeSet::new();
+            for row in table {
+                let layer = row.layer == Layer::Shift;
+                let number = *numbers
+                    .entry((row.input, message_type(row.kind), layer))
+                    .or_insert(row.number);
+                assert_eq!(number, row.number, "{} has two addresses", row.input);
+                assert!(actions.insert((row.input, layer, row.target)));
+            }
+        }
     }
 
     #[test]

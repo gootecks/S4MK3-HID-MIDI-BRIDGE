@@ -37,10 +37,32 @@ their detailed notes stay in `docs/release-*.md`.
 - `--generate-mapping <path> --device s8` writes the default Djay mapping for
   the Kontrol S8 (`Kontrol S8 Bridge.djayMidiMapping`, endpoint
   `Kontrol S8 MIDI Full`) from the new S8 catalog in `src/s8/catalog.rs`
-  (#14). Pads: HOTCUE sets and jumps to hot cues, LOOP plays bounce loops,
-  FREEZE opens the Slicer and REMIX plays the sampler; SNAP and QUANTIZE are
-  unassigned. `docs/s8/mapping.md` lists every address. The layout is not
-  checked in Djay yet, and the bridge does not send S8 MIDI yet (#15).
+  (#14). Pads: HOTCUE sets and jumps to hot cues, Shift + HOTCUE plays bounce
+  loops, FREEZE opens the Slicer and REMIX plays the sampler; each of these
+  also switches Djay's pad view. LOOP shows or hides Djay's Looper. FX
+  buttons and dials 1-3 are Djay's three effect slots, button 4 toggles FX
+  and dial 4 is dry/wet for all slots. BACK switches the library table, FX
+  SELECT expands the library and QUANTIZE toggles quantize. SNAP and MIC 2
+  send notes with no Djay action, so they can be assigned in Djay.
+  `docs/s8/mapping.md` lists every address.
+- `--device s8 --midi full` publishes the virtual MIDI source
+  `Kontrol S8 MIDI Full` and translates Kontrol S8 input to the default
+  mapping (#15): deck and Shift layers, DECK switching, pad modes, FX unit
+  targets, FILTER ON, crossfader assign and the touchstrips. It writes
+  nothing to the S8 and has no LED or screen feedback. A first attended check
+  ran against an earlier layout; the revised layout is not checked on
+  hardware. `docs/s8/translator-validation.md` holds the check and its
+  results, and `mise run s8:midi` runs it: it stops NIHardwareAgent, runs the
+  bridge until Ctrl-C and restores the agent. The first control moved after
+  start only synchronises positions.
+- The S8 CUE VOL, CUE MIX, BOOTH and MAIN knobs are decoded and mapped to
+  Djay's monitor volume, cue/mix, booth volume and main volume (mixer channel
+  CCs 25, 27, 28 and 29). Their report fields come from raw captures kept in
+  `docs/s8/captures/2026-11-10-centre-knobs/` and
+  `docs/s8/captures/2026-11-10-main-knob/`. CUE VOL, CUE MIX and MAIN are
+  reported working in Djay; the booth output is not checked.
+- `mise run s8:midi` writes its bridge log to
+  `docs/s8/captures/translator-<UTC time>/` instead of `target/`.
 - The Encdr dependency now points at `gootecks/Encdr` branch
   `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
   `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.

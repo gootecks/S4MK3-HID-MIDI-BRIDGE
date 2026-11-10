@@ -1,7 +1,10 @@
-//! Kontrol S8 catalog and generated Djay mapping.
+//! Kontrol S8 catalog, generated Djay mapping and input-to-MIDI bridge.
 
+pub mod bridge;
 pub mod catalog;
 mod mapping;
+mod strip;
+mod translator;
 
 use std::path::Path;
 

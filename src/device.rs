@@ -37,7 +37,7 @@ pub struct DescriptorCorrections {
     /// Probe and minimal MIDI stage: control interface, plus button LEDs
     /// where the bridge may write them.
     pub control: fn(&DeviceDescriptor) -> DeviceDescriptor,
-    /// Full MIDI profile; `None` until the controller has a Djay catalog.
+    /// Full MIDI profile; `None` when the control corrections serve it too.
     pub full: Option<fn(&DeviceDescriptor) -> anyhow::Result<DeviceDescriptor>>,
 }
 
@@ -89,7 +89,7 @@ pub const S4_MK3: DeviceProfile = DeviceProfile {
     mapping_file_name: "S4 MK3 Bridge.djayMidiMapping",
 };
 
-/// Input only: there is no Djay catalog, and nothing is written to the S8.
+/// Input only: nothing is written to the S8.
 pub const S8: DeviceProfile = DeviceProfile {
     device: Device::S8,
     name: "Kontrol S8",

@@ -362,6 +362,10 @@ for the right BROWSE encoder (29 seconds, 112 reports). Both logs are in
 | 123 | `M-tempo-turn`   | TEMPO encoder                                          | `r1 [3] 0x0f`          | clockwise +3, anticlockwise −3, mod 16          | Verified |
 | 124 | `M-mic1`         | MIC 1 button                                           | `r1 [22] 0x04`         | 2 presses; latch `r1 [39] 0x10` flips per press | Verified |
 | 125 | `M-mic2`         | MIC 2 button                                           | `r1 [25] 0x01`         | 2 presses; latch `r1 [39] 0x20` flips per press | Verified |
+|     | `M-cue-vol`      | CUE VOL (2026-11-10, separate raw capture)             | `r2 [65..66]`          | 19–4091                                         | Verified by order moved |
+|     | `M-cue-mix`      | CUE MIX (2026-11-10, separate raw capture)             | `r2 [63..64]`          | 20–4090                                         | Verified by order moved |
+|     | `M-booth`        | BOOTH (2026-11-10, separate raw capture)               | `r2 [61..62]`          | 11–4082                                         | Verified by order moved |
+|     | `M-main`         | MAIN (2026-11-10, separate raw capture)                | `r2 [59..60]`          | 13–4082                                         | Verified, only field sweeping |
 
 ### Right deck
 
