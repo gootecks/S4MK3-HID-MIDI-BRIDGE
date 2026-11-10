@@ -34,6 +34,13 @@ their detailed notes stay in `docs/release-*.md`.
   refused for it until a mapping catalog exists. `tests/s8_input.rs` replays
   the captured reports through the decoder. `mise run s8:raw [seconds]` runs
   the decode.
+- `--generate-mapping <path> --device s8` writes the default Djay mapping for
+  the Kontrol S8 (`Kontrol S8 Bridge.djayMidiMapping`, endpoint
+  `Kontrol S8 MIDI Full`) from the new S8 catalog in `src/s8/catalog.rs`
+  (#14). Pads: HOTCUE sets and jumps to hot cues, LOOP plays bounce loops,
+  FREEZE opens the Slicer and REMIX plays the sampler; SNAP and QUANTIZE are
+  unassigned. `docs/s8/mapping.md` lists every address. The layout is not
+  checked in Djay yet, and the bridge does not send S8 MIDI yet (#15).
 - The Encdr dependency now points at `gootecks/Encdr` branch
   `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
   `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.
