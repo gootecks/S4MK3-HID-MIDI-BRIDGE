@@ -8,8 +8,9 @@ Evidence levels used below:
   hardware test.
 - **Unconfirmed** — research notes or decompile claims; may conflict.
 
-Nothing below has been verified by this bridge yet. Input verification is
-#10; LED framing is #21.
+Input fields were checked control by control in the agent-stopped capture
+(#10, [input-capture.md](input-capture.md)); where that record and the
+descriptor summary below differ, the record wins. LED framing is #21.
 
 ## USB identity (observed)
 
@@ -48,8 +49,20 @@ IDs 1 (41 bytes) and 2 (109 bytes) arrive in MIDI mode, the
 kontrol-s8-protocol offsets match for every button tested, and shared-mode
 reads coexist with NIHardwareAgent and Controller Editor.
 
-Still open for #10: fader full scale (4078 vs the S4's 4095), touchstrip
-range, encoder directions and the remaining mixer controls.
+The agent-stopped capture ([input-capture.md](input-capture.md)) corrects
+this descriptor in several places:
+
+- Touch caps are in report 1 (bytes 10/11 left, 18/19 right), not report 2.
+- Touchstrips have no touch bit; position is 0 when released and 1–1024
+  while touched.
+- Screen encoders wrap at 1000, not 65536.
+- EQ LOW on channels C and D is 12-bit at bytes 95–96 and 105–106.
+- Crossfader assign is one three-position switch per channel, and channels
+  B and D are swapped in the descriptor.
+- Fader and knob full scale runs 4074–4095 depending on the control.
+
+Still open: counts per turn of the screen encoders and the right deck
+fader 1 touch bit.
 
 ## LED output (interface 5, OUT `0x03`)
 
