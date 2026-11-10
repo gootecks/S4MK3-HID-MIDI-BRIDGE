@@ -293,6 +293,9 @@ Record in a validation file under `docs/s8/`, not in this plan.
 - Refresh rate and latency for repeated frames, holding interface 6 across
   frames, and partial updates (SKIP, sub-rectangles): planned as phase 5
   (#43), not run.
+- The bridge-side frame channel (stdin records, status lines, pacing,
+  exit frames) is specified in [screen-transport.md](screen-transport.md)
+  and unexercised on hardware (#44).
 - What the panels should show when the bridge quits without relaunching the
   agent: they keep the last frame (#27).
 - How Djay's four-deck layouts appear through Accessibility (#45).
