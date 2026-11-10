@@ -104,6 +104,18 @@ arg "[mode]" help="check to compare instead of writing"
 '''
 run = 'bash docs/s8/phase5-images.sh ${usage_mode:-}'
 
+[tasks."s8:transport-images"]
+description = "Regenerate the expected screen transport pictures, or `check` them against the tool (#44); sends nothing"
+usage = '''
+arg "[mode]" help="check to compare instead of writing"
+'''
+run = 'bash docs/s8/transport-images.sh ${usage_mode:-}'
+
+[tasks."s8:screen-transport"]
+description = "Attended S8 screen transport check: stop NIHardwareAgent, feed frames through --s8-screens-stdin, restore (#44)"
+run = "bash docs/s8/screen-transport-check.sh"
+raw = true
+
 [tasks."s8:input-capture"]
 description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
 usage = '''
