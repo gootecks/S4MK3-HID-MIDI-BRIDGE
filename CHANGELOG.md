@@ -41,6 +41,13 @@ their detailed notes stay in `docs/release-*.md`.
   FREEZE opens the Slicer and REMIX plays the sampler; SNAP and QUANTIZE are
   unassigned. `docs/s8/mapping.md` lists every address. The layout is not
   checked in Djay yet, and the bridge does not send S8 MIDI yet (#15).
+- `--device s8 --midi full` publishes the virtual MIDI source
+  `Kontrol S8 MIDI Full` and translates Kontrol S8 input to the default
+  mapping (#15): deck and Shift layers, DECK switching, pad modes, FX unit
+  targets, FILTER ON, crossfader assign and the touchstrips. It writes
+  nothing to the S8 and has no LED or screen feedback. No control is checked
+  on hardware yet; `docs/s8/translator-validation.md` holds the attended
+  check. The first control moved after start only synchronises positions.
 - The Encdr dependency now points at `gootecks/Encdr` branch
   `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
   `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.
