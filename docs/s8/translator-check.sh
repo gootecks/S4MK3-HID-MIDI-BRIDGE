@@ -1,7 +1,7 @@
 #!/bin/bash
 # Attended translator check (#15): run the S8 bridge against Djay.
 # Sends nothing to the S8. Stops NIHardwareAgent with SIGKILL and restores it.
-# The bridge log goes to target/s8-captures/ and stays out of git.
+# The bridge log goes to docs/s8/captures/translator-<UTC time>/bridge.log.
 set -euo pipefail
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
@@ -10,7 +10,7 @@ exe="$bundle/Contents/MacOS/NIHardwareAgent"
 mappings="$HOME/Music/djay/MIDI Mappings"
 mapping="$mappings/Kontrol S8 Bridge.djayMidiMapping"
 bridge="target/debug/s4mk3-hid-midi-bridge"
-run="target/s8-captures/translator-$(date -u +%Y%m%dT%H%M%SZ)"
+run="docs/s8/captures/translator-$(date -u +%Y%m%dT%H%M%SZ)"
 
 agent_pid() { pgrep -f "$exe" || true; }
 
