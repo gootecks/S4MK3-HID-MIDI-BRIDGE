@@ -11,9 +11,10 @@ LED report, feature request, control transfer or screen traffic.
 | ---- | ------ |
 | Translator against the catalog | Unit tests, including a replay of the captured reports through the real decoder |
 | Startup with the S8 connected | Run once, unattended: MIDI source created, HID opened, no input in 3 s |
-| MIDI from physical controls | Four attended checks, 2026-11-10. The user went down the checklist and states that every row not reported as broken works; see [Results](#results) |
-| Djay reaction with the generated mapping | As above. Open: the touchstrip's fine motion and CAPTURE |
-| Touchstrip, Shift + touchstrip | Reported working for broad scrubbing; a small back-and-forth motion does not register. **Open**, see [Touchstrip](#touchstrip) |
+| MIDI from physical controls | Five attended checks, 2026-11-10. The user went down the checklist and states that every row not reported as broken works; see [Results](#results) |
+| Djay reaction with the generated mapping | As above. Open: CAPTURE |
+| Touchstrip | Reported coarse after the fourth check; reported working in the fifth, including a small back-and-forth motion on the left strip, with no change to the bridge. See [Touchstrip](#touchstrip) |
+| Shift + touchstrip | Reported working for broad motion in the earlier checks; not repeated in the fifth |
 | CAPTURE | Triggers "Record Sample" with no visible result in the sampler (first check). Deferred |
 | Pad-mode notes, FX slots 1 and 2, FX buttons, dial 4, BACK, FX SELECT, TEMPO | Reported working in the second check |
 | FX dial 3 | Reported working in the third check, after a full sweep |
@@ -27,7 +28,7 @@ LED report, feature request, control transfer or screen traffic.
 
 Each attended check ran against the layout of its time, and the layout
 changed after each in response. The rows changed after a check were reported
-working in a later one, except the touchstrip and CAPTURE.
+working in a later one, except CAPTURE.
 
 ## What the unit tests cover
 
@@ -73,6 +74,9 @@ working in a later one, except the touchstrip and CAPTURE.
 - There is no LED or screen feedback; the mapping has no outputs.
 - `--midi` without `full`, `--led-config`, `--tension-config`, `--jog-config`,
   `--screens` and `--screen-control-stdin` are refused for the S8.
+- Started once with Controller Editor closed, the S8 was dark and the bridge
+  was of no use until Controller Editor was opened again; see
+  [S8 dark at start](#s8-dark-at-start).
 
 ## Attended check
 
@@ -83,6 +87,11 @@ passive; this check sends nothing to the S8.
 restores NIHardwareAgent when the bridge stops. It keeps an existing
 `Kontrol S8 Bridge` mapping, and writes the bridge log to
 `docs/s8/captures/translator-<UTC time>/`. The manual steps are:
+
+Open Controller Editor first and check that both panels show its labels.
+If the S8 is dark and the panels ask for MIDI mode with SHIFT + BACK, end the
+check with Ctrl-C, open Controller Editor and start again
+([S8 dark at start](#s8-dark-at-start)).
 
 ### Setup
 
@@ -254,12 +263,12 @@ MAIN to its own outputs, and behaviour with NIHardwareAgent running.
 
 ### Touchstrip
 
-The user reported that the touchstrip scratches and seeks, but that the
-motion is coarse: a broad slide scrubs, and jiggling a finger back and forth
-in place does little or nothing.
+After the fourth check the user reported that the touchstrip scratches and
+seeks, but that the motion is coarse: a broad slide scrubs, and jiggling a
+finger back and forth in place does little or nothing. The fifth check below
+did not reproduce this, and its cause is not established.
 
-The generated mapping already uses the values of Evan's mapping for this
-control, so the mapping file does not explain the difference:
+The generated mapping uses values close to Evan's mapping for this control:
 
 | Mapping | Action | Type | Flipped | Sensitivity | Acceleration |
 | ------- | ------ | ---- | ------- | ----------- | ------------ |
@@ -268,15 +277,84 @@ control, so the mapping file does not explain the difference:
 | Evan 1.1, second layer | `jogSeekMove` | `rotary-absolute` | no | 7.1-7.7 | 0 |
 | Bridge, Shift | `jogSeekMove` | `rotary-absolute` | no | 7.4 | 0 |
 
-What differs is the MIDI that reaches Djay. The bridge sends the strip
-position 1-1024 as a 7-bit value, `(position - 1) >> 3`, so one step of the
-value is 8 units of the strip. The fourth check's bridge log has two touches
-of the left strip: 24 position changes with a median of 4 units each (largest
-7), reported about every 25 ms. Only 11 of the 24 changed the 7-bit value.
-A motion that stays within 8 units sends nothing, which fits the report.
+An earlier version of this record explained the report by the 7-bit value
+the bridge sends, `(position - 1) >> 3`: one step is 8 units of the strip,
+so a motion within 8 units sends nothing. It rested on 29 strip events in
+the fourth check's log. The comparison below shows that NIHardwareAgent
+sends the same value, so this does not separate the bridge from the usual
+setup.
 
-Not established: what NIHardwareAgent sends on this control with Evan's
-Controller Editor template (resolution, absolute or relative), and how Djay
-turns successive `rotary-absolute` values into motion. No change is made
-yet. The fallback recorded in #13 is to send bridge-side deltas at the
-strip's full resolution as a relative control.
+#### Comparison with NIHardwareAgent, 2026-11-10
+
+Read-only, with NIHardwareAgent running, Controller Editor open and Evan's
+mapping selected in Djay. The user states that an in-place jiggle scratches
+in this setup. `examples/midi-monitor.rs` listened on the agent's virtual
+source `Traktor Kontrol S8 Input` while `--device s8 --raw` logged the strip
+from interface 5 in shared mode. The user slid the left strip from end to
+end and then jiggled in place. The logs are in
+`captures/2026-11-10-agent-strip-midi/`.
+
+- The agent sends the strip as an absolute 7-bit value on CC 2, channel 1,
+  and note 2 while touched: velocity 127 at the touch, a note-on with
+  velocity 0 at the release.
+- The value equals `(position - 1) >> 3` of the last logged position in 844
+  of 926 messages and differs by one in the rest.
+- The translator's rule, applied to the decoded events of the raw log, gives
+  934 messages against the agent's 934: the same eight touch notes, and a
+  value sequence that differs in 54 places by an added, dropped or
+  off-by-one value. This was computed from the log, not by running the
+  bridge.
+- The S8 reported the strip only after it had moved 3 units or more, with
+  one move of 2, about every 13 ms during motion.
+
+For the same motion the bridge sends Djay what the agent sends. A relative
+encoding is not needed to match the usual setup, and none was built.
+
+#### Fifth attended check, 2026-11-10
+
+Run by the user with `mise run s8:midi` and Controller Editor quit. Two
+mappings were installed: r6, and `Kontrol S8 Bridge r7`, a copy of r6 with
+the `scratchingMove` sensitivity and acceleration of Evan's mapping on each
+deck (20 / 9, 18 / 10, 16 / 14, 19 / 11) and no other change. The user
+selected r7 first and reported that the in-place jiggle worked and felt like
+Evan's mapping, then selected r6 and reported that it felt the same: "both
+of them work fine now".
+
+The bridge log is `captures/translator-20261110T125820Z/bridge.log.gz`. It
+has 15 touches of the left strip and no DECK or Shift press, so the motion
+went to deck A on the base layer. Strip reports came about every 12.5 ms
+during motion, as with the agent running. The shortest touches span 55 to
+144 units of the strip, 7 to 13 values. The log does not mark the change of
+mapping, so a touch cannot be assigned to r6 or r7.
+
+Not covered by this check: the right strip, decks B to D and Shift +
+touchstrip.
+
+The catalog keeps the r6 values. r7 was made for this comparison only and
+is not kept in `mappings/`.
+
+### S8 dark at start
+
+Reported by the user on 2026-11-10, after the fifth check: `mise run s8:midi`
+started the bridge, but the S8 went dark and the displays said to start MIDI
+mode with SHIFT + BACK. That did not work. The user pressed Ctrl-C, opened
+Controller Editor again, and then it worked.
+
+The fifth check had been run with Controller Editor quit, as its
+instructions asked, and ended at 13:06 UTC with NIHardwareAgent restored by
+the script. The bridge logs of the three starts that followed are in
+`captures/`:
+
+| Log | What it shows |
+| --- | ------------- |
+| `translator-20261110T131032Z` | HID opened. The first input is Shift, then BACK, 46 s after start; one second later the bridge ends with a HID read error |
+| `translator-20261110T131159Z` | HID opened, no input in 39 s, ended with Ctrl-C. The running Controller Editor process was started during this run, at 13:12:23 UTC |
+| `translator-20261110T131306Z` | HID opened, 747 input events in a minute |
+
+The cause is not established. The logs do not show whether the S8 was
+already dark before the script stopped the agent, or what SHIFT + BACK did
+to the S8 apart from ending the bridge's HID read. The fifth check itself
+ran with Controller Editor quit and received input throughout.
+
+`translator-check.sh` now prints a warning when Controller Editor is not
+running. It does not refuse to start.

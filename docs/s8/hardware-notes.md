@@ -49,12 +49,19 @@ IDs 1 (41 bytes) and 2 (109 bytes) arrive in MIDI mode, the
 kontrol-s8-protocol offsets match for every button tested, and shared-mode
 reads coexist with NIHardwareAgent and Controller Editor.
 
+With the agent running, CoreMIDI shows two S8 sources. `Traktor Kontrol S8`
+is the S8's own USB MIDI port and carries no control data.
+`Traktor Kontrol S8 Input` is the agent's virtual source with the MIDI of
+the Controller Editor template.
+
 The agent-stopped capture ([input-capture.md](input-capture.md)) corrects
 this descriptor in several places:
 
 - Touch caps are in report 1 (bytes 10/11 left, 18/19 right), not report 2.
 - Touchstrips have no touch bit; position is 0 when released and 1–1024
-  while touched.
+  while touched. A report follows only after the position has moved about
+  3 units, roughly every 13 ms during motion
+  ([translator-validation.md](translator-validation.md#touchstrip)).
 - Screen encoders wrap at 1000, not 65536, and one full turn is 1000 counts.
 - EQ LOW on channels C and D is 12-bit at bytes 95–96 and 105–106.
 - Crossfader assign is one three-position switch per channel (left sets the

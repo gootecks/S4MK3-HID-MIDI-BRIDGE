@@ -83,8 +83,16 @@ layer. The Looper's own pad triggers are not mapped.
 | Touchstrip     | 5     | rotary-absolute | `scratchingMove` (flipped)            | `jogSeekMove` |
 | Stem fader 1-4 | 48-51 | absolute, pickup | `unmixerFourTrackChannel{1-4}Volume` |               |
 
-The touchstrip uses its own sensitivity and acceleration per layer; the tuned
-values are in the catalog.
+The touchstrip sends its position, 1-1024, as the 7-bit value
+`(position - 1) >> 3`, once per change, and its touch note while a finger is
+on it. Djay turns successive values into motion (`rotary-absolute`), and the
+touch note switches scratching on (`scratchingMode`) or, with Shift, seeking
+(`jogSeekMode`). A touch keeps the deck and layer it started on.
+NIHardwareAgent sends the same value for the Controller Editor template, and
+the user reports the same feel as with that setup
+([translator-validation.md](translator-validation.md#touchstrip)). Each
+layer has its own sensitivity and acceleration; the tuned values are in the
+catalog.
 
 ## Pads
 
