@@ -16,7 +16,10 @@ their detailed notes stay in `docs/release-*.md`.
   keeps it current: the list of the open tab on the left, the selected
   track on the right, or one deck with `--deck N`
   ([panel-views.md](docs/s8/panel-views.md), #27). Stopping it leaves the
-  panels black. Not yet checked on the S8.
+  panels black. Sidebar readings, deck readings and writes to the bridge
+  run on separate queues, so a slow one does not delay the deck page, and
+  `--log-deck-polls` logs the time between deck readings (#89). Not yet
+  checked on the S8.
 - `mise run s8:panel-views-images` makes the expected pictures of those
   views from recorded snapshots, and `mise run s8:panel-views` runs the
   attended check on the S8 (#27); the check sends screen frames to the S8.
