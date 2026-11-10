@@ -40,14 +40,21 @@ final class DeckParserTests: XCTestCase {
         XCTAssertNil(DeckParser.parseDeckNumber(from: "Crossfader"))
     }
 
-    func testReaderMergesBothLanguagePrefixes() throws {
+    func testReaderSplitsOneWalkByDeckInBothLanguages() throws {
         struct Source: DeckAccessibility {
-            func labeledValues(prefix: String) throws -> [String: String] {
-                prefix == "Deck 1" ? ["Title, Deck 1": "A"] : ["Artiste, Platine 1": "B"]
+            func labeledValues() throws -> [String: String] {
+                [
+                    "Title, Deck 1": "A", "Artiste, Platine 1": "B", "Title, Deck 3": "C",
+                    "Remaining time, Deck 4": "-02:58", "Play / Pause, Deck 4": "Active"
+                ]
             }
         }
-        let reading = try DeckReader(source: Source()).read(deck: 1)
-        XCTAssertEqual(reading.title, "A")
-        XCTAssertEqual(reading.artist, "B")
+        let readings = try DeckReader(source: Source()).readings()
+        XCTAssertEqual(readings[1]?.title, "A")
+        XCTAssertEqual(readings[1]?.artist, "B")
+        XCTAssertEqual(readings[3]?.title, "C")
+        XCTAssertEqual(readings[4]?.remainingTime, "-02:58")
+        XCTAssertEqual(readings[4]?.isPlaying, true)
+        XCTAssertNil(readings[2])
     }
 }

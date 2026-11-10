@@ -4,10 +4,13 @@ public struct PlayStateDebouncer {
     private var rawState = false
     private var reportedState = false
     private var lastRawChangeTime = Date.distantPast
+    private var lastSampleTime = Date.distantPast
     private let threshold: TimeInterval
+    private let maximumGap: TimeInterval
 
-    public init(threshold: TimeInterval = 0.7) {
+    public init(threshold: TimeInterval = 0.7, maximumGap: TimeInterval = 0.45) {
         self.threshold = threshold
+        self.maximumGap = maximumGap
     }
 
     public var activeSince: Date? {
@@ -15,7 +18,9 @@ public struct PlayStateDebouncer {
     }
 
     public mutating func update(isPlaying: Bool, now: Date = Date()) -> Bool {
-        if isPlaying != rawState {
+        let gapped = now.timeIntervalSince(lastSampleTime) > maximumGap
+        lastSampleTime = now
+        if isPlaying != rawState || (isPlaying && !reportedState && gapped) {
             rawState = isPlaying
             lastRawChangeTime = now
         }

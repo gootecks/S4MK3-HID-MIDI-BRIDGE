@@ -20,21 +20,23 @@ public final class DeckMonitor {
     }
 
     public func poll(now: Date = Date()) {
+        let readings: [Int: DeckReading]
+        do {
+            readings = try reader.readings()
+        } catch DeckAccessError.permissionDenied {
+            return fail("Accessibility permission needed")
+        } catch {
+            return fail("djay is not running")
+        }
         for deck in decks {
-            do {
-                let reading = try reader.read(deck: deck)
-                let current = withLock { trackers[deck] }
-                var entry: CatalogEntry?
-                let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
-                if reading.hasTrack, let title = reading.title, changed {
-                    entry = catalog.entry(title: title, artist: reading.artist)
-                }
-                withLock { trackers[deck]?.ingest(reading, entry: entry, now: now) }
-            } catch DeckAccessError.permissionDenied {
-                fail(deck, "Accessibility permission needed")
-            } catch {
-                fail(deck, "djay is not running")
+            let reading = readings[deck] ?? DeckReading()
+            let current = withLock { trackers[deck] }
+            var entry: CatalogEntry?
+            let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
+            if reading.hasTrack, let title = reading.title, changed {
+                entry = catalog.entry(title: title, artist: reading.artist)
             }
+            withLock { trackers[deck]?.ingest(reading, entry: entry, now: now) }
         }
     }
 
@@ -42,8 +44,12 @@ public final class DeckMonitor {
         withLock { trackers[deck]?.snapshot(now: now) } ?? DeckSnapshot(deck: deck)
     }
 
-    private func fail(_ deck: Int, _ message: String) {
-        withLock { trackers[deck]?.ingestFailure(message) }
+    private func fail(_ message: String) {
+        withLock {
+            for deck in decks {
+                trackers[deck]?.ingestFailure(message)
+            }
+        }
     }
 
     private func withLock<T>(_ body: () -> T) -> T {
