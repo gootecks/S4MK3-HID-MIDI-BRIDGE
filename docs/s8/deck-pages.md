@@ -227,7 +227,7 @@ bridge output and the stream log of each step.
 | ---- | ------ | ------------ | --------------------- |
 | `a-paused` | `pending`, `active`, `inactive`; exit status 0 | 2 | `y` to all three questions: the left panel showed deck 1 and the right panel deck 2 with title, time, waveform and PAUSED; both times and playheads stood still for the 20 s; both panels went black at the end. |
 | `b-play` | `pending`, `active`, `inactive`; exit status 0 | 117 | `y`: while deck 1 played the left panel said PLAYING and its time moved with djay's. To the question whether the paused time stood still and went on without a jump by the length of the pause: "on resume, there was a small jump in the time on the S8 display". The runner took that as a fault and stopped; the question about the right panel was not asked. |
-| `c-four-decks` | Not run | | |
+| `c-four-decks` | Not run in this run; see the second run below | | |
 
 After recovery the panels showed the Controller Editor labels and djay
 reacted to the left PLAY button.
@@ -257,5 +257,16 @@ that size is acceptable is not decided.
 After this run the runner asks the paused time and the resume in separate
 questions and names the expected step.
 
-Not checked on the S8: decks 3 and 4 in Four Decks, whether the right panel
-stood still during `b-play`, and a second run with the reworded questions.
+Second run on 2026-11-10 at `d27bf56` with `mise run s8:deck-page
+c-four-decks`, which skips the first two steps. Answers and logs:
+`captures/deck-page-20261110T193343Z/`.
+
+| Step | Bridge | Records sent | The observer reported |
+| ---- | ------ | ------------ | --------------------- |
+| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 91 | `y` to both questions: the left panel showed deck 3 and the right panel deck 4; each time moved only while its own deck played and stood still while it was paused. The question named one step of up to about 1 s when PLAYING appears as expected. Nothing else was reported on the panels. |
+
+After recovery the panels showed the Controller Editor labels and djay
+reacted to the left PLAY button.
+
+Not checked on the S8: whether the right panel stood still during `b-play`,
+and a second run of `b-play` with the reworded questions.

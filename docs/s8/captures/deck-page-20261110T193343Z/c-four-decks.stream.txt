@@ -1,0 +1,93 @@
+DECKSTREAM start unix=1794339254.070
+DECKSTREAM 0.008 panel=left deck=3 elapsed=68.04 remaining=214.00 playing=false title=É o Bonde
+DECKSTREAM 0.010 panel=right deck=4 elapsed=32.34 remaining=146.00 playing=false title=Scut 2
+DECKSTREAM 9.389 panel=left deck=3 elapsed=68.93 remaining=213.12 playing=true title=É o Bonde
+DECKSTREAM 9.505 panel=left deck=3 elapsed=69.04 remaining=213.01 playing=true title=É o Bonde
+DECKSTREAM 9.614 panel=left deck=3 elapsed=69.15 remaining=212.89 playing=true title=É o Bonde
+DECKSTREAM 9.833 panel=left deck=3 elapsed=69.37 remaining=212.67 playing=true title=É o Bonde
+DECKSTREAM 9.941 panel=left deck=3 elapsed=69.23 remaining=212.81 playing=true title=É o Bonde
+DECKSTREAM 10.050 panel=left deck=3 elapsed=69.34 remaining=212.71 playing=true title=É o Bonde
+DECKSTREAM 10.718 panel=left deck=3 elapsed=70.00 remaining=212.04 playing=true title=É o Bonde
+DECKSTREAM 10.829 panel=left deck=3 elapsed=70.12 remaining=211.93 playing=true title=É o Bonde
+DECKSTREAM 11.271 panel=left deck=3 elapsed=70.55 remaining=211.49 playing=true title=É o Bonde
+DECKSTREAM 11.724 panel=left deck=3 elapsed=71.01 remaining=211.04 playing=true title=É o Bonde
+DECKSTREAM 11.835 panel=left deck=3 elapsed=71.12 remaining=210.92 playing=true title=É o Bonde
+DECKSTREAM 11.942 panel=left deck=3 elapsed=71.23 remaining=210.82 playing=true title=É o Bonde
+DECKSTREAM 12.496 panel=left deck=3 elapsed=71.78 remaining=210.27 playing=true title=É o Bonde
+DECKSTREAM 12.821 panel=left deck=3 elapsed=72.11 remaining=209.94 playing=true title=É o Bonde
+DECKSTREAM 13.151 panel=left deck=3 elapsed=72.44 remaining=209.61 playing=true title=É o Bonde
+DECKSTREAM 13.702 panel=left deck=3 elapsed=72.99 remaining=209.06 playing=true title=É o Bonde
+DECKSTREAM 13.811 panel=left deck=3 elapsed=73.10 remaining=208.95 playing=true title=É o Bonde
+DECKSTREAM 14.354 panel=left deck=3 elapsed=73.64 remaining=208.40 playing=true title=É o Bonde
+DECKSTREAM 14.786 panel=left deck=3 elapsed=74.07 remaining=207.97 playing=true title=É o Bonde
+DECKSTREAM 15.004 panel=left deck=3 elapsed=74.29 remaining=207.76 playing=true title=É o Bonde
+DECKSTREAM 15.561 panel=left deck=3 elapsed=74.85 remaining=207.19 playing=true title=É o Bonde
+DECKSTREAM 15.775 panel=left deck=3 elapsed=75.06 remaining=206.98 playing=true title=É o Bonde
+DECKSTREAM 16.211 panel=left deck=3 elapsed=75.50 remaining=206.55 playing=true title=É o Bonde
+DECKSTREAM 16.760 panel=left deck=3 elapsed=76.04 remaining=206.00 playing=true title=É o Bonde
+DECKSTREAM 16.872 panel=left deck=3 elapsed=76.16 remaining=205.88 playing=true title=É o Bonde
+DECKSTREAM 17.417 panel=left deck=3 elapsed=76.70 remaining=205.34 playing=true title=É o Bonde
+DECKSTREAM 17.748 panel=left deck=3 elapsed=77.03 remaining=205.01 playing=true title=É o Bonde
+DECKSTREAM 17.858 panel=left deck=3 elapsed=77.15 remaining=204.90 playing=true title=É o Bonde
+DECKSTREAM 18.075 panel=left deck=3 elapsed=77.36 remaining=204.68 playing=true title=É o Bonde
+DECKSTREAM 18.744 panel=left deck=3 elapsed=78.03 remaining=204.02 playing=true title=É o Bonde
+DECKSTREAM 18.857 panel=left deck=3 elapsed=78.14 remaining=203.90 playing=true title=É o Bonde
+DECKSTREAM 19.296 panel=left deck=3 elapsed=78.58 remaining=203.46 playing=true title=É o Bonde
+DECKSTREAM 19.734 panel=left deck=3 elapsed=79.02 remaining=203.03 playing=true title=É o Bonde
+DECKSTREAM 19.846 panel=left deck=3 elapsed=79.13 remaining=202.91 playing=true title=É o Bonde
+DECKSTREAM 19.954 panel=left deck=3 elapsed=79.24 remaining=202.80 playing=true title=É o Bonde
+DECKSTREAM 20.611 panel=left deck=3 elapsed=79.90 remaining=202.15 playing=true title=É o Bonde
+DECKSTREAM 20.724 panel=left deck=3 elapsed=80.01 remaining=202.04 playing=true title=É o Bonde
+DECKSTREAM 20.835 panel=left deck=3 elapsed=80.12 remaining=201.92 playing=true title=É o Bonde
+DECKSTREAM 21.156 panel=left deck=3 elapsed=80.44 remaining=201.60 playing=true title=É o Bonde
+DECKSTREAM 21.820 panel=left deck=3 elapsed=81.11 remaining=200.94 playing=true title=É o Bonde
+DECKSTREAM 22.366 panel=left deck=3 elapsed=81.04 remaining=201.00 playing=false title=É o Bonde
+DECKSTREAM 26.454 panel=right deck=4 elapsed=33.52 remaining=144.81 playing=true title=Scut 2
+DECKSTREAM 26.562 panel=right deck=4 elapsed=33.64 remaining=144.69 playing=true title=Scut 2
+DECKSTREAM 27.008 panel=right deck=4 elapsed=34.09 remaining=144.25 playing=true title=Scut 2
+DECKSTREAM 27.338 panel=right deck=4 elapsed=34.42 remaining=143.92 playing=true title=Scut 2
+DECKSTREAM 27.771 panel=right deck=4 elapsed=34.85 remaining=143.49 playing=true title=Scut 2
+DECKSTREAM 27.992 panel=right deck=4 elapsed=35.07 remaining=143.27 playing=true title=Scut 2
+DECKSTREAM 28.213 panel=right deck=4 elapsed=35.29 remaining=143.04 playing=true title=Scut 2
+DECKSTREAM 28.322 panel=right deck=4 elapsed=35.40 remaining=142.93 playing=true title=Scut 2
+DECKSTREAM 28.537 panel=right deck=4 elapsed=35.62 remaining=142.72 playing=true title=Scut 2
+DECKSTREAM 28.977 panel=right deck=4 elapsed=36.06 remaining=142.28 playing=true title=Scut 2
+DECKSTREAM 29.299 panel=right deck=4 elapsed=36.38 remaining=141.96 playing=true title=Scut 2
+DECKSTREAM 29.735 panel=right deck=4 elapsed=36.82 remaining=141.52 playing=true title=Scut 2
+DECKSTREAM 29.956 panel=right deck=4 elapsed=37.04 remaining=141.30 playing=true title=Scut 2
+DECKSTREAM 30.175 panel=right deck=4 elapsed=37.26 remaining=141.08 playing=true title=Scut 2
+DECKSTREAM 30.288 panel=right deck=4 elapsed=37.37 remaining=140.97 playing=true title=Scut 2
+DECKSTREAM 30.506 panel=right deck=4 elapsed=37.59 remaining=140.75 playing=true title=Scut 2
+DECKSTREAM 30.947 panel=right deck=4 elapsed=38.03 remaining=140.31 playing=true title=Scut 2
+DECKSTREAM 31.274 panel=right deck=4 elapsed=38.35 remaining=139.98 playing=true title=Scut 2
+DECKSTREAM 31.713 panel=right deck=4 elapsed=38.79 remaining=139.54 playing=true title=Scut 2
+DECKSTREAM 31.926 panel=right deck=4 elapsed=39.01 remaining=139.33 playing=true title=Scut 2
+DECKSTREAM 32.038 panel=right deck=4 elapsed=39.12 remaining=139.22 playing=true title=Scut 2
+DECKSTREAM 32.363 panel=right deck=4 elapsed=39.44 remaining=138.89 playing=true title=Scut 2
+DECKSTREAM 32.473 panel=right deck=4 elapsed=39.55 remaining=138.78 playing=true title=Scut 2
+DECKSTREAM 32.910 panel=right deck=4 elapsed=39.99 remaining=138.35 playing=true title=Scut 2
+DECKSTREAM 33.022 panel=right deck=4 elapsed=40.10 remaining=138.24 playing=true title=Scut 2
+DECKSTREAM 33.242 panel=right deck=4 elapsed=40.32 remaining=138.02 playing=true title=Scut 2
+DECKSTREAM 33.351 panel=right deck=4 elapsed=40.43 remaining=137.90 playing=true title=Scut 2
+DECKSTREAM 33.678 panel=right deck=4 elapsed=40.76 remaining=137.58 playing=true title=Scut 2
+DECKSTREAM 34.005 panel=right deck=4 elapsed=41.09 remaining=137.25 playing=true title=Scut 2
+DECKSTREAM 34.330 panel=right deck=4 elapsed=41.41 remaining=136.93 playing=true title=Scut 2
+DECKSTREAM 34.442 panel=right deck=4 elapsed=41.52 remaining=136.82 playing=true title=Scut 2
+DECKSTREAM 34.773 panel=right deck=4 elapsed=41.85 remaining=136.48 playing=true title=Scut 2
+DECKSTREAM 34.995 panel=right deck=4 elapsed=42.08 remaining=136.26 playing=true title=Scut 2
+DECKSTREAM 35.217 panel=right deck=4 elapsed=42.30 remaining=136.04 playing=true title=Scut 2
+DECKSTREAM 35.320 panel=right deck=4 elapsed=42.40 remaining=135.93 playing=true title=Scut 2
+DECKSTREAM 35.649 panel=right deck=4 elapsed=42.73 remaining=135.61 playing=true title=Scut 2
+DECKSTREAM 35.980 panel=right deck=4 elapsed=43.06 remaining=135.28 playing=true title=Scut 2
+DECKSTREAM 36.302 panel=right deck=4 elapsed=43.38 remaining=134.95 playing=true title=Scut 2
+DECKSTREAM 36.407 panel=right deck=4 elapsed=43.49 remaining=134.85 playing=true title=Scut 2
+DECKSTREAM 36.742 panel=right deck=4 elapsed=43.82 remaining=134.52 playing=true title=Scut 2
+DECKSTREAM 36.960 panel=right deck=4 elapsed=44.04 remaining=134.30 playing=true title=Scut 2
+DECKSTREAM 37.173 panel=right deck=4 elapsed=44.26 remaining=134.08 playing=true title=Scut 2
+DECKSTREAM 37.278 panel=right deck=4 elapsed=44.36 remaining=133.98 playing=true title=Scut 2
+DECKSTREAM 37.605 panel=right deck=4 elapsed=44.69 remaining=133.65 playing=true title=Scut 2
+DECKSTREAM 37.934 panel=right deck=4 elapsed=45.02 remaining=133.32 playing=true title=Scut 2
+DECKSTREAM 38.271 panel=right deck=4 elapsed=45.35 remaining=132.99 playing=true title=Scut 2
+DECKSTREAM 38.380 panel=right deck=4 elapsed=45.34 remaining=133.00 playing=false title=Scut 2
+DECKSTREAM 38.599 panel=right deck=4 elapsed=45.34 remaining=133.00 playing=false title=Scut 2
+DECKSTREAM end records=91
