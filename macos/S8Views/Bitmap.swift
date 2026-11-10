@@ -91,7 +91,7 @@ public enum S8Frame {
         return record
     }
 
-    private static func appendPixels(of bitmap: Bitmap, to bytes: inout [UInt8]) {
+    static func appendPixels(of bitmap: Bitmap, to bytes: inout [UInt8]) {
         let rgba = bitmap.rgba
         for index in stride(from: 0, to: rgba.count, by: 4) {
             let value = rgb565(Pixel(red: rgba[index], green: rgba[index + 1], blue: rgba[index + 2]))

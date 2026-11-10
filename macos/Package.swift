@@ -47,7 +47,7 @@ let package = Package(
         .testTarget(name: "S8ControlTests", dependencies: ["S8Control"], path: "S8ControlTests"),
         .executableTarget(
             name: "S8Host",
-            dependencies: ["DjaySidebar", "S8Control"],
+            dependencies: ["DjayDecks", "DjaySidebar", "S8Control", "S8Views"],
             path: "S8Host",
             exclude: ["README.md"]
         ),

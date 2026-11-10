@@ -1,21 +1,26 @@
 import DjaySidebar
 import Foundation
-import S8Control
-
-extension DjaySidebar: SidebarControlling {}
 
 func report(_ message: String) {
     FileHandle.standardError.write(Data(("S8Host: " + message + "\n").utf8))
 }
 
-func bridgePath(_ arguments: [String]) -> String? {
-    guard let index = arguments.firstIndex(of: "--bridge"), index + 1 < arguments.count else { return nil }
-    return arguments[index + 1]
+guard let options = HostOptions.parse(Array(CommandLine.arguments.dropFirst())) else {
+    FileHandle.standardError.write(Data((HostOptions.usage + "\n").utf8))
+    exit(2)
 }
 
-let arguments = Array(CommandLine.arguments.dropFirst())
-guard let bridge = bridgePath(arguments) else {
-    report("usage: S8Host --bridge <path to s4mk3-hid-midi-bridge>")
+if let snapshots = options.replay, let records = options.records {
+    do {
+        try Replay.run(snapshots: snapshots, records: records)
+        exit(0)
+    } catch {
+        report("replay failed: \(error)")
+        exit(1)
+    }
+}
+
+guard let path = options.bridge else {
     exit(2)
 }
 
@@ -32,64 +37,41 @@ guard LiveRoot.djayIsRunning() else {
     exit(3)
 }
 
-let child = Process()
-child.executableURL = URL(fileURLWithPath: bridge)
-child.arguments = ["--device", "s8", "--midi", "full", "--until-stopped", "--app-events"]
-let pipe = Pipe()
-child.standardOutput = pipe
-child.standardError = FileHandle.standardError
-child.standardInput = FileHandle.nullDevice
+signal(SIGPIPE, SIG_IGN)
+let bridge = Bridge(path: path, screens: options.screens)
 
 do {
-    try child.run()
+    try bridge.start()
 } catch {
-    report("cannot start \(bridge): \(error.localizedDescription)")
+    report("cannot start \(path): \(error.localizedDescription)")
     exit(4)
-}
-
-func stopChild() {
-    if child.isRunning {
-        child.terminate()
-    }
 }
 
 var sources: [DispatchSourceSignal] = []
 for signalNumber in [SIGINT, SIGTERM] {
     signal(signalNumber, SIG_IGN)
     let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
-    source.setEventHandler { stopChild() }
+    source.setEventHandler { bridge.stop() }
     source.resume()
     sources.append(source)
 }
 
 Thread.detachNewThread {
     _ = FileHandle.standardInput.readDataToEndOfFile()
-    stopChild()
+    DispatchQueue.main.async { bridge.stop() }
 }
 
-let router = ControlRouter(sidebar: DjaySidebar(root: LiveRoot()))
+let session = LiveSession(bridge: bridge, options: options)
+session.start()
 
 Thread.detachNewThread {
-    var buffer = Data()
-    let handle = pipe.fileHandleForReading
-    while true {
-        let chunk = handle.availableData
-        if chunk.isEmpty {
-            break
-        }
-        buffer.append(chunk)
-        while let newline = buffer.firstIndex(of: 0x0A) {
-            let lineData = buffer.subdata(in: buffer.startIndex ..< newline)
-            buffer.removeSubrange(buffer.startIndex ... newline)
-            let line = String(bytes: lineData, encoding: .utf8) ?? ""
-            if !router.handle(line: line) {
-                print(line)
-                fflush(stdout)
-            }
+    bridge.readLines { line in
+        if !session.handle(line: line) {
+            print(line)
+            fflush(stdout)
         }
     }
-    child.waitUntilExit()
-    exit(child.terminationStatus)
+    exit(bridge.waitForExit())
 }
 
 dispatchMain()

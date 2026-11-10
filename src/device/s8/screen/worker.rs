@@ -25,8 +25,8 @@ pub const MAX_FRAMES_PER_SECOND: u64 = 30;
 /// Shortest time between the starts of two transfers to the same panel.
 pub const FRAME_INTERVAL: Duration = Duration::from_nanos(1_000_000_000 / MAX_FRAMES_PER_SECOND);
 
-/// Pixel pair of the frames sent to each panel on stop. Provisional: #27
-/// decides what the panels show when the bridge exits.
+/// Pixel pair of the frames sent to each panel on stop: both panels are drawn
+/// black on a clean stop, so no stale library view stays on the S8.
 pub const EXIT_PIXELS: [u8; 4] = [0; 4];
 
 const PANELS: [Panel; 2] = [Panel::Left, Panel::Right];
