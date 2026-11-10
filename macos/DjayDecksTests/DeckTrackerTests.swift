@@ -41,35 +41,35 @@ final class DeckTrackerTests: XCTestCase {
     }
 
     func testSnapshotCarriesAXFieldsAndAnalysis() throws {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         try tracker.ingest(reading(), entry: entry(), now: start)
         let snapshot = tracker.snapshot(now: start)
         XCTAssertEqual(snapshot.title, "Soma")
         XCTAssertEqual(snapshot.artist, "Skrillex")
         XCTAssertEqual(snapshot.bpm, "140.0")
         XCTAssertEqual(snapshot.key, "8A")
-        XCTAssertEqual(snapshot.elapsed ?? 0, 60, accuracy: 0.001)
-        XCTAssertEqual(snapshot.remaining ?? 0, 145, accuracy: 0.001)
+        XCTAssertEqual(snapshot.elapsed ?? 0, 60.5, accuracy: 0.001)
+        XCTAssertEqual(snapshot.remaining ?? 0, 145.5, accuracy: 0.001)
         XCTAssertEqual(snapshot.duration ?? 0, 204.904, accuracy: 0.001)
         XCTAssertEqual(snapshot.analysis?.beats.count, 478)
         XCTAssertFalse(snapshot.playing)
     }
 
     func testRemainingOnlyLayoutDerivesElapsedFromLibraryDuration() throws {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         try tracker.ingest(reading(elapsed: nil), entry: entry(), now: start)
-        XCTAssertEqual(tracker.snapshot(now: start).elapsed ?? 0, 204.904 - 145, accuracy: 0.001)
+        XCTAssertEqual(tracker.snapshot(now: start).elapsed ?? 0, 204.904 - 145.5, accuracy: 0.001)
     }
 
     func testWithoutCatalogEntryHasNoAnalysisAndNeedsEntry() {
-        var tracker = DeckTracker(deck: 2, now: start)
+        var tracker = DeckTracker(deck: 2)
         tracker.ingest(reading(), entry: nil, now: start)
         XCTAssertNil(tracker.snapshot(now: start).analysis)
         XCTAssertTrue(tracker.needsEntry)
     }
 
     func testLateCatalogEntryIsAdopted() throws {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         tracker.ingest(reading(), entry: nil, now: start)
         try tracker.ingest(reading(), entry: entry(), now: start.addingTimeInterval(1))
         XCTAssertNotNil(tracker.snapshot(now: start.addingTimeInterval(1)).analysis)
@@ -77,7 +77,7 @@ final class DeckTrackerTests: XCTestCase {
     }
 
     func testTrackChangeResetsEntry() throws {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         try tracker.ingest(reading(), entry: entry(), now: start)
         tracker.ingest(reading(title: "Other"), entry: nil, now: start.addingTimeInterval(1))
         let snapshot = tracker.snapshot(now: start.addingTimeInterval(1))
@@ -86,42 +86,45 @@ final class DeckTrackerTests: XCTestCase {
     }
 
     func testPlayingIsDebouncedAndElapsedAdvances() {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         tracker.ingest(reading(playing: true), entry: nil, now: start)
         XCTAssertFalse(tracker.snapshot(now: start).playing)
         for step in 1 ... 4 {
             tracker.ingest(reading(playing: true), entry: nil, now: start.addingTimeInterval(Double(step) * 0.25))
         }
-        let snapshot = tracker.snapshot(now: start.addingTimeInterval(1.5))
-        XCTAssertTrue(snapshot.playing)
-        XCTAssertEqual(snapshot.elapsed ?? 0, 61.5, accuracy: 0.001)
+        let held = tracker.snapshot(now: start.addingTimeInterval(1.2))
+        XCTAssertTrue(held.playing)
+        XCTAssertEqual((held.elapsed ?? 0).rounded(.down), 60)
+        XCTAssertEqual((held.remaining ?? 0).rounded(.down), 145)
+        tracker.ingest(reading(elapsed: "01:01", playing: true), entry: nil, now: start.addingTimeInterval(1.25))
+        XCTAssertEqual(tracker.snapshot(now: start.addingTimeInterval(1.5)).elapsed ?? 0, 61.25, accuracy: 0.001)
     }
 
     func testBlinkingPlayButtonOnPausedDeckHoldsTime() {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         for step in 0 ... 40 {
             let now = start.addingTimeInterval(Double(step) * 0.25)
             tracker.ingest(reading(playing: (step / 2).isMultiple(of: 2)), entry: nil, now: now)
             let snapshot = tracker.snapshot(now: now.addingTimeInterval(0.1))
             XCTAssertFalse(snapshot.playing, "step \(step)")
-            XCTAssertEqual(snapshot.elapsed ?? 0, 60, accuracy: 0.001, "step \(step)")
-            XCTAssertEqual(snapshot.remaining ?? 0, 145, accuracy: 0.001, "step \(step)")
+            XCTAssertEqual(snapshot.elapsed ?? 0, 60.5, accuracy: 0.001, "step \(step)")
+            XCTAssertEqual(snapshot.remaining ?? 0, 145.5, accuracy: 0.001, "step \(step)")
         }
     }
 
     func testBlinkSampledOncePerBlinkPeriodHoldsTime() {
-        var tracker = DeckTracker(deck: 3, now: start)
+        var tracker = DeckTracker(deck: 3)
         for step in 0 ... 8 {
             let now = start.addingTimeInterval(Double(step) * 0.93)
             tracker.ingest(reading(playing: true), entry: nil, now: now)
             let snapshot = tracker.snapshot(now: now.addingTimeInterval(0.5))
             XCTAssertFalse(snapshot.playing, "step \(step)")
-            XCTAssertEqual(snapshot.elapsed ?? 0, 60, accuracy: 0.001, "step \(step)")
+            XCTAssertEqual(snapshot.elapsed ?? 0, 60.5, accuracy: 0.001, "step \(step)")
         }
     }
 
     func testResumeAfterPauseContinuesFromPausedPosition() {
-        var tracker = DeckTracker(deck: 1, now: start)
+        var tracker = DeckTracker(deck: 1)
         tracker.ingest(reading(), entry: nil, now: start)
         for step in 0 ... 4 {
             let now = start.addingTimeInterval(30 + Double(step) * 0.25)
@@ -129,26 +132,27 @@ final class DeckTrackerTests: XCTestCase {
         }
         let snapshot = tracker.snapshot(now: start.addingTimeInterval(31))
         XCTAssertTrue(snapshot.playing)
-        XCTAssertEqual(snapshot.elapsed ?? 0, 61, accuracy: 0.001)
-        XCTAssertEqual(snapshot.remaining ?? 0, 144, accuracy: 0.001)
+        XCTAssertEqual((snapshot.elapsed ?? 0).rounded(.down), 60)
+        XCTAssertGreaterThan(snapshot.elapsed ?? 0, 60.5)
+        XCTAssertEqual((snapshot.remaining ?? 0).rounded(.down), 145)
+        XCTAssertLessThan(snapshot.remaining ?? 0, 145.5)
     }
 
-    func testLabelChangeBeforePlayIsConfirmedAnchorsTheResume() {
-        var tracker = DeckTracker(deck: 1, now: start)
+    func testLabelTickWhileLitConfirmsPlayingAtTheSecondBoundary() {
+        var tracker = DeckTracker(deck: 1)
         tracker.ingest(reading(), entry: nil, now: start)
         tracker.ingest(reading(playing: true), entry: nil, now: start.addingTimeInterval(30))
         tracker.ingest(reading(playing: true), entry: nil, now: start.addingTimeInterval(30.25))
-        for step in 2 ... 4 {
-            let now = start.addingTimeInterval(30 + Double(step) * 0.25)
-            tracker.ingest(reading(elapsed: "01:01", playing: true), entry: nil, now: now)
-        }
-        let snapshot = tracker.snapshot(now: start.addingTimeInterval(31))
-        XCTAssertTrue(snapshot.playing)
-        XCTAssertEqual(snapshot.elapsed ?? 0, 61.5, accuracy: 0.001)
+        XCTAssertFalse(tracker.snapshot(now: start.addingTimeInterval(30.25)).playing)
+        tracker.ingest(reading(elapsed: "01:01", playing: true), entry: nil, now: start.addingTimeInterval(30.5))
+        let confirmed = tracker.snapshot(now: start.addingTimeInterval(30.5))
+        XCTAssertTrue(confirmed.playing)
+        XCTAssertEqual(confirmed.elapsed ?? 0, 61)
+        XCTAssertEqual(tracker.snapshot(now: start.addingTimeInterval(31)).elapsed ?? 0, 61.5, accuracy: 0.001)
     }
 
     func testEmptyDeckAndFailureNotice() {
-        var tracker = DeckTracker(deck: 3, now: start)
+        var tracker = DeckTracker(deck: 3)
         tracker.ingest(DeckReading(), entry: nil, now: start)
         XCTAssertFalse(tracker.snapshot(now: start).hasTrack)
         tracker.ingestFailure("Accessibility permission needed")
@@ -172,7 +176,7 @@ final class DeckTrackerTests: XCTestCase {
         XCTAssertFalse(monitor.snapshot(deck: 2, now: start).hasTrack)
         let fourth = monitor.snapshot(deck: 4, now: start)
         XCTAssertEqual(fourth.title, "Scut 2")
-        XCTAssertEqual(fourth.remaining ?? 0, 178, accuracy: 0.001)
+        XCTAssertEqual(fourth.remaining ?? 0, 178.5, accuracy: 0.001)
         XCTAssertEqual(monitor.snapshot(deck: 9, now: start).deck, 9)
     }
 

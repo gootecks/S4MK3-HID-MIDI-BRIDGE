@@ -1,83 +1,42 @@
 import Foundation
 
 public struct TimeInterpolator {
-    private var lastElapsedSeconds: Double?
-    private var lastRemainingSeconds: Double?
-    private var lastUpdateTime: Date
-    private var isPlaying = false
-    private var playbackRate = 1.0
-    private var elapsedCorrection = 0.0
-    private var elapsedCorrectionStart: Date?
-    private var remainingCorrection = 0.0
-    private var remainingCorrectionStart: Date?
-    private let correctionDuration: TimeInterval = 0.25
+    private var elapsed = LabelClock(direction: 1)
+    private var remaining = LabelClock(direction: -1)
+    private var knownDuration: Double?
 
-    public init(now: Date = Date()) {
-        lastUpdateTime = now
-    }
+    public init() {}
 
     public mutating func update(
         elapsedTime: String?, remainingTime: String?, knownDuration: Double? = nil, isPlaying: Bool,
         playingSince: Date? = nil, bpmPercent: String?, now: Date = Date()
     ) {
-        let parsedElapsed = elapsedTime.flatMap { Self.parseTime($0) }
-        let newRemaining = remainingTime.flatMap { Self.parseTime($0) }
-        let derivedElapsed = knownDuration.flatMap { duration in newRemaining.map { max(0, duration - $0) } }
-        let newElapsed = parsedElapsed ?? derivedElapsed
+        self.knownDuration = knownDuration
+        let motion = LabelClock.Motion(
+            isPlaying: isPlaying, credit: playingSince.map { max(0, now.timeIntervalSince($0)) } ?? 0,
+            rate: Self.parsePlaybackRate(bpmPercent)
+        )
+        elapsed.update(label: elapsedTime.flatMap(Self.parseTime), trackStart: 0, motion: motion, now: now)
+        remaining.update(
+            label: remainingTime.flatMap(Self.parseTime), trackStart: knownDuration, motion: motion, now: now
+        )
+    }
 
-        if elapsedTime == nil, derivedElapsed == nil {
-            lastElapsedSeconds = nil
-        }
-        if remainingTime == nil {
-            lastRemainingSeconds = nil
-        }
-        let predictedElapsed = interpolatedElapsed(now: now)
-        let predictedRemaining = interpolatedRemaining(now: now)
-
-        if let elapsed = newElapsed, elapsed != lastElapsedSeconds {
-            elapsedCorrection = (predictedElapsed ?? elapsed) - elapsed
-            elapsedCorrectionStart = now
-            lastElapsedSeconds = elapsed
-            lastUpdateTime = now
-        }
-        if let remaining = newRemaining, remaining != lastRemainingSeconds {
-            remainingCorrection = (predictedRemaining ?? remaining) - remaining
-            remainingCorrectionStart = now
-            lastRemainingSeconds = remaining
-            lastUpdateTime = now
-        }
-        if isPlaying, !self.isPlaying {
-            lastUpdateTime = max(lastUpdateTime, playingSince ?? now)
-        }
-        self.isPlaying = isPlaying
-        playbackRate = Self.parsePlaybackRate(bpmPercent)
+    public func isNextSecond(elapsedTime: String?, remainingTime: String?) -> Bool {
+        elapsed.isTick(to: elapsedTime.flatMap(Self.parseTime))
+            || remaining.isTick(to: remainingTime.flatMap(Self.parseTime))
     }
 
     public func interpolatedElapsed(now: Date = Date()) -> Double? {
-        guard let base = lastElapsedSeconds else { return nil }
-        let raw = isPlaying ? max(0, base + now.timeIntervalSince(lastUpdateTime) * playbackRate) : base
-        let eased = Self.decayedCorrection(
-            elapsedCorrection, since: elapsedCorrectionStart, duration: correctionDuration, now: now
-        )
-        return max(0, raw + eased)
+        if let value = elapsed.value(trackStart: 0, now: now) {
+            return value
+        }
+        guard let knownDuration, let left = interpolatedRemaining(now: now) else { return nil }
+        return max(0, knownDuration - left)
     }
 
     public func interpolatedRemaining(now: Date = Date()) -> Double? {
-        guard let base = lastRemainingSeconds else { return nil }
-        let raw = isPlaying ? max(0, base - now.timeIntervalSince(lastUpdateTime) * playbackRate) : base
-        let eased = Self.decayedCorrection(
-            remainingCorrection, since: remainingCorrectionStart, duration: correctionDuration, now: now
-        )
-        return max(0, raw + eased)
-    }
-
-    private static func decayedCorrection(
-        _ correction: Double, since start: Date?, duration: TimeInterval, now: Date
-    ) -> Double {
-        guard correction != 0, let start else { return 0 }
-        let progress = min(1, max(0, now.timeIntervalSince(start) / duration))
-        guard progress < 1 else { return 0 }
-        return correction * pow(1 - progress, 3)
+        remaining.value(trackStart: knownDuration, now: now)
     }
 
     public static func parseTime(_ text: String) -> Double? {
@@ -92,5 +51,74 @@ public struct TimeInterpolator {
             return 1
         }
         return 1 + percent / 100
+    }
+}
+
+private struct LabelClock {
+    struct Motion {
+        let isPlaying: Bool
+        let credit: TimeInterval
+        let rate: Double
+    }
+
+    let direction: Double
+    private var label: Double?
+    private var counted: Double?
+    private var countedAt = Date.distantPast
+    private var isPlaying = false
+    private var rate = 1.0
+
+    init(direction: Double) {
+        self.direction = direction
+    }
+
+    func isTick(to next: Double?) -> Bool {
+        guard let label, let next else { return false }
+        return next == label + direction
+    }
+
+    func value(trackStart: Double?, now: Date) -> Double? {
+        guard let label else { return nil }
+        guard let counted else { return Self.resting(label, trackStart: trackStart) }
+        let moved = isPlaying ? direction * max(0, now.timeIntervalSince(countedAt)) * rate : 0
+        return Self.clamp(counted + moved, to: label)
+    }
+
+    mutating func update(label next: Double?, trackStart: Double?, motion: Motion, now: Date) {
+        guard let next else {
+            self = LabelClock(direction: direction)
+            return
+        }
+        var current = counted == nil ? nil : value(trackStart: trackStart, now: now)
+        if motion.isPlaying, !isPlaying, let label {
+            let rest = current ?? Self.resting(label, trackStart: trackStart)
+            current = Self.clamp(rest + direction * motion.credit * motion.rate, to: label)
+        }
+        if let label, next != label {
+            if motion.isPlaying || isPlaying, isTick(to: next) {
+                current = Self.clamp(current ?? Self.resting(label, trackStart: trackStart), to: next)
+            } else {
+                current = nil
+            }
+        }
+        if motion.isPlaying, current == nil {
+            current = Self.resting(next, trackStart: trackStart)
+        }
+        label = next
+        counted = current
+        countedAt = now
+        isPlaying = motion.isPlaying
+        rate = motion.rate
+    }
+
+    private static func resting(_ label: Double, trackStart: Double?) -> Double {
+        if let trackStart, trackStart.rounded(.down) == label {
+            return trackStart
+        }
+        return label + 0.5
+    }
+
+    private static func clamp(_ value: Double, to label: Double) -> Double {
+        min(max(value, label), (label + 1).nextDown)
     }
 }
