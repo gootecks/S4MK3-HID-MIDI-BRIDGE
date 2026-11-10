@@ -25,6 +25,8 @@ Nothing here talks to the S8 or to djay: it consumes sidebar snapshot JSON
 - **Right panel: detail.** The djay main-library selection at a glance:
   title (two lines), artist and large BPM, key and time tiles, plus "n of m".
   Its strip shows the active tab's sub-tabs (for Info, "Related").
+- **Deck page** (`DeckSnapshot.swift`, `DeckPanel.swift`): one deck on a
+  panel; see [`docs/s8/deck-pages.md`](../../docs/s8/deck-pages.md).
 
 ## Selection model
 

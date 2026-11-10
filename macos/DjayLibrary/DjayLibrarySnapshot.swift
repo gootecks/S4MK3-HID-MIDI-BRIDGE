@@ -10,6 +10,7 @@ public struct DjayLibrarySnapshot {
     public let historySessions: [DjayHistorySession]
 
     let tracksByID: [String: DjayTrack]
+    let cuePointsByID: [String: [DjayCuePoint]]
 
     public static let collectionNames = [
         "mediaItems", "mediaItemUserData", "mediaItemAnalyzedData", "mediaArtists", "mediaAlbums", "mediaGenres",
@@ -123,6 +124,10 @@ public struct DjayLibrarySnapshot {
         }
         tracks = built
         tracksByID = Dictionary(built.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        cuePointsByID = Dictionary(items.compactMap { row -> (String, [DjayCuePoint])? in
+            let cues = Self.makeCuePoints(userData[row.key])
+            return cues.isEmpty ? nil : (row.key, cues)
+        }, uniquingKeysWith: { first, _ in first })
         playlists = Self.makePlaylists(
             playlists: rows("mediaItemPlaylists"), items: rows("mediaItemPlaylistItems"), index: index
         )

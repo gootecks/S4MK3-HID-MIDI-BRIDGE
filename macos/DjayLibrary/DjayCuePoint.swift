@@ -1,0 +1,35 @@
+import Foundation
+
+public struct DjayCuePoint: Equatable {
+    public let time: TimeInterval
+    public let endTime: TimeInterval?
+    public let name: String?
+    public let colorHex: String?
+    public let number: Int?
+}
+
+public extension DjayLibrarySnapshot {
+    internal static func makeCuePoints(_ user: DjayValue?) -> [DjayCuePoint] {
+        let entries = user?["cuePoints"]?.listValue ?? []
+        return entries.compactMap { entry -> DjayCuePoint? in
+            guard entry.className == nil || entry.className == "ADCCuePoint",
+                  let time = entry["time"]?.numberValue, time.isFinite, time >= 0 else { return nil }
+            let end = entry["endTime"]?.numberValue.flatMap { $0 >= 0 ? $0 : nil }
+            return DjayCuePoint(
+                time: time, endTime: end, name: entry["comment"]?.stringValue,
+                colorHex: entry["color"]?.stringValue, number: entry["number"]?.intValue
+            )
+        }.sorted { $0.time < $1.time }
+    }
+
+    func cuePoints(trackID: String) -> [DjayCuePoint] {
+        cuePointsByID[trackID] ?? []
+    }
+
+    func tracks(title: String, artist: String?) -> [DjayTrack] {
+        guard let wanted = TrackIdentity(title: title, artist: artist) else { return [] }
+        let sameTitle = tracks.filter { TrackIdentity.normalize($0.title) == wanted.title }
+        let exact = sameTitle.filter { TrackIdentity.normalize($0.artist) == wanted.artist }
+        return exact.isEmpty ? sameTitle : exact
+    }
+}

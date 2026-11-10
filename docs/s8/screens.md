@@ -127,6 +127,9 @@ use: decks 3 and 4 while Djay shows its two-deck layout.
 Its layout is the starting point: a header with title, artist, BPM, key and
 time; an overview waveform; a phrase, next-cue and section row.
 
+Built in #45 as `DjayDecks` and the deck page in `S8Views`; see
+[deck-pages.md](deck-pages.md) for fields, limits and the live preview check.
+
 ## First-frame test plan
 
 Each phase needs separate approval. Stop at the first unexpected result and

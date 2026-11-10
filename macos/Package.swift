@@ -11,7 +11,8 @@ let package = Package(
             path: ".",
             exclude: [
                 "build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests", "S8Views", "S8Preview",
-                "S8ViewsTests", "DjaySidebar", "DjaySidebarTests", "S8Control", "S8ControlTests", "S8Host"
+                "S8ViewsTests", "DjaySidebar", "DjaySidebarTests", "S8Control", "S8ControlTests", "S8Host",
+                "DjayDecks", "DjayDecksTests"
             ],
             sources: [
                 "S4BridgeApp.swift", "ScreenPreferences.swift", "ScreenSupport.swift",
@@ -29,7 +30,7 @@ let package = Package(
         ),
         .testTarget(name: "S4BridgeTests", dependencies: ["S4Bridge"], path: "Tests"),
         .target(name: "S8Views", path: "S8Views", exclude: ["README.md"]),
-        .executableTarget(name: "S8Preview", dependencies: ["S8Views"], path: "S8Preview"),
+        .executableTarget(name: "S8Preview", dependencies: ["S8Views", "DjayDecks", "DjayLibrary"], path: "S8Preview"),
         .testTarget(
             name: "S8ViewsTests",
             dependencies: ["S8Views"],
@@ -49,6 +50,19 @@ let package = Package(
             dependencies: ["DjaySidebar", "S8Control"],
             path: "S8Host",
             exclude: ["README.md"]
+        ),
+        .target(
+            name: "DjayDecks",
+            dependencies: ["DjayLibrary", "S8Views"],
+            path: "DjayDecks",
+            exclude: ["README.md", "NOTICE"],
+            linkerSettings: [.linkedLibrary("z")]
+        ),
+        .testTarget(
+            name: "DjayDecksTests",
+            dependencies: ["DjayDecks", "DjayLibrary", "S8Views"],
+            path: "DjayDecksTests",
+            resources: [.copy("Fixtures")]
         )
     ]
 )
