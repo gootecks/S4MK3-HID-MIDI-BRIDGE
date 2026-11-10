@@ -32,7 +32,8 @@ their detailed notes stay in `docs/release-*.md`.
   (#12). The S8 descriptor corrections from the #10 capture live in
   `src/device/s8.rs`; the bridge never writes to the S8, and `--midi` is
   refused for it until a mapping catalog exists. `tests/s8_input.rs` replays
-  the captured reports through the decoder.
+  the captured reports through the decoder. `mise run s8:raw [seconds]` runs
+  the decode.
 - The Encdr dependency now points at `gootecks/Encdr` branch
   `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
   `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.

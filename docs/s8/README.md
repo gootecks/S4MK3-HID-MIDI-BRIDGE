@@ -9,7 +9,7 @@ upstream pull request.
 | Area                | State                                                                 |
 | ------------------- | --------------------------------------------------------------------- |
 | S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
-| S8 detection        | Listed and identified by the bridge (`--device s8`). `--device s8 --raw` opens interface 5 read-only and never writes (#12). |
+| S8 detection        | Listed and identified by the bridge (`--device s8`). `--device s8 --raw` opens interface 5 read-only and never writes (#12); `mise run s8:raw` runs it. |
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). The bridge applies those corrections and decodes every verified control in `--raw`; a fixture test replays the capture through the decoder (#12). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
