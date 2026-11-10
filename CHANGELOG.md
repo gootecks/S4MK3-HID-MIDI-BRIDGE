@@ -151,13 +151,14 @@ their detailed notes stay in `docs/release-*.md`.
   RGB565 frame records for each panel from stdin, sends them to the S8
   screens with a latest-wins slot per panel and a 30 frames per
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
-  in `docs/s8/screen-transport.md`; tested with a fake transport only, not
-  on hardware (#44).
+  in `docs/s8/screen-transport.md`. Checked on the S8 in an attended run
+  ([record](docs/s8/screen-transport-validation.md)); stopping it with
+  Ctrl-C while it streams is not settled (#44).
 - `examples/s8-screen-feed.rs` writes `S8FR` records of the phase 5 test
   pattern to stdout (`--dry-run` touches nothing), and `mise run
-  s8:screen-transport` runs the planned attended check of the screen
+  s8:screen-transport [first-step]` runs the attended check of the screen
   channel against the S8. The plan with expected pictures is in
-  `docs/s8/screen-transport.md`; not run yet (#44).
+  `docs/s8/screen-transport.md`.
 
 ### Changed
 
