@@ -8,6 +8,8 @@ struct Options {
     var framesDir: String?
     var pngDir: String?
     var windowless = false
+    var deck: Int?
+    var deckSnapshot: String?
 }
 
 func parseOptions() -> Options? {
@@ -21,6 +23,8 @@ func parseOptions() -> Options? {
         case "--frames": options.framesDir = args.isEmpty ? nil : args.removeFirst()
         case "--png": options.pngDir = args.isEmpty ? nil : args.removeFirst()
         case "--no-window": options.windowless = true
+        case "--deck": options.deck = args.isEmpty ? nil : Int(args.removeFirst())
+        case "--deck-snapshot": options.deckSnapshot = args.isEmpty ? nil : args.removeFirst()
         default: path = arg
         }
     }
@@ -31,8 +35,10 @@ func parseOptions() -> Options? {
 
 let usage = """
 usage: S8Preview <snapshot.json | fixtures-dir> [--zoom 2] [--frames DIR] [--png DIR] [--no-window]
+                 [--deck N | --deck-snapshot deck.json]
 keys: 1-8 left display buttons, q w e r t y u i right display buttons,
       up/down screen encoder, z zoom, f dump current state to --frames/--png dirs
+--deck N shows live djay deck N (Accessibility) in the right panel; --deck-snapshot shows a recorded DeckSnapshot.
 """
 
 func dump(_ state: ViewState, prefix: String, options: Options) {
@@ -54,6 +60,7 @@ final class PreviewView: NSView {
     var navigator: SidebarNavigator
     var zoom: CGFloat
     let options: Options
+    var deckFeed: DeckFeed?
     static let margin: CGFloat = 16
 
     init(navigator: SidebarNavigator, options: Options) {
@@ -86,7 +93,12 @@ final class PreviewView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         context.interpolationQuality = .none
         for (index, side) in [PanelSide.left, .right].enumerated() {
-            guard let image = PanelRenderer.render(side, navigator.state).cgImage else { continue }
+            let rendered: Bitmap = if index == 1, let deckFeed {
+                DeckPanelRenderer.render(deckFeed.current())
+            } else {
+                PanelRenderer.render(side, navigator.state)
+            }
+            guard let image = rendered.cgImage else { continue }
             let rect = CGRect(
                 x: (Self.margin + CGFloat(index) * (480 + Self.margin)) * zoom, y: Self.margin * zoom,
                 width: 480 * zoom, height: 272 * zoom
@@ -116,6 +128,9 @@ final class PreviewView: NSView {
             window?.setContentSize(Self.contentSize(zoom: zoom))
         } else if key == "f" {
             dump(navigator.state, prefix: "current", options: options)
+            if let deckFeed {
+                dumpDeck(deckFeed.current(), options: options)
+            }
         } else {
             return
         }
@@ -145,6 +160,24 @@ for (index, snapshot) in library.snapshots.enumerated() {
     dump(navigator.state(showing: snapshot), prefix: String(format: "%02d", index), options: options)
 }
 
+var deckFeed: DeckFeed?
+if let path = options.deckSnapshot {
+    do {
+        deckFeed = try RecordedDeckFeed(snapshot: DeckSnapshot.load(URL(fileURLWithPath: path)))
+    } catch {
+        FileHandle.standardError.write(Data("cannot load \(path): \(error)\n".utf8))
+        exit(1)
+    }
+} else if let deck = options.deck {
+    let live = LiveDeckFeed(deck: deck)
+    live.settle(polls: 3, interval: 0.3)
+    deckFeed = live
+}
+
+if let deckFeed {
+    dumpDeck(deckFeed.current(), options: options)
+}
+
 if options.windowless {
     exit(0)
 }
@@ -152,6 +185,12 @@ if options.windowless {
 let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 let view = PreviewView(navigator: navigator, options: options)
+view.deckFeed = deckFeed
+if let live = deckFeed as? LiveDeckFeed {
+    live.start()
+    Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in view.needsDisplay = true }
+}
+
 let window = NSWindow(
     contentRect: NSRect(origin: .zero, size: PreviewView.contentSize(zoom: options.zoom)),
     styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false
