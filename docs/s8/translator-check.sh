@@ -26,6 +26,8 @@ if [ -n "$pid" ]; then
     [ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || { echo "Expected one NIHardwareAgent, found: $pid"; exit 1; }
     [ "$(ps -o command= -p "$pid")" = "$exe" ] || { echo "NIHardwareAgent identity mismatch."; exit 1; }
 fi
+pgrep -f 'Controller Editor.app/Contents/MacOS/Controller Editor' > /dev/null ||
+    echo "Warning: Controller Editor is not running. Started like this, the S8 was once dark and unusable; see docs/s8/translator-validation.md."
 
 cargo build --locked --quiet
 mkdir -p "$run"

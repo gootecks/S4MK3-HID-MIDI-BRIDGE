@@ -74,6 +74,9 @@ working in a later one, except CAPTURE.
 - There is no LED or screen feedback; the mapping has no outputs.
 - `--midi` without `full`, `--led-config`, `--tension-config`, `--jog-config`,
   `--screens` and `--screen-control-stdin` are refused for the S8.
+- Started once with Controller Editor closed, the S8 was dark and the bridge
+  was of no use until Controller Editor was opened again; see
+  [S8 dark at start](#s8-dark-at-start).
 
 ## Attended check
 
@@ -84,6 +87,11 @@ passive; this check sends nothing to the S8.
 restores NIHardwareAgent when the bridge stops. It keeps an existing
 `Kontrol S8 Bridge` mapping, and writes the bridge log to
 `docs/s8/captures/translator-<UTC time>/`. The manual steps are:
+
+Open Controller Editor first and check that both panels show its labels.
+If the S8 is dark and the panels ask for MIDI mode with SHIFT + BACK, end the
+check with Ctrl-C, open Controller Editor and start again
+([S8 dark at start](#s8-dark-at-start)).
 
 ### Setup
 
@@ -324,3 +332,29 @@ touchstrip.
 
 The catalog keeps the r6 values. r7 was made for this comparison only and
 is not kept in `mappings/`.
+
+### S8 dark at start
+
+Reported by the user on 2026-11-10, after the fifth check: `mise run s8:midi`
+started the bridge, but the S8 went dark and the displays said to start MIDI
+mode with SHIFT + BACK. That did not work. The user pressed Ctrl-C, opened
+Controller Editor again, and then it worked.
+
+The fifth check had been run with Controller Editor quit, as its
+instructions asked, and ended at 13:06 UTC with NIHardwareAgent restored by
+the script. The bridge logs of the three starts that followed are in
+`captures/`:
+
+| Log | What it shows |
+| --- | ------------- |
+| `translator-20261110T131032Z` | HID opened. The first input is Shift, then BACK, 46 s after start; one second later the bridge ends with a HID read error |
+| `translator-20261110T131159Z` | HID opened, no input in 39 s, ended with Ctrl-C. The running Controller Editor process was started during this run, at 13:12:23 UTC |
+| `translator-20261110T131306Z` | HID opened, 747 input events in a minute |
+
+The cause is not established. The logs do not show whether the S8 was
+already dark before the script stopped the agent, or what SHIFT + BACK did
+to the S8 apart from ending the bridge's HID read. The fifth check itself
+ran with Controller Editor quit and received input throughout.
+
+`translator-check.sh` now prints a warning when Controller Editor is not
+running. It does not refuse to start.

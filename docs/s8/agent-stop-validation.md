@@ -127,7 +127,8 @@ reports and MIDI per port to `target/s8-captures/`.
 
 ## Not covered
 
-- Behaviour with Controller Editor closed.
+- Behaviour with Controller Editor closed. One later observation is in
+  [translator-validation.md](translator-validation.md#s8-dark-at-start).
 - Which rule Djay uses to match the mapping's endpoint name.
 - Whether the bridge's own process can restore the agent in the same way; the
   S4 app's restore path was not run here.
