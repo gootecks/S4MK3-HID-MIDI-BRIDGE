@@ -11,8 +11,10 @@ LED report, feature request, control transfer or screen traffic.
 | ---- | ------ |
 | Translator against the catalog | Unit tests, including a replay of the captured reports through the real decoder |
 | Startup with the S8 connected | Run once, unattended: MIDI source created, HID opened, no input in 3 s |
-| MIDI from physical controls | Four attended checks, 2026-11-10: partly reported, see [Results](#results) |
-| Djay reaction with the generated mapping | Four attended checks, 2026-11-10: partly reported, see [Results](#results) |
+| MIDI from physical controls | Four attended checks, 2026-11-10. The user went down the checklist and states that every row not reported as broken works; see [Results](#results) |
+| Djay reaction with the generated mapping | As above. Open: the touchstrip's fine motion and CAPTURE |
+| Touchstrip, Shift + touchstrip | Reported working for broad scrubbing; a small back-and-forth motion does not register. **Open**, see [Touchstrip](#touchstrip) |
+| CAPTURE | Triggers "Record Sample" with no visible result in the sampler (first check). Deferred |
 | Pad-mode notes, FX slots 1 and 2, FX buttons, dial 4, BACK, FX SELECT, TEMPO | Reported working in the second check |
 | FX dial 3 | Reported working in the third check, after a full sweep |
 | REMIX toggling the sampler | Reported working in the third check |
@@ -23,8 +25,9 @@ LED report, feature request, control transfer or screen traffic.
 | MAIN | Reported working in Djay with the mapping regenerated after the fourth check |
 | Behaviour with NIHardwareAgent running | **Not checked** |
 
-Each attended check ran against the layout of its time. The layout changed
-after each in response; the changed rows have not been checked on hardware.
+Each attended check ran against the layout of its time, and the layout
+changed after each in response. The rows changed after a check were reported
+working in a later one, except the touchstrip and CAPTURE.
 
 ## What the unit tests cover
 
@@ -231,3 +234,49 @@ The log also has two left PLAY presses and a short channel A fader move
 before the sweep; no other field moved. MAIN is now decoded and mapped to
 `mixer.masterLevel`. The user then reported that MAIN works in Djay. Whether
 the S8 also applies the knob to its own main output is not checked.
+
+### User statement after the fourth check, 2026-11-10
+
+The user stated that in the checks they went down the list and tried
+everything quickly, and that, to the best of their knowledge, every row not
+reported as broken works. On that statement all rows of the checklist are
+recorded as checked and working in Djay, with these exceptions:
+
+| # | State |
+| - | ----- |
+| 12 | CAPTURE: "Record Sample" triggers with no visible result. Deferred, unchanged since the first check |
+| 13, 14 | Touchstrip: works, but only for broad scrubbing. See below |
+
+The rows were tried quickly and not logged one by one, so this is a general
+statement by the user, not a per-row record. It does not cover the items
+outside the checklist: the booth output, whether the S8 applies BOOTH and
+MAIN to its own outputs, and behaviour with NIHardwareAgent running.
+
+### Touchstrip
+
+The user reported that the touchstrip scratches and seeks, but that the
+motion is coarse: a broad slide scrubs, and jiggling a finger back and forth
+in place does little or nothing.
+
+The generated mapping already uses the values of Evan's mapping for this
+control, so the mapping file does not explain the difference:
+
+| Mapping | Action | Type | Flipped | Sensitivity | Acceleration |
+| ------- | ------ | ---- | ------- | ----------- | ------------ |
+| Evan 1.1, decks 1-4 | `scratchingMove` | `rotary-absolute` | yes | 16-20 | 9-14 |
+| Bridge | `scratchingMove` | `rotary-absolute` | yes | 18 | 11 |
+| Evan 1.1, second layer | `jogSeekMove` | `rotary-absolute` | no | 7.1-7.7 | 0 |
+| Bridge, Shift | `jogSeekMove` | `rotary-absolute` | no | 7.4 | 0 |
+
+What differs is the MIDI that reaches Djay. The bridge sends the strip
+position 1-1024 as a 7-bit value, `(position - 1) >> 3`, so one step of the
+value is 8 units of the strip. The fourth check's bridge log has two touches
+of the left strip: 24 position changes with a median of 4 units each (largest
+7), reported about every 25 ms. Only 11 of the 24 changed the 7-bit value.
+A motion that stays within 8 units sends nothing, which fits the report.
+
+Not established: what NIHardwareAgent sends on this control with Evan's
+Controller Editor template (resolution, absolute or relative), and how Djay
+turns successive `rotary-absolute` values into motion. No change is made
+yet. The fallback recorded in #13 is to send bridge-side deltas at the
+strip's full resolution as a relative control.
