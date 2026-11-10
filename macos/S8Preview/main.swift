@@ -36,9 +36,11 @@ func parseOptions() -> Options? {
 let usage = """
 usage: S8Preview <snapshot.json | fixtures-dir> [--zoom 2] [--frames DIR] [--png DIR] [--no-window]
                  [--deck N | --deck-snapshot deck.json]
+       S8Preview --stream left=N[,right=M] [--seconds S]
 keys: 1-8 left display buttons, q w e r t y u i right display buttons,
       up/down screen encoder, z zoom, f dump current state to --frames/--png dirs
 --deck N shows live djay deck N (Accessibility) in the right panel; --deck-snapshot shows a recorded DeckSnapshot.
+--stream writes the live deck pages as S8FR records to stdout, for the bridge's --s8-screens-stdin; it opens no device.
 """
 
 func dump(_ state: ViewState, prefix: String, options: Options) {
@@ -136,6 +138,14 @@ final class PreviewView: NSView {
         }
         needsDisplay = true
     }
+}
+
+if CommandLine.arguments.dropFirst().first == "--stream" {
+    guard let request = StreamRequest(arguments: Array(CommandLine.arguments.dropFirst())) else {
+        FileHandle.standardError.write(Data((usage + "\n").utf8))
+        exit(2)
+    }
+    runDeckStream(targets: request.targets, seconds: request.seconds)
 }
 
 guard let options = parseOptions() else {

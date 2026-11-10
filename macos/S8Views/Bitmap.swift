@@ -76,13 +76,27 @@ public enum S8Frame {
         frame.reserveCapacity(size)
         frame += header(screen: screen)
         frame += [0x00, 0x00, 0xFF, 0x00]
+        appendPixels(of: bitmap, to: &frame)
+        frame += footer(screen: screen)
+        return frame
+    }
+
+    public static func record(screen: PanelSide, bitmap: Bitmap) -> [UInt8]? {
+        guard bitmap.width == Metrics.width, bitmap.height == Metrics.height else { return nil }
+        let length = UInt32(pixelBytes)
+        var record: [UInt8] = [0x53, 0x38, 0x46, 0x52, screen.rawValue, 0, 0, 0]
+        record.reserveCapacity(12 + pixelBytes)
+        record += [UInt8(length & 0xFF), UInt8((length >> 8) & 0xFF), UInt8((length >> 16) & 0xFF), UInt8(length >> 24)]
+        appendPixels(of: bitmap, to: &record)
+        return record
+    }
+
+    private static func appendPixels(of bitmap: Bitmap, to bytes: inout [UInt8]) {
         let rgba = bitmap.rgba
         for index in stride(from: 0, to: rgba.count, by: 4) {
             let value = rgb565(Pixel(red: rgba[index], green: rgba[index + 1], blue: rgba[index + 2]))
-            frame.append(UInt8(value >> 8))
-            frame.append(UInt8(value & 0xFF))
+            bytes.append(UInt8(value >> 8))
+            bytes.append(UInt8(value & 0xFF))
         }
-        frame += footer(screen: screen)
-        return frame
     }
 }
