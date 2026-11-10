@@ -1,7 +1,7 @@
 [tools]
 age = "1.3.1"
 communique = "1.5.0"
-fnox = "1.28.0"
+fnox = "1.43.0"
 hk = "2.4.0"
 op = "2.32.1"
 pkl = "0.32.1"
@@ -99,6 +99,13 @@ arg "[from]" help="checklist row to start from (default 1)"
 '''
 run = 'bash docs/s8/input-capture-session.sh ${usage_from:-}'
 raw = true
+
+[tasks."s8:raw"]
+description = "Read-only S8 decode: log every control change from interface 5, send nothing (#12)"
+usage = '''
+arg "[seconds]" help="how long to read (default 30)"
+'''
+run = 'cargo run --locked -- --device s8 --raw --seconds ${usage_seconds:-30}'
 
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
