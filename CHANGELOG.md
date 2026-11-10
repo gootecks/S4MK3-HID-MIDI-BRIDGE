@@ -153,7 +153,7 @@ their detailed notes stay in `docs/release-*.md`.
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
   in `docs/s8/screen-transport.md`. Checked on the S8 in an attended run
   ([record](docs/s8/screen-transport-validation.md)); stopping it with
-  Ctrl-C while it streams is not settled (#44).
+  Ctrl-C while it streams failed there, see Fixed (#44).
 - `examples/s8-screen-feed.rs` writes `S8FR` records of the phase 5 test
   pattern to stdout (`--dry-run` touches nothing), and `mise run
   s8:screen-transport [first-step]` runs the attended check of the screen
@@ -170,6 +170,16 @@ their detailed notes stay in `docs/release-*.md`.
   `assert!(value.is_empty())`.
 - The macOS app starts the bridge with `--device s4mk3`, so a connected S8
   does not stop it from finding the S4 MK3.
+
+### Fixed
+
+- The bridge no longer aborts when the reader of its stdout is gone, as
+  happened on Ctrl-C in a pipeline during the screen transport check (exit
+  status 134, no `S8_SCREEN_STATUS inactive`). Log lines to a closed stdout
+  are dropped, on the S4 MK3 as well. With `--s8-screens-stdin` or
+  `--app-events` the S8 bridge stops cleanly when a status or `S8_CONTROL`
+  line cannot be written: exit frames, release, exit status 0. Covered by
+  tests; not yet run on the S8 (#44).
 
 ## [0.2.1-beta.1] - 2026-10-26
 
