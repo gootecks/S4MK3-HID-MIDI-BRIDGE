@@ -16,8 +16,9 @@ their detailed notes stay in `docs/release-*.md`.
   and the screen encoders as `S8_CONTROL` lines on stdout. The `S8Host`
   macOS tool runs the bridge and uses them to switch djay Pro's sidebar tabs
   and Info > Related and to move the selection through Accessibility
-  ([display-buttons.md](docs/s8/display-buttons.md), #51). Not yet checked
-  on the S8.
+  ([display-buttons.md](docs/s8/display-buttons.md), #51). Checked once on
+  the S8
+  ([record](docs/s8/display-buttons-validation.md)).
 - `mise run s8:display-buttons` runs the attended check of the display
   buttons and screen encoders on the S8 (#51); it sends nothing to the S8.
 - Kontrol S8 project notes in `docs/s8/`: status, hardware evidence, S4 MK3
