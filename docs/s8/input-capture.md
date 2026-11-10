@@ -192,9 +192,10 @@ The right deck fader 1 touch bit is left out of the verified set.
 
 ### Live `--raw` check (#12)
 
-Attended on 2026-11-10 (06:21 UTC) with `NIHardwareAgent` stopped:
-`cargo run --locked -- --device s8 --raw --seconds 180`, stopped with Ctrl-C
-after 86 seconds. 391 reports decoded. The log is in
+Attended on 2026-11-10 with `NIHardwareAgent` stopped, in two runs of
+`cargo run --locked -- --device s8 --raw`, each stopped with Ctrl-C: the
+main run at 06:21 UTC (86 seconds, 391 reports) and a second run at 06:29 UTC
+for the right BROWSE encoder (29 seconds, 112 reports). Both logs are in
 [captures/2026-11-09-input-capture](captures/2026-11-09-input-capture/README.md).
 
 | Control moved                     | Decoded as                                                        | Result   |
@@ -208,14 +209,15 @@ after 86 seconds. 391 reports decoded. The log is in
 | Left display side button          | `left_screen_left_2` pressed / released, `r1 [4] 0x10`            | Correct  |
 | Left screen encoder 1             | `left_screen_encoder_touch_1` and 132 `left_screen_encoder_1` turns | Correct  |
 | Left touchstrip                   | `left_touchstrip` 0 to 1.0 and back, `left_touchstrip_touch`      | Correct  |
-| Right encoder, touch, turn, push  | `right_loop_encoder_touch`, `right_loop_encoder` +1 × 6, `right_loop_encoder_press` | See below |
+| Right LOOP encoder                | `right_loop_encoder_touch`, `right_loop_encoder` +1 × 6, `right_loop_encoder_press` | Correct  |
+| Right BROWSE encoder (second run) | `right_browse_encoder_touch`, `right_browse_encoder` +1 × 10 then −1 × 11, `right_browse_encoder_press` twice | Correct  |
 | Right pad                         | `right_pad_1` pressed / released, `r1 [16] 0x08`                  | Correct  |
 
-- The encoder step asked for the right BROWSE encoder. The bytes that changed
-  (`r1 [18] 0x01`, `r1 [2]` low nibble, `r1 [15] 0x10`) are the right LOOP
-  encoder's fields in the table below, so the LOOP encoder was the one moved
-  and the decoder named it consistently with the capture. The right BROWSE
-  encoder was not exercised in this check.
+- The main run moved the right LOOP encoder where the list asked for BROWSE
+  (`r1 [18] 0x01`, `r1 [2]` low nibble, `r1 [15] 0x10`). The second run
+  moved BROWSE: touch at `r1 [18] 0x20`, turns in the `r1 [2]` high nibble,
+  clockwise counting up, and push at `r1 [12] 0x08`. Both match the table
+  below.
 - The first report of each ID is logged as events: the four crossfader assign
   switches resting in the middle, the CUE latches that were on and every
   fader and knob position appear once at the start. They are resting state,

@@ -18,6 +18,7 @@ byte.
 | `steps.json`                              | Per step, the reports selected for analysis; where a step was stamped more than once, its last run. |
 | `senc_steps.json`                         | The 24 screen-encoder sub-steps (clockwise, counterclockwise and so on) with their reports. |
 | `raw-live-check-20261110T062133Z.log.gz`  | Bridge output of the attended `--device s8 --raw` check for #12, build lines removed. |
+| `raw-live-check-browse-20261110T062923Z.log.gz` | Second attended run of that check, for the right BROWSE encoder. |
 
 Not recovered: the two re-check logs of 2026-11-09 (screen encoder turns and
 crossfader assign positions). Their totals are in
