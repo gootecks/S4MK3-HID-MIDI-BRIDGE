@@ -14,12 +14,17 @@
 #   e  60 fps, above the cap
 # Logs go to docs/s8/captures/screen-transport-UTC/, outside target/. Nothing
 # uses the passive recorder: the bridge reads the S8 itself.
+# An optional argument names the first step to run, e.g. c-alternate-10, to
+# continue a run that stopped early. Earlier steps are skipped.
 set -euo pipefail
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 # shellcheck source=docs/s8/screen-lib.sh
 . docs/s8/screen-lib.sh
 
-[ "$#" -eq 0 ] || { echo "Usage: $0"; exit 1; }
+step_names="a-left-10 b-right-30 c-alternate-10 d-alternate-30 e-over-cap f-stall g-eof h-bad-record i-ctrl-c"
+[ "$#" -le 1 ] || { echo "Usage: $0 [first-step]"; exit 1; }
+from="${1:-}"
+case " $step_names " in *" ${from:-a-left-10} "*) ;; *) echo "Unknown step '$from'. Steps: $step_names"; exit 1 ;; esac
 pictures_dir=docs/s8/images/transport
 bridge=target/release/s4mk3-hid-midi-bridge
 feeder=target/release/examples/s8-screen-feed
@@ -39,12 +44,21 @@ trap 'exit 1' TERM HUP
 trap : INT
 
 note "Screen transport check. Djay open, no track playing. Bridge: $bridge (release). Feeder: $feeder."
+[ -z "$from" ] || note "Starting at $from; earlier steps are skipped."
 snap pre
 screen_agent_stop
 
 stopped=""
 status=0
 statuses=""
+elapsed=0
+skip=""
+
+# skipped NAME: true while NAME is before the first step to run.
+skipped() {
+    [ -n "$from" ] || return 1
+    [ "$1" != "$from" ] || { from=""; return 1; }
+}
 
 # confirm NAME: prompt, return 1 and record on "stop".
 confirm() {
@@ -73,6 +87,8 @@ pictures() {
 # exit), $statuses and $elapsed.
 run_step() {
     local name="$1" hold="$2" expect="$3" garbage="$4"
+    if skipped "$name"; then skip="$name"; return 0; fi
+    skip=""
     shift 4
     "$feeder" "$@" --dry-run > "$run/$name.dry"
     note "$name: dry run, $(wc -l < "$run/$name.dry" | tr -d ' ') records, hashes in $run/$name.dry"
@@ -100,6 +116,7 @@ run_step() {
 
 # verdict NAME QUESTION: y continues; anything else stops the run.
 verdict() {
+    [ "$skip" != "$1" ] || return 0
     ask "$1: $2 (y, n or describe; 'stop' ends the run)"
     case "$answer" in y | Y | yes) ;; *) stopped="$1: observer answered '$answer'"; return 1 ;; esac
 }

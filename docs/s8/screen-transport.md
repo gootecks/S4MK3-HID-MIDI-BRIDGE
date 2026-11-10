@@ -192,7 +192,9 @@ exit behaviour. Nothing here is a result.
 - `NIHardwareAgent` is stopped by the runner (`kill -9`, as in the other
   attended runners) and relaunched with `open -g` on every exit path. The
   bridge itself never stops it (see above).
-- Run it from an interactive terminal: `mise run s8:screen-transport`. The
+- Run it from an interactive terminal: `mise run s8:screen-transport`. To
+  continue a run that stopped early, name the first step to run, for
+  example `mise run s8:screen-transport c-alternate-10`. The
   runner builds the release bridge and `examples/s8-screen-feed`, writes
   `docs/s8/captures/screen-transport-<UTC>/` (per step: `.dry` record hashes,
   `.txt` bridge output, `.feeder.txt`; plus `notes.txt`, `snapshots.txt`,
