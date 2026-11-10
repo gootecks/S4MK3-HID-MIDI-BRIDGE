@@ -38,6 +38,7 @@ enum MidiProfile {
     about,
     group(clap::ArgGroup::new("jog_context").args(["generate_mapping", "midi"]))
 )]
+#[allow(clippy::struct_excessive_bools)]
 struct Args {
     /// List attached supported controllers without opening their USB interfaces.
     #[arg(long)]
@@ -87,6 +88,11 @@ struct Args {
     /// Run until Ctrl-C instead of stopping after a fixed duration.
     #[arg(long, conflicts_with = "seconds")]
     until_stopped: bool,
+
+    /// Kontrol S8 only: print display-button and screen-encoder events as
+    /// `S8_CONTROL` lines on stdout for the companion app.
+    #[arg(long, requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
+    app_events: bool,
 }
 
 #[derive(Debug, clap::Args)]
@@ -220,6 +226,10 @@ fn open_and_run(
     if args.midi.is_some() && profile.device == Device::S8 {
         s8::bridge::check_args(args)?;
     }
+    ensure!(
+        !args.app_events || profile.device == Device::S8,
+        "--app-events applies to the Kontrol S8 only"
+    );
     let descriptor = match profile.descriptor.full {
         Some(full) if matches!(args.midi, Some(MidiProfile::Full)) => full(&device.descriptor)?,
         _ => (profile.descriptor.control)(&device.descriptor),
@@ -735,6 +745,18 @@ mod tests {
         assert!(report_probe_counts(&continuous, &device::S4_MK3, &ProbeCounts::default()).is_ok());
         let bounded = Args::try_parse_from(["probe", "--midi", "full", "--seconds", "60"])?;
         assert!(report_probe_counts(&bounded, &device::S4_MK3, &ProbeCounts::default()).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn app_events_need_a_midi_profile_and_are_off_by_default() -> anyhow::Result<()> {
+        assert!(!Args::try_parse_from(["probe", "--midi", "full"])?.app_events);
+        let args =
+            Args::try_parse_from(["probe", "--device", "s8", "--midi", "full", "--app-events"])?;
+        assert!(args.app_events);
+        assert!(s8::bridge::check_args(&args).is_ok());
+        assert!(Args::try_parse_from(["probe", "--app-events"]).is_err());
+        assert!(Args::try_parse_from(["probe", "--list", "--app-events"]).is_err());
         Ok(())
     }
 }

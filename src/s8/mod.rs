@@ -1,5 +1,6 @@
 //! Kontrol S8 catalog, generated Djay mapping and input-to-MIDI bridge.
 
+mod app_events;
 pub mod bridge;
 pub mod catalog;
 mod mapping;

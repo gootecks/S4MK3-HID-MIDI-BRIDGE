@@ -9,8 +9,10 @@ use hidapi::HidDevice;
 use midir::MidiOutput;
 use midir::os::unix::VirtualOutput as _;
 use s4mk3_hid_midi_bridge::device::S8;
+use s4mk3_hid_midi_bridge::device::s8::ScreenEncoders;
 use tracing::info;
 
+use super::app_events;
 use super::translator::Translator;
 use crate::{Args, MidiProfile, ProbeCounts, record_event, report_probe_counts, stop_signal};
 
@@ -46,6 +48,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
     );
     let mut translator = Translator::new();
     let mut counts = ProbeCounts::default();
+    let mut screen_encoders = ScreenEncoders::default();
     let mut seen = Vec::with_capacity(S8.input_reports.len());
     let mut buffer = [0_u8; 128];
     let mut events = Vec::with_capacity(128);
@@ -81,9 +84,21 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         events.clear();
         messages.clear();
         parser.parse_from("control", payload, &mut events);
+        if args.app_events {
+            for turn in screen_encoders.update(report) {
+                if let Some(line) = app_events::screen_encoder(&turn) {
+                    println!("{line}");
+                }
+            }
+        }
         for event in &events {
             record_event(event, None, &mut counts, false)?;
             translator.handle(event, resting, &mut messages);
+            if args.app_events
+                && let Some(line) = app_events::display_button(event, resting)
+            {
+                println!("{line}");
+            }
         }
         translator.end_report(&mut messages);
         for message in &messages {
