@@ -1,0 +1,4 @@
+0.030 claimed interface 6; f800
+0.0s stage 1/1: one frame to the left panel
+{"bytes":32,"dry_run":false,"elapsed_s":0.000106667,"error":null,"frames_sent":1,"late":0,"panels":{"left":{"frames":1,"rate":9374.970703216552,"transfer_ms":{"max":0.105542,"median":0.105542,"min":0.105542,"p95":0.105542}}},"params":{"panel":"left"},"stage":0,"step":"f800","stopped":null}
+0.030 released

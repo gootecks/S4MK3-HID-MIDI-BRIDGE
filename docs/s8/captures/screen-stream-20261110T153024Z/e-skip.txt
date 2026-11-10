@@ -1,0 +1,4 @@
+0.022 claimed interface 6; partial-skip
+0.0s stage 1/1: one frame to the left panel
+{"bytes":130592,"dry_run":false,"elapsed_s":0.008176875,"error":null,"frames_sent":1,"late":0,"panels":{"left":{"frames":1,"rate":122.29610945501796,"transfer_ms":{"max":8.1595,"median":8.1595,"min":8.1595,"p95":8.1595}}},"params":{"panel":"left"},"stage":0,"step":"partial-skip","stopped":null}
+0.031 released

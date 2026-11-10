@@ -1,0 +1,4 @@
+0.029 claimed interface 6; pattern
+0.0s stage 1/1: one frame to the left panel
+{"bytes":261148,"dry_run":false,"elapsed_s":0.01617225,"error":null,"frames_sent":1,"late":0,"panels":{"left":{"frames":1,"rate":61.834314953083215,"transfer_ms":{"max":16.143959,"median":16.143959,"min":16.143959,"p95":16.143959}}},"params":{"panel":"left"},"stage":0,"step":"pattern","stopped":null}
+0.046 released

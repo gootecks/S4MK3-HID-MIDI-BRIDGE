@@ -13,7 +13,7 @@ upstream pull request.
 | S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). The bridge applies those corrections and decodes every verified control in `--raw`; a fixture test replays the capture through the decoder (#12). |
 | S8 Djay mapping     | Catalog and generated default mapping (`--generate-mapping <path> --device s8`, [mapping.md](mapping.md), #14). `--device s8 --midi full` translates S8 input to that mapping's MIDI on `Kontrol S8 MIDI Full` and writes nothing to the S8 (#15); `mise run s8:midi` runs it. Checked in Djay in five attended checks on 2026-11-10 ([translator-validation.md](translator-validation.md)); the touchstrip keeps its absolute 7-bit encoding (#13); open: CAPTURE and the booth output. Open Controller Editor before `mise run s8:midi`: started without it, the S8 was once dark and unusable ([translator-validation.md](translator-validation.md#s8-dark-at-start)). The checked mapping is kept in [mappings/](mappings/README.md). Source build only: the menu-bar app does not run the S8. A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
-| S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). The library views render in the app from djay's sidebar (#48–#50). Next: the attended repeated-frame run (#43, planned in [screens.md](screens.md)), bridge transport (#44), display buttons and encoders (#51), then views on the panels (#27). |
+| S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Repeated frames work with a held claim: about 60 full frames per second in total, so 30 per panel on both, and partial updates work (#43, [screen-stream-validation.md](screen-stream-validation.md)). The library views render in the app from djay's sidebar (#48–#50). Next: the attended checks of the bridge transport (#44) and of display buttons and encoders (#51), then views on the panels (#27). |
 | Motor, jog tension  | Not applicable: the S8 has touchstrips, not platters.                 |
 | Clippy gate         | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28). |
 
@@ -100,9 +100,10 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 - [screen-frame-validation.md](screen-frame-validation.md) — phases 2–4:
   first frames, colour order and a full uncompressed frame
   (`screen-frame-check.sh`).
-- [screens.md](screens.md) phase 5 — planned repeated-frame, held-claim and
-  partial-update steps, run by `screen-stream-check.sh` (shared helpers in
-  `screen-lib.sh`); results will go to `screen-stream-validation.md`.
+- [screen-stream-validation.md](screen-stream-validation.md) — phase 5:
+  repeated frames with a held claim, the transfer ceiling, partial updates
+  and the exit state (`screen-stream-check.sh`, shared helpers in
+  `screen-lib.sh`).
 - [screen-stream-expected.md](screen-stream-expected.md) — pictures of what each
   phase 5 step should show, decoded from the frames the tool sends
   (`mise run s8:phase5-images`).

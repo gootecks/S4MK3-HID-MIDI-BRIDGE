@@ -1,0 +1,72 @@
+Phase 5. Djay open, no track playing. Tool: target/release/examples/s8-screen-frame (release build).
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+a-left: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/a-left.dump (600 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: a-left. Enter to send, or 'stop'.: 
+a-left exit status 0
+a-left: highest rate (10, 20, 30 or 60) that showed a steady moving bar and counter without tearing, flicker or stale areas; 0 if none; or 'stop'.: 60
+a-right: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/a-right.dump (600 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: a-right. Enter to send, or 'stop'.: 
+a-right exit status 0
+a-right: highest rate (10, 20, 30 or 60) that showed a steady moving bar and counter without tearing, flicker or stale areas; 0 if none; or 'stop'.: 60
+Press left PLAY once, then Enter. Did LEDs or audio change? Describe, or 'no'.: 
+b-alternate: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/b-alternate.dump (1200 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: b-alternate. Enter to send, or 'stop'.: 
+b-alternate exit status 0
+b-alternate: highest rate (10, 20, 30 or 60) that showed a steady moving bar and counter without tearing, flicker or stale areas; 0 if none; or 'stop'.: 60
+c-burst: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/c-burst.dump (120 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: c-burst. Enter to send, or 'stop'.: 
+c-burst exit status 0
+c-burst: any tearing or stale areas on the left panel afterwards? Describe, or 'stop'.: no
+Soak rate: 30 frames/s per panel (min of a-left 60, a-right 60, b 60, capped at 30).
+d-soak: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/d-soak.dump (3600 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: d-soak. Enter to send, or 'stop'.: 
+d-soak exit status 0
+d-soak: steady for the whole 60 s? y/n, or describe: y
+Press left PLAY once, then Enter. Did LEDs or audio change? Describe, or 'no'.: 
+e-bg-skip: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/e-bg-skip.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: e-bg-skip. Enter to send, or 'stop'.: 
+e-bg-skip exit status 0
+e-skip: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/e-skip.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: e-skip. Enter to send, or 'stop'.: 
+e-skip exit status 0
+e-skip: top half, bottom half? Photo. Describe, or 'stop'.: top half red, bottom half has color bars
+e-bg-rect: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/e-bg-rect.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: e-bg-rect. Enter to send, or 'stop'.: 
+e-bg-rect exit status 0
+e-rect: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/e-rect.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: e-rect. Enter to send, or 'stop'.: 
+e-rect exit status 0
+e-rect: where did the pattern land? Photo. Describe, or 'stop'.: in the center and small
+f-end: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/f-end.dump (300 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: f-end. Enter to send, or 'stop'.: 
+f-end exit status 0
+f-end: stream ended without a final frame. What do the panels show? Photo.: Left S8 Screen with the yellow bar underneath the fourth grey bar from the left.  Right screen is the same
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: f-kill. Enter to send, or 'stop'.: 
+f-kill: tool killed with SIGKILL after about 4 s of streaming.
+f-kill: what do the panels show after the kill? Photo.: Traktor logo on the left, Kontrol S8 on the right with the hold S & Q buttons during startup for Vegas Mode line
+f-clean-left: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/f-clean-left.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: f-clean-left. Enter to send, or 'stop'.: 
+f-clean-left exit status 0
+f-clean-right: dry-run written to docs/s8/captures/screen-stream-20261110T153024Z/f-clean-right.dump (0 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: f-clean-right. Enter to send, or 'stop'.: 
+f-clean-right exit status 0
+f-clean: do both panels show the clean test pattern? y/n, or describe: y
+Interface released, agent still stopped: what do the panels show? Photo.: both have the clean test pattern
+After recovery: what do the panels show (Controller Editor labels again)? Photo.: Controller Editor labels again
+Press left PLAY once, then Enter.: 
+Did Djay react to left PLAY? y/n: y
+Recorded in docs/s8/captures/screen-stream-20261110T153024Z

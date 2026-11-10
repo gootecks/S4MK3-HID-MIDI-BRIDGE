@@ -1,0 +1,14 @@
+Phase 5. Djay open, no track playing. Tool: target/release/examples/s8-screen-frame (release build).
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+a-left: dry-run written to docs/s8/captures/screen-stream-20261110T152202Z/a-left.dump (600 lines)
+Expected pictures (docs/s8/screen-stream-expected.md):
+Next: a-left. Enter to send, or 'stop'.: 
+a-left exit status 0
+a-left: highest rate (10, 20, 30 or 60) that showed a steady moving bar and counter without tearing, flicker or stale areas; 0 if none; or 'stop'.: stop
+Stopped: after a-left.
+Interface released, agent still stopped: what do the panels show? Photo.: Left S8 Screen 480 x 272 Literal.  the yellow bar is under the 8th white bar from the left
+After recovery: what do the panels show (Controller Editor labels again)? Photo.: Controller Editor labels again on both
+Press left PLAY once, then Enter.: 
+Did Djay react to left PLAY? y/n: y
+Recorded in docs/s8/captures/screen-stream-20261110T152202Z

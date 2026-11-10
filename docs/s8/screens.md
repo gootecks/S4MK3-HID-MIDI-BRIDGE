@@ -3,7 +3,8 @@
 Research and first-frame test plan for #26, with results. Phases 2 and 4
 sent frames to the S8 from this bridge's tools
 ([screen-frame-validation.md](screen-frame-validation.md)). Phase 5
-(repeated frames, held claim, partial updates) is planned, not run.
+(repeated frames, held claim, partial updates) ran on 2026-11-10
+([screen-stream-validation.md](screen-stream-validation.md)).
 
 Sidebar mirroring: [djay-sidebar-access.md](djay-sidebar-access.md) (#48).
 
@@ -231,7 +232,8 @@ labels ([screen-frame-validation.md](screen-frame-validation.md)).
 
 ### Phase 5: repeated frames, held claim and partial updates
 
-Planned, not run. Each step needs the earlier ones to pass. Every frame is a
+Run on 2026-11-10; the result follows the plan. Each step needs the earlier
+ones to pass. Every frame is a
 full LITERAL frame unless stated, drawn by the shared encoder with a frame
 counter and a bar that moves every frame, so tearing, flicker and dropped
 frames show. Streaming steps claim interface 6 once and hold it for the whole
@@ -274,11 +276,18 @@ or their hashes without a device.
 `examples/s8-screen-frame/` has `stream`, `burst` and `partial skip|rect`
 besides the single frames. `mise run s8:screen-stream` runs the six steps during
 an attended agent stop and writes raw logs to
-`docs/s8/captures/screen-stream-<UTC>/`. The results go to
-`docs/s8/screen-stream-validation.md` after the run. What each step should show,
+`docs/s8/captures/screen-stream-<UTC>/`. What each step should show,
 decoded from the frames the tool sends, is in
 [screen-stream-expected.md](screen-stream-expected.md); the runner lists the
 pictures before each prompt.
+
+Result: no transfer failed. A full frame takes about 16.6 ms, so the S8
+accepts about 60 full frames per second in total: 60 per second on one panel,
+or 30 per second on each of two, which held for the 60 s soak. The SKIP
+command and the sub-rectangle header both work as guessed. A stream that
+ends leaves the last frame on the panels. After a `kill -9` mid-stream both
+panels showed the S8's startup screens, and the next clean frame displayed
+correctly ([screen-stream-validation.md](screen-stream-validation.md)).
 
 ### What to record
 
@@ -293,9 +302,10 @@ Record in a validation file under `docs/s8/`, not in this plan.
 
 ## Still open after this plan
 
-- Refresh rate and latency for repeated frames, holding interface 6 across
-  frames, and partial updates (SKIP, sub-rectangles): planned as phase 5
-  (#43), not run.
+- Input-to-panel latency, rates above 60 frames per second, partial updates
+  inside a stream, and why a killed stream brings up the startup screens:
+  not covered by phase 5
+  ([screen-stream-validation.md](screen-stream-validation.md#not-covered)).
 - The bridge-side frame channel (stdin records, status lines, pacing,
   exit frames) is specified in [screen-transport.md](screen-transport.md)
   and unexercised on hardware (#44).

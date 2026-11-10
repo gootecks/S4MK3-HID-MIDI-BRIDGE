@@ -1,0 +1,4 @@
+0.030 claimed interface 6; burst
+0.0s stage 1/1: 120 frames back to back to the left panel
+{"bytes":31337760,"dry_run":false,"elapsed_s":1.9998154590000001,"error":null,"frames_sent":120,"late":0,"panels":{"left":{"frames":120,"rate":60.005536740877844,"transfer_ms":{"max":16.710042,"median":16.622812,"min":16.1135,"p95":16.674208}}},"params":{"frames":120,"panel":"left","swap_rb":false},"stage":0,"step":"burst","stopped":null}
+2.030 released

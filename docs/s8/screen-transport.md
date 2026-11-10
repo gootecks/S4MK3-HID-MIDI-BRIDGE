@@ -124,9 +124,11 @@ status lines, the stdin thread and the flag check.
   panel that has a new, unsent frame. An unchanged panel is never repeated.
 - **Pacing.** The start of two transfers to the same panel are at least
   `FRAME_INTERVAL` apart: 30 frames per second per panel
-  (`MAX_FRAMES_PER_SECOND`). **Provisional**: no S8 refresh rate has been
-  measured; phase 5 (#43) replaces it. Frames dropped by pacing are the
-  older ones of the slot. When both panels are ready they alternate.
+  (`MAX_FRAMES_PER_SECOND`). Phase 5 measured about 16.6 ms per full frame,
+  so 30 per panel is the most two panels can take together
+  ([screen-stream-validation.md](screen-stream-validation.md)). Frames
+  dropped by pacing are the older ones of the slot. When both panels are
+  ready they alternate.
 - **One transfer per frame**, 500 ms timeout, no retry. A failed or short
   transfer, or a failed claim, reports `failed <reason>` and releases the
   interface. A failed transfer sends no exit frames; the claim is released.
@@ -148,6 +150,10 @@ Hardware-validated (from the bridge's example tools, not from this channel):
 - Claiming interface 6 with the agent stopped.
 - Full-panel literal and repeat frames on both panels, RGB565 big-endian,
   no init report needed.
+- Holding interface 6 across 3,599 frames and releasing it afterwards.
+- 30 frames per second per panel on both panels for 60 s, steady by eye,
+  with the two panels updated back to back
+  ([screen-stream-validation.md](screen-stream-validation.md)).
 
 Covered by tests with a fake transport only:
 
@@ -157,10 +163,11 @@ Covered by tests with a fake transport only:
 
 Not validated on hardware (only a device can confirm):
 
-- Holding interface 6 across many frames, and releasing it afterwards.
-- Any refresh rate, in particular that 30 frames per second per panel is
-  sustainable and visually smooth (#43).
-- Both panels updated back to back within one bridge process.
+- Both panels updated back to back within one bridge process, and the
+  worker's pacing at the measured limit.
+- What the panels show when the bridge is killed while it streams. The
+  example tool killed mid-stream left the S8's startup screens on both
+  panels.
 - The claim failure when NIHardwareAgent holds interface 6, and that the
   reason text is useful.
 - What the panels show after the exit frames, and after a `failed` stop (#27).
@@ -175,10 +182,9 @@ exit behaviour. Nothing here is a result.
 
 ### Preconditions
 
-- Phase 5 of #43 (`mise run s8:screen-stream`, `docs/s8/screens.md`) has
-  passed and its measured rates are known. This check does not replace it: it
-  only exercises the bridge's worker and stdin path. The 30 frames per second
-  cap is still the provisional value.
+- Phase 5 of #43 (`mise run s8:screen-stream`) has passed
+  ([screen-stream-validation.md](screen-stream-validation.md)). This check
+  does not replace it: it only exercises the bridge's worker and stdin path.
 - Exactly one Kontrol S8 on USB; Traktor, Maschine and Komplete Kontrol
   quit; Djay open with no track playing.
 - The user has approved sending frames to the S8. The runner prompts before
@@ -273,18 +279,18 @@ so the end of each step is stdin closing or Ctrl-C.
    panel, 150 frames per panel (5 s, 300 records), hold 5 s. See: both
    counters up to 149 with a steady bar, then both black. Pass: steady, no
    tearing or flicker, and the status order exact. Fault: stutter, a panel
-   that falls behind, or `failed`: stop. A step 4 that fails while step 3
-   passed points at the 30 fps cap or at USB throughput (about 15.7 MB per
-   second), which phase 5 measures.
+   that falls behind, or `failed`: stop. Phase 5 sent this load from the
+   example tool without error, so a step 4 that fails while step 3 passed
+   points at the bridge's worker or its stdin path.
 
    ![Left, frame 0](images/transport/d-alternate-30-left-0.png)
    ![Right, frame 0](images/transport/d-alternate-30-right-0.png)
    ![Left, frame 149, the last frame](images/transport/d-alternate-30-left-149.png)
    ![Right, frame 149, the last frame](images/transport/d-alternate-30-right-149.png)
 
-   Two panels at 30 fps need about 60 transfers per second of roughly 17 ms
-   each, more than one second of USB time per second, so skipped numbers are
-   likely here; only the last frames are certain.
+   Phase 5 measured 16.6 ms per transfer, so two panels at 30 fps fill the
+   USB time almost exactly. Skipped numbers are possible here; only the
+   last frames are certain.
 
 5. **`e-over-cap`: more than the cap.** Left panel, 60 fps, 180 frames (3
    s), hold 5 s. The feeder is twice as fast as the 30 fps pacing, so the

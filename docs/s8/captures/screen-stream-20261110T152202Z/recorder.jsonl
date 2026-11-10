@@ -1,0 +1,18 @@
+{"src":"hid-open","t":0.009157334,"unix_ms":1794324126293,"usage":0,"usage_page":65281}
+{"destinations":["Traktor Kontrol S8","Traktor Kontrol S8 Output"],"sources":["Traktor Kontrol S8","Traktor Kontrol S8 Input"],"src":"midi-endpoints","t":0.022952125,"unix_ms":1794324126307}
+{"port":"Traktor Kontrol S8","src":"midi-connect","t":0.023091459,"unix_ms":1794324126307}
+{"port":"Traktor Kontrol S8 Input","src":"midi-connect","t":0.023254209,"unix_ms":1794324126307}
+{"hex":"01ffffff000000e0001000000000004000000000000000005a009d7e000000009c7e0000000000000e","id":1,"len":41,"src":"hid","t":8.283000875,"unix_ms":1794324134567}
+{"hex":"b00a7f","port":"Traktor Kontrol S8 Input","src":"midi","t":8.286310459,"unix_ms":1794324134570}
+{"hex":"01ffffff000000e0000000000000004000000000000000005a007a7f00000000797f0000000000000e","id":1,"len":41,"src":"hid","t":8.431404292,"unix_ms":1794324134715}
+{"hex":"b00a00","port":"Traktor Kontrol S8 Input","src":"midi","t":8.431475,"unix_ms":1794324134715}
+{"destinations":["Traktor Kontrol S8"],"sources":["Traktor Kontrol S8"],"src":"midi-endpoints","t":11.980196209,"unix_ms":1794324138264}
+{"hex":"01ffffff000000e0001000000000004000000000000000005a003faa000000003eaa0000000000000e","id":1,"len":41,"src":"hid","t":15.607128334,"unix_ms":1794324141891}
+{"hex":"01ffffff000000e0000000000000004000000000000000005a00f8aa00000000f6aa0000000000000e","id":1,"len":41,"src":"hid","t":15.725609667,"unix_ms":1794324142009}
+{"destinations":["Traktor Kontrol S8","Traktor Kontrol S8 Output"],"sources":["Traktor Kontrol S8","Traktor Kontrol S8 Input"],"src":"midi-endpoints","t":181.330958792,"unix_ms":1794324307613}
+{"port":"Traktor Kontrol S8 Input","src":"midi-connect","t":181.331407875,"unix_ms":1794324307614}
+{"hex":"01ffffff000000e0001000000000004000000000000000005a0068430000000067430000000000000e","id":1,"len":41,"src":"hid","t":213.109686375,"unix_ms":1794324339392}
+{"hex":"b00a7f","port":"Traktor Kontrol S8 Input","src":"midi","t":213.109951292,"unix_ms":1794324339392}
+{"hex":"01ffffff000000e0000000000000004000000000000000005a00e74400000000e6440000000000000e","id":1,"len":41,"src":"hid","t":213.359611834,"unix_ms":1794324339642}
+{"hex":"b00a00","port":"Traktor Kontrol S8 Input","src":"midi","t":213.359720125,"unix_ms":1794324339642}
+{"src":"end","t":219.763598584,"unix_ms":1794324346046}

@@ -1,0 +1,4 @@
+0.029 claimed interface 6; stream
+0.0s stage 1/1: 30 frames/s per panel, left+right
+{"bytes":78344400,"dry_run":false,"elapsed_s":5.000989458,"error":null,"frames_sent":300,"late":0,"panels":{"left":{"frames":150,"rate":29.994064426600115,"transfer_ms":{"max":16.719250000000002,"median":16.581625,"min":16.108542,"p95":16.693833}},"right":{"frames":150,"rate":29.994064426600115,"transfer_ms":{"max":16.764666000000002,"median":16.588437000000003,"min":16.078333,"p95":16.684}}},"params":{"panels":["left","right"],"rate_per_panel":30,"seconds":5,"swap_rb":false},"stage":0,"step":"stream","stopped":null}
+5.031 released
