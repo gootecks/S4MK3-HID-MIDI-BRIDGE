@@ -88,9 +88,11 @@ nothing sent to the S8. All 191 rows of
 [capture-checklist.md](capture-checklist.md) were stamped across five runs;
 where a row was stamped more than once, its last run counts. The raw logs
 were kept in `target/s8-captures/` and were lost on 2026-11-09 when the build
-cache was cleared. What survives is the reduced fixture described under
-[Decoder fixture](#decoder-fixture-12) and the tables below. Keep future
-capture logs outside `target/`.
+cache was garbage-collected. A copy of the reports recovered from the analysis
+session is committed in
+[captures/2026-11-09-input-capture](captures/2026-11-09-input-capture/README.md),
+alongside the reduced fixture described under
+[Decoder fixture](#decoder-fixture-12). Keep capture logs outside `target/`.
 
 Offsets in this section **include the report ID**, as the recorder prints
 them: `r1` is report 1 (41 bytes), `r2` is report 2 (109 bytes). Multi-byte
@@ -187,6 +189,42 @@ How each row was reduced:
   on the order the decoder emits fields of one report.
 
 The right deck fader 1 touch bit is left out of the verified set.
+
+### Live `--raw` check (#12)
+
+Attended on 2026-11-10 (06:21 UTC) with `NIHardwareAgent` stopped:
+`cargo run --locked -- --device s8 --raw --seconds 180`, stopped with Ctrl-C
+after 86 seconds. 391 reports decoded. The log is in
+[captures/2026-11-09-input-capture](captures/2026-11-09-input-capture/README.md).
+
+| Control moved                     | Decoded as                                                        | Result   |
+| --------------------------------- | ----------------------------------------------------------------- | -------- |
+| Left PLAY, 2 presses              | `left_play` pressed / released, `r1 [9] 0x10`                     | Correct  |
+| Channel A volume fader            | `mixer_fader_a`, 152 values from 0.002 to 0.996                   | Correct  |
+| Crossfader assign A, left         | `xfader_assign_left_a` on, `xfader_assign_middle_a` off           | Correct  |
+| Crossfader assign A, right        | both off                                                          | Correct  |
+| Crossfader assign A, middle       | `xfader_assign_middle_a` on                                       | Correct  |
+| Channel A mixer CUE               | `mixer_cue_a` pressed / released, `mixer_cue_a_latch` on          | Correct  |
+| Left display side button          | `left_screen_left_2` pressed / released, `r1 [4] 0x10`            | Correct  |
+| Left screen encoder 1             | `left_screen_encoder_touch_1` and 132 `left_screen_encoder_1` turns | Correct  |
+| Left touchstrip                   | `left_touchstrip` 0 to 1.0 and back, `left_touchstrip_touch`      | Correct  |
+| Right encoder, touch, turn, push  | `right_loop_encoder_touch`, `right_loop_encoder` +1 × 6, `right_loop_encoder_press` | See below |
+| Right pad                         | `right_pad_1` pressed / released, `r1 [16] 0x08`                  | Correct  |
+
+- The encoder step asked for the right BROWSE encoder. The bytes that changed
+  (`r1 [18] 0x01`, `r1 [2]` low nibble, `r1 [15] 0x10`) are the right LOOP
+  encoder's fields in the table below, so the LOOP encoder was the one moved
+  and the decoder named it consistently with the capture. The right BROWSE
+  encoder was not exercised in this check.
+- The first report of each ID is logged as events: the four crossfader assign
+  switches resting in the middle, the CUE latches that were on and every
+  fader and knob position appear once at the start. They are resting state,
+  not presses. A Djay mapping must not treat them as presses (#13).
+- The run was stopped with Ctrl-C through a pipe and the closing summary line
+  was not captured. `led_writes=0` was seen in the earlier unattended run; the
+  S8 descriptor has no output reports to write.
+- Controls not in the table were not exercised live; the fixture test covers
+  them.
 
 ### Left deck
 
