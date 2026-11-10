@@ -304,6 +304,13 @@ Get the user's go-ahead first, then do it:
   revision, copy it into `docs/s8/mappings/`.
 - In a validation record, write only what the user reported in that check. A
   passing unit test does not make a row checked on hardware.
+- Before an attended check that draws on the S8 panels, attach pictures of
+  what each step should show to the step's GitHub issue, and embed them in
+  the PR description. Three to five pictures are enough for a continuous
+  step. Make them from the bytes that will be sent, not from a second
+  rendering. A file path in backticks does not show a picture: embed it with
+  `![...](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/<path>)`.
+  For a PR that draws nothing on the panels, say so on the issue.
 - Stacked PRs with squash merges: merge the base PR first. Then rebase the
   child with `git rebase --onto origin/main <old base tip>` and push it with
   `--force-with-lease`.
