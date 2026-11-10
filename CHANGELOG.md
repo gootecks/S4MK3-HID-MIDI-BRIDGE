@@ -25,8 +25,17 @@ their detailed notes stay in `docs/release-*.md`.
   Gateway token supplied through fnox and 1Password.
 - `--device s4mk3|s8` chooses the controller; without it the bridge uses the
   one kind of supported controller that is connected. `--list` also reports a
-  connected Kontrol S8, and the bridge identifies its HID collections, but it
-  does not open or write to the S8 yet.
+  connected Kontrol S8.
+- `--device s8 --raw` reads the Kontrol S8 read-only and logs every verified
+  control: buttons, pads, touch caps, step encoders, faders, knobs,
+  touchstrips, crossfader assign switches and the eight screen encoders
+  (#12). The S8 descriptor corrections from the #10 capture live in
+  `src/device/s8.rs`; the bridge never writes to the S8, and `--midi` is
+  refused for it until a mapping catalog exists. `tests/s8_input.rs` replays
+  the captured reports through the decoder.
+- The Encdr dependency now points at `gootecks/Encdr` branch
+  `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
+  `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.
 - Device profiles (`src/device.rs`) hold each controller's USB identity, input
   report sizes, descriptor corrections, MIDI endpoint and mapping file name.
 - `examples/s8-passive-recorder.rs` records S8 HID input and every S8 MIDI
@@ -39,15 +48,19 @@ their detailed notes stay in `docs/release-*.md`.
   checklist at the S8: it stops NIHardwareAgent, stamps each row's label into
   the log and restores the agent.
 - 2026-11-09: attended S8 input capture completed (#10). All 191 checklist
-  rows were recorded with NIHardwareAgent stopped; raw logs stay local in
-  `target/s8-captures/` and the per-control results are in
+  rows were recorded with NIHardwareAgent stopped; the raw logs in
+  `target/s8-captures/` were later lost with the build cache, a recovered
+  copy of the reports is committed in `docs/s8/captures/`, and the
+  per-control results are in
   `docs/s8/input-capture.md`. Touch caps sit in report 1 as
   kontrol-s8-protocol lists them, not where Encdr places them; the
   touchstrips report position only, with no touch bit; channel faders and EQ
   LOW on C and D are 12-bit; the screen encoders wrap at 1000 and have no
   detents; crossfader assign is a three-position switch on two bits, and
-  Encdr has channels B and D swapped. Still unverified: screen encoder counts
-  per turn and the right deck fader 1 touch bit.
+  Encdr has channels B and D swapped. A re-check the same day measured the
+  screen encoders at 1000 counts per turn and confirmed the crossfader
+  assign positions against the panel. Still unverified: the right deck
+  fader 1 touch bit.
 - `docs/s8/driverkit-evaluation.md` evaluates DriverKit, USBDriverKit,
   HIDDriverKit, AudioDriverKit and MIDIDriverKit for native S8 support, with
   entitlement costs and polish steps that need no driver extension (#55).

@@ -55,14 +55,19 @@ this descriptor in several places:
 - Touch caps are in report 1 (bytes 10/11 left, 18/19 right), not report 2.
 - Touchstrips have no touch bit; position is 0 when released and 1–1024
   while touched.
-- Screen encoders wrap at 1000, not 65536.
+- Screen encoders wrap at 1000, not 65536, and one full turn is 1000 counts.
 - EQ LOW on channels C and D is 12-bit at bytes 95–96 and 105–106.
-- Crossfader assign is one three-position switch per channel, and channels
-  B and D are swapped in the descriptor.
+- Crossfader assign is one three-position switch per channel (left sets the
+  end bit, middle the middle bit, right neither), and channels B and D are
+  swapped in the descriptor.
 - Fader and knob full scale runs 4074–4095 depending on the control.
 
-Still open: counts per turn of the screen encoders and the right deck
-fader 1 touch bit.
+The bridge applies these corrections in `src/device/s8.rs` and decodes the S8
+read-only with `--device s8 --raw` (#12); `tests/s8_input.rs` replays the
+captured reports through that decoder.
+
+Still open: the right deck fader 1 touch bit, which never reported on this
+unit.
 
 ## LED output (interface 5, OUT `0x03`)
 
@@ -110,8 +115,12 @@ LEDs from the S4 path do not apply. The touchstrips replace the jog wheels
 
 ## Encdr pin
 
-The bridge pins RufusIbiza/Encdr `5d7a689` (2026-10-04). It already contains
-`ni_kontrol_s8.json`. The 49 later commits include the hidapi HID backend
-(`b87a283`), NI-service ownership gating (`fc9c730`), the S8 service screen
-route (`3698b09`) and a 7-line S8 descriptor addition. The bump decision is
-#11.
+The bridge pins `gootecks/Encdr` branch `pin/5d7a689-deviceid-default`
+(`8986302`): RufusIbiza/Encdr `5d7a689` (2026-10-04) plus a cherry-pick of
+upstream `675c70c`, which derives `Default` for `DeviceId`. The S8 descriptor
+corrections need that derive (#12). Nothing else differs from `5d7a689`, which
+already contains `ni_kontrol_s8.json`. The 49 later upstream commits include
+the hidapi HID backend (`b87a283`), NI-service ownership gating (`fc9c730`),
+the S8 service screen route (`3698b09`) and a 7-line S8 descriptor addition.
+The bump decision is #11; moving the pin back to an upstream release needs an
+attended S4 MK3 revalidation.

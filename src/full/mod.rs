@@ -1300,7 +1300,10 @@ mod tests {
         let original = registry
             .find(PROFILE.vendor_id, PROFILE.product_id)
             .context("S4 descriptor missing")?;
-        (PROFILE.descriptor.context("S4 corrections missing")?.full)(original)
+        (PROFILE
+            .descriptor
+            .full
+            .context("S4 full corrections missing")?)(original)
     }
 
     #[test]

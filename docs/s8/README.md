@@ -9,8 +9,8 @@ upstream pull request.
 | Area                | State                                                                 |
 | ------------------- | --------------------------------------------------------------------- |
 | S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
-| S8 detection        | Listed and identified by the bridge (`--device s8`); never opened.    |
-| S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). |
+| S8 detection        | Listed and identified by the bridge (`--device s8`). `--device s8 --raw` opens interface 5 read-only and never writes (#12). |
+| S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). The bridge applies those corrections and decodes every verified control in `--raw`; a fixture test replays the capture through the decoder (#12). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
 | S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Next: app-rendered library views (#48–#51), repeated frames (#43) and bridge transport (#44); see [screens.md](screens.md). |
@@ -40,15 +40,18 @@ repository and are in regular use for sets.
 
 ```mermaid
 flowchart LR
-  EU[RufusIbiza/Encdr] -->|git dependency, rev 5d7a689| BU[jtoronto/S4MK3-HID-MIDI-BRIDGE]
-  EU -->|fork| EF[gootecks/Encdr<br/>../Encdr, v0.8.4]
+  EU[RufusIbiza/Encdr] -->|fork| EF[gootecks/Encdr<br/>../Encdr, v0.8.4]
+  EF -->|git dependency, branch pin/5d7a689-deviceid-default<br/>5d7a689 + 675c70c| BF
+  EU -->|git dependency, rev 5d7a689| BU[jtoronto/S4MK3-HID-MIDI-BRIDGE]
   BU -->|fork| BF[gootecks/S4MK3-HID-MIDI-BRIDGE<br/>this repo]
   EF -.->|research, descriptor fixes| BF
 ```
 
-- The bridge depends on upstream Encdr by git revision, not on the gootecks
-  fork. Encdr changes needed for the S8 should become PRs to RufusIbiza/Encdr
-  before the bridge pins them.
+- Upstream's bridge depends on upstream Encdr by git revision. This fork
+  pins a gootecks/Encdr branch that is `5d7a689` plus one upstream commit
+  (`675c70c`, `Default` for `DeviceId`), needed by the S8 descriptor
+  corrections (#12). Other Encdr changes needed for the S8 should become PRs
+  to RufusIbiza/Encdr before the bridge pins them.
 - `../Encdr` holds S8 research: `encdr/descriptors/ni_kontrol_s8.json`,
   `docs/hardware/ni_kontrol_s8.md`, `docs/hardware/attempts/`,
   `s8_discovery/`, and the `examples/kontrol_s8/` probes.

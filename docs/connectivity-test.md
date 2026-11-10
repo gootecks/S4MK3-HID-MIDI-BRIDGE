@@ -6,8 +6,11 @@ MIDI, a Djay mapping, audio forwarding, screen rendering, or powered jog behavio
 ## Dependency and access boundaries
 
 Encdr 0.7.0 is pinned to commit
-`5d7a689ca5789161b3efd1b2049d7e54504fe881`. Cargo.lock records the resolved
-dependencies. Use `--locked` to reproduce them.
+`89863020c79358ff496227501544eb1e6bbcbad6` on the `gootecks/Encdr` branch
+`pin/5d7a689-deviceid-default`: upstream commit
+`5d7a689ca5789161b3efd1b2049d7e54504fe881` plus a cherry-pick of upstream
+`675c70c`, which derives `Default` for `DeviceId`. Cargo.lock records the
+resolved dependencies. Use `--locked` to reproduce them.
 
 The probe uses Encdr's descriptor registry, packet parser, and LED builder.
 It selects the S4 MK3 (`17cc:1720`) and opens its HID collection by path using
@@ -21,8 +24,8 @@ It selects the S4 MK3 (`17cc:1720`) and opens its HID collection by path using
 - No GPU context or WebView renderer is created. Encdr still depends on `wgpu`
   at compile time.
 
-This is not an Encdr fork. The descriptor-boundary test protects the permitted
-output reports.
+The pinned branch changes no Encdr behaviour. The descriptor-boundary test
+protects the permitted output reports.
 
 The original Encdr USB-worker attempt failed live with `0xe00002c5` (exclusive
 access). IORegistry showed interface 3 owned by `AppleUserUSBHostHIDDevice`, while
@@ -71,8 +74,17 @@ The bridge also recognises the Traktor Kontrol S8 (`17cc:1370`) and lists it as
 `S8_USB_FOUND`. `--device s4mk3` or `--device s8` limits the listing, and every
 other mode, to one controller. Without `--device`, the bridge picks the single
 kind of supported controller that is connected and stops with an error when
-there are none or both. The S8 is identification only: the bridge logs its HID
-collections as `S8_HID_IDENTIFIED`, then exits without opening or writing to it.
+there are none or both.
+
+S8 input is read-only. `--device s8 --raw --seconds 60` opens the S8's HID
+collection with shared access, applies the S8 descriptor corrections and logs
+every decoded control: `BUTTON`, `TOUCH`, `ENCODER`, `SLIDER` and
+`SCREEN_ENCODER` lines, with `HID_RAW` for each report. The S8 descriptor the
+bridge uses has no LED, screen or motor outputs, so the probe cannot write to
+the S8, and the final line reports `led_writes=0`. The S8 sends reports only
+when a control changes; a run in which nothing is touched ends with
+`no decoded S8 input received during the probe`. `--midi` is refused for the
+S8 until it has a Djay mapping catalog.
 
 ## Input and LED test
 

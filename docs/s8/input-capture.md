@@ -86,8 +86,13 @@ Attended capture for #10 with `mise run s8:input-capture`: `NIHardwareAgent`
 stopped, interface 5 opened shared and read-only by `examples/s8-input-diff`,
 nothing sent to the S8. All 191 rows of
 [capture-checklist.md](capture-checklist.md) were stamped across five runs;
-where a row was stamped more than once, its last run counts. Raw logs stay in
-`target/s8-captures/` and are not committed.
+where a row was stamped more than once, its last run counts. The raw logs
+were kept in `target/s8-captures/` and were lost on 2026-11-09 when the build
+cache was garbage-collected. A copy of the reports recovered from the analysis
+session is committed in
+[captures/2026-11-09-input-capture](captures/2026-11-09-input-capture/README.md),
+alongside the reduced fixture described under
+[Decoder fixture](#decoder-fixture-12). Keep capture logs outside `target/`.
 
 Offsets in this section **include the report ID**, as the recorder prints
 them: `r1` is report 1 (41 bytes), `r2` is report 2 (109 bytes). Multi-byte
@@ -105,9 +110,9 @@ fields are little-endian.
 - **EQ LOW on channels C and D** is 12-bit at `r2 [95..96]` and
   `r2 [105..106]`, like every other mixer knob.
 - **Screen encoders** hold a position from 0 to 999 that wraps, in two bytes
-  each at `r2 [1..16]`. Clockwise counts up. They have no detents. Counts per
-  turn are **Unverified**: a turn judged by hand gave 1226–1728 counts and a
-  quarter turn 105–357.
+  each at `r2 [1..16]`. Clockwise counts up. They have no detents. One full
+  turn is 1000 counts, so the value is the angle within one revolution; see
+  [Screen encoder counts per turn](#screen-encoder-counts-per-turn).
 - **Browse, loop and tempo encoders** step a 4-bit counter by one per click,
   up when turned clockwise, on all five encoders.
 - **Touch caps** report in report 1 at the kontrol-s8-protocol locations:
@@ -119,17 +124,18 @@ fields are little-endian.
   separate touch bit. The bit kontrol-s8-protocol calls touch
   (`[29]` / `[35]` mask `0x01`) is bit 8 of the position.
 - **Crossfader assign** is a three-position switch per channel in `r1 [24]`.
-  One end sets one bit, the middle sets another and the other end clears
-  both. Moves went end ↔ middle ↔ other end with each position held for a
-  second or more. By row order the end that sets a bit is the left position;
-  that naming is inferred, not checked against the panel.
+  The left position sets the end bit, the middle sets the middle bit and the
+  right position clears both. Moves went end ↔ middle ↔ other end with each
+  position held for a second or more. The left/middle/right naming was
+  checked against the panel on channels A, B, C and D in the 2026-11-09
+  re-check.
 
-  | Channel | End bit | Middle bit | Other end |
-  | ------- | ------- | ---------- | --------- |
-  | A       | `0x20`  | `0x10`     | neither   |
-  | B       | `0x01`  | `0x02`     | neither   |
-  | C       | `0x80`  | `0x40`     | neither   |
-  | D       | `0x04`  | `0x08`     | neither   |
+  | Channel | Left (end bit) | Middle bit | Right   |
+  | ------- | -------------- | ---------- | ------- |
+  | A       | `0x20`         | `0x10`     | neither |
+  | B       | `0x01`         | `0x02`     | neither |
+  | C       | `0x80`         | `0x40`     | neither |
+  | D       | `0x04`         | `0x08`     | neither |
 
   A repeat of the channel B rows gave the same bits.
 - **Latches:** the S8 keeps a toggle state for CUE (`r1 [39]` masks
@@ -139,6 +145,88 @@ fields are little-endian.
 - **Counters:** `r1 [26..27]` and `r1 [32..33]` are 16-bit counters that
   change on every report; the second is always the first minus one. Ignore
   them for control decoding.
+
+### Screen encoder counts per turn
+
+Re-check on 2026-11-09 after the capture, same read-only setup. A tape mark
+on the knob counted whole turns; position deltas were summed modulo 1000.
+
+| Encoder | Turns         | Summed counts | Counts per turn |
+| ------- | ------------- | ------------- | --------------- |
+| Left 1  | 10 slow, CW   | +9999         | 999.9           |
+| Left 1  | 10 slow, CCW  | −9985         | 998.5           |
+| Right 1 | 10 slow, CW   | +10044        | 1004.4          |
+| Left 1  | 10 fast, CW   | +10040        | 1004.0          |
+
+One turn is 1000 counts, independent of speed and direction. An earlier fast
+run that summed to +10982 was 11 turns, not 10. The other six screen encoders
+were not counted turn by turn. The re-check logs were lost with the capture
+logs; these totals were read from them before the loss.
+
+The same re-check left the right deck fader 1 touch bit **Unverified**: no
+report arrived on touching that fader in two sessions while fader 2 reported
+normally. A dead touch cap on this unit is suspected, not shown.
+
+### Decoder fixture (#12)
+
+`tests/fixtures/s8-input-reports.jsonl` holds a reduced copy of the capture:
+one line per checklist row plus 24 screen-encoder sub-steps, 215 lines and
+1049 reports in total. `tests/s8_input.rs` replays every line through the
+bridge's real decoder and compares the decoded events, and checks that every
+verified control in the tables below appears.
+
+How each row was reduced:
+
+- Each line starts with a base report per report ID. The first report of an
+  ID only sets the resting state and produces no events.
+- Buttons, pads, touch caps, switches and step encoders keep every report 1
+  in which a digital field changed.
+- Faders and knobs keep the reports at the lowest and highest value of the
+  sweep.
+- Touchstrips keep the base report, the first touched report, the highest
+  position and the return to 0.
+- Expected events are sorted within each report, so the test does not depend
+  on the order the decoder emits fields of one report.
+
+The right deck fader 1 touch bit is left out of the verified set.
+
+### Live `--raw` check (#12)
+
+Attended on 2026-11-10 with `NIHardwareAgent` stopped, in two runs of
+`cargo run --locked -- --device s8 --raw`, each stopped with Ctrl-C: the
+main run at 06:21 UTC (86 seconds, 391 reports) and a second run at 06:29 UTC
+for the right BROWSE encoder (29 seconds, 112 reports). Both logs are in
+[captures/2026-11-09-input-capture](captures/2026-11-09-input-capture/README.md).
+
+| Control moved                     | Decoded as                                                        | Result   |
+| --------------------------------- | ----------------------------------------------------------------- | -------- |
+| Left PLAY, 2 presses              | `left_play` pressed / released, `r1 [9] 0x10`                     | Correct  |
+| Channel A volume fader            | `mixer_fader_a`, 152 values from 0.002 to 0.996                   | Correct  |
+| Crossfader assign A, left         | `xfader_assign_left_a` on, `xfader_assign_middle_a` off           | Correct  |
+| Crossfader assign A, right        | both off                                                          | Correct  |
+| Crossfader assign A, middle       | `xfader_assign_middle_a` on                                       | Correct  |
+| Channel A mixer CUE               | `mixer_cue_a` pressed / released, `mixer_cue_a_latch` on          | Correct  |
+| Left display side button          | `left_screen_left_2` pressed / released, `r1 [4] 0x10`            | Correct  |
+| Left screen encoder 1             | `left_screen_encoder_touch_1` and 132 `left_screen_encoder_1` turns | Correct  |
+| Left touchstrip                   | `left_touchstrip` 0 to 1.0 and back, `left_touchstrip_touch`      | Correct  |
+| Right LOOP encoder                | `right_loop_encoder_touch`, `right_loop_encoder` +1 × 6, `right_loop_encoder_press` | Correct  |
+| Right BROWSE encoder (second run) | `right_browse_encoder_touch`, `right_browse_encoder` +1 × 10 then −1 × 11, `right_browse_encoder_press` twice | Correct  |
+| Right pad                         | `right_pad_1` pressed / released, `r1 [16] 0x08`                  | Correct  |
+
+- The main run moved the right LOOP encoder where the list asked for BROWSE
+  (`r1 [18] 0x01`, `r1 [2]` low nibble, `r1 [15] 0x10`). The second run
+  moved BROWSE: touch at `r1 [18] 0x20`, turns in the `r1 [2]` high nibble,
+  clockwise counting up, and push at `r1 [12] 0x08`. Both match the table
+  below.
+- The first report of each ID is logged as events: the four crossfader assign
+  switches resting in the middle, the CUE latches that were on and every
+  fader and knob position appear once at the start. They are resting state,
+  not presses. A Djay mapping must not treat them as presses (#13).
+- The run was stopped with Ctrl-C through a pipe and the closing summary line
+  was not captured. `led_writes=0` was seen in the earlier unattended run; the
+  S8 descriptor has no output reports to write.
+- Controls not in the table were not exercised live; the fixture test covers
+  them.
 
 ### Left deck
 
