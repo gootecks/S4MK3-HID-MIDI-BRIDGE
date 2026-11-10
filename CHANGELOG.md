@@ -12,6 +12,14 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- `S8Host --screens` shows djay Pro's sidebar on both Kontrol S8 panels and
+  keeps it current: the list of the open tab on the left, the selected
+  track on the right, or one deck with `--deck N`
+  ([panel-views.md](docs/s8/panel-views.md), #27). Stopping it leaves the
+  panels black. Not yet checked on the S8.
+- `mise run s8:panel-views-images` makes the expected pictures of those
+  views from recorded snapshots, and `mise run s8:panel-views` runs the
+  attended check on the S8 (#27); the check sends screen frames to the S8.
 - `--app-events` (Kontrol S8 only) prints the display buttons 2, 3 and 5-8
   and the screen encoders as `S8_CONTROL` lines on stdout. The `S8Host`
   macOS tool runs the bridge and uses them to switch djay Pro's sidebar tabs
