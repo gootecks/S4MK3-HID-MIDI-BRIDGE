@@ -38,6 +38,9 @@ their detailed notes stay in `docs/release-*.md`.
   agent-stopped capture (#10). `mise run s8:input-capture` walks that
   checklist at the S8: it stops NIHardwareAgent, stamps each row's label into
   the log and restores the agent.
+- `docs/s8/driverkit-evaluation.md` evaluates DriverKit, USBDriverKit,
+  HIDDriverKit, AudioDriverKit and MIDIDriverKit for native S8 support, with
+  entitlement costs and polish steps that need no driver extension (#55).
 - S8 screen phase 0 (#32): `mise run s8:agent-stop` stops NIHardwareAgent,
   asks for presses at the S8 and restores the agent. Result in
   `docs/s8/agent-stop-validation.md`: S8 MIDI needs the agent, so driving
