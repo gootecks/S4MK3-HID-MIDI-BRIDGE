@@ -135,6 +135,12 @@ their detailed notes stay in `docs/release-*.md`.
   a dry run that decodes the frames it would send into PNGs;
   `mise run s8:phase5-images` regenerates or checks the expected pictures in
   `docs/s8/images/phase5/`.
+- `--s8-screens-stdin` (Kontrol S8 only, needs `--midi`): the bridge reads
+  RGB565 frame records for each panel from stdin, sends them to the S8
+  screens with a latest-wins slot per panel and a provisional 30 frames per
+  second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
+  in `docs/s8/screen-transport.md`; tested with a fake transport only, not
+  on hardware (#44).
 
 ### Changed
 
