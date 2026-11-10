@@ -172,7 +172,8 @@ The working tree is shared and can contain user edits and unfinished work.
 
 - Read files before editing; preserve changes you did not make.
 - Use `apply_patch` for source and documentation edits.
-- Never commit, push, rewrite history, or discard changes unless requested.
+- Never rewrite history or discard changes unless requested. Commit and push
+  only as *Approvals* in the fork section allows.
 - Preserve user-edited Djay mappings under their existing names.
 - Keep generated bundles, local capture logs, and large packet captures out
   of commits.
@@ -219,3 +220,90 @@ This section is fork-only. Keep it out of upstream pull requests.
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
   not reformat upstream Swift. Regenerate the baseline only for deliberately
   accepted violations (`mise run lint:swift:baseline`).
+
+### S8 code and commands
+
+- `src/device.rs`, `src/device/s4mk3.rs`, `src/device/s8.rs`: device
+  profiles, and the S8 corrections to the pinned Encdr descriptor.
+- `src/s8/catalog.rs`: every S8 MIDI address and Djay action. The mapping
+  generator and the translator both read it; change an address there only.
+- `src/s8/mapping.rs`: generated `Kontrol S8 Bridge.djayMidiMapping`.
+- `src/s8/translator/`: S8 input events to the catalog's MIDI messages.
+- `src/s8/strip.rs`: touchstrip position and ownership of one touch.
+- `src/s8/bridge.rs`: the `--device s8 --midi full` loop. It writes nothing
+  to the S8.
+- `tests/s8_input.rs`: replays captured reports through the decoder.
+- `docs/s8/mappings/`: frozen copies of mappings checked on the S8.
+
+Read before changing S8 behaviour: `docs/s8/mapping.md`,
+`docs/s8/input-capture.md`, `docs/s8/translator-validation.md` and
+`docs/s8/hardware-notes.md`.
+
+- `mise run s8:raw [seconds]`: read-only log of every control change.
+- `mise run s8:midi`: stops NIHardwareAgent, runs the bridge until Ctrl-C,
+  restores the agent. The log goes to `docs/s8/captures/translator-<UTC>/`.
+- `cargo run --locked -- --device s8 --generate-mapping <dir>`: writes the
+  mapping; it does not overwrite an existing file.
+- `cargo test --locked translator`: translator tests. Run the full suite with
+  no bridge process running.
+
+### Approvals
+
+These rules cover the named actions only. Do not extend them to similar
+actions.
+
+No go-ahead needed:
+
+- Creating issues, issue comments, board moves and branches from `main`.
+- On a `type/N-description` branch: committing, pushing, and opening or
+  updating its PR. After a rebase, pushing that branch with
+  `--force-with-lease`.
+- Reading S8 HID input, `mise run s8:raw`, and generating a mapping under a
+  new file name.
+- Repeating a read-only command or a check that failed.
+
+Get the user's go-ahead first, then do it:
+
+- Merging a PR.
+- Sending anything to the S8 (see *S8 hardware* above).
+- Stopping NIHardwareAgent, which `mise run s8:midi` does. Djay then gets no
+  MIDI from the Controller Editor setup until the agent is restored.
+- Overwriting, renaming or deleting a file in `~/Music/djay/MIDI Mappings/`.
+- Rewriting history on `main`, and discarding uncommitted changes you did not
+  make.
+- Opening an issue or PR on an upstream repository.
+
+### Code ownership
+
+- The S8 code and notes are this fork's own: `src/s8/`, `src/device/s8.rs`,
+  `tests/s8_input.rs`, `docs/s8/` and the S8 tasks in `mise.toml`. What they
+  are for and how they are built is our call, and we keep building on them.
+  Merge repeated code, fix nearby problems and restructure when that makes
+  the next change simpler. Name each such change in the PR description.
+- Everything else is upstream's code. Change it as little as possible and
+  only where the S8 needs it, so that merges from upstream stay simple and
+  S4 MK3 behaviour stays the same.
+
+### Working rules from S8 sessions
+
+- The S8 has no jog wheels. Skip jog, platter and motor items that come from
+  S4 MK3 documents.
+- Write capture logs under `docs/s8/captures/<name>/`, never under `target/`:
+  a capture was lost with the build cache. `*.log` is ignored globally, so
+  commit a capture as `.log.gz`.
+- For an attended check, install the mapping as
+  `Kontrol S8 Bridge rN.djayMidiMapping` with the next N. Do not overwrite an
+  installed revision; Djay may have it selected. When the user confirms a
+  revision, copy it into `docs/s8/mappings/`.
+- In a validation record, write only what the user reported in that check. A
+  passing unit test does not make a row checked on hardware.
+- Stacked PRs with squash merges: merge the base PR first. Then rebase the
+  child with `git rebase --onto origin/main <old base tip>` and push it with
+  `--force-with-lease`.
+- Before removing a worktree, move its ignored capture logs out. Removing the
+  worktree deletes them.
+- Keep the branch `pin/5d7a689-deviceid-default` in gootecks/Encdr.
+  `Cargo.toml` pins a commit on it by revision, and the branch keeps that
+  commit available.
+- `apply_patch` in *Workspace discipline* names upstream's edit tool. Use the
+  edit tool of your own harness.
