@@ -24,8 +24,8 @@ their detailed notes stay in `docs/release-*.md`.
 - `S8Preview --stream left=N,right=M` writes the live djay deck pages as
   screen records for the bridge's `--s8-screens-stdin`, and
   `mise run s8:deck-page` runs the attended check of those pages on the S8
-  panels ([plan and record](docs/s8/deck-pages.md), #85). Run once on the S8
-  for decks 1 and 2; the Four Decks step is not yet run.
+  panels ([plan and record](docs/s8/deck-pages.md), #85). Run on the S8 for
+  decks 1 and 2 and, in Four Decks, for decks 3 and 4.
 - Kontrol S8 project notes in `docs/s8/`: status, hardware evidence, S4 MK3
   coupling audit and the upstream contribution workflow.
 - Pinned mise tooling with named tasks for the existing Rust, Swift and
