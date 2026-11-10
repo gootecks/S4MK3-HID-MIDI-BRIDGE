@@ -193,8 +193,8 @@ their detailed notes stay in `docs/release-*.md`.
 - The deck page time no longer runs up to 1 s ahead of djay and no longer
   steps back on pause. A deck at the start of its track shows 0:00. djay
   shows whole seconds, and the page now keeps its time inside the second
-  djay shows. Checked by replaying a recorded djay session, not yet seen on
-  the S8. The time still stands until playback is confirmed and then moves
+  djay shows. Checked by replaying a recorded djay session and in one run
+  on the S8. The time still stands until playback is confirmed and then moves
   forward once by less than 1 s (#83, #87).
 
 ## [0.2.1-beta.1] - 2026-10-26
