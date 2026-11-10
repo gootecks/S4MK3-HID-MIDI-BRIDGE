@@ -10,6 +10,10 @@ public struct PlayStateDebouncer {
         self.threshold = threshold
     }
 
+    public var activeSince: Date? {
+        rawState ? lastRawChangeTime : nil
+    }
+
     public mutating func update(isPlaying: Bool, now: Date = Date()) -> Bool {
         if isPlaying != rawState {
             rawState = isPlaying

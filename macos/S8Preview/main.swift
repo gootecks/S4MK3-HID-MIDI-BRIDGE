@@ -170,7 +170,7 @@ if let path = options.deckSnapshot {
     }
 } else if let deck = options.deck {
     let live = LiveDeckFeed(deck: deck)
-    live.settle(polls: 3, interval: 0.3)
+    live.settle(polls: 4, interval: 0.3)
     deckFeed = live
 }
 
