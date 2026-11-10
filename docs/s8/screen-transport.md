@@ -175,14 +175,14 @@ Checked on the S8 through this channel on 2026-11-10
 - The last frame staying while stdin is open and idle.
 - Black panels after the exit frames when stdin closes, and after a
   `failed` stop from a bad record.
+- Ctrl-C of the bridge while it streams: exit frame, `inactive`, exit
+  status 0. The first attempt aborted with status 134 and led to a fix
+  ([record](screen-transport-validation.md#ctrl-c-while-streaming)).
 
 Not validated on hardware (only a device can confirm):
 
-- Ctrl-C of the bridge while it streams. The attended step failed: exit
-  status 134 and no `inactive`
-  ([record](screen-transport-validation.md#failed-ctrl-c-while-streaming)).
-  The cause is fixed and covered by tests, and the step has not been run on
-  the S8 since.
+- A stop because the reader of stdout is gone. Tests cover it; the passing
+  Ctrl-C run kept its reader.
 - What the panels show when the bridge is killed while it streams. The
   example tool killed mid-stream left the S8's startup screens on both
   panels.

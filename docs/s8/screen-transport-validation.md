@@ -2,7 +2,7 @@
 
 The check of `--s8-screens-stdin` on the S8, as planned in
 [screen-transport.md](screen-transport.md#attended-check). It ran on
-2026-11-10 in three runs of `mise run s8:screen-transport`, with the user at
+2026-11-10 in four runs of `mise run s8:screen-transport`, with the user at
 the S8, djay Pro and Controller Editor open and NIHardwareAgent stopped by
 the runner. Each step ran
 `s8-screen-feed | bridge --device s8 --midi full --s8-screens-stdin --until-stopped`
@@ -13,6 +13,7 @@ from a release build.
 | 1 | [captures/screen-transport-20261110T162556Z](captures/screen-transport-20261110T162556Z/) | a, b, c (c not judged) |
 | 2 | [captures/screen-transport-20261110T163759Z](captures/screen-transport-20261110T163759Z/) | c to i, started with the first-step argument |
 | 3 | [captures/screen-transport-20261110T164659Z](captures/screen-transport-20261110T164659Z/) | i again |
+| 4 | [captures/screen-transport-20261110T170222Z](captures/screen-transport-20261110T170222Z/) | i with the fix |
 
 Per step the capture holds the record hashes of the dry run (`.dry`), the
 bridge output (`.txt`) and the feeder's stderr (`.feeder.txt`); `notes.txt`
@@ -35,6 +36,7 @@ answer to the runner's question, unchanged. No photos were taken.
 | h-bad-record | left, 10 fps, 20 frames, then 12 bytes that are no record, hold 5 s | pending, active, `failed bad record magic [4e, 4f, 50, 45]` | 0, 7 s | left panel counted to 19, then went black at once; the bridge kept running until the 5 s hold ended | "y" |
 | i-ctrl-c, run 2 | left, 10 fps, 600 frames (60 s), Ctrl-C asked after 5 s or more | pending, active, inactive | 0, 60 s | the bar was moving; after Ctrl-C the left panel went black and the bridge exited | "y" |
 | i-ctrl-c, run 3 | the same | pending, active | 134, 12 s | not asked: the runner stopped on the status order | – |
+| i-ctrl-c, run 4 | the same, with the fix | pending, active, inactive | 0, 13 s | the same | "S8_SCREEN_STATUS inactive. the bar was moving, after ctrl-c, the left panel went black and the bridge exited. right panel still shows Controller Editor labels" |
 
 After the steps, in runs 1 and 2:
 
@@ -54,10 +56,12 @@ After the steps, in runs 1 and 2:
   exits with status 0.
 - A bad record ends the stream with a `failed` status line that names the
   reason, the panel goes black, and the bridge keeps running.
+- Ctrl-C while the bridge streams sends the exit frame, releases the
+  interface and ends the bridge with `inactive` and status 0 (run 4).
 - Every step that claimed interface 6 released it: the next step claimed it
   again, and NIHardwareAgent drew its labels after recovery.
 
-## Failed: Ctrl-C while streaming
+## Ctrl-C while streaming
 
 - **Run 2.** The bridge log runs from 16:40:16 to 16:41:16 and the feeder
   wrote all 600 records, so the bridge ended when stdin closed after 60 s,
@@ -79,12 +83,18 @@ After the steps, in runs 1 and 2:
   before that. Reproduced without the S8, with the worker on a fake
   transport and both streams closed: exit status 134. The chain through the
   real binary is inferred from that, not observed.
-- Fix, not yet run on the S8. The bridge writes status and `S8_CONTROL`
-  lines without panicking and stops cleanly when their reader is gone, log
-  lines to a closed stdout are dropped, and a panic in the status callback
-  can no longer skip the exit frames or the release. The runner starts
-  `tee` with `-i` so that the log outlives Ctrl-C. Step i has to be run
-  again: `mise run s8:screen-transport i-ctrl-c`.
+- Fix. The bridge writes status and `S8_CONTROL` lines without panicking
+  and stops cleanly when their reader is gone, log lines to a closed stdout
+  are dropped, and a panic in the status callback can no longer skip the
+  exit frames or the release. The runner starts `tee` with `-i` so that the
+  log outlives Ctrl-C.
+- **Run 4**, with the fix. Ctrl-C about 13 s in: exit status 0, `pending`,
+  `active`, `inactive`, and the closing log line is in the capture. The
+  answer was a description, not "y", so the runner stopped there and went
+  to recovery. With the bridge gone: "black on the left, Controller Editor
+  labels on the right display". After recovery: "Controller Editor labels",
+  and Djay reacted to left PLAY. The runner's `tee` was still there, so
+  this run does not exercise the closed stdout; that path has tests only.
 
 ## Not settled
 
