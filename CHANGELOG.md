@@ -141,6 +141,11 @@ their detailed notes stay in `docs/release-*.md`.
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
   in `docs/s8/screen-transport.md`; tested with a fake transport only, not
   on hardware (#44).
+- `examples/s8-screen-feed.rs` writes `S8FR` records of the phase 5 test
+  pattern to stdout (`--dry-run` touches nothing), and `mise run
+  s8:screen-transport` runs the planned attended check of the screen
+  channel against the S8. The plan with expected pictures is in
+  `docs/s8/screen-transport.md`; not run yet (#44).
 
 ### Changed
 
