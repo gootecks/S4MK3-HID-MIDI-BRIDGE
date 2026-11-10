@@ -6,6 +6,7 @@ mod input;
 mod midi;
 #[path = "jog_diagnostic/ownership.rs"]
 mod ownership;
+mod s8;
 mod screens_control;
 
 use std::num::NonZeroU64;
@@ -149,8 +150,14 @@ fn main() -> anyhow::Result<()> {
 
     if let Some(path) = &args.generate_mapping {
         let profile = args.device.unwrap_or(Device::S4Mk3).profile();
-        require_full_catalog(profile)?;
         let path = &mapping_path(path, profile);
+        if profile.device == Device::S8 {
+            ensure!(
+                args.jog_config.is_none(),
+                "--jog-config applies to the S4 MK3 mapping only"
+            );
+            return s8::export_mapping(path);
+        }
         full::mapping::write(path, args.jog_config.as_deref())?;
         for control in full::catalog::LOCAL_CONTROLS {
             info!(
@@ -211,7 +218,7 @@ fn open_and_run(
     }
     let (profile, device) = select_device(args.device, &scanned)?;
     if args.midi.is_some() {
-        require_full_catalog(profile)?;
+        require_translator(profile)?;
     }
     let descriptor = if matches!(args.midi, Some(MidiProfile::Full)) {
         let full = profile
@@ -326,10 +333,10 @@ fn mapping_path(path: &std::path::Path, profile: &DeviceProfile) -> PathBuf {
     }
 }
 
-fn require_full_catalog(profile: &DeviceProfile) -> anyhow::Result<()> {
+fn require_translator(profile: &DeviceProfile) -> anyhow::Result<()> {
     ensure!(
         profile.device == full::PROFILE.device,
-        "no Djay mapping catalog for {} yet",
+        "no MIDI translator for {} yet",
         profile.name
     );
     Ok(())
@@ -619,9 +626,9 @@ mod tests {
     }
 
     #[test]
-    fn device_choice_parses_and_only_the_s4_has_a_djay_catalog() -> anyhow::Result<()> {
+    fn device_choice_parses_and_only_the_s4_has_a_midi_translator() -> anyhow::Result<()> {
         // Given each forced controller, for runtime and mapping export.
-        for (name, device, has_catalog) in
+        for (name, device, has_translator) in
             [("s4mk3", Device::S4Mk3, true), ("s8", Device::S8, false)]
         {
             let args = Args::try_parse_from(["probe", "--device", name, "--list"])?;
@@ -633,9 +640,9 @@ mod tests {
                 "--device",
                 name,
             ])?;
-            // Then only a controller with a catalog may export or run the full profile.
+            // Then both controllers may export, but only a translated one runs MIDI.
             let device = export.device.context("device missing")?;
-            assert_eq!(require_full_catalog(device.profile()).is_ok(), has_catalog);
+            assert_eq!(require_translator(device.profile()).is_ok(), has_translator);
         }
         // Screen previews are S4 artwork, independent of any controller choice.
         assert!(
