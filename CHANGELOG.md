@@ -29,6 +29,9 @@ their detailed notes stay in `docs/release-*.md`.
   Swift files added by the fork.
 - Communiqué release-note and changelog tasks for this fork, with the LLM
   Gateway token supplied through fnox and 1Password.
+- Deck page for the Kontrol S8 screens: `DjayDecks` reads deck state from
+  djay through Accessibility and the analysis cache, and `S8Preview --deck N`
+  renders it. Nothing is sent to the S8 yet.
 - `--device s4mk3|s8` chooses the controller; without it the bridge uses the
   one kind of supported controller that is connected. `--list` also reports a
   connected Kontrol S8.
