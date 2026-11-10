@@ -217,17 +217,12 @@ fn open_and_run(
         return Ok(());
     }
     let (profile, device) = select_device(args.device, &scanned)?;
-    if args.midi.is_some() {
-        require_translator(profile)?;
+    if args.midi.is_some() && profile.device == Device::S8 {
+        s8::bridge::check_args(args)?;
     }
-    let descriptor = if matches!(args.midi, Some(MidiProfile::Full)) {
-        let full = profile
-            .descriptor
-            .full
-            .context("full MIDI corrections missing")?;
-        full(&device.descriptor)?
-    } else {
-        (profile.descriptor.control)(&device.descriptor)
+    let descriptor = match profile.descriptor.full {
+        Some(full) if matches!(args.midi, Some(MidiProfile::Full)) => full(&device.descriptor)?,
+        _ => (profile.descriptor.control)(&device.descriptor),
     };
     let names = registry.intern_descriptor_names(&descriptor);
     let mut parser = PacketParser::new(device.device_id, &descriptor, names);
@@ -247,6 +242,9 @@ fn open_and_run(
     let hid = api
         .open_path(collection.path())
         .with_context(|| format!("open {} HID collection", profile.tag))?;
+    if args.midi.is_some() && profile.device == Device::S8 {
+        return s8::bridge::run(args, &hid, &mut parser);
+    }
     let tension = tension
         .map(|config| {
             api.open_path(collection.path())
@@ -331,15 +329,6 @@ fn mapping_path(path: &std::path::Path, profile: &DeviceProfile) -> PathBuf {
     } else {
         path.to_path_buf()
     }
-}
-
-fn require_translator(profile: &DeviceProfile) -> anyhow::Result<()> {
-    ensure!(
-        profile.device == full::PROFILE.device,
-        "no MIDI translator for {} yet",
-        profile.name
-    );
-    Ok(())
 }
 
 fn run_probe(
@@ -626,11 +615,9 @@ mod tests {
     }
 
     #[test]
-    fn device_choice_parses_and_only_the_s4_has_a_midi_translator() -> anyhow::Result<()> {
+    fn device_choice_parses_and_the_s8_runs_the_full_profile_alone() -> anyhow::Result<()> {
         // Given each forced controller, for runtime and mapping export.
-        for (name, device, has_translator) in
-            [("s4mk3", Device::S4Mk3, true), ("s8", Device::S8, false)]
-        {
+        for (name, device) in [("s4mk3", Device::S4Mk3), ("s8", Device::S8)] {
             let args = Args::try_parse_from(["probe", "--device", name, "--list"])?;
             assert_eq!(args.device, Some(device));
             let export = Args::try_parse_from([
@@ -640,9 +627,31 @@ mod tests {
                 "--device",
                 name,
             ])?;
-            // Then both controllers may export, but only a translated one runs MIDI.
-            let device = export.device.context("device missing")?;
-            assert_eq!(require_translator(device.profile()).is_ok(), has_translator);
+            assert_eq!(export.device, Some(device));
+        }
+        // The S8 translator serves the full profile and drives no S4 outputs.
+        for (arguments, accepted) in [
+            (&["probe", "--device", "s8", "--midi", "full"][..], true),
+            (&["probe", "--device", "s8", "--midi"][..], false),
+            (
+                &["probe", "--device", "s8", "--midi", "full", "--screens"][..],
+                false,
+            ),
+            (
+                &[
+                    "probe",
+                    "--device",
+                    "s8",
+                    "--midi",
+                    "full",
+                    "--jog-config",
+                    "jog.json",
+                ][..],
+                false,
+            ),
+        ] {
+            let args = Args::try_parse_from(arguments)?;
+            assert_eq!(s8::bridge::check_args(&args).is_ok(), accepted);
         }
         // Screen previews are S4 artwork, independent of any controller choice.
         assert!(
