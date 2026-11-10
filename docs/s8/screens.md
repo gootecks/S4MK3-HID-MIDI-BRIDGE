@@ -300,6 +300,44 @@ and the panel state after exit and after recovery.
 
 Record in a validation file under `docs/s8/`, not in this plan.
 
+## Frame rate limit and ways past it
+
+Phase 5 found a byte rate, not a frame rate: about 15.7 MB per second on
+bulk OUT `0x04`, whatever the frame size
+([screen-stream-validation.md](screen-stream-validation.md)). A full
+uncompressed panel is 261,148 bytes and takes 16.6 ms, which gives 60 full
+frames per second in total, or 30 on each of two panels.
+
+What does and does not set the limit:
+
+- **Not the picture.** Full frames are uncompressed, so every one has the
+  same size and takes the same time whatever it shows.
+- **Not a panel refresh.** Smaller frames took proportionally less time
+  (160×80 in 1.7 ms, half a panel in 8.2 ms).
+- **Not the bus speed as such.** The S8 was linked at High Speed
+  (480 Mbit/s); 15.7 MB per second is about a quarter of that.
+- **Open: the S8 or the hubs.** In the run the S8 sat behind two hubs of a
+  dock on an M4 Mac mini, sharing the second hub with a keyboard.
+  [INFERENCE] The S8's own controller sets the rate; hubs do not normally
+  cost that much. Untested.
+- **Qt and QML are not a faster route.** [INFERENCE] From general knowledge
+  of these screens, not from our captures: the S8 runs no Qt. Traktor draws
+  its QML on the computer and sends pixels over this same endpoint, so a
+  QML mod changes what is drawn, not how fast it travels.
+
+To revisit later:
+
+1. **Direct-port test.** Plug the S8 into a port of the Mac itself and send
+   one burst (`s8-screen-frame burst`, 120 frames, 2 s). A median well under
+   16.6 ms means the dock was the limit. This sends to the S8 and needs
+   approval.
+2. **Send fewer bytes.** The format has run-length (REPEAT), SKIP and
+   sub-rectangle frames, all confirmed on the S8. Library views are mostly
+   static text, so sending only changed rows would cost a millisecond or two
+   per update. The bridge sends full frames only; it does not do this yet.
+
+Until then the bridge keeps its cap of 30 frames per second per panel.
+
 ## Still open after this plan
 
 - Input-to-panel latency, rates above 60 frames per second, partial updates
