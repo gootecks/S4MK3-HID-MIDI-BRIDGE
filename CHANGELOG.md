@@ -47,7 +47,9 @@ their detailed notes stay in `docs/release-*.md`.
   targets, FILTER ON, crossfader assign and the touchstrips. It writes
   nothing to the S8 and has no LED or screen feedback. No control is checked
   on hardware yet; `docs/s8/translator-validation.md` holds the attended
-  check. The first control moved after start only synchronises positions.
+  check, and `mise run s8:midi` runs it: it stops NIHardwareAgent, runs the
+  bridge until Ctrl-C and restores the agent. The first control moved after
+  start only synchronises positions.
 - The Encdr dependency now points at `gootecks/Encdr` branch
   `pin/5d7a689-deviceid-default`: the previous pin `5d7a689` plus upstream
   `675c70c` (`Default` for `DeviceId`), which the S8 corrections need.
