@@ -1,0 +1,4 @@
+0.025 claimed interface 6; partial-rect
+0.0s stage 1/1: one frame to the left panel
+{"bytes":25628,"dry_run":false,"elapsed_s":0.001733333,"error":null,"frames_sent":1,"late":0,"panels":{"left":{"frames":1,"rate":576.9231878698438,"transfer_ms":{"max":1.7275420000000001,"median":1.7275420000000001,"min":1.7275420000000001,"p95":1.7275420000000001}}},"params":{"panel":"left"},"stage":0,"step":"partial-rect","stopped":null}
+0.027 released

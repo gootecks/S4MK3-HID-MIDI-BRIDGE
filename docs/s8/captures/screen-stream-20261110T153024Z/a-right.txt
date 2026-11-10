@@ -1,0 +1,10 @@
+0.034 claimed interface 6; stream
+0.0s stage 1/4: 10 frames/s per panel, right
+{"bytes":13057400,"dry_run":false,"elapsed_s":4.921296791,"error":null,"frames_sent":50,"late":0,"panels":{"right":{"frames":50,"rate":10.159923719991713,"transfer_ms":{"max":16.29725,"median":16.190104,"min":16.119999999999997,"p95":16.282958}}},"params":{"panels":["right"],"rate_per_panel":10,"seconds":5,"swap_rb":false},"stage":0,"step":"stream","stopped":null}
+6.9s stage 2/4: 20 frames/s per panel, right
+{"bytes":26114800,"dry_run":false,"elapsed_s":4.9669307499999995,"error":null,"frames_sent":100,"late":0,"panels":{"right":{"frames":100,"rate":20.13315768495464,"transfer_ms":{"max":16.304125,"median":16.192646,"min":16.134290999999997,"p95":16.256625}}},"params":{"panels":["right"],"rate_per_panel":20,"seconds":5,"swap_rb":false},"stage":1,"step":"stream","stopped":null}
+13.9s stage 3/4: 30 frames/s per panel, right
+{"bytes":39172200,"dry_run":false,"elapsed_s":4.986673833,"error":null,"frames_sent":150,"late":0,"panels":{"right":{"frames":150,"rate":30.080170675562208,"transfer_ms":{"max":16.394958000000003,"median":16.192396000000002,"min":16.098042,"p95":16.282167}}},"params":{"panels":["right"],"rate_per_panel":30,"seconds":5,"swap_rb":false},"stage":2,"step":"stream","stopped":null}
+20.9s stage 4/4: 60 frames/s per panel, right
+{"bytes":78344400,"dry_run":false,"elapsed_s":5.001097833,"error":null,"frames_sent":300,"late":0,"panels":{"right":{"frames":300,"rate":59.986828895934536,"transfer_ms":{"max":16.794084,"median":16.580728999999998,"min":16.230083999999998,"p95":16.701417}}},"params":{"panels":["right"],"rate_per_panel":60,"seconds":5,"swap_rb":false},"stage":3,"step":"stream","stopped":null}
+25.922 released

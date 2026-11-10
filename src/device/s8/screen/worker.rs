@@ -17,8 +17,8 @@ use super::{FRAME_BYTES, PIXEL_BYTES, Panel, full, solid};
 
 /// Frames per second one panel may receive at most.
 ///
-/// Provisional: no S8 refresh rate has been measured. Phase 5 (#43) measures
-/// the rate and latency of repeated frames and replaces this value.
+/// Phase 5 (#43) measured about 16.6 ms per full frame, so this is the most
+/// two panels can take together (`docs/s8/screen-stream-validation.md`).
 pub const MAX_FRAMES_PER_SECOND: u64 = 30;
 
 /// Shortest time between the starts of two transfers to the same panel.

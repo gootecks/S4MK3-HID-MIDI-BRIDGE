@@ -1,0 +1,9 @@
+   2 a-right	hid	report 1	
+   2 baseline	hid	report 1	
+   1 baseline	midi	Traktor Kontrol S8 Input	b00a00
+   1 baseline	midi	Traktor Kontrol S8 Input	b00a7f
+   2 d-soak	hid	report 1	
+   2 recover	hid	report 1	
+   1 recover	midi	Traktor Kontrol S8 Input	b00a00
+   1 recover	midi	Traktor Kontrol S8 Input	b00a7f
+   2 stop	hid	report 1	
