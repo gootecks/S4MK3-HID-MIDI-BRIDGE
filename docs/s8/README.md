@@ -117,6 +117,9 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   attended check plan (`panel-views-check.sh`);
   [panel-views-validation.md](panel-views-validation.md) holds the attended
   run on the S8.
+- [deck-data-validation.md](deck-data-validation.md) — the attended check of
+  the live djay deck data on the panels (`deck-data-check.sh`, #45): plan,
+  expected pictures, and the run on the S8 with what it did not cover.
 - [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
   and Mixxx survey, with licensing notes.
 - [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching

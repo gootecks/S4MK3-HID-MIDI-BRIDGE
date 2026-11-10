@@ -25,6 +25,12 @@ their detailed notes stay in `docs/release-*.md`.
 - `mise run s8:panel-views-images` makes the expected pictures of those
   views from recorded snapshots, and `mise run s8:panel-views` runs the
   attended check on the S8 (#27); the check sends screen frames to the S8.
+- `mise run s8:deck-data` runs the attended check of the live djay deck
+  data on the S8 panels: content against djay, jumps, tempo, track and
+  layout changes ([deck-data-validation.md](docs/s8/deck-data-validation.md),
+  #45); the check sends screen frames to the S8. Run once on the S8: the
+  pages matched djay; a cue point set after the track was loaded gets no
+  flag, and djay's One Deck view shows deck 1 as empty.
 - `--app-events` (Kontrol S8 only) prints the display buttons 2, 3 and 5-8
   and the screen encoders as `S8_CONTROL` lines on stdout. The `S8Host`
   macOS tool runs the bridge and uses them to switch djay Pro's sidebar tabs

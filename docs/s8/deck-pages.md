@@ -51,7 +51,12 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   envelope tinted by the bands.
 - The key stored in the analysis blob is not decoded; the AX key is used.
 - Cue points come from `mediaItemUserData` (`cuePoints`). Unit tests cover
-  synthetic data; the live run showed 8 cues, not compared with djay's list.
+  synthetic data. On the S8 the flags of two tracks were compared with
+  djay's cue points by eye
+  ([deck-data-validation.md](deck-data-validation.md), row 3).
+- Cue points and analysis are read once, when the track is first seen on
+  the deck. A cue point set later got no flag on the S8 (row 11 of the same
+  record).
 - djay shows whole seconds, so the page knows the position exactly only at
   the moment a label moves. In the tests, with a poll every 0.25 s: a
   playing deck is 0 to 0.25 s behind djay once a poll has seen its label
@@ -64,7 +69,9 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   library. The remaining label is taken as the remaining time cut to a whole
   second, which matches capture C of the #80 record.
 - Decks 3 and 4 are read in djay's Four Decks layout. A deck that is not in
-  the current layout looks the same as an empty deck.
+  the current layout looks the same as an empty deck. In djay's One Deck
+  view deck 1 was shown as empty on the S8 while deck 2 was still read
+  (row 13 of the same record); that view was not looked into further.
 
 ## Run the preview
 
