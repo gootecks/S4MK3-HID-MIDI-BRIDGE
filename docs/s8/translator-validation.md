@@ -58,6 +58,11 @@ be run.
 Needs the S8, Djay Pro and a person at the controller. Reading HID input is
 passive; this check sends nothing to the S8.
 
+`mise run s8:midi` (`translator-check.sh`) does setup steps 1 to 3 and
+restores NIHardwareAgent when the bridge stops. It keeps an existing
+`Kontrol S8 Bridge` mapping, and writes the bridge log to
+`target/s8-captures/`. The manual steps are:
+
 ### Setup
 
 1. Generate the mapping into Djay's mapping folder:

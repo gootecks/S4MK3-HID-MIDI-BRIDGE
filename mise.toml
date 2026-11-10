@@ -107,6 +107,11 @@ arg "[seconds]" help="how long to read (default 30)"
 '''
 run = 'cargo run --locked -- --device s8 --raw --seconds ${usage_seconds:-30}'
 
+[tasks."s8:midi"]
+description = "Attended S8 translator check: stop NIHardwareAgent, run --midi full until Ctrl-C, restore (#15)"
+run = "bash docs/s8/translator-check.sh"
+raw = true
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
 run = "hk install"
