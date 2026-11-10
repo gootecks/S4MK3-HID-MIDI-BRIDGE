@@ -38,6 +38,13 @@ their detailed notes stay in `docs/release-*.md`.
   agent-stopped capture (#10). `mise run s8:input-capture` walks that
   checklist at the S8: it stops NIHardwareAgent, stamps each row's label into
   the log and restores the agent.
+- 2026-11-09: attended S8 input capture completed (#10). All 191 checklist
+  rows were recorded with NIHardwareAgent stopped; raw logs stay local in
+  `target/s8-captures/`. Findings so far: touch bits sit in report 1 as
+  kontrol-s8-protocol lists them, not where Encdr places them; channel
+  faders and EQ LOW on C and D are 12-bit; crossfader assign is a
+  three-position switch on two bits, and Encdr has channels B and D swapped;
+  the screen encoders have no detents. The written results are still to come.
 - `docs/s8/driverkit-evaluation.md` evaluates DriverKit, USBDriverKit,
   HIDDriverKit, AudioDriverKit and MIDIDriverKit for native S8 support, with
   entitlement costs and polish steps that need no driver extension (#55).
