@@ -105,14 +105,14 @@ steps() {
     run_step b-play 60 left=1,right=2 \
         "During the step: play deck 1 for about 10 s, pause it for about 10 s, play it again, then pause it. Leave deck 2 paused." || return 0
     verdict b-play "while deck 1 played, the left panel said PLAYING and its time moved with djay's" || return 0
-    verdict b-play "while deck 1 was paused, the left time stood still" || return 0
-    verdict b-play "on resume the left time did not jump by the length of the pause (one step of up to about 1 s when PLAYING appears is expected; answer y for that)" || return 0
+    verdict b-play "when deck 1 was paused, the left time stopped without stepping back and then stood still" || return 0
+    verdict b-play "on resume the left time did not jump by the length of the pause (one move forward of less than 1 s when PLAYING appears is known, #87; answer y for that)" || return 0
     verdict b-play "the right panel (deck 2) stood still for the whole step" || return 0
 
     run_step c-four-decks 60 left=3,right=4 \
         "Switch djay to Four Decks with decks 3 and 4 loaded and paused. During the step: play deck 3 for about 10 s and pause it, then play deck 4 for about 10 s and pause it." || return 0
     verdict c-four-decks "left panel showed deck 3 and right panel deck 4" || return 0
-    verdict c-four-decks "each time moved only while its own deck played and stood still while it was paused (one step of up to about 1 s when PLAYING appears is expected)" || return 0
+    verdict c-four-decks "each time moved only while its own deck played, and on pause it stopped without stepping back and stood still (one move forward of less than 1 s when PLAYING appears is known, #87)" || return 0
 }
 
 steps

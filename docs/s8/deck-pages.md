@@ -10,8 +10,8 @@ to a bitmap, a PNG or an `.s8frame` file through `S8Preview`.
 | Data | Source | Notes |
 | ---- | ------ | ----- |
 | Title, artist, BPM, key, elapsed, remaining, playing | djay window through Accessibility (`DjayDecks`, polled by `DeckMonitor`) | Needs Accessibility permission for the process. One poll walks the window once and splits the labels by deck number, so the cost does not grow with the number of decks (about 0.1 s measured with four decks). Title, artist, key and BPM are read from English and French labels (`Deck n` and `Platine n`); the time and play labels are matched in English only. |
-| Play state | `PlayStateDebouncer` (ported, extended) | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. Paused is reported on the first unlit sample. |
-| Time between AX updates | `TimeInterpolator` (ported, extended) | Extrapolates elapsed and remaining while the debounced state is playing, scaled by the pitch percentage, and eases corrections. When playing is confirmed it counts from the first lit sample, not from the last label change. |
+| Play state | `PlayStateDebouncer` (ported, extended) | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. It is reported at once when the time label moves one second in the play direction while the button is lit. Paused is reported on the first unlit sample. |
+| Time between AX updates | `TimeInterpolator` (rewritten for #83) | djay cuts the fraction off a time label, so a label names a whole second and not a moment. The page time always stays inside the second of the label last read. A paused label rests at the middle of its second. A remaining label equal to the track length cut to a whole second rests at the track start, so elapsed is 0. While the debounced state is playing the time counts on, scaled by the pitch percentage, and waits at the end of the label's second until the label moves. A label that moves one second in the play direction marks the boundary between the two seconds. Any other label change is taken as a jump and rests at the middle of the new second. On pause the counted time stays. When playing is confirmed, the time since the first lit sample is added. |
 | Duration, cue points | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`) | The track is matched by title and artist. Used to derive elapsed when only remaining is shown. |
 | Overview waveform, 3-band samples, beats, bars | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat starting at `firstDownBeatIndex % 4`. |
 
@@ -52,10 +52,17 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
 - The key stored in the analysis blob is not decoded; the AX key is used.
 - Cue points come from `mediaItemUserData` (`cuePoints`). Unit tests cover
   synthetic data; the live run showed 8 cues, not compared with djay's list.
-- Playback position is a prediction between AX updates; it can drift by the
-  AX update interval and while scratching or looping.
-- With only the remaining time shown, the page is ahead of djay by up to
-  1 s, because djay cuts the fraction off the label (#83).
+- djay shows whole seconds, so the page knows the position exactly only at
+  the moment a label moves. In the tests, with a poll every 0.25 s: a
+  playing deck is 0 to 0.25 s behind djay once a poll has seen its label
+  move, and never ahead; a deck paused after it played is within 0.25 s; a
+  deck that has not played since it was first read, or that jumped, is
+  within 0.5 s. Scratching and looping are not modelled.
+- From the press of play until playing is confirmed the time stands still.
+  It then moves forward once by the time played, less than 1 s (#87).
+- The track start is recognised only when the track length is known from the
+  library. The remaining label is taken as the remaining time cut to a whole
+  second, which matches capture C of the #80 record.
 - Decks 3 and 4 are read in djay's Four Decks layout. A deck that is not in
   the current layout looks the same as an empty deck.
 
@@ -128,19 +135,18 @@ with status 0 and the observer answers `y` to each question.
 | Step | Panels | Time | The observer does | Pass |
 | ---- | ------ | ---- | ----------------- | ---- |
 | `a-paused` | left deck 1, right deck 2 | 20 s | Nothing; both decks stay paused | Each panel shows its deck with title, time, waveform and PAUSED. Both times and playheads stand still for the 20 s. Both panels go black at the end. |
-| `b-play` | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses | While deck 1 plays the left panel says PLAYING and its time moves with djay's. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
-| `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays. |
+| `b-play` | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses | While deck 1 plays the left panel says PLAYING and its time moves with djay's. On pause the time stops without stepping back. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
+| `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays and does not step back on pause. |
 
-Expected and not a fault (#83):
+Expected and not a fault (#87):
 
-- PLAYING appears about 1 s after play. Until then the time stands still;
-  when PLAYING appears the time steps forward once by up to about 1 s, which
-  is the time played since the press.
-- The panel time is up to 1 s ahead of djay and steps back by up to 1 s on
-  pause.
+- PLAYING appears up to about 1 s after play. Until then the time stands
+  still; when PLAYING appears the time moves forward once by less than 1 s,
+  which is the time played since the press.
 
-Fault: a time that runs on a paused deck, a page of the wrong deck, a garbled
-or frozen panel while its deck plays, a status line `failed`, or a bridge
+Fault: a time that runs on a paused deck, a time that steps back on pause, a
+page of the wrong deck, a garbled or frozen panel while its deck plays, a
+status line `failed`, or a bridge
 exit status other than 0. On a fault answer `n` or describe it; the runner
 skips the remaining steps and goes to recovery. `stop` at any prompt and
 Ctrl-C during a step do the same; after Ctrl-C the panels go black.
@@ -202,7 +208,8 @@ layout showed only the remaining time. Captures:
 
 - In F the page time stepped back when a playing deck was paused (59.88 s to
   59.04 s on deck 3), and decks at the start of a track showed 0.04 s, 0.34 s
-  and 0.70 s. Both come from the cut-off label (#83) and are not fixed.
+  and 0.70 s. Both come from the cut-off label (#83) and were not fixed at
+  that revision; see "Time inside djay's second (#83)" below.
 - A first recording of F was lost before it was saved; the user repeated the
   steps.
 
@@ -270,3 +277,45 @@ reacted to the left PLAY button.
 
 Not checked on the S8: whether the right panel stood still during `b-play`,
 and a second run of `b-play` with the reworded questions.
+
+### Time inside djay's second (#83)
+
+Not seen on the S8 and not run against a live djay. Checked on 2026-11-10 at
+`a6a9b36` with `swift test --package-path macos` only. Both test classes feed
+`DeckTracker` a poll every 0.25 s at five poll phases and read the page every
+0.1 s.
+
+`DeckTimeReplayTests` replays the djay side of capture C
+(`captures/deck-pages-20261110/c-two-decks-play-djay.txt.gz`, copied to
+`macos/DjayDecksTests/Fixtures/`). The true position comes from the moments
+the remaining label moved in that capture.
+
+| Deck 1 in capture C | Page in the replay, over the five poll phases |
+| ------------------- | -------------------------------------------- |
+| First play (label moved at 9.48 s) | PLAYING at 9.1 to 9.3 s. The time moved forward once by 0.5 s, from the middle of the second to its end. |
+| Playing, from 0.25 s after a label move | 0 to 0.25 s behind djay, never ahead. |
+| Pauses at 21.41 s and 42.88 s | PAUSED 0.0 to 0.3 s later. No step back. |
+| Paused | Within 0.25 s of the paused position. |
+| Resumes at 40.00 s and 47.87 s | PLAYING 0.1 to 0.45 s later. The time moved forward once by 0 to 0.3 s. |
+| Whole capture | The page second equals djay's label at the last poll, and the time never steps back. |
+
+Deck 2 of capture C stood at the start of its track and showed 0.70 s before
+the fix. In the replay it shows 0 s elapsed for the whole capture.
+
+For comparison, the stream log of `b-play` before the fix (another session,
+see the #85 record) has steps back of 0.48 s and 0.84 s on pause and steps
+forward of 0.87 s and 0.92 s on resume.
+
+`DeckTimeSimulationTests` runs a simulated deck that cuts its label the same
+way, with presses that fall at other moments in the second and the blink at
+other phases. It holds the same bounds, and bounds the time before playing
+is confirmed: at most 0.75 s ahead and at most 0.7 s plus two polls behind.
+
+Not checked: the page on the S8, a live djay, a layout that shows the elapsed
+label, a changed pitch, a jump, scratching and looping. In capture C the
+label moved 0.07 s and 0.22 s after the two resumes, which confirmed playing
+early. A resume that falls early in a second waits longer and gives a larger
+forward move (#87); the observer has not seen either at this revision.
+
+The runner now asks whether the time stepped back on pause and names #87 as
+the known move on resume.
