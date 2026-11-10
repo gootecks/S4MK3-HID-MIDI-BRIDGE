@@ -116,6 +116,11 @@ description = "Attended S8 screen transport check: stop NIHardwareAgent, feed fr
 run = "bash docs/s8/screen-transport-check.sh"
 raw = true
 
+[tasks."s8:display-buttons"]
+description = "Attended S8 display button and screen encoder check: stop NIHardwareAgent, run S8Host against Djay, restore (#51); sends nothing to the S8"
+run = "bash docs/s8/display-buttons-check.sh"
+raw = true
+
 [tasks."s8:input-capture"]
 description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
 usage = '''

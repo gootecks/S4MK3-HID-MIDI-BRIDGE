@@ -41,6 +41,15 @@ code, not recorded from djay).
 
 ## Not checked: needs the S8
 
+Run it from an interactive terminal with someone at the S8:
+`mise run s8:display-buttons` (`display-buttons-check.sh`). It sends nothing
+to the S8. It stops NIHardwareAgent, starts `S8Host`, asks one question per
+row below, stops `S8Host` with SIGINT and restores the agent. Answers go to
+`docs/s8/captures/display-buttons-<UTC>/notes.txt`. `S8Host` does not print
+the `S8_CONTROL` lines it handles, so the answers are the record. Before the
+run: Controller Editor and djay Pro open with the sidebar showing, and the
+terminal allowed under Privacy & Security > Accessibility.
+
 - [ ] Each display button, left 2, 3, 5, 6, 7 and right 2, 3, does its action on
       the S8 and button up does nothing; buttons 1 and 4 still do the NI actions.
 - [ ] Left 8 and right 5-8 do nothing visible.
