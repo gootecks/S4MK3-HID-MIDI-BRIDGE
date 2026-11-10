@@ -94,6 +94,9 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   and Mixxx survey, with licensing notes.
 - [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching
   djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
+- [driverkit-evaluation.md](driverkit-evaluation.md) — DriverKit, USB, HID,
+  audio and MIDI driver extensions for a more native S8 setup: verdicts,
+  entitlement cost, and polish steps that need no driver (#55).
 
 Future notes (created by their issues): `mapping.md` (#13, #14),
 `led-output.md` (#21, #24).
