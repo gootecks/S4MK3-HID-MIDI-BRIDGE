@@ -129,6 +129,18 @@ description = "Attended S8 display button and screen encoder check: stop NIHardw
 run = "bash docs/s8/display-buttons-check.sh"
 raw = true
 
+[tasks."s8:panel-views-images"]
+description = "Regenerate the expected panel view pictures, or `check` them against the tools (#27); sends nothing"
+usage = '''
+arg "[mode]" help="check to compare instead of writing"
+'''
+run = 'bash docs/s8/panel-views-images.sh ${usage_mode:-}'
+
+[tasks."s8:panel-views"]
+description = "Attended S8 panel views check: stop NIHardwareAgent, run S8Host --screens against Djay, restore (#27); sends screen frames to the S8"
+run = "bash docs/s8/panel-views-check.sh"
+raw = true
+
 [tasks."s8:input-capture"]
 description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
 usage = '''

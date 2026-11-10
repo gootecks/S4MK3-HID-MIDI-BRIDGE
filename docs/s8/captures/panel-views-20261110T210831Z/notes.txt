@@ -1,0 +1,41 @@
+Panel views (#27). Host: /Users/prime/Working/kontrol-s8/S4MK3-HID-MIDI-BRIDGE/macos/.build/out/Products/Debug/S8Host, bridge: target/release/s4mk3-hid-midi-bridge.
+Before the stop: what do the two S8 panels show?: Controller Editor labels
+In djay: sidebar open on Library, a track loaded on deck 1. Click a row of the main track table so that no sidebar row is selected. Done?: yes
+Library views are running.
+1. Both panels: do they match 01-library (list without highlight; 'No track selected')? y/n, or describe: y
+2. Turn left screen encoder 1 until a sidebar track is selected, then two rows further. Do the highlight and the right panel follow each row (as 02-library-selected)? y/n, or describe: y
+3. Keep turning past the last visible row. Does the list scroll and keep the highlight visible (as 03-library-scrolled)? y/n, or describe: y
+4. Is 'n of m' on the right panel the position of the row among the sidebar's tracks? y/n, or describe: y
+5. Press left button 3. Do the panels show Queue (as 04-queue, or your queue)? y/n, or describe: y
+6. Press left button 5. Match (as 05-match)? y/n, or describe: y
+7. Press left button 6. History (as 06-history, with your sessions)? y/n, or describe: y
+8. Press left button 7. Info, and Info/Related labels on right buttons 2 and 3 (as 07-info)? y/n, or describe: y
+9. Press right button 3. Related (as 08-related)? Then right button 2: Info again? y/n, or describe: y
+10. Press left button 2. Library again? y/n, or describe: y
+11. With the mouse, select another sidebar row in djay. How long until the panels follow? (expected: about 1 s): sometimes instant, sometimes about 1s
+12. Close djay's sidebar. Does the left panel say 'Open the djay sidebar' (as 09-sidebar-closed)? Open it again: does the list return? y/n, or describe: y
+13. From an encoder turn to the panel change: instant, a short lag, or seconds? Describe.: instant
+14. Spin an encoder fast through a long list. Do the panels end on the row djay selected? y/n, or describe: y
+15. Press left PLAY once. Did djay react (bridge MIDI while the screens run)? y/n: y
+16. Any flicker, tearing, wrong colours or a frozen panel at any time? Describe, or 'no'.: scrolling fast with a display encoder is smooth in djay because you see each row being passed through, but on the panel, it's choppy and skips to wherever the encoder ends.  it still ends on the same row as djay, it's just choppy if you go fast.  but if you go slow or medium, it's smooth
+library: S8Host exit status 0 (expected 0).
+library: status lines: S8_SCREEN_STATUS pending;S8_SCREEN_STATUS active;S8_SCREEN_STATUS inactive;
+library: bridge processes left: 
+17. After Ctrl-C, agent still stopped: what do the panels show? (expected: both black): both black
+Deck page is running.
+18. Right panel: deck 1 page with your track's title, time, BPM, key and waveform (layout as 10-deck)? Left panel: the library list? y/n, or describe: y
+18 start: deck reads 150, longest gap 0.544 s, gaps over 0.45 s 1, longest read 0.544 s
+19. Press PLAY on deck 1. Does the page say PLAYING and do the time and the playhead move? Press it again: PAUSED? Then press PLAY once more and leave it playing. y/n, or describe: y
+19 play and pause: deck reads 84, longest gap 0.253 s, gaps over 0.45 s 0, longest read 0.089 s
+20. Turn a left screen encoder through at least twenty rows. Does the left panel follow the selection while the deck page keeps moving on the right? y/n, or describe: y
+20 scrolling: deck reads 310, longest gap 0.252 s, gaps over 0.45 s 0, longest read 0.093 s
+21. Press left button 3, then 6, then 2. Does the left panel show Queue, History and Library in turn while the deck page keeps moving? y/n, or describe: y
+21 tab switching: deck reads 106, longest gap 0.251 s, gaps over 0.45 s 0, longest read 0.104 s
+deck: S8Host exit status 0 (expected 0).
+deck: status lines: S8_SCREEN_STATUS pending;S8_SCREEN_STATUS active;S8_SCREEN_STATUS inactive;
+deck: bridge processes left: 
+22. After S8Host's stdin closed: what do the panels show? (expected: both black): both black
+23. After recovery: what do the panels show (Controller Editor labels again)?: Controller Editor labels
+24. Press left PLAY once. Did djay react? y/n: y
+25. Press display button 1 or 4. Does the NI action work again? y/n: y
+Recorded in docs/s8/captures/panel-views-20261110T210831Z

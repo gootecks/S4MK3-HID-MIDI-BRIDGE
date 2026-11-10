@@ -85,10 +85,10 @@ func runDeckStream(targets: [StreamTarget], seconds: Double?) -> Never {
             let snapshot = monitor.snapshot(deck: target.deck)
             let bitmap = DeckPanelRenderer.render(snapshot)
             guard sent[target.side.rawValue] != bitmap,
-                  let record = S8Frame.record(screen: target.side, bitmap: bitmap)
+                  let record = S8Record.make(panel: target.side, bitmap: bitmap)
             else { continue }
             do {
-                try output.write(contentsOf: Data(record))
+                try output.write(contentsOf: record)
             } catch {
                 logLine("DECKSTREAM stopped: the reader of stdout is gone after \(records) records")
                 exit(0)

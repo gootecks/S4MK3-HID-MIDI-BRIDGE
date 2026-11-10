@@ -94,7 +94,8 @@ or do not exist there.
 **Decision: the app renders, the bridge transports.** The menu-bar app builds
 each 480×272 panel offscreen at 1x, converts it to RGB565 big-endian and hands
 frames to the Rust child. The bridge owns interface 6 and paces transfers
-(#44). Views on the panels: #27.
+(#44). `S8Host --screens` puts the views on the panels
+([panel-views.md](panel-views.md), #27).
 
 ### Library views first
 
@@ -347,6 +348,7 @@ Until then the bridge keeps its cap of 30 frames per second per panel.
 - The bridge-side frame channel (stdin records, status lines, pacing,
   exit frames) is specified in [screen-transport.md](screen-transport.md)
   and unexercised on hardware (#44).
-- What the panels should show when the bridge quits without relaunching the
-  agent: they keep the last frame (#27).
+- The views on the panels through `S8Host --screens` are unchecked on the
+  S8. A clean stop leaves both panels black until the agent is relaunched
+  ([panel-views.md](panel-views.md#stop-and-panel-state), #27).
 - How Djay's four-deck layouts appear through Accessibility (#45).

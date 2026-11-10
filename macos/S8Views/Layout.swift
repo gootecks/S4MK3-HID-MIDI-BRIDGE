@@ -75,6 +75,13 @@ public struct ViewState: Equatable {
         revealSelection()
     }
 
+    public init(live snapshot: SidebarSnapshot, scrollTop: CGFloat = 0) {
+        self.snapshot = snapshot
+        selectedIndex = snapshot.selectedRowIndex
+        self.scrollTop = scrollTop
+        revealSelection()
+    }
+
     public func rowOffset(_ index: Int) -> CGFloat {
         snapshot.rows[..<index].reduce(0) { $0 + Metrics.rowHeight($1.kind) }
     }

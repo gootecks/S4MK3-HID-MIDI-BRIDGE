@@ -139,9 +139,10 @@ status lines, the stdin thread and the flag check.
   interface. A failed transfer sends no exit frames; the claim is released.
 - **Exit frames.** On a clean stop and after a protocol error, the bridge
   sends `screen::solid` black (`00 00 00 00` pixel pairs) to each panel that
-  received a frame, then releases the interface. **Provisional**: #27
-  decides what the panels show when the bridge exits. The frames equal the
-  black frames in the validation record.
+  received a frame, then releases the interface. #27 kept this: a clean stop
+  leaves the panels black, so no stale view stays on the S8
+  ([panel-views.md](panel-views.md#stop-and-panel-state)). The frames equal
+  the black frames in the validation record.
 - **NIHardwareAgent.** The bridge neither looks for nor stops
   NIHardwareAgent. If the agent holds interface 6 the claim fails and the
   bridge reports `failed <reason>` while MIDI keeps running. Stopping the

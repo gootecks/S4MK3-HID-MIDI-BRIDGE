@@ -14,6 +14,8 @@ Nothing here talks to the S8 or to djay: it consumes sidebar snapshot JSON
 | `SidebarNavigator.swift` | `FixtureLibrary` (file or directory of snapshots) and `SidebarNavigator` (button presses and encoder moves swap snapshots and selection). |
 | `PanelRenderer.swift` | Draws a panel with CoreGraphics and CoreText (no AppKit, no `ImageRenderer`; macOS 12). |
 | `Bitmap.swift` | RGBA bitmap, PNG writer, `S8Frame` (RGB565 big-endian frame builder) and the drawing canvas. |
+| `LivePanels.swift` | `LivePanels` (a live snapshot to a `ViewState`, keeping the scroll position per list) and `PanelFeed` (renders both panels and returns records for the changed ones). |
+| `S8Record.swift` | The `S8FR` stdin record of the bridge's `--s8-screens-stdin` channel. |
 
 ## Panel content
 
@@ -40,6 +42,11 @@ encoder means "move djay's main library selection":
 tracks stand in for the main table), the right panel always shows it, and the
 Library tab's highlight follows it. Other tabs keep their rows unselected.
 Selecting sidebar rows (Queue, History, Related) through AX is open for #51.
+
+Live (`LivePanels`, used by `S8Host --screens`) does not step a selection of
+its own: the highlight and the right panel are the row djay reports as
+selected in the sidebar table, on every tab, and nothing is shown once djay
+drops it ([`docs/s8/panel-views.md`](../../docs/s8/panel-views.md#selection)).
 
 ## Display-button mapping
 
