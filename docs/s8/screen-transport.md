@@ -108,6 +108,11 @@ exactly one of `inactive` or `failed`. A failure before the first frame goes
 process, and frames arriving afterwards are discarded. To retry, restart the
 bridge.
 
+The reader of stdout MUST stay for as long as the bridge should run. When a
+status line or an `S8_CONTROL` line cannot be written because the reader is
+gone, the bridge stops as on Ctrl-C: exit frames, release, exit status 0.
+Log lines to a closed stdout are dropped.
+
 ## Worker behaviour
 
 Placement: `src/device/s8/screen/{wire,worker,usb}.rs` in the library next
@@ -161,24 +166,39 @@ Covered by tests with a fake transport only:
   transport bytes for both panels, latest-wins under a blocked transfer,
   pacing, status order, claim and transfer failure, exit frames.
 
+Checked on the S8 through this channel on 2026-11-10
+([screen-transport-validation.md](screen-transport-validation.md)):
+
+- Each panel alone and both panels back to back within one bridge process,
+  at 10 and 30 frames per second per panel for 5 s.
+- Frames dropped above the cap, with the last frame arriving.
+- The last frame staying while stdin is open and idle.
+- Black panels after the exit frames when stdin closes, and after a
+  `failed` stop from a bad record.
+- Ctrl-C of the bridge while it streams: exit frame, `inactive`, exit
+  status 0. The first attempt aborted with status 134 and led to a fix
+  ([record](screen-transport-validation.md#ctrl-c-while-streaming)).
+
 Not validated on hardware (only a device can confirm):
 
-- Both panels updated back to back within one bridge process, and the
-  worker's pacing at the measured limit.
+- A stop because the reader of stdout is gone. Tests cover it; the passing
+  Ctrl-C run kept its reader.
 - What the panels show when the bridge is killed while it streams. The
   example tool killed mid-stream left the S8's startup screens on both
   panels.
 - The claim failure when NIHardwareAgent holds interface 6, and that the
   reason text is useful.
-- What the panels show after the exit frames, and after a `failed` stop (#27).
 - The 500 ms transfer timeout under a stalled device.
-- stdin throughput: about 15.7 MB per second for two panels at the cap.
+- stdin throughput: about 15.7 MB per second for two panels at the cap,
+  for longer than 5 s.
 
 ## Attended check
 
-Planned, not run. It drives the real panels through the channel above with a
-feeder, one step at a time, and checks the status lines, the pictures and the
-exit behaviour. Nothing here is a result.
+Run on 2026-11-10; the results are in
+[screen-transport-validation.md](screen-transport-validation.md). It drives
+the real panels through the channel above with a feeder, one step at a time,
+and checks the status lines, the pictures and the exit behaviour. The rest
+of this section is the plan, not a result.
 
 ### Preconditions
 
@@ -192,7 +212,9 @@ exit behaviour. Nothing here is a result.
 - `NIHardwareAgent` is stopped by the runner (`kill -9`, as in the other
   attended runners) and relaunched with `open -g` on every exit path. The
   bridge itself never stops it (see above).
-- Run it from an interactive terminal: `mise run s8:screen-transport`. The
+- Run it from an interactive terminal: `mise run s8:screen-transport`. To
+  continue a run that stopped early, name the first step to run, for
+  example `mise run s8:screen-transport c-alternate-10`. The
   runner builds the release bridge and `examples/s8-screen-feed`, writes
   `docs/s8/captures/screen-transport-<UTC>/` (per step: `.dry` record hashes,
   `.txt` bridge output, `.feeder.txt`; plus `notes.txt`, `snapshots.txt`,

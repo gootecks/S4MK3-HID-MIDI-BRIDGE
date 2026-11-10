@@ -1,0 +1,7 @@
+2026-11-10T16:47:17.683446Z  INFO S8_USB_FOUND: 17cc:1370 device=dev:0003070017cc1370
+S8_SCREEN_STATUS pending
+2026-11-10T16:47:17.730133Z  INFO Opening device from registry id 4294997013
+2026-11-10T16:47:17.732228Z  INFO starting event loop thread
+2026-11-10T16:47:17.742137Z  INFO MIDI_FULL_READY port="Kontrol S8 MIDI Full"
+2026-11-10T16:47:17.742144Z  INFO S8_HID_OPEN: native HID access; nothing is written to the controller
+S8_SCREEN_STATUS active

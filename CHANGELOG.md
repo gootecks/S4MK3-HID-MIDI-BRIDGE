@@ -16,8 +16,11 @@ their detailed notes stay in `docs/release-*.md`.
   and the screen encoders as `S8_CONTROL` lines on stdout. The `S8Host`
   macOS tool runs the bridge and uses them to switch djay Pro's sidebar tabs
   and Info > Related and to move the selection through Accessibility
-  ([display-buttons.md](docs/s8/display-buttons.md), #51). Not yet checked
-  on the S8.
+  ([display-buttons.md](docs/s8/display-buttons.md), #51). Checked once on
+  the S8
+  ([record](docs/s8/display-buttons-validation.md)).
+- `mise run s8:display-buttons` runs the attended check of the display
+  buttons and screen encoders on the S8 (#51); it sends nothing to the S8.
 - Kontrol S8 project notes in `docs/s8/`: status, hardware evidence, S4 MK3
   coupling audit and the upstream contribution workflow.
 - Pinned mise tooling with named tasks for the existing Rust, Swift and
@@ -148,13 +151,14 @@ their detailed notes stay in `docs/release-*.md`.
   RGB565 frame records for each panel from stdin, sends them to the S8
   screens with a latest-wins slot per panel and a 30 frames per
   second cap, and prints `S8_SCREEN_STATUS` lines. The channel is specified
-  in `docs/s8/screen-transport.md`; tested with a fake transport only, not
-  on hardware (#44).
+  in `docs/s8/screen-transport.md`. Checked on the S8 in an attended run
+  ([record](docs/s8/screen-transport-validation.md)), including a stop with
+  Ctrl-C while it streams after the fix below (#44).
 - `examples/s8-screen-feed.rs` writes `S8FR` records of the phase 5 test
   pattern to stdout (`--dry-run` touches nothing), and `mise run
-  s8:screen-transport` runs the planned attended check of the screen
+  s8:screen-transport [first-step]` runs the attended check of the screen
   channel against the S8. The plan with expected pictures is in
-  `docs/s8/screen-transport.md`; not run yet (#44).
+  `docs/s8/screen-transport.md`.
 
 ### Changed
 
@@ -166,6 +170,16 @@ their detailed notes stay in `docs/release-*.md`.
   `assert!(value.is_empty())`.
 - The macOS app starts the bridge with `--device s4mk3`, so a connected S8
   does not stop it from finding the S4 MK3.
+
+### Fixed
+
+- The bridge no longer aborts when the reader of its stdout is gone, as
+  happened on Ctrl-C in a pipeline during the screen transport check (exit
+  status 134, no `S8_SCREEN_STATUS inactive`). Log lines to a closed stdout
+  are dropped, on the S4 MK3 as well. With `--s8-screens-stdin` or
+  `--app-events` the S8 bridge stops cleanly when a status or `S8_CONTROL`
+  line cannot be written: exit frames, release, exit status 0. Covered by
+  tests; Ctrl-C while streaming then passed on the S8 (#44).
 
 ## [0.2.1-beta.1] - 2026-10-26
 

@@ -32,6 +32,10 @@ version of the menu-bar app runs it.
 - **Known limits:** the touchstrips register broad scrubbing only, CAPTURE has
   no visible result in Djay, and the booth output is not checked. See the
   [validation record](docs/s8/translator-validation.md).
+- **Screen buttons and encoders:** the buttons and encoders beside the two
+  screens switch Djay's sidebar tabs and move its selection when the bridge
+  runs under the `S8Host` tool. See
+  [display buttons and screen encoders](docs/s8/display-buttons.md).
 - **Missing:** LED feedback and the screens. The bridge sends nothing to the
   S8, so its LEDs and displays do not follow Djay.
 

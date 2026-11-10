@@ -1,0 +1,38 @@
+Screen transport check. Djay open, no track playing. Bridge: target/release/s4mk3-hid-midi-bridge (release). Feeder: target/release/examples/s8-screen-feed.
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+a-left-10: dry run, 50 records, hashes in docs/s8/captures/screen-transport-20261110T162556Z/a-left-10.dry
+  expected: docs/s8/images/transport/a-left-10-left-0.png
+  expected: docs/s8/images/transport/a-left-10-left-25.png
+  expected: docs/s8/images/transport/a-left-10-left-49.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: a-left-10. Enter to start, or 'stop'.: 
+a-left-10: bridge exit status 0 after 10 s
+a-left-10: status lines: pending,active,inactive
+a-left-10: left panel: moving bar, counter ends at 49 and holds 5 s, then black; right panel unchanged (y, n or describe; 'stop' ends the run): y
+b-right-30: dry run, 150 records, hashes in docs/s8/captures/screen-transport-20261110T162556Z/b-right-30.dry
+  expected: docs/s8/images/transport/b-right-30-right-0.png
+  expected: docs/s8/images/transport/b-right-30-right-149.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: b-right-30. Enter to start, or 'stop'.: 
+b-right-30: bridge exit status 0 after 10 s
+b-right-30: status lines: pending,active,inactive
+b-right-30: right panel: steady bar, counter ends at 149 and holds 5 s, then black; left panel unchanged (y, n or describe; 'stop' ends the run): y
+c-alternate-10: dry run, 100 records, hashes in docs/s8/captures/screen-transport-20261110T162556Z/c-alternate-10.dry
+  expected: docs/s8/images/transport/c-alternate-10-left-0.png
+  expected: docs/s8/images/transport/c-alternate-10-left-25.png
+  expected: docs/s8/images/transport/c-alternate-10-left-49.png
+  expected: docs/s8/images/transport/c-alternate-10-right-0.png
+  expected: docs/s8/images/transport/c-alternate-10-right-25.png
+  expected: docs/s8/images/transport/c-alternate-10-right-49.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: c-alternate-10. Enter to start, or 'stop'.: 
+c-alternate-10: bridge exit status 0 after 10 s
+c-alternate-10: status lines: pending,active,inactive
+c-alternate-10: both panels move, both counters end at 49 and hold, then both black; no panel shows the other's title (y, n or describe; 'stop' ends the run): run it again
+Stopped: c-alternate-10: observer answered 'run it again'.
+Bridge gone, agent still stopped: what do the panels show? Photo.: black on both panels
+After recovery: what do the panels show (Controller Editor labels again)? Photo.: Controller Editor labels
+Press left PLAY once, then Enter.: 
+Did Djay react to left PLAY? y/n: y
+Recorded in docs/s8/captures/screen-transport-20261110T162556Z

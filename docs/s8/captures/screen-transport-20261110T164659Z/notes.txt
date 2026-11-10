@@ -1,0 +1,17 @@
+Screen transport check. Djay open, no track playing. Bridge: target/release/s4mk3-hid-midi-bridge (release). Feeder: target/release/examples/s8-screen-feed.
+Starting at i-ctrl-c; earlier steps are skipped.
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+i-ctrl-c: the feeder streams for 60 s. Press Ctrl-C once after 5 s or more.
+i-ctrl-c: dry run, 600 records, hashes in docs/s8/captures/screen-transport-20261110T164659Z/i-ctrl-c.dry
+  expected: docs/s8/images/transport/i-ctrl-c-left-0.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: i-ctrl-c. Enter to start, or 'stop'.: 
+i-ctrl-c: bridge exit status 134 after 12 s
+i-ctrl-c: status lines: pending,active
+Stopped: i-ctrl-c: status order 'pending,active', expected 'pending,active,inactive'.
+Bridge gone, agent still stopped: what do the panels show? Photo.: left display is black, right display still shows Controller Editor labels
+After recovery: what do the panels show (Controller Editor labels again)? Photo.: Controller Editor labels again
+Press left PLAY once, then Enter.: 
+Did Djay react to left PLAY? y/n: y
+Recorded in docs/s8/captures/screen-transport-20261110T164659Z

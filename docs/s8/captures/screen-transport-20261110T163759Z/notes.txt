@@ -1,0 +1,68 @@
+Screen transport check. Djay open, no track playing. Bridge: target/release/s4mk3-hid-midi-bridge (release). Feeder: target/release/examples/s8-screen-feed.
+Starting at c-alternate-10; earlier steps are skipped.
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+c-alternate-10: dry run, 100 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/c-alternate-10.dry
+  expected: docs/s8/images/transport/c-alternate-10-left-0.png
+  expected: docs/s8/images/transport/c-alternate-10-left-25.png
+  expected: docs/s8/images/transport/c-alternate-10-left-49.png
+  expected: docs/s8/images/transport/c-alternate-10-right-0.png
+  expected: docs/s8/images/transport/c-alternate-10-right-25.png
+  expected: docs/s8/images/transport/c-alternate-10-right-49.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: c-alternate-10. Enter to start, or 'stop'.: 
+c-alternate-10: bridge exit status 0 after 10 s
+c-alternate-10: status lines: pending,active,inactive
+c-alternate-10: both panels move, both counters end at 49 and hold, then both black; no panel shows the other's title (y, n or describe; 'stop' ends the run): y
+d-alternate-30: dry run, 300 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/d-alternate-30.dry
+  expected: docs/s8/images/transport/d-alternate-30-left-0.png
+  expected: docs/s8/images/transport/d-alternate-30-left-149.png
+  expected: docs/s8/images/transport/d-alternate-30-right-0.png
+  expected: docs/s8/images/transport/d-alternate-30-right-149.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: d-alternate-30. Enter to start, or 'stop'.: 
+d-alternate-30: bridge exit status 0 after 10 s
+d-alternate-30: status lines: pending,active,inactive
+d-alternate-30: both panels steady, both counters end at 149, then both black; any tearing or flicker? (y, n or describe; 'stop' ends the run): y
+e-over-cap: dry run, 180 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/e-over-cap.dry
+  expected: docs/s8/images/transport/e-over-cap-left-179.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: e-over-cap. Enter to start, or 'stop'.: 
+e-over-cap: bridge exit status 0 after 8 s
+e-over-cap: status lines: pending,active,inactive
+e-over-cap: left panel: bar moves in visible jumps (frames dropped by the 30 fps cap) but the counter ends at 179, then black (y, n or describe; 'stop' ends the run): y
+f-stall: dry run, 30 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/f-stall.dry
+  expected: docs/s8/images/transport/f-stall-left-29.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: f-stall. Enter to start, or 'stop'.: 
+f-stall: bridge exit status 0 after 18 s
+f-stall: status lines: pending,active,inactive
+f-stall: left panel kept frame 29 unchanged and without flicker for the 15 s after the feeder stopped, then went black (y, n or describe; 'stop' ends the run): y
+g-eof: dry run, 60 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/g-eof.dry
+  expected: docs/s8/images/transport/g-eof-left-29.png
+  expected: docs/s8/images/transport/g-eof-right-29.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: g-eof. Enter to start, or 'stop'.: 
+g-eof: bridge exit status 0 after 3 s
+g-eof: status lines: pending,active,inactive
+g-eof: both panels went black within about a second of the last frame and the bridge exited by itself (y, n or describe; 'stop' ends the run): y
+h-bad-record: dry run, 20 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/h-bad-record.dry
+  expected: docs/s8/images/transport/h-bad-record-left-19.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: h-bad-record. Enter to start, or 'stop'.: 
+h-bad-record: bridge exit status 0 after 7 s
+h-bad-record: status lines: pending,active,failed bad record magic [4e, 4f, 50, 45]
+h-bad-record: left panel counted to 19, then went black at once; the bridge kept running until the 5 s hold ended (y, n or describe; 'stop' ends the run): y
+i-ctrl-c: the feeder streams for 60 s. Press Ctrl-C once after 5 s or more.
+i-ctrl-c: dry run, 600 records, hashes in docs/s8/captures/screen-transport-20261110T163759Z/i-ctrl-c.dry
+  expected: docs/s8/images/transport/i-ctrl-c-left-0.png
+  expected: docs/s8/images/transport/exit-black.png
+Next: i-ctrl-c. Enter to start, or 'stop'.: 
+i-ctrl-c: bridge exit status 0 after 60 s
+i-ctrl-c: status lines: pending,active,inactive
+i-ctrl-c: the bar was moving; after Ctrl-C the left panel went black and the bridge exited (y, n or describe; 'stop' ends the run): y
+Bridge gone, agent still stopped: what do the panels show? Photo.: all black
+After recovery: what do the panels show (Controller Editor labels again)? Photo.: Controller Editor labels
+Press left PLAY once, then Enter.: 
+Did Djay react to left PLAY? y/n: y
+Recorded in docs/s8/captures/screen-transport-20261110T163759Z
