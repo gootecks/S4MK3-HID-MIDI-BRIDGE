@@ -1,5 +1,7 @@
 import DjaySidebar
 import Foundation
+import S8Control
+import S8Session
 
 func report(_ message: String) {
     FileHandle.standardError.write(Data(("S8Host: " + message + "\n").utf8))
@@ -47,26 +49,34 @@ do {
     exit(4)
 }
 
+let session = PanelSession.live(bridge: bridge, options: options)
+
+func stop() {
+    session.shutdown()
+    bridge.stop()
+}
+
 var sources: [DispatchSourceSignal] = []
 for signalNumber in [SIGINT, SIGTERM] {
     signal(signalNumber, SIG_IGN)
     let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
-    source.setEventHandler { bridge.stop() }
+    source.setEventHandler { stop() }
     source.resume()
     sources.append(source)
 }
 
 Thread.detachNewThread {
     _ = FileHandle.standardInput.readDataToEndOfFile()
-    DispatchQueue.main.async { bridge.stop() }
+    DispatchQueue.main.async { stop() }
 }
 
-let session = LiveSession(bridge: bridge, options: options)
 session.start()
 
 Thread.detachNewThread {
     bridge.readLines { line in
-        if !session.handle(line: line) {
+        if let event = ControlEvent.parse(line) {
+            session.handle(event)
+        } else {
             print(line)
             fflush(stdout)
         }
