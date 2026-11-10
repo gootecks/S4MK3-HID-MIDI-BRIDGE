@@ -117,6 +117,8 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 - [driverkit-evaluation.md](driverkit-evaluation.md) — DriverKit, USB, HID,
   audio and MIDI driver extensions for a more native S8 setup: verdicts,
   entitlement cost, and polish steps that need no driver (#55).
+- [deck-pages.md](deck-pages.md) — deck page data (Accessibility, analysis
+  cache), snapshot fields, limits, preview commands and live validation (#45).
 
 Future notes (created by their issues): `led-output.md` (#21, #24).
 
