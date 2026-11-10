@@ -23,6 +23,9 @@ checked once on the S8; see
 S8Host starts the bridge with
 `--device s8 --midi full --until-stopped --app-events`, passes its other
 output through, and stops it on Ctrl-C, SIGTERM, or when its own stdin closes.
+With `--screens` it also draws the sidebar on the S8 panels
+([panel-views.md](panel-views.md)); without the flag nothing is sent to the
+S8.
 
 ## Buttons
 

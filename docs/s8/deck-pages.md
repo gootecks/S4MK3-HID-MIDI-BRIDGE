@@ -78,6 +78,9 @@ swift run --package-path macos S8Preview macos/S8ViewsTests/Fixtures --deck-snap
 `f` (or `--png`/`--frames`) also writes `deck-N.png`, `deck-N.json` (a
 `DeckSnapshot`, reusable with `--deck-snapshot`) and `deck-N.s8frame`.
 
+On the S8, `S8Host --screens --deck N` shows the page on the right panel
+([panel-views.md](panel-views.md)); unchecked on hardware.
+
 ## Stream to the S8
 
 ```sh
