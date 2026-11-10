@@ -1,0 +1,10 @@
+2026-11-10T16:39:09.698095Z  INFO S8_USB_FOUND: 17cc:1370 device=dev:0003070017cc1370
+S8_SCREEN_STATUS pending
+2026-11-10T16:39:09.735111Z  INFO Opening device from registry id 4294997013
+2026-11-10T16:39:09.735955Z  INFO starting event loop thread
+2026-11-10T16:39:09.746646Z  INFO MIDI_FULL_READY port="Kontrol S8 MIDI Full"
+2026-11-10T16:39:09.746653Z  INFO S8_HID_OPEN: native HID access; nothing is written to the controller
+S8_SCREEN_STATUS active
+2026-11-10T16:39:27.654465Z  INFO Probe ended; LED visibility and audio coexistence need physical confirmation input_events=0 led_writes=0 midi_messages=0 feedback_messages=0
+2026-11-10T16:39:27.655767Z  INFO event loop thread exited
+S8_SCREEN_STATUS inactive

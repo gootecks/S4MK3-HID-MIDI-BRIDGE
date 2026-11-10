@@ -161,24 +161,35 @@ Covered by tests with a fake transport only:
   transport bytes for both panels, latest-wins under a blocked transfer,
   pacing, status order, claim and transfer failure, exit frames.
 
+Checked on the S8 through this channel on 2026-11-10
+([screen-transport-validation.md](screen-transport-validation.md)):
+
+- Each panel alone and both panels back to back within one bridge process,
+  at 10 and 30 frames per second per panel for 5 s.
+- Frames dropped above the cap, with the last frame arriving.
+- The last frame staying while stdin is open and idle.
+- Black panels after the exit frames when stdin closes, and after a
+  `failed` stop from a bad record.
+
 Not validated on hardware (only a device can confirm):
 
-- Both panels updated back to back within one bridge process, and the
-  worker's pacing at the measured limit.
+- Ctrl-C of the bridge while it streams: the attended step did not settle it.
 - What the panels show when the bridge is killed while it streams. The
   example tool killed mid-stream left the S8's startup screens on both
   panels.
 - The claim failure when NIHardwareAgent holds interface 6, and that the
   reason text is useful.
-- What the panels show after the exit frames, and after a `failed` stop (#27).
 - The 500 ms transfer timeout under a stalled device.
-- stdin throughput: about 15.7 MB per second for two panels at the cap.
+- stdin throughput: about 15.7 MB per second for two panels at the cap,
+  for longer than 5 s.
 
 ## Attended check
 
-Planned, not run. It drives the real panels through the channel above with a
-feeder, one step at a time, and checks the status lines, the pictures and the
-exit behaviour. Nothing here is a result.
+Run on 2026-11-10; the results are in
+[screen-transport-validation.md](screen-transport-validation.md). It drives
+the real panels through the channel above with a feeder, one step at a time,
+and checks the status lines, the pictures and the exit behaviour. The rest
+of this section is the plan, not a result.
 
 ### Preconditions
 

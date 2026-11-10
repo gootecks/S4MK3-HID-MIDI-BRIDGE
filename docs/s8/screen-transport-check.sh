@@ -132,7 +132,7 @@ steps() {
     verdict c-alternate-10 "both panels move, both counters end at 49 and hold, then both black; no panel shows the other's title" || return 0
 
     run_step d-alternate-30 5 'pending,active,inactive' 0 --panels alternate --rate 30 --frames 150 || return 0
-    verdict d-alternate-30 "both panels steady, both counters end at 149, then both black; any tearing or flicker?" || return 0
+    verdict d-alternate-30 "both panels steady without tearing or flicker, both counters end at 149, then both black" || return 0
 
     run_step e-over-cap 5 'pending,active,inactive' 0 --panels left --rate 60 --frames 180 || return 0
     verdict e-over-cap "left panel: bar moves in visible jumps (frames dropped by the 30 fps cap) but the counter ends at 179, then black" || return 0
