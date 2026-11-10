@@ -119,8 +119,27 @@ The bridge pins `gootecks/Encdr` branch `pin/5d7a689-deviceid-default`
 (`8986302`): RufusIbiza/Encdr `5d7a689` (2026-10-04) plus a cherry-pick of
 upstream `675c70c`, which derives `Default` for `DeviceId`. The S8 descriptor
 corrections need that derive (#12). Nothing else differs from `5d7a689`, which
-already contains `ni_kontrol_s8.json`. The 49 later upstream commits include
-the hidapi HID backend (`b87a283`), NI-service ownership gating (`fc9c730`),
-the S8 service screen route (`3698b09`) and a 7-line S8 descriptor addition.
-The bump decision is #11; moving the pin back to an upstream release needs an
-attended S4 MK3 revalidation.
+already contains `ni_kontrol_s8.json`.
+
+Decision (#11): keep this pin. Upstream v0.9.0 (`a541465`, 52 commits after
+`5d7a689`) was evaluated on 2026-11-10 and adds nothing the S8 path uses:
+
+- Parser: pad-stream filtering for Maschine, NI-service ownership gating and
+  a fallback for zero-padded reports. The bridge frames reports itself and
+  runs with `NIHardwareAgent` stopped; the live `--raw` checks decode
+  correctly on the current pin.
+- Hotplug: an added controller filter API. The bridge only calls
+  `scan_devices`.
+- `ni_kontrol_s8.json`: LED protocol tags, an RLE screen protocol and an
+  NI-service quirk. The bridge's S8 descriptor drops LEDs, screens and quirks,
+  and screens use the bridge's own transport.
+
+A trial build against v0.9.0 compiled without source changes and the S8
+replay test passed. One S4 MK3 descriptor test failed: upstream added two
+jog-position sliders to the S4 MK3 descriptor. Upstream also renamed the
+`wheel_leds` group that the S4 path selects by name. Moving the pin therefore
+needs S4 MK3 fixes and an attended S4 MK3 revalidation, and no S4 MK3 is
+available. The full suite passes on the current pin.
+
+#61 tracks the move to an upstream release. It stays deferred until an S4 MK3
+is available or an upstream submission needs an upstream-reachable pin.
