@@ -10,7 +10,7 @@ upstream pull request.
 | ------------------- | --------------------------------------------------------------------- |
 | S4 MK3              | Behaviour unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5). |
 | S8 detection        | Listed and identified by the bridge (`--device s8`); never opened.    |
-| S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI ([input-capture.md](input-capture.md), #10). |
+| S8 input            | Read alongside MIDI mode on macOS; CUE and display buttons send HID but no MIDI. All 191 controls captured with the agent stopped, with corrections to both sources ([input-capture.md](input-capture.md), #10). |
 | S8 Djay mapping     | Bridge catalog not started (#13, #14). A working Controller Editor setup exists (below). |
 | S8 LEDs             | Partial evidence in Encdr; output framing unresolved (#21).           |
 | S8 screens          | S8 MIDI needs NIHardwareAgent, so direct screens mean full bridge control (#26, [agent-stop-validation.md](agent-stop-validation.md)). With the agent stopped, interface 6 claims cleanly ([screen-claim-validation.md](screen-claim-validation.md)), and both panels show run-length and full uncompressed RGB565 frames from the bridge's tools ([screen-frame-validation.md](screen-frame-validation.md)). Next: app-rendered library views (#48–#51), repeated frames (#43) and bridge transport (#44); see [screens.md](screens.md). |

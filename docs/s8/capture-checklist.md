@@ -1,9 +1,12 @@
 # S8 agent-stopped input capture: recorder and checklist
 
-Prerequisite capture for #10 (input), and for #12-#15. This is the plan for the
-attended pass with `NIHardwareAgent` stopped; results go into
-[input-capture.md](input-capture.md). The MIDI-mode pass already verified the
-four CUE buttons, PLAY and the 16 display buttons.
+Prerequisite capture for #10 (input), and for #12-#15. This is the plan used
+for the attended pass with `NIHardwareAgent` stopped. The pass ran on
+2026-11-09; results and corrections are in
+[input-capture.md](input-capture.md#agent-stopped-capture-2026-11-09). The
+`Expect` column below keeps what the sources predicted, not what was seen.
+The MIDI-mode pass had already verified the four CUE buttons, PLAY and the 16
+display buttons.
 
 ## Recorder
 
@@ -105,29 +108,25 @@ from physical minimum to maximum and back so range and monotonic direction are
 both visible; hold at each end for 1 s. Touch caps: rest a fingertip on the cap
 without moving the control. The screen encoder caps register a light touch.
 
-## Discrepancies to settle
+## Discrepancies settled
 
-The two sources disagree. The session decides which is right on this firmware.
+The two sources disagreed. The session settled each point on this firmware;
+detail is in
+[input-capture.md](input-capture.md#agent-stopped-capture-2026-11-09).
 
-| Topic | Encdr | kontrol-s8-protocol | Rows |
-| ----- | ----- | ------------------- | ---- |
-| Touchstrip position | Report 1, 10-bit at `[28..29]` (left) and `[34..35]` (right), max 1024 | Position field unresolved | `L-strip-slide`, `R-strip-slide` |
-| Touchstrip touch | `[16]` and `[32]`, mask `0x01` | `[29]` and `[35]`, mask `0x01` (inside Encdr's position bytes) | `L-strip-touch`, `R-strip-touch` |
-| Heartbeat | `[26..27]`, `[32..33]` called heartbeat | Not listed | hidden by default |
-| Deck fader and FX dial touch | Report 2, byte 11 / 19 | Report 1, byte 11 / 19 (faders), byte 10 / 18 (FX knobs, different masks) | `*-fader-n`, `*-fxk-n-touch` |
-| Screen encoders | `wrap16_wide`, 16-bit, `[1..16]` | Absolute position, same bytes | `*-senc-n-turn` |
-| Browse and loop encoders | Not described | Report 1 `[1]` (left) / `[2]` (right), nibbles, mod 16 | `*-browse-turn`, `*-loop-turn` |
-| Mixer channel fader | 12-bit at `[33..40]`, max 4078 | One byte at `[34]`, `[36]`, `[37]`, `[40]`, range 0..15 | `M-*-fader` |
-| EQ LOW, channels C and D | 4-bit at `[96]` / `[106]` | One byte at `[96]` / `[106]`, range 0..15 | `M-C-eqlow`, `M-D-eqlow` |
-| FILTER ON, deck assign, crossfader assign, MIC | Described | Not listed | marked "Encdr only" |
-| Fader full scale | Max 4078 | 4077-4089 observed | all 12-bit rows (S4 uses 4095) |
-| Report length | 41 and 109 bytes | Some report-1 rows are labelled length 109 | any `r1` change at a different length prints `baseline` again |
-
-EQ LOW on channels C and D is the likeliest wrong width: both sources give one
-byte at `[96]` / `[106]`, but the neighbouring knobs are 16-bit, so the field
-probably spans `[95..96]` / `[105..106]`. Changes in `[95]`, `[105]` or the
-upper nibble of `[96]` / `[106]` print as `?` during `M-C-eqlow` /
-`M-D-eqlow`.
+| Topic | Encdr | kontrol-s8-protocol | Observed |
+| ----- | ----- | ------------------- | -------- |
+| Touchstrip position | Report 1, 10-bit at `[28..29]` (left) and `[34..35]` (right), max 1024 | Position field unresolved | Encdr's bytes; 0 released, 1–1024 touched (11 bits) |
+| Touchstrip touch | `[16]` and `[32]`, mask `0x01` | `[29]` and `[35]`, mask `0x01` (inside Encdr's position bytes) | Neither: no touch bit. `[16] 0x01` is right pad 2, `[32]` a counter, `[29]`/`[35]` position bit 8 |
+| Heartbeat | `[26..27]`, `[32..33]` called heartbeat | Not listed | Two 16-bit counters; the second is the first minus one |
+| Deck fader and FX dial touch | Report 2, byte 11 / 19 | Report 1, byte 11 / 19 (faders), byte 10 / 18 (FX knobs, different masks) | kontrol-s8-protocol. Right fader 1 touch never fired: Unverified |
+| Screen encoders | `wrap16_wide`, 16-bit, `[1..16]` | Absolute position, same bytes | Position 0–999, wrapping; clockwise counts up |
+| Browse and loop encoders | Not described | Report 1 `[1]` (left) / `[2]` (right), nibbles, mod 16 | kontrol-s8-protocol's fields; clockwise is +1 per click, not a decrease |
+| Mixer channel fader | 12-bit at `[33..40]`, max 4078 | One byte at `[34]`, `[36]`, `[37]`, `[40]`, range 0..15 | Encdr: 12-bit at `[33..40]` |
+| EQ LOW, channels C and D | 4-bit at `[96]` / `[106]` | One byte at `[96]` / `[106]`, range 0..15 | Both wrong: 12-bit at `[95..96]` / `[105..106]` |
+| FILTER ON, deck assign, crossfader assign, MIC | Described | Not listed | Present. Crossfader assign is a three-position switch, and Encdr swaps B and D |
+| Fader full scale | Max 4078 | 4077-4089 observed | 4074–4095 depending on the control |
+| Report length | 41 and 109 bytes | Some report-1 rows are labelled length 109 | 41 and 109 bytes |
 
 ## Recorder verification status
 
