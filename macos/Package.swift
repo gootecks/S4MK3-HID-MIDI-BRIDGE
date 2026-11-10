@@ -11,7 +11,7 @@ let package = Package(
             path: ".",
             exclude: [
                 "build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests", "S8Views", "S8Preview",
-                "S8ViewsTests"
+                "S8ViewsTests", "DjaySidebar", "DjaySidebarTests", "S8Control", "S8ControlTests", "S8Host"
             ],
             sources: [
                 "S4BridgeApp.swift", "ScreenPreferences.swift", "ScreenSupport.swift",
@@ -35,6 +35,20 @@ let package = Package(
             dependencies: ["S8Views"],
             path: "S8ViewsTests",
             resources: [.copy("Fixtures")]
+        ),
+        .target(name: "DjaySidebar", dependencies: ["S8Views"], path: "DjaySidebar"),
+        .testTarget(
+            name: "DjaySidebarTests",
+            dependencies: ["DjaySidebar"],
+            path: "DjaySidebarTests"
+        ),
+        .target(name: "S8Control", dependencies: ["S8Views"], path: "S8Control"),
+        .testTarget(name: "S8ControlTests", dependencies: ["S8Control"], path: "S8ControlTests"),
+        .executableTarget(
+            name: "S8Host",
+            dependencies: ["DjaySidebar", "S8Control"],
+            path: "S8Host",
+            exclude: ["README.md"]
         )
     ]
 )

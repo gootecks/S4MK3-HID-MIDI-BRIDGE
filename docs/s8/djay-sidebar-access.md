@@ -239,9 +239,23 @@ retarget `Add Selection to Queue`. A real click does: djay treats a clicked
 sidebar row like a main-table row for queue and load (confirmed by the user
 in normal use). So the AX attribute is not equivalent to a click. The main
 library `AXTable` (`Playlist`, x=311) accepts `AXSelected`/`AXSelectedRows`
-and does retarget. Sidebar rows expose no actions (no `AXPress`). Selecting
-sidebar rows through AX (e.g. `AXSelectedRows` on the sidebar table, or
-focusing the table first) is open for #51.
+and does retarget. Sidebar rows expose no actions (no `AXPress`).
+
+### Sidebar selection by `AXSelectedRows` (#51)
+
+Tried on the running djay, no track loaded, queued or played:
+
+| Attempt | Result |
+| --- | --- |
+| `AXSelectedRows` set to `[row]` on the sidebar `AXTable` (child of the sidebar scroll area) | success; the sidebar row highlights and the Info panel's track becomes that row's track; the main table selection does not change |
+| `AXSelected` set on a row re-read just before | same effect; on a row reference kept across a UI change it fails (`-25202`) |
+| `AXSelectedRows` on the main table set to the row it already selects | no change in the Info panel |
+
+`DjaySidebar.moveSelection(by:)` uses `AXSelectedRows` on the sidebar table
+with freshly read rows, so a stale reference is never used. Whether this
+retargets load and queue like a click is **unverified**: queueing was not
+allowed in the test, and the earlier finding above says plain `AXSelected`
+did not. The Info panel following is the only retargeting observed.
 
 MIDI load itself was not exercised (see [Not exercised](#not-exercised)).
 

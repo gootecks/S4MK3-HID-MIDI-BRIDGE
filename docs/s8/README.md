@@ -110,6 +110,10 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
   and Mixxx survey, with licensing notes.
 - [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching
   djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
+- [display-buttons.md](display-buttons.md) — using the display buttons and
+  screen encoders to switch djay's sidebar tabs and move the selection
+  (`S8Host`, #51); [display-buttons-validation.md](display-buttons-validation.md)
+  holds what was observed and what still needs the S8.
 - [driverkit-evaluation.md](driverkit-evaluation.md) — DriverKit, USB, HID,
   audio and MIDI driver extensions for a more native S8 setup: verdicts,
   entitlement cost, and polish steps that need no driver (#55).
