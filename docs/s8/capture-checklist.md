@@ -75,6 +75,15 @@ be grouped later. Stop with Ctrl-C. Offline check of any log:
 
 ## Session flow
 
+`mise run s8:input-capture [row]` (`docs/s8/input-capture-session.sh`) runs
+steps 1 to 3 from an interactive terminal. It checks for one S8 and one
+verified `NIHardwareAgent`, starts the recorder, stops the agent and asks for a
+warm-up motion so both reports have a baseline. It then shows each row and
+stamps its label: Enter moves on, `r` stamps the label again, `q` stops, and
+any other text is saved as a note for the row. The agent is restored on exit.
+Logs go to `target/s8-captures/input-capture-<time>/`. Pass a row number to
+continue a stopped session.
+
 1. Integrator confirms the S8 is connected in the mode under test and starts
    the recorder; the first line per report is `baseline`. The S8 sends HID
    reports only when a control changes, so nothing prints until the first

@@ -92,6 +92,14 @@ arg "[order]" help="pattern colour order: rgb or bgr"
 run = 'bash docs/s8/screen-frame-check.sh "$usage_phase" ${usage_order:-}'
 raw = true
 
+[tasks."s8:input-capture"]
+description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
+usage = '''
+arg "[from]" help="checklist row to start from (default 1)"
+'''
+run = 'bash docs/s8/input-capture-session.sh ${usage_from:-}'
+raw = true
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks"
 run = "hk install"
