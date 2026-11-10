@@ -5,8 +5,9 @@ right-hand sidebar. Buttons 1 and 4 stay with Native Instruments (colour
 settings and template switching) and are never used.
 
 This is a source-build feature of the fork: `S8Host` runs the bridge and
-applies the controls through Accessibility. It is **not yet checked on the
-S8**; see [display-buttons-validation.md](display-buttons-validation.md).
+applies the controls through Accessibility. The buttons and encoders were
+checked once on the S8; see
+[display-buttons-validation.md](display-buttons-validation.md).
 
 ## Run
 

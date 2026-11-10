@@ -1,0 +1,27 @@
+Display buttons and screen encoders (#51). Host: /Users/prime/Working/kontrol-s8/S4MK3-wt-51/macos/.build/out/Products/Debug/S8Host, bridge: target/release/s4mk3-hid-midi-bridge.
+Before the stop: what do the two S8 panels show?: Controller Editor panel buttons
+S8Host is running. In djay: sidebar open on Library, click the main track table once so no sidebar row is selected.
+1. Turn the left screen encoder 1 by one small click. Did the sidebar selection jump? (expected: at most one row) Describe.: yes
+2. Press left button 3. Which djay tab is showing? (expected: Queue): Queue
+3. Hold left button 3 again, then release it. Did the release change anything? (expected: no): no
+4. Press left button 5. Tab? (expected: Match): Match
+5. Press left button 6. Tab? (expected: History): History
+6. Press left button 7. Tab? (expected: Info): Info
+7. Press right button 3. What shows? (expected: Info > Related): Info > Related
+8. Press right button 2. What shows? (expected: Info sub-tab): Info sub-tab
+9. Press left button 2. Tab? (expected: Library): Library
+10. Press left button 8, then right buttons 5, 6, 7, 8. Any change in djay? (expected: no): no
+11. Press buttons 1 and 4 on both sides. Any change in djay or on the panels? (expected: no; the NI actions need the agent): no
+12. Left encoders 1 to 4, one at a time: clockwise, then back. Which moved the selection down on clockwise? (expected: all four): all four
+13. Right encoders 1 to 4 the same way. Which moved down on clockwise? (expected: all four): all four
+14. One full turn moves 20 rows. Too fast, too slow or right?: right
+15. Spin an encoder fast through a long list. Does the selection keep up, lag or stop? Describe.: it lags a little bit
+16. Select a row with an encoder in Queue or History, then load or queue it with your usual control. Which control, and did it act on that row?: i pushed the right Browse encoder and it loaded on Deck B as expected
+17. Did either S8 panel change at any time since the stop? (expected: no): no
+S8Host exit status 15.
+Bridge processes left: 
+S8Host stopped, agent still stopped: what do the panels show?: Controller Editor panels
+After recovery: what do the panels show (Controller Editor labels again)?: Controller Editor labels again
+Press left PLAY once. Did Djay react? y/n: y
+Press display button 1 or 4. Does the NI action work again? y/n: y
+Recorded in docs/s8/captures/display-buttons-20261110T161510Z

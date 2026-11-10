@@ -1,6 +1,7 @@
 # Display buttons and screen encoders: validation (#51)
 
-Two kinds of evidence, kept apart. Nothing here was run against the S8.
+Three kinds of evidence, kept apart: a stand-in test without the S8, the
+automated tests, and one attended run on the S8.
 
 ## Observed: stand-in smoke test, live djay Pro, 2026-11-10
 
@@ -39,25 +40,57 @@ Automated: `cargo test --locked app_events` (button and encoder mapping, buttons
 (parser, accumulator, router) and `DjaySidebarTests` (element trees built in
 code, not recorded from djay).
 
-## Not checked: needs the S8
+## Observed on the S8: attended run, 2026-11-10
 
-Run it from an interactive terminal with someone at the S8:
-`mise run s8:display-buttons` (`display-buttons-check.sh`). It sends nothing
-to the S8. It stops NIHardwareAgent, starts `S8Host`, asks one question per
-row below, stops `S8Host` with SIGINT and restores the agent. Answers go to
-`docs/s8/captures/display-buttons-<UTC>/notes.txt`. `S8Host` does not print
-the `S8_CONTROL` lines it handles, so the answers are the record. Before the
-run: Controller Editor and djay Pro open with the sidebar showing, and the
-terminal allowed under Privacy & Security > Accessibility.
+`mise run s8:display-buttons` (`display-buttons-check.sh`), run by the user at
+the S8 with djay Pro and Controller Editor open. The runner sends nothing to
+the S8. It stops NIHardwareAgent, starts `S8Host`, asks one question per row,
+stops `S8Host` with SIGINT and restores the agent. Record:
+[captures/display-buttons-20261110T161510Z](captures/display-buttons-20261110T161510Z/).
+`notes.txt` holds the answers. `S8Host` does not print the `S8_CONTROL` lines
+it handles, so the answers are the record of what djay did; `host.log.gz`
+holds the bridge's own log of the buttons and encoder touches.
 
-- [ ] Each display button, left 2, 3, 5, 6, 7 and right 2, 3, does its action on
-      the S8 and button up does nothing; buttons 1 and 4 still do the NI actions.
-- [ ] Left 8 and right 5-8 do nothing visible.
-- [ ] All eight screen encoders move the list in the right direction; feel
-      of 50 counts per row (20 rows per turn): too fast or slow?
-- [ ] The first movement after start does not jump the selection.
-- [ ] Rapid turning keeps up with djay (each step re-reads the sidebar tree).
-- [ ] Load and queue act on a row selected by the encoders (unverified even
-      in the stand-in test; see [the finding](djay-sidebar-access.md#sidebar-selection-by-axselectedrows-51)).
-- [ ] NIHardwareAgent stopped as required; S8Host stops cleanly on Ctrl-C and
-      the bridge restores nothing it should not.
+The "Reported" column is the user's answer, unchanged.
+
+| Row | Action | Expected | Reported |
+| --- | --- | --- | --- |
+| 1 | Left screen encoder 1, one small click, first movement after start: did the selection jump? | at most one row | "yes" |
+| 2 | Left button 3 | Queue | "Queue" |
+| 3 | Hold and release left button 3: did the release change anything? | no | "no" |
+| 4 | Left button 5 | Match | "Match" |
+| 5 | Left button 6 | History | "History" |
+| 6 | Left button 7 | Info | "Info" |
+| 7 | Right button 3 | Info > Related | "Info > Related" |
+| 8 | Right button 2 | Info sub-tab | "Info sub-tab" |
+| 9 | Left button 2 | Library | "Library" |
+| 10 | Left button 8, right buttons 5, 6, 7, 8: any change in djay? | no | "no" |
+| 11 | Buttons 1 and 4 on both sides, agent stopped: any change in djay or on the panels? | no | "no" |
+| 12 | Left encoders 1 to 4: which moved the selection down on clockwise? | all four | "all four" |
+| 13 | Right encoders 1 to 4: which moved down on clockwise? | all four | "all four" |
+| 14 | 20 rows per full turn: too fast, too slow or right? | – | "right" |
+| 15 | Fast spin through a long list: keep up, lag or stop? | – | "it lags a little bit" |
+| 16 | Select a row with an encoder in Queue or History, then load or queue it | acts on that row | "i pushed the right Browse encoder and it loaded on Deck B as expected" |
+| 17 | Did either panel change since the agent stop? | no | "no" |
+
+After the rows:
+
+- `S8Host` stopped within 5 s of SIGINT with exit status 15 and left no
+  bridge process. Status 15 is the bridge ending on the SIGTERM that `S8Host`
+  sends it, as in the stand-in test.
+- With `S8Host` stopped and the agent still stopped, the panels showed the
+  Controller Editor labels.
+- After the agent was relaunched: Controller Editor labels on the panels,
+  Djay reacted to left PLAY, and the NI action of button 1 or 4 worked again.
+
+Limits of this run:
+
+- Row 1 is not settled. The answer "yes" does not say how far the selection
+  moved, so the first movement after start is neither confirmed nor failed.
+- Row 15: the selection lags a little behind a fast spin. Each step re-reads
+  djay's sidebar tree. It was not measured.
+- Row 16 covers loading with the right Browse encoder press. Queueing a
+  selected row was not tried.
+- Row 11 shows that buttons 1 and 4 do nothing in djay while the agent is
+  stopped. Their NI actions were tried once, after recovery, on one button.
+- One run, one S8, two-deck djay layout.
