@@ -2,7 +2,8 @@
 
 Research and first-frame test plan for #26, with results. Phases 2 and 4
 sent frames to the S8 from this bridge's tools
-([screen-frame-validation.md](screen-frame-validation.md)).
+([screen-frame-validation.md](screen-frame-validation.md)). Phase 5
+(repeated frames, held claim, partial updates) is planned, not run.
 
 Sidebar mirroring: [djay-sidebar-access.md](djay-sidebar-access.md) (#48).
 
@@ -195,7 +196,7 @@ Left panel only, one frame each:
 3. The same two frames on the right panel (screen byte and footer byte
    `01`).
 
-`examples/s8-screen-frame.rs` builds and sends one frame per run (`black`,
+`examples/s8-screen-frame/` builds and sends one frame per run (`black`,
 `f800` or `pattern`, `--screen left|right`) and refuses to run while
 NIHardwareAgent is running. `mise run s8:screen-frame first` runs the four
 steps during an attended agent stop with the passive recorder.
@@ -225,16 +226,73 @@ intended on both panels, each transfer taking about 16 ms. The last frame
 stays after the interface is released, and the relaunched agent redraws its
 labels ([screen-frame-validation.md](screen-frame-validation.md)).
 
+### Phase 5: repeated frames, held claim and partial updates
+
+Planned, not run. Each step needs the earlier ones to pass. Every frame is a
+full LITERAL frame unless stated, drawn by the shared encoder with a frame
+counter and a bar that moves every frame, so tearing, flicker and dropped
+frames show. Streaming steps claim interface 6 once and hold it for the whole
+step.
+
+1. **Held claim, one panel at a time.** Left panel at 10, 20, 30 and 60 frames
+   per second, 5 s each, then the right panel the same way. Stop at the first
+   transfer error or timeout. Pass: no error, and the observer names the
+   highest rate with a steady bar and counter.
+2. **Alternating panels.** Left, right, left, ... at the same four rates (rate
+   counted per panel, so 60 means 120 transfers per second), 5 s each. Same
+   stop condition and pass rule.
+3. **Unpaced burst.** 120 full frames to the left panel back to back, to measure
+   the transfer ceiling. Stop at the first error or timeout. Pass: no error.
+4. **Soak.** 60 s alternating both panels at 30 frames per second per panel, or
+   at the highest rate that passed steps 1 and 2 on both panels if that is
+   lower. Pass: no error and steady for the whole minute.
+5. **Partial updates**, last because the format is unverified. Over a known
+   solid F800 background, one frame with a full-panel header that uses SKIP for
+   the top half and LITERAL for the bottom half; then, over a fresh F800
+   background, one frame whose header names a sub-rectangle (x 160, y 96,
+   160 x 80) filled with LITERAL. One frame each, photo after each. Whatever
+   the panel shows is the result; a rejected transfer ends the step.
+6. **Exit state.** Stream 5 s alternating at 30 frames per second and stop
+   without a final frame; photograph both panels. Start a 30 s stream, `kill -9`
+   the tool after 4 s (the runner does this), photograph the panels, then start
+   the tool again and send one clean full pattern frame to each panel. This
+   shows whether a cut-off frame leaves the panel usable.
+
+Bounds, enforced by the tool: 500 ms timeout per transfer, no retries, the tool
+stops at the first error or timeout, at most 3,600 frames and 60 s (stage gaps
+included) per invocation, 1 to 60 frames per second. Only interface 6 is
+claimed (the passive recorder reads interface 5). The runner stops the whole
+run at the first failed step, or when the observer answers `stop`, and goes to
+the recovery above (`open -g` on the agent bundle, PLAY check). Stages inside
+one invocation are 2 s apart. The tool refuses to send while NIHardwareAgent
+runs or unless exactly one S8 is connected; `--dump` writes every mode's frames
+or their hashes without a device.
+
+`examples/s8-screen-frame/` has `stream`, `burst` and `partial skip|rect`
+besides the single frames. `mise run s8:screen-stream` runs the six steps during
+an attended agent stop and writes raw logs to
+`docs/s8/captures/screen-stream-<UTC>/`. The results go to
+`docs/s8/screen-stream-validation.md` after the run. What each step should show,
+decoded from the frames the tool sends, is in
+[screen-stream-expected.md](screen-stream-expected.md); the runner lists the
+pictures before each prompt.
+
 ### What to record
 
 For each step: the exact bytes or a hash for full frames, transfer status,
 panel photo, whether MIDI and HID still flowed, and what happened on recovery.
+For phase 5, per step and panel: frames sent, achieved rate, transfer time
+minimum, median, 95th percentile and maximum, errors, what the observer saw
+(tearing, flicker, stale areas), MIDI and HID flow from the passive recorder,
+and the panel state after exit and after recovery.
+
 Record in a validation file under `docs/s8/`, not in this plan.
 
 ## Still open after this plan
 
 - Refresh rate and latency for repeated frames, holding interface 6 across
-  frames, and partial updates (SKIP, sub-rectangles): phase 5, #43.
+  frames, and partial updates (SKIP, sub-rectangles): planned as phase 5
+  (#43), not run.
 - What the panels should show when the bridge quits without relaunching the
   agent: they keep the last frame (#27).
 - How Djay's four-deck layouts appear through Accessibility (#45).
