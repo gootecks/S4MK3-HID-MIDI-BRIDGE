@@ -42,11 +42,12 @@ public struct DeckTracker {
         }
         self.reading = reading
         notice = nil
+        playing = debouncer.update(isPlaying: reading.isPlaying, now: now)
         interpolator.update(
             elapsedTime: reading.elapsedTime, remainingTime: reading.remainingTime,
-            knownDuration: knownDuration, isPlaying: reading.isPlaying, bpmPercent: reading.bpmPercent, now: now
+            knownDuration: knownDuration, isPlaying: playing, playingSince: debouncer.activeSince,
+            bpmPercent: reading.bpmPercent, now: now
         )
-        playing = debouncer.update(isPlaying: reading.isPlaying, now: now)
     }
 
     public mutating func ingestFailure(_ message: String) {

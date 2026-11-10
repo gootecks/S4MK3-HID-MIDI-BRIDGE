@@ -18,7 +18,7 @@ public struct TimeInterpolator {
 
     public mutating func update(
         elapsedTime: String?, remainingTime: String?, knownDuration: Double? = nil, isPlaying: Bool,
-        bpmPercent: String?, now: Date = Date()
+        playingSince: Date? = nil, bpmPercent: String?, now: Date = Date()
     ) {
         let parsedElapsed = elapsedTime.flatMap { Self.parseTime($0) }
         let newRemaining = remainingTime.flatMap { Self.parseTime($0) }
@@ -45,6 +45,9 @@ public struct TimeInterpolator {
             remainingCorrectionStart = now
             lastRemainingSeconds = remaining
             lastUpdateTime = now
+        }
+        if isPlaying, !self.isPlaying {
+            lastUpdateTime = max(lastUpdateTime, playingSince ?? now)
         }
         self.isPlaying = isPlaying
         playbackRate = Self.parsePlaybackRate(bpmPercent)

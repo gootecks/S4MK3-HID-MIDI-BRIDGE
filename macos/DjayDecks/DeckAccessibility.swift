@@ -7,7 +7,7 @@ public enum DeckAccessError: Error, Equatable {
 }
 
 public protocol DeckAccessibility {
-    func labeledValues(prefix: String) throws -> [String: String]
+    func labeledValues() throws -> [String: String]
 }
 
 public struct DeckReader {
@@ -17,12 +17,13 @@ public struct DeckReader {
         self.source = source
     }
 
-    public func read(deck: Int) throws -> DeckReading {
-        var labeled: [String: String] = [:]
-        for keyword in DeckParser.deckKeywords {
-            try labeled.merge(source.labeledValues(prefix: "\(keyword) \(deck)")) { _, new in new }
+    public func readings() throws -> [Int: DeckReading] {
+        var labeled: [Int: [String: String]] = [:]
+        for (label, value) in try source.labeledValues() {
+            guard let deck = DeckParser.parseDeckNumber(from: label) else { continue }
+            labeled[deck, default: [:]][label] = value
         }
-        return DeckParser.reading(from: labeled)
+        return labeled.mapValues(DeckParser.reading(from:))
     }
 }
 
@@ -50,14 +51,16 @@ public final class AXDeckSource: DeckAccessibility {
         return element
     }
 
-    public func labeledValues(prefix: String) throws -> [String: String] {
+    public func labeledValues() throws -> [String: String] {
         let app = try application()
         var value: AnyObject?
         let status = AXUIElementCopyAttributeValue(app, kAXChildrenAttribute as CFString, &value)
         if status == .apiDisabled || status == .cannotComplete {
             throw DeckAccessError.permissionDenied
         }
-        return Self.collect(app, prefix: prefix, depth: 0)
+        var results: [String: String] = [:]
+        Self.collect(app, depth: 0, into: &results)
+        return results
     }
 
     static func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
@@ -65,19 +68,19 @@ public final class AXDeckSource: DeckAccessibility {
         return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
     }
 
-    static func collect(_ element: AXUIElement, prefix: String, depth: Int) -> [String: String] {
-        var results: [String: String] = [:]
+    static func collect(_ element: AXUIElement, depth: Int, into results: inout [String: String]) {
         let label = attribute(element, kAXDescriptionAttribute) as? String ?? ""
-        let value = attribute(element, kAXValueAttribute) as? String
-            ?? attribute(element, kAXTitleAttribute) as? String ?? ""
-        if !label.isEmpty, label.contains(prefix), !value.isEmpty {
-            results[label] = value
+        if DeckParser.deckKeywords.contains(where: label.contains) {
+            let value = attribute(element, kAXValueAttribute) as? String
+                ?? attribute(element, kAXTitleAttribute) as? String ?? ""
+            if !value.isEmpty {
+                results[label] = value
+            }
         }
         if depth < maximumDepth, let children = attribute(element, kAXChildrenAttribute) as? [AXUIElement] {
             for child in children {
-                results.merge(collect(child, prefix: prefix, depth: depth + 1)) { _, new in new }
+                collect(child, depth: depth + 1, into: &results)
             }
         }
-        return results
     }
 }

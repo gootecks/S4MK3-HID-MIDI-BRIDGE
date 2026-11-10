@@ -77,14 +77,45 @@ final class PlayStateDebouncerTests: XCTestCase {
     func testPausedToPlayingNeedsSustainedState() {
         var debouncer = PlayStateDebouncer()
         XCTAssertFalse(debouncer.update(isPlaying: true, now: start))
+        XCTAssertFalse(debouncer.update(isPlaying: true, now: start.addingTimeInterval(0.25)))
         XCTAssertFalse(debouncer.update(isPlaying: true, now: start.addingTimeInterval(0.5)))
-        XCTAssertTrue(debouncer.update(isPlaying: true, now: start.addingTimeInterval(0.8)))
+        XCTAssertTrue(debouncer.update(isPlaying: true, now: start.addingTimeInterval(0.75)))
     }
 
     func testPlayingToPausedIsImmediate() {
         var debouncer = PlayStateDebouncer()
-        _ = debouncer.update(isPlaying: true, now: start)
+        for step in 0 ... 3 {
+            _ = debouncer.update(isPlaying: true, now: start.addingTimeInterval(Double(step) * 0.25))
+        }
         XCTAssertTrue(debouncer.update(isPlaying: true, now: start.addingTimeInterval(1)))
         XCTAssertFalse(debouncer.update(isPlaying: false, now: start.addingTimeInterval(1.01)))
+    }
+
+    func testConfirmedPlayingSurvivesASlowPoll() {
+        var debouncer = PlayStateDebouncer()
+        for step in 0 ... 3 {
+            _ = debouncer.update(isPlaying: true, now: start.addingTimeInterval(Double(step) * 0.25))
+        }
+        XCTAssertTrue(debouncer.update(isPlaying: true, now: start.addingTimeInterval(3)))
+        XCTAssertEqual(debouncer.activeSince, start)
+    }
+
+    func testActiveSamplesTooFarApartToRuleOutABlinkNeverConfirmPlaying() {
+        var debouncer = PlayStateDebouncer()
+        for step in 0 ... 8 {
+            let now = start.addingTimeInterval(Double(step) * 0.93)
+            XCTAssertFalse(debouncer.update(isPlaying: true, now: now), "step \(step)")
+        }
+    }
+
+    func testDenseSamplesAfterAGapConfirmPlaying() {
+        var debouncer = PlayStateDebouncer()
+        _ = debouncer.update(isPlaying: true, now: start)
+        var confirmed = false
+        for step in 0 ... 3 {
+            confirmed = debouncer.update(isPlaying: true, now: start.addingTimeInterval(2 + Double(step) * 0.25))
+        }
+        XCTAssertTrue(confirmed)
+        XCTAssertEqual(debouncer.activeSince, start.addingTimeInterval(2))
     }
 }

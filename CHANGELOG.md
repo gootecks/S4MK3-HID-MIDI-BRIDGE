@@ -180,6 +180,11 @@ their detailed notes stay in `docs/release-*.md`.
   `--app-events` the S8 bridge stops cleanly when a status or `S8_CONTROL`
   line cannot be written: exit frames, release, exit status 0. Covered by
   tests; Ctrl-C while streaming then passed on the S8 (#44).
+- The deck page no longer runs the time of a paused deck ahead. djay blinks
+  the play button of a paused deck, and the page took the lit half of a
+  blink for playback. All decks are now read in one pass of djay's window,
+  which keeps the page correct in the Four Decks layout. Checked against
+  djay with two and four decks (#80).
 
 ## [0.2.1-beta.1] - 2026-10-26
 
