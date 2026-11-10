@@ -71,6 +71,82 @@ swift run --package-path macos S8Preview macos/S8ViewsTests/Fixtures --deck-snap
 `f` (or `--png`/`--frames`) also writes `deck-N.png`, `deck-N.json` (a
 `DeckSnapshot`, reusable with `--deck-snapshot`) and `deck-N.s8frame`.
 
+## Stream to the S8
+
+```sh
+swift run --package-path macos S8Preview --stream left=1,right=2 --seconds 20
+```
+
+`--stream` writes the live deck pages as `S8FR` records to stdout, in the
+format of [screen-transport.md](screen-transport.md), for the bridge's
+`--s8-screens-stdin`. It opens no device. `left=N` and `right=M` choose the
+deck for each panel; one panel alone is allowed. The pages are rendered every
+0.1 s and a record is written only when a page changed, so a paused deck
+sends one record. Without `--seconds` it runs until its stdout closes. Each
+record is logged on stderr with the deck's time and play state. When djay
+cannot be read it exits with status 1 before it writes anything.
+
+## Attended check on the S8 (#85)
+
+This section is the plan, not a result. The run sends screen frames to the
+S8 and stops NIHardwareAgent, so it needs the user's go-ahead.
+
+What it checks: the deck pages of the paused-deck fix (#80) on the real
+panels, next to djay. What it sends: full-panel frames to interface 6 through
+the bridge's `--s8-screens-stdin` channel, which was checked on this S8 on
+2026-11-10 ([screen-transport-validation.md](screen-transport-validation.md)).
+It sends no LED reports, no feature reports and nothing to interface 4.
+
+### Preconditions
+
+- Exactly one Kontrol S8 on USB; Traktor, Maschine and Komplete Kontrol quit.
+- djay open with decks 1 and 2 loaded and paused. For the last step, decks 3
+  and 4 loaded as well.
+- The terminal that runs the check holds Accessibility permission. The runner
+  reads djay once before it stops anything and refuses when that fails.
+- Run from an interactive terminal: `mise run s8:deck-page`. To continue a
+  run that stopped early, name the first step, for example
+  `mise run s8:deck-page b-play`.
+- The runner stops `NIHardwareAgent` with `kill -9` and relaunches it with
+  `open -g` on every exit path. While it is stopped, the S8's controls reach
+  djay only through the bridge mapping, so start and stop decks in djay's
+  window.
+
+The runner builds the release bridge and `S8Preview`, and writes
+`docs/s8/captures/deck-page-<UTC>/`: per step the bridge output (`.txt`) and
+the stream log (`.stream.txt`), plus `notes.txt` with every answer,
+`snapshots.txt` and `events.txt`.
+
+### Steps
+
+Every step runs `S8Preview --stream … --seconds N | bridge --device s8 --midi
+full --s8-screens-stdin --until-stopped`. The stream ends after N seconds,
+the bridge then sends black frames to both panels and exits. A step passes
+when the status lines are `pending`, `active`, `inactive`, the bridge exits
+with status 0 and the observer answers `y` to each question.
+
+| Step | Panels | Time | The observer does | Pass |
+| ---- | ------ | ---- | ----------------- | ---- |
+| `a-paused` | left deck 1, right deck 2 | 20 s | Nothing; both decks stay paused | Each panel shows its deck with title, time, waveform and PAUSED. Both times and playheads stand still for the 20 s. Both panels go black at the end. |
+| `b-play` | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses | While deck 1 plays the left panel says PLAYING and its time moves with djay's. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
+| `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays. |
+
+Expected and not a fault: PLAYING appears about 1 s after play, and the panel
+time is up to 1 s ahead of djay and steps back by up to 1 s on pause (#83).
+
+Fault: a time that runs on a paused deck, a page of the wrong deck, a garbled
+or frozen panel while its deck plays, a status line `failed`, or a bridge
+exit status other than 0. On a fault answer `n` or describe it; the runner
+skips the remaining steps and goes to recovery. `stop` at any prompt and
+Ctrl-C during a step do the same; after Ctrl-C the panels go black.
+
+### Recovery
+
+The runner relaunches NIHardwareAgent, waits 5 s, and asks what the panels
+show and whether djay reacts to the left PLAY button. If the agent does not
+come back, start it by hand:
+`open -g "/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app"`.
+
 ## Validation record
 
 Observed on 2026-11-10 with djay Pro running and the terminal holding
