@@ -1,12 +1,15 @@
 #!/bin/bash
-# Shared parts of the attended S8 screen runners (screen-frame-check.sh,
-# screen-stream-check.sh). Source it; it does nothing on its own.
+# Shared parts of the attended S8 screen runners. Source it; it does nothing
+# on its own.
 #   screen_init NAME      create docs/s8/captures/NAME-UTC and set $run
 #   screen_preflight      refuse unless one S8, no rival apps, one genuine agent
 #   screen_build PROFILE  build the recorder and screen tool; sets $tool, $recorder_bin
 #   screen_start          start the passive recorder and the restore trap
 #   screen_agent_stop     baseline PLAY check, SIGKILL the agent, PLAY check
 #   screen_finish         release wait, recovery, PLAY check, jq per-window summary
+#   row QUESTION          ask and record; false when the answer is "stop"
+#   start_host NAME ARGS  run S8Host --screens ARGS with $host and $bridge, log to $run/NAME.log
+#   stop_host NAME HOW    stop it with Ctrl-C (int) or by closing its stdin (eof)
 
 bundle="/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app"
 exe="$bundle/Contents/MacOS/NIHardwareAgent"
@@ -100,4 +103,60 @@ screen_finish() {
         | "\(window)\t\(.src)\t\(.port // ("report " + (.id | tostring)))\t\(if .src == "midi" then .hex else "" end)"
     ' "$run/recorder.jsonl" | sort | uniq -c | tee "$run/summary.txt"
     note "Recorded in $run"
+}
+
+row() {
+    ask "$1"
+    [ "$answer" != stop ]
+}
+
+start_host() {
+    local name="$1"
+    shift
+    log="$run/$name.log"
+    fifo="$(mktemp -u "${TMPDIR:-/tmp}/s8host-stdin.XXXXXX")"
+    mkfifo "$fifo"
+    "$host" --bridge "$bridge" --screens "$@" < "$fifo" \
+        > >(perl -MTime::HiRes=time -ne 'BEGIN { $| = 1 } printf "%.3f %s", time, $_' > "$log") 2>&1 &
+    host_pid=$!
+    exec 9> "$fifo"
+    mark "$name-started"
+    for _ in $(seq 1 20); do
+        grep -Eq 'S8_SCREEN_STATUS (active|failed)' "$log" 2> /dev/null && break
+        kill -0 "$host_pid" 2> /dev/null || break
+        sleep 0.5
+    done
+    if ! grep -q 'S8_SCREEN_STATUS active' "$log" 2> /dev/null; then
+        note "$name: the screens did not become active within 10 s."
+        cat "$log"
+        exit 1
+    fi
+}
+
+# stop_host NAME int|eof: Ctrl-C to S8Host, or close its stdin.
+stop_host() {
+    local name="$1" how="$2" status=0
+    mark "$name-$how"
+    if [ "$how" = int ]; then
+        kill -INT "$host_pid" 2> /dev/null || true
+    else
+        exec 9>&-
+    fi
+    for _ in $(seq 1 30); do
+        kill -0 "$host_pid" 2> /dev/null || break
+        sleep 0.5
+    done
+    if kill -0 "$host_pid" 2> /dev/null; then
+        note "$name: S8Host still running 15 s after $how; sending SIGTERM."
+        kill -TERM "$host_pid"
+    fi
+    wait "$host_pid" || status=$?
+    host_pid=""
+    exec 9>&- || true
+    rm -f "$fifo"
+    fifo=""
+    note "$name: S8Host exit status $status (expected 0)."
+    note "$name: status lines: $(grep -o 'S8_SCREEN_STATUS.*' "$log" | tr '\n' ';')"
+    note "$name: bridge processes left: $(pgrep -f "$bridge" | tr '\n' ' ')"
+    snap "$name-stopped"
 }

@@ -28,62 +28,6 @@ restore() {
     fi
 }
 
-row() {
-    ask "$1"
-    [ "$answer" != stop ]
-}
-
-start_host() {
-    local name="$1"
-    shift
-    log="$run/$name.log"
-    fifo="$(mktemp -u "${TMPDIR:-/tmp}/s8host-stdin.XXXXXX")"
-    mkfifo "$fifo"
-    "$host" --bridge "$bridge" --screens "$@" < "$fifo" \
-        > >(perl -MTime::HiRes=time -ne 'BEGIN { $| = 1 } printf "%.3f %s", time, $_' > "$log") 2>&1 &
-    host_pid=$!
-    exec 9> "$fifo"
-    mark "$name-started"
-    for _ in $(seq 1 20); do
-        grep -Eq 'S8_SCREEN_STATUS (active|failed)' "$log" 2> /dev/null && break
-        kill -0 "$host_pid" 2> /dev/null || break
-        sleep 0.5
-    done
-    if ! grep -q 'S8_SCREEN_STATUS active' "$log" 2> /dev/null; then
-        note "$name: the screens did not become active within 10 s."
-        cat "$log"
-        exit 1
-    fi
-}
-
-# stop_host NAME int|eof: Ctrl-C to S8Host, or close its stdin.
-stop_host() {
-    local name="$1" how="$2" status=0
-    mark "$name-$how"
-    if [ "$how" = int ]; then
-        kill -INT "$host_pid" 2> /dev/null || true
-    else
-        exec 9>&-
-    fi
-    for _ in $(seq 1 30); do
-        kill -0 "$host_pid" 2> /dev/null || break
-        sleep 0.5
-    done
-    if kill -0 "$host_pid" 2> /dev/null; then
-        note "$name: S8Host still running 15 s after $how; sending SIGTERM."
-        kill -TERM "$host_pid"
-    fi
-    wait "$host_pid" || status=$?
-    host_pid=""
-    exec 9>&- || true
-    rm -f "$fifo"
-    fifo=""
-    note "$name: S8Host exit status $status (expected 0)."
-    note "$name: status lines: $(grep -o 'S8_SCREEN_STATUS.*' "$log" | tr '\n' ';')"
-    note "$name: bridge processes left: $(pgrep -f "$bridge" | tr '\n' ' ')"
-    snap "$name-stopped"
-}
-
 screen_preflight
 pgrep -f 'djay.app/Contents/MacOS/' > /dev/null ||
     { echo "Open djay Pro with its library sidebar showing."; exit 1; }

@@ -141,6 +141,11 @@ description = "Attended S8 panel views check: stop NIHardwareAgent, run S8Host -
 run = "bash docs/s8/panel-views-check.sh"
 raw = true
 
+[tasks."s8:deck-data"]
+description = "Attended S8 deck data check: stop NIHardwareAgent, show the live djay decks on the panels through S8Preview --stream and S8Host, restore (#45); sends screen frames to the S8"
+run = "bash docs/s8/deck-data-check.sh"
+raw = true
+
 [tasks."s8:input-capture"]
 description = "Attended S8 input capture: stop NIHardwareAgent, walk the control checklist, restore (#10)"
 usage = '''
