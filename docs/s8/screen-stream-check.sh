@@ -35,12 +35,19 @@ confirm() {
     mark "$1"
 }
 
-# run NAME ARGS...: dump check (hashes only), then the real send. Sets $status.
+# pictures PICS: list the expected pictures to compare with, before the prompt.
+pictures() {
+    note "Expected pictures (docs/s8/screen-stream-expected.md):"
+    ls docs/s8/images/phase5/"$1"-*.png
+}
+
+# run NAME PICS ARGS...: dump check (hashes only), then the real send. Sets $status.
 run_tool() {
-    local name="$1"
-    shift
+    local name="$1" pics="$2"
+    shift 2
     "$tool" "$@" --dump "$run/$name.dump" > /dev/null
     note "$name: dry-run written to $run/$name.dump ($(wc -l < "$run/$name.dump" | tr -d ' ') lines)"
+    pictures "$pics"
     confirm "$name" || return 1
     set +e
     "$tool" "$@" 2>&1 | tee "$run/$name.txt"
@@ -67,16 +74,16 @@ play_check() {
 
 steps() {
     local rate_left rate_right rate_alt soak
-    run_tool a-left stream --rates 10,20,30,60 --seconds 5 --panels left --screen left || return 0
+    run_tool a-left a-left stream --rates 10,20,30,60 --seconds 5 --panels left --screen left || return 0
     observe a-left || return 0; rate_left=$rate
-    run_tool a-right stream --rates 10,20,30,60 --seconds 5 --panels right --screen right || return 0
+    run_tool a-right a-right stream --rates 10,20,30,60 --seconds 5 --panels right --screen right || return 0
     observe a-right || return 0; rate_right=$rate
     play_check
 
-    run_tool b-alternate stream --rates 10,20,30,60 --seconds 5 --panels alternate || return 0
+    run_tool b-alternate b-alternate stream --rates 10,20,30,60 --seconds 5 --panels alternate || return 0
     observe b-alternate || return 0; rate_alt=$rate
 
-    run_tool c-burst burst --frames 120 --screen left || return 0
+    run_tool c-burst c-burst burst --frames 120 --screen left || return 0
     ask "c-burst: any tearing or stale areas on the left panel afterwards? Describe, or 'stop'."
     [ "$answer" != stop ] || { stopped="after c-burst"; return 0; }
 
@@ -84,23 +91,24 @@ steps() {
     soak=$(( soak < rate_alt ? soak : rate_alt ))
     soak=$(( soak < 30 ? soak : 30 ))
     note "Soak rate: $soak frames/s per panel (min of a-left $rate_left, a-right $rate_right, b $rate_alt, capped at 30)."
-    run_tool d-soak stream --rates "$soak" --seconds 60 --panels alternate || return 0
+    run_tool d-soak d-soak stream --rates "$soak" --seconds 60 --panels alternate || return 0
     ask "d-soak: steady for the whole 60 s? y/n, or describe"
     case "$answer" in y|Y|yes) ;; *) stopped="d-soak not steady"; return 0 ;; esac
     play_check
 
-    run_tool e-bg-skip f800 --screen left || return 0
-    run_tool e-skip partial skip --screen left || return 0
+    run_tool e-bg-skip e-bg f800 --screen left || return 0
+    run_tool e-skip e-skip partial skip --screen left || return 0
     ask "e-skip: top half, bottom half? Photo. Describe, or 'stop'."
     [ "$answer" != stop ] || { stopped="after e-skip"; return 0; }
-    run_tool e-bg-rect f800 --screen left || return 0
-    run_tool e-rect partial rect --screen left || return 0
+    run_tool e-bg-rect e-bg f800 --screen left || return 0
+    run_tool e-rect e-rect partial rect --screen left || return 0
     ask "e-rect: where did the pattern land? Photo. Describe, or 'stop'."
     [ "$answer" != stop ] || { stopped="after e-rect"; return 0; }
 
-    run_tool f-end stream --rates 30 --seconds 5 --panels alternate || return 0
+    run_tool f-end f-end stream --rates 30 --seconds 5 --panels alternate || return 0
     sleep 3
     ask "f-end: stream ended without a final frame. What do the panels show? Photo."
+    pictures f-kill
     confirm f-kill || return 0
     "$tool" stream --rates 30 --seconds 30 --panels alternate > "$run/f-kill.txt" 2>&1 &
     local streamer=$!
@@ -112,8 +120,8 @@ steps() {
     sleep 1
     snap "f-kill+1s"
     ask "f-kill: what do the panels show after the kill? Photo."
-    run_tool f-clean-left pattern --screen left || return 0
-    run_tool f-clean-right pattern --screen right || return 0
+    run_tool f-clean-left f-clean-left pattern --screen left || return 0
+    run_tool f-clean-right f-clean-right pattern --screen right || return 0
     ask "f-clean: do both panels show the clean test pattern? y/n, or describe"
 }
 

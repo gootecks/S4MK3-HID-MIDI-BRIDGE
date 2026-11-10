@@ -272,7 +272,10 @@ or their hashes without a device.
 besides the single frames. `mise run s8:screen-stream` runs the six steps during
 an attended agent stop and writes raw logs to
 `docs/s8/captures/screen-stream-<UTC>/`. The results go to
-`docs/s8/screen-stream-validation.md` after the run.
+`docs/s8/screen-stream-validation.md` after the run. What each step should show,
+decoded from the frames the tool sends, is in
+[screen-stream-expected.md](screen-stream-expected.md); the runner lists the
+pictures before each prompt.
 
 ### What to record
 
