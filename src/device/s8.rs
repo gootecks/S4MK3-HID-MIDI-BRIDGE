@@ -4,6 +4,8 @@
 //! Byte offsets include the report ID, as Encdr's S8 packets count them.
 //! Evidence for every field is in `docs/s8/input-capture.md`.
 
+pub mod screen;
+
 use encdr::DeviceDescriptor;
 use encdr::core::descriptor::{
     ButtonItemDesc, EncoderEncoding, EncoderItemDesc, HexU16, InputItemDesc, QuirksDesc,
