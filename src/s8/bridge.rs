@@ -37,7 +37,12 @@ pub fn check_args(args: &Args) -> anyhow::Result<()> {
 }
 
 pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::Result<()> {
-    let (_stop_tx, stop_rx) = stop_signal()?;
+    let (stop_tx, stop_rx) = stop_signal()?;
+    let _screens = args
+        .screens
+        .s8_stdin
+        .then(|| super::screens::start(stop_tx.clone()))
+        .transpose()?;
     let mut midi = MidiOutput::new("Kontrol S8 full bridge")?
         .create_virtual(S8.full_endpoint)
         .map_err(|error| anyhow::anyhow!("create S8 MIDI source: {error}"))?;

@@ -106,6 +106,8 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 - [screen-stream-expected.md](screen-stream-expected.md) — pictures of what each
   phase 5 step should show, decoded from the frames the tool sends
   (`mise run s8:phase5-images`).
+- [screen-transport.md](screen-transport.md) — the app/bridge channel for
+  screen frames and status (#44): record layout, status lines, worker policy.
 - [research-sources.md](research-sources.md) — kontrol-s8-protocol, Encdr
   and Mixxx survey, with licensing notes.
 - [djay-sidebar-access.md](djay-sidebar-access.md) — reading and switching

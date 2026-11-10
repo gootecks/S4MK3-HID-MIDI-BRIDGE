@@ -12,6 +12,8 @@
 //! go to a file. One JSON summary line per stage goes to stdout.
 
 mod modes;
+#[path = "../common/picture_file.rs"]
+mod picture_file;
 mod pictures;
 mod run;
 mod transport;
