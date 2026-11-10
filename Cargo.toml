@@ -25,6 +25,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 core-foundation = "0.10"
+png = "0.18.1"
 sha2 = "0.10"
 
 [lints.rust]

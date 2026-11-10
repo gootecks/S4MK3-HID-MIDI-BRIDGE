@@ -12,6 +12,7 @@
 //! go to a file. One JSON summary line per stage goes to stdout.
 
 mod modes;
+mod pictures;
 mod run;
 mod transport;
 
@@ -22,6 +23,7 @@ use std::time::Instant;
 
 use anyhow::{Context as _, bail, ensure};
 use clap::{Parser, Subcommand, ValueEnum};
+use pictures::{Pick, Pictures};
 use run::Job;
 use s4mk3_hid_midi_bridge::device::s8::screen::Panel;
 use transport::{DryRun, Session};
@@ -50,6 +52,14 @@ impl From<Side> for Panel {
     }
 }
 
+/// What the panels already show when the pictures start.
+#[derive(Clone, Copy, ValueEnum)]
+enum Under {
+    Black,
+    F800,
+}
+
+/// Which panels `stream` feeds.
 #[derive(Clone, Copy, ValueEnum)]
 enum Panels {
     Left,
@@ -123,6 +133,23 @@ struct Args {
     /// Write the pattern as intended (logical RGB) to this PPM file.
     #[arg(long, global = true)]
     preview: Option<PathBuf>,
+    /// Dry run that draws what the panels would show, decoded from the frame
+    /// bytes, into this directory as 480x272 PNG files; sends nothing.
+    #[arg(long, global = true, requires = "name")]
+    png: Option<PathBuf>,
+    /// Start of the picture file names, e.g. the runner step.
+    #[arg(long, global = true, requires = "png")]
+    name: Option<String>,
+    /// Draw these frames of every stage (`last` or numbers from 0, per panel)
+    /// instead of the first, the last of each stage and a spread.
+    #[arg(long, global = true, value_delimiter = ',', requires = "png")]
+    png_frames: Option<Vec<Pick>>,
+    /// Show the frames over a solid panel instead of black.
+    #[arg(long, value_enum, global = true, requires = "png")]
+    under: Option<Under>,
+    /// Compare the pictures with the files in `--png` instead of writing.
+    #[arg(long, global = true, requires = "png")]
+    png_check: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -162,19 +189,49 @@ fn main() -> anyhow::Result<()> {
         },
     };
 
-    match args.dump {
-        Some(path) => dump(job, &path),
-        None => send(job),
+    let pictures = match args.png {
+        Some(dir) => {
+            let under = args.under.map(|under| match under {
+                Under::Black => [0; 4],
+                Under::F800 => [0xf8, 0, 0xf8, 0],
+            });
+            let options = pictures::Options {
+                dir,
+                name: args.name.unwrap_or_default(),
+                picks: args.png_frames,
+                check: args.png_check,
+            };
+            Some(Pictures::new(options, under)?)
+        }
+        None => None,
+    };
+    if args.dump.is_some() || pictures.is_some() {
+        dry_run(job, args.dump.as_deref(), pictures)
+    } else {
+        send(job)
     }
 }
 
-fn dump(mut job: Job, path: &Path) -> anyhow::Result<()> {
+fn dry_run(mut job: Job, dump: Option<&Path>, pictures: Option<Pictures>) -> anyhow::Result<()> {
     let raw = job.raw.take();
-    let bytes = raw.unwrap_or_else(|| {
-        let mut dry = DryRun::default();
-        run::run_job(&mut job, &mut dry, true);
-        (dry.rows.join("\n") + "\n").into_bytes()
-    });
+    let mut dry = DryRun::default();
+    dry.pictures = pictures;
+    let drawing = dry.pictures.is_some();
+    let error = if raw.is_none() || drawing {
+        run::run_job(&mut job, &mut dry, true)
+    } else {
+        None
+    };
+    if let Some(error) = error {
+        bail!("{error}");
+    }
+    if let Some(pictures) = &dry.pictures {
+        println!("{}", pictures.report());
+    }
+    let Some(path) = dump else {
+        return Ok(());
+    };
+    let bytes = raw.unwrap_or_else(|| (dry.rows.join("\n") + "\n").into_bytes());
     File::create_new(path)
         .and_then(|mut file| file.write_all(&bytes))
         .with_context(|| format!("write {}", path.display()))?;

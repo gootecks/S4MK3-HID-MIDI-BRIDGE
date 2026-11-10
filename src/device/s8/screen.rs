@@ -7,6 +7,7 @@
 //! `Rect::FULL` are not: the position of `x` and `y` in the header is taken
 //! from the Maschine MK3 display family and no S8 capture shows it.
 
+pub mod decode;
 pub mod pattern;
 pub mod stats;
 

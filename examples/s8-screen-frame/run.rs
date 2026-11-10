@@ -6,7 +6,7 @@ use s4mk3_hid_midi_bridge::device::s8::screen::Panel;
 use s4mk3_hid_midi_bridge::device::s8::screen::stats::summarize;
 use serde_json::{Value, json};
 
-use crate::transport::Transport;
+use crate::transport::{StageInfo, Transport};
 
 /// At most this many transfers in one invocation, all stages together.
 pub const MAX_FRAMES: usize = 3600;
@@ -19,6 +19,10 @@ pub type Build = Box<dyn FnMut(usize, &mut Vec<u8>) -> Panel>;
 
 pub struct Plan {
     pub total: usize,
+    /// Panels the transfers alternate over (1 or 2).
+    pub panels: usize,
+    /// Names this stage's picture files, e.g. `10fps`; empty for none.
+    pub tag: String,
     /// Time between the starts of transfers; `None` sends back to back.
     pub interval: Option<Duration>,
 }
@@ -64,7 +68,13 @@ pub fn run_job(job: &mut Job, transport: &mut dyn Transport, dry_run: bool) -> O
             index + 1,
             stage.label
         );
-        transport.stage(index);
+        transport.stage(&StageInfo {
+            index,
+            count,
+            tag: &stage.plan.tag,
+            total: stage.plan.total,
+            panels: stage.plan.panels,
+        });
         let outcome = drive(transport, &stage.plan, &mut stage.build, started);
         let line = summary(job.step, index, &stage.params, &outcome, dry_run);
         println!("{line}");

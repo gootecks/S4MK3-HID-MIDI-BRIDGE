@@ -22,6 +22,8 @@ pub fn single(step: &'static str, panel: Panel, frame: Vec<u8>) -> Job {
             params: json!({ "panel": name(panel) }),
             plan: Plan {
                 total: 1,
+                panels: 1,
+                tag: String::new(),
                 interval: None,
             },
             build: Box::new(move |_, out| {
@@ -131,6 +133,8 @@ pub fn stream(panels: &[Panel], rates: &[u32], seconds: u32, swap_rb: bool) -> a
                 }),
                 plan: Plan {
                     total: usize::try_from(rate * seconds).unwrap_or_default() * panels.len(),
+                    panels: panels.len(),
+                    tag: format!("{rate}fps"),
                     interval: Some(Duration::from_secs(1).div_f64(f64::from(rate * count))),
                 },
                 build: Box::new(move |seq, out| {
@@ -164,6 +168,8 @@ pub fn burst(panel: Panel, frames: u32, swap_rb: bool) -> anyhow::Result<Job> {
             params: json!({ "frames": frames, "panel": name(panel), "swap_rb": swap_rb }),
             plan: Plan {
                 total,
+                panels: 1,
+                tag: String::new(),
                 interval: None,
             },
             build: Box::new(move |seq, out| {

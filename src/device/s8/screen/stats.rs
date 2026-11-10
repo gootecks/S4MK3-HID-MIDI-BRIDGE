@@ -35,6 +35,19 @@ pub fn summarize(times: &[Duration]) -> Option<Millis> {
     })
 }
 
+/// `wanted` frame numbers out of `count`, evenly spaced from the first to the
+/// last (both included). Every number when `count <= wanted`.
+#[must_use]
+pub fn sample_positions(count: usize, wanted: usize) -> Vec<usize> {
+    if count <= wanted {
+        return (0..count).collect();
+    }
+    let steps = wanted - 1;
+    (0..wanted)
+        .map(|index| (index * (count - 1) + steps / 2) / steps)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,5 +73,13 @@ mod tests {
         assert!((stats.median - 50.5).abs() < 1e-9);
         assert!((stats.p95 - 95.0).abs() < 1e-9);
         assert!((stats.max - 100.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn samples_run_from_the_first_to_the_last_frame() {
+        assert_eq!(sample_positions(0, 5), Vec::<usize>::new());
+        assert_eq!(sample_positions(3, 5), vec![0, 1, 2]);
+        assert_eq!(sample_positions(120, 5), vec![0, 30, 60, 89, 119]);
+        assert_eq!(sample_positions(1800, 5), vec![0, 450, 900, 1349, 1799]);
     }
 }

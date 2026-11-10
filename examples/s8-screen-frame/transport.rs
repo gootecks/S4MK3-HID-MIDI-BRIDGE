@@ -11,6 +11,8 @@ use s4mk3_hid_midi_bridge::device::S8;
 use s4mk3_hid_midi_bridge::device::s8::screen::{ENDPOINT, INTERFACE, Panel};
 use sha2::{Digest as _, Sha256};
 
+use crate::pictures::Pictures;
+
 const AGENT: &str = "/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app/Contents/MacOS/NIHardwareAgent";
 pub const TIMEOUT: Duration = Duration::from_millis(500);
 
@@ -21,7 +23,17 @@ pub trait Transport {
     fn wait_until(&self, deadline: Instant);
 
     /// Called before each stage of a job.
-    fn stage(&mut self, _index: usize) {}
+    fn stage(&mut self, _info: &StageInfo) {}
+}
+
+/// What a stage is about to send.
+pub struct StageInfo<'a> {
+    pub index: usize,
+    pub count: usize,
+    pub tag: &'a str,
+    /// Transfers in the stage, all panels together.
+    pub total: usize,
+    pub panels: usize,
 }
 
 /// Interface 6 of the one connected S8, claimed once and held until dropped.
@@ -92,6 +104,7 @@ impl Transport for Session {
 #[derive(Default)]
 pub struct DryRun {
     pub rows: Vec<String>,
+    pub pictures: Option<Pictures>,
     stage: usize,
 }
 
@@ -104,12 +117,18 @@ impl Transport for DryRun {
             frame.len(),
             Sha256::digest(frame)
         ));
+        if let Some(pictures) = &mut self.pictures {
+            pictures.observe(panel, frame)?;
+        }
         Ok(Duration::ZERO)
     }
 
     fn wait_until(&self, _deadline: Instant) {}
 
-    fn stage(&mut self, index: usize) {
-        self.stage = index;
+    fn stage(&mut self, info: &StageInfo) {
+        self.stage = info.index;
+        if let Some(pictures) = &mut self.pictures {
+            pictures.stage(info);
+        }
     }
 }
