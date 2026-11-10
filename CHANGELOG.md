@@ -49,7 +49,8 @@ their detailed notes stay in `docs/release-*.md`.
   the log and restores the agent.
 - 2026-11-09: attended S8 input capture completed (#10). All 191 checklist
   rows were recorded with NIHardwareAgent stopped; the raw logs in
-  `target/s8-captures/` were later lost with the build cache, and the
+  `target/s8-captures/` were later lost with the build cache, a recovered
+  copy of the reports is committed in `docs/s8/captures/`, and the
   per-control results are in
   `docs/s8/input-capture.md`. Touch caps sit in report 1 as
   kontrol-s8-protocol lists them, not where Encdr places them; the
