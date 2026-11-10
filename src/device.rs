@@ -1,6 +1,7 @@
 //! Supported controller identities and the per-device seams the bridge selects by.
 
 mod s4mk3;
+pub mod s8;
 
 use anyhow::{Context as _, bail, ensure};
 use clap::ValueEnum;
@@ -33,10 +34,11 @@ pub struct InputReport {
 /// Corrections applied to the pinned Encdr descriptor before parsing input.
 #[derive(Clone, Copy, Debug)]
 pub struct DescriptorCorrections {
-    /// Probe and minimal MIDI stage: control interface and button LEDs only.
+    /// Probe and minimal MIDI stage: control interface, plus button LEDs
+    /// where the bridge may write them.
     pub control: fn(&DeviceDescriptor) -> DeviceDescriptor,
-    /// Full MIDI profile.
-    pub full: fn(&DeviceDescriptor) -> anyhow::Result<DeviceDescriptor>,
+    /// Full MIDI profile; `None` until the controller has a Djay catalog.
+    pub full: Option<fn(&DeviceDescriptor) -> anyhow::Result<DeviceDescriptor>>,
 }
 
 #[derive(Debug)]
@@ -49,8 +51,10 @@ pub struct DeviceProfile {
     pub vendor_id: u16,
     pub product_id: u16,
     pub input_reports: &'static [InputReport],
-    /// `None` means the bridge only identifies this controller.
-    pub descriptor: Option<DescriptorCorrections>,
+    pub descriptor: DescriptorCorrections,
+    /// Encdr's packets for this controller count byte offsets from the
+    /// report ID, so its parser takes whole reports.
+    pub report_id_in_offsets: bool,
     /// Virtual MIDI endpoint of the full profile and its Djay mapping.
     pub full_endpoint: &'static str,
     pub mapping_file_name: &'static str,
@@ -76,23 +80,37 @@ pub const S4_MK3: DeviceProfile = DeviceProfile {
             payload_len: 59,
         },
     ],
-    descriptor: Some(DescriptorCorrections {
+    descriptor: DescriptorCorrections {
         control: s4mk3::control_descriptor,
-        full: s4mk3::full_control_descriptor,
-    }),
+        full: Some(s4mk3::full_control_descriptor),
+    },
+    report_id_in_offsets: false,
     full_endpoint: "S4 MK3 MIDI Full",
     mapping_file_name: "S4 MK3 Bridge.djayMidiMapping",
 };
 
-/// Identification only: input framing and descriptor corrections are unverified.
+/// Input only: there is no Djay catalog, and nothing is written to the S8.
 pub const S8: DeviceProfile = DeviceProfile {
     device: Device::S8,
     name: "Kontrol S8",
     tag: "S8",
     vendor_id: 0x17cc,
     product_id: 0x1370,
-    input_reports: &[],
-    descriptor: None,
+    input_reports: &[
+        InputReport {
+            id: 1,
+            payload_len: 40,
+        },
+        InputReport {
+            id: 2,
+            payload_len: 108,
+        },
+    ],
+    descriptor: DescriptorCorrections {
+        control: s8::control_descriptor,
+        full: None,
+    },
+    report_id_in_offsets: true,
     full_endpoint: "Kontrol S8 MIDI Full",
     mapping_file_name: "Kontrol S8 Bridge.djayMidiMapping",
 };
@@ -105,7 +123,8 @@ impl DeviceProfile {
         self.vendor_id == vendor_id && self.product_id == product_id
     }
 
-    /// Strip the report ID from a known input report and check its length.
+    /// Check the length of a known input report and return the bytes Encdr
+    /// parses: the payload, or the whole report when offsets count its ID.
     ///
     /// # Errors
     /// Returns an error for an empty report or a known report of the wrong length.
@@ -125,7 +144,11 @@ impl DeviceProfile {
             self.tag,
             payload.len()
         );
-        Ok(Some(payload))
+        Ok(Some(if self.report_id_in_offsets {
+            report
+        } else {
+            payload
+        }))
     }
 }
 
@@ -273,10 +296,18 @@ mod tests {
     }
 
     #[test]
-    fn s8_is_identification_only() {
-        // No input framing or descriptor is trusted until S8 input is verified.
-        assert!(S8.descriptor.is_none());
-        assert_eq!(S8.input_payload(&[1, 0, 0]).ok().flatten(), None);
+    fn s8_reports_keep_their_id_and_are_checked_before_parsing() -> anyhow::Result<()> {
+        // Given S8 reports with their captured sizes.
+        for (id, size) in [(1, 40), (2, 108)] {
+            let mut report = vec![id];
+            report.resize(size + 1, 0x40);
+
+            // Then Encdr sees the report ID, and a short report is rejected.
+            assert_eq!(S8.input_payload(&report)?, Some(report.as_slice()));
+            assert!(S8.input_payload(&report[..size]).is_err());
+        }
+        assert_eq!(S8.input_payload(&[3, 0, 0])?, None);
+        Ok(())
     }
 
     #[test]

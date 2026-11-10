@@ -64,7 +64,7 @@ pub fn run(
                     events.clear();
                     parser.parse_from("control", payload, &mut events);
                     for event in &events {
-                        record_event(event, leds, &mut counts, false)?;
+                        record_event(event, Some(&mut *leds), &mut counts, false)?;
                     }
                     crate::send_full_report(
                         &mut bridge,
@@ -124,7 +124,7 @@ pub fn run(
         cleanup,
         "reader shutdown",
     )?;
-    crate::report_probe_counts(args, &counts)
+    crate::report_probe_counts(args, full::PROFILE, &counts)
 }
 
 fn with_cleanup(

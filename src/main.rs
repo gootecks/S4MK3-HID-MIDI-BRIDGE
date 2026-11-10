@@ -20,6 +20,7 @@ use encdr::device::parser::PacketParser;
 use encdr::usb::hotplug;
 use encdr::{Event, LedValue};
 use hidapi::{HidApi, HidDevice};
+use s4mk3_hid_midi_bridge::device::s8::ScreenEncoders;
 use s4mk3_hid_midi_bridge::device::{self, Device, DeviceProfile};
 use tracing::{debug, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -209,14 +210,17 @@ fn open_and_run(
         return Ok(());
     }
     let (profile, device) = select_device(args.device, &scanned)?;
-    let Some(corrections) = profile.descriptor else {
-        return identify(profile);
-    };
-    let descriptor = if matches!(args.midi, Some(MidiProfile::Full)) {
+    if args.midi.is_some() {
         require_full_catalog(profile)?;
-        (corrections.full)(&device.descriptor)?
+    }
+    let descriptor = if matches!(args.midi, Some(MidiProfile::Full)) {
+        let full = profile
+            .descriptor
+            .full
+            .context("full MIDI corrections missing")?;
+        full(&device.descriptor)?
     } else {
-        (corrections.control)(&device.descriptor)
+        (profile.descriptor.control)(&device.descriptor)
     };
     let names = registry.intern_descriptor_names(&descriptor);
     let mut parser = PacketParser::new(device.device_id, &descriptor, names);
@@ -246,11 +250,10 @@ fn open_and_run(
     let interface = descriptor
         .interface_by_id("control")
         .context("control interface missing")?;
-    let buttons = descriptor
+    let mut leds = descriptor
         .leds
         .first()
-        .context("button LED layout missing")?;
-    let mut leds = LedBuilder::new(buttons, interface);
+        .map(|buttons| LedBuilder::new(buttons, interface));
     info!(
         "{}_HID_OPEN: native HID access; audio interfaces are not claimed",
         profile.tag
@@ -261,12 +264,12 @@ fn open_and_run(
             &hid,
             reader,
             &mut parser,
-            &mut leds,
+            leds.as_mut().context("button LED layout missing")?,
             config,
             jog.context("motor output requires the full MIDI profile")?,
         )
     } else {
-        run_probe(args, profile, &hid, &mut parser, &mut leds, jog)
+        run_probe(args, profile, &hid, &mut parser, leds.as_mut(), jog)
     }
 }
 
@@ -315,31 +318,6 @@ fn select_device(
     Ok((profile, device))
 }
 
-/// Report a controller the bridge cannot drive yet from enumeration alone.
-fn identify(profile: &DeviceProfile) -> anyhow::Result<()> {
-    let api = HidApi::new().context("initialize macOS-native HID access")?;
-    let mut collections = 0_usize;
-    for collection in api
-        .device_list()
-        .filter(|collection| profile.matches(collection.vendor_id(), collection.product_id()))
-    {
-        collections += 1;
-        info!(
-            product = ?collection.product_string(),
-            manufacturer = ?collection.manufacturer_string(),
-            release = %format_args!("{:04x}", collection.release_number()),
-            interface = collection.interface_number(),
-            usage_page = %format_args!("{:04x}", collection.usage_page()),
-            usage = %format_args!("{:04x}", collection.usage()),
-            "{}_HID_IDENTIFIED: enumerated only; not opened", profile.tag
-        );
-    }
-    bail!(
-        "{} identified ({collections} HID collections); the bridge cannot translate its input yet, so nothing was opened or sent",
-        profile.name
-    )
-}
-
 fn mapping_path(path: &std::path::Path, profile: &DeviceProfile) -> PathBuf {
     if path.is_dir() {
         path.join(profile.mapping_file_name)
@@ -362,7 +340,7 @@ fn run_probe(
     profile: &DeviceProfile,
     hid: &HidDevice,
     parser: &mut PacketParser,
-    leds: &mut LedBuilder,
+    mut leds: Option<&mut LedBuilder>,
     jog: Option<full::jog::Config>,
 ) -> anyhow::Result<()> {
     let led_config = matches!(args.midi, Some(MidiProfile::Full))
@@ -389,6 +367,7 @@ fn run_probe(
     );
     let started = Instant::now();
     let mut counts = ProbeCounts::default();
+    let mut screen_encoders = (profile.device == Device::S8).then(ScreenEncoders::default);
     let mut buffers = [[0_u8; 128]; 3];
     let mut events = Vec::with_capacity(128);
     while args.until_stopped || started.elapsed() < Duration::from_secs(args.seconds.get()) {
@@ -412,10 +391,11 @@ fn run_probe(
             let Some(payload) = profile.input_payload(report)? else {
                 continue;
             };
+            record_screen_encoders(screen_encoders.as_mut(), report, &mut counts);
             events.clear();
             parser.parse_from("control", payload, &mut events);
             for event in &events {
-                record_event(event, leds, &mut counts, full.is_none())?;
+                record_event(event, leds.as_deref_mut(), &mut counts, full.is_none())?;
                 if let Some(bridge) = &mut midi
                     && bridge.send(event)?
                 {
@@ -426,6 +406,7 @@ fn run_probe(
                 send_full_report(bridge, &events, report, &mut counts, started.elapsed())?;
             }
             if full.is_none()
+                && let Some(leds) = leds.as_deref_mut()
                 && let Some(report) = leds.flush()
             {
                 let written = hid.write(&report).context("write S4 button LED report")?;
@@ -458,7 +439,7 @@ fn run_probe(
             bridge.publish_screens();
         }
     }
-    report_probe_counts(args, &counts)
+    report_probe_counts(args, profile, &counts)
 }
 
 fn stop_signal() -> anyhow::Result<(
@@ -504,7 +485,11 @@ fn send_full_report(
     Ok(())
 }
 
-fn report_probe_counts(args: &Args, counts: &ProbeCounts) -> anyhow::Result<()> {
+fn report_probe_counts(
+    args: &Args,
+    profile: &DeviceProfile,
+    counts: &ProbeCounts,
+) -> anyhow::Result<()> {
     info!(
         input_events = counts.input_events,
         led_writes = counts.led_writes,
@@ -518,7 +503,8 @@ fn report_probe_counts(args: &Args, counts: &ProbeCounts) -> anyhow::Result<()> 
     }
     ensure!(
         counts.input_events > 0,
-        "no decoded S4 input received during the probe"
+        "no decoded {} input received during the probe",
+        profile.tag
     );
     ensure!(
         args.midi.is_none()
@@ -529,9 +515,29 @@ fn report_probe_counts(args: &Args, counts: &ProbeCounts) -> anyhow::Result<()> 
     Ok(())
 }
 
+/// Log the S8 screen encoders, which Encdr cannot decode, as input events.
+fn record_screen_encoders(
+    encoders: Option<&mut ScreenEncoders>,
+    report: &[u8],
+    counts: &mut ProbeCounts,
+) {
+    for turn in encoders
+        .into_iter()
+        .flat_map(|encoders| encoders.update(report))
+    {
+        info!(
+            control = turn.name,
+            delta = turn.delta,
+            position = turn.position,
+            "SCREEN_ENCODER"
+        );
+        counts.input_events = counts.input_events.saturating_add(1);
+    }
+}
+
 fn record_event(
     event: &Event,
-    leds: &mut LedBuilder,
+    leds: Option<&mut LedBuilder>,
     counts: &mut ProbeCounts,
     mirror_play: bool,
 ) -> anyhow::Result<()> {
@@ -545,7 +551,10 @@ fn record_event(
         }
         Event::Button { name, pressed, .. } => {
             info!(control = name, pressed, "BUTTON");
-            if mirror_play && *name == "left_play" {
+            if mirror_play
+                && *name == "left_play"
+                && let Some(leds) = leds
+            {
                 ensure!(
                     leds.set(
                         name,
@@ -707,9 +716,9 @@ mod tests {
     fn continuous_stop_accepts_idle_counts_but_bounded_probe_requires_activity()
     -> anyhow::Result<()> {
         let continuous = Args::try_parse_from(["probe", "--midi", "full", "--until-stopped"])?;
-        assert!(report_probe_counts(&continuous, &ProbeCounts::default()).is_ok());
+        assert!(report_probe_counts(&continuous, &device::S4_MK3, &ProbeCounts::default()).is_ok());
         let bounded = Args::try_parse_from(["probe", "--midi", "full", "--seconds", "60"])?;
-        assert!(report_probe_counts(&bounded, &ProbeCounts::default()).is_err());
+        assert!(report_probe_counts(&bounded, &device::S4_MK3, &ProbeCounts::default()).is_err());
         Ok(())
     }
 }
