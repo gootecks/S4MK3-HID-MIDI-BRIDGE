@@ -43,6 +43,35 @@ version of the menu-bar app runs it.
   run it and its limits.
 - **Missing:** LED feedback. The S8's LEDs do not follow Djay.
 
+![Architecture of the bridge and the S8 tools](docs/s8/images/architecture.png)
+
+How the parts fit together. Both controllers use one Rust bridge binary:
+`S8Host` and the S4 MK3 menu-bar app each start it with their own device
+profile. The S8 profile and the Swift S8 tools are this fork's work; the rest
+comes from upstream. The picture is exported from
+[architecture.html](docs/s8/images/architecture.html).
+
+The Swift tools reach Djay through three modules, "djay access" in the picture:
+
+- `DjayDecks` reads the decks through Accessibility: title, artist, BPM, key,
+  time and play state, with each track's waveform, beats and cue points. It
+  is ported from the djay-phrase-tool prototype, which builds on
+  djay-pro-bridge.
+- `DjaySidebar` reads Djay's sidebar through Accessibility, switches its tabs
+  and moves the selection. It was written for this fork.
+- `DjayLibrary` reads a copy of Djay's library database and never writes the
+  live one. Its decoder is a port of djaykit's.
+
+The bridge builds on these repositories:
+
+- [jtoronto/S4MK3-HID-MIDI-BRIDGE](https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE):
+  the S4 MK3 bridge this fork extends.
+- [RufusIbiza/Encdr](https://github.com/RufusIbiza/Encdr): NI controller
+  descriptors and HID decoding.
+- [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge):
+  reading Djay's decks through Accessibility.
+- djaykit, a private repository: decoding Djay's library database.
+
 To use it you need this repository, [mise](https://mise.jdx.dev) for the
 pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.
 

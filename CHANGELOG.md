@@ -12,6 +12,10 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- Architecture overview in the README: the two controllers, the one Rust
+  bridge binary with its two device profiles, the Swift S8 tools and djay Pro
+  in one diagram, with links to the repositories the bridge builds on (#122).
+  Its source is `docs/s8/images/architecture.html`.
 - `S8Host --screens` shows djay Pro's sidebar on both Kontrol S8 panels and
   keeps it current: the list of the open tab on the left, the selected
   track on the right, or one deck with `--deck N`
