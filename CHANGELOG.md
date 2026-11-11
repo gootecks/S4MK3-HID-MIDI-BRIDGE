@@ -202,8 +202,10 @@ their detailed notes stay in `docs/release-*.md`.
   and returns when djay shows the deck again. djay's One Deck view does not
   always show deck 1, and Two Decks hides decks 3 and 4. `S8Preview
   --stream` no longer refuses to start for a hidden deck. Covered by tests
-  on labels captured from djay and seen once against djay; not yet on the
-  S8 (#93).
+  on labels captured from djay and seen once against djay. On the S8 the
+  text was seen for decks 2, 3 and 4, and decks 3 and 4 returned in Four
+  Decks; in the one try with One Deck view the deck 2 page did not return,
+  cause not settled (#93).
 - The deck pages read djay's decks while djay's window is in another Space.
   They said "Deck n is not shown in djay" for every deck before. Seen
   against djay in another Space; not yet on the S8 (#100).
@@ -244,8 +246,9 @@ their detailed notes stay in `docs/release-*.md`.
   analysis finished after the track was loaded, without reloading the track.
   The deck is looked at again every 5 s and the library is copied only when
   its files changed, off the deck poll; a change shows within about 10 s
-  of djay writing it to disk. Covered by tests and seen once against djay
-  (about 5 s); not yet on the S8 (#92, #95).
+  of djay writing it to disk. Covered by tests, seen once against djay
+  (about 5 s) and once on the S8: a new flag after about 5 s, a waveform 3
+  to 4 s after djay's analysis (#92, #95).
 
 ## [0.2.1-beta.1] - 2026-10-26
 
