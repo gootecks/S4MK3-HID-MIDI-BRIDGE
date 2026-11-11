@@ -197,6 +197,12 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Fixed
 
+- The deck page no longer crashes the app on a negative bar index from djay's
+  analysis, and bar ticks keep their phase over gaps in the beat list (#94).
+- When djay does not answer an Accessibility read, the deck page shows
+  "djay is not answering" instead of "Accessibility permission needed", keeps
+  its track and analysis, and carries on with the next answer; one unanswered
+  read waits at most 3 s (#94).
 - The bridge no longer aborts when the reader of its stdout is gone, as
   happened on Ctrl-C in a pipeline during the screen transport check (exit
   status 134, no `S8_SCREEN_STATUS inactive`). Log lines to a closed stdout
