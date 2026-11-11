@@ -2,7 +2,7 @@
 age = "1.3.1"
 communique = "1.5.0"
 fnox = "1.43.0"
-"github:jeduden/mdsmith" = "0.55.0"
+"github:jeduden/mdsmith" = "0.57.0"
 hk = { version = "2.12.0", workflow = "release.yml" }
 "github:oxc-project/oxc" = { version = "0.76.0", version_prefix = "oxfmt_v", rename_exe = "oxfmt" }
 op = "2.32.1"
@@ -172,7 +172,12 @@ raw = true
 
 [tasks."hooks:install"]
 description = "Install hk Git hooks and the mdsmith merge driver"
-run = ["hk install", "mdsmith merge-driver install 'docs/s8/**/*.md'"]
+run = [
+  "hk install",
+  "git config merge.mdsmith.name 'mdsmith section-aware Markdown merge'",
+  '''git config merge.mdsmith.driver "'$(command -v mdsmith)' merge-driver run %O %A %B %P"''',
+  "mdsmith pre-merge-commit install",
+]
 
 [tasks."secrets:check"]
 description = "Validate configured secrets"

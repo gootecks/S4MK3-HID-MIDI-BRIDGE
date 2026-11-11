@@ -242,11 +242,21 @@ This section is fork-only. Keep it out of upstream pull requests.
   Every note there needs front matter with `summary` and `type`; the index in
   `docs/s8/README.md` is generated from it by `<?catalog?>`, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table
-  of contents and `mdsmith fix` regenerates it. Committing any note also
-  regenerates and stages the index (`mdsmith_index` in `hk.pkl`).
-  `mise run hooks:install` also registers mdsmith's merge driver for
-  `docs/s8/**/*.md` (`.gitattributes`), so generated sections no longer
-  conflict. After a merge or rebase they can still be stale: run
+  of contents and `mdsmith fix` regenerates it. A commit that touches a note
+  or `.mdsmith.yml` lints all of `docs/s8/`, not only the staged notes: a new
+  or renamed note changes the index and the links in other notes. It stages
+  the notes its fixer changed. A commit that only deletes notes is checked
+  and not fixed: run `mdsmith fix .` and stage `docs/s8/README.md` first.
+  Pushing runs the same check on the committed tree, which also covers
+  merges, rebases and `--no-verify` commits. Untracked and unstaged notes
+  are set aside for both. mdsmith output is coloured; `NO_COLOR=1` turns
+  that off. `mise run hooks:install` also registers mdsmith's merge driver
+  for `docs/s8/**/*.md` (`.gitattributes`), so generated sections no longer
+  conflict. It writes the driver to the Git config and leaves
+  `.gitattributes` alone: `mdsmith merge-driver install` and the
+  `git-hook-sync` rule rewrite that file from the `ignore:` list and turn
+  the driver off for every note. After a merge or rebase generated sections
+  can still be stale: run
   `mdsmith fix .` again (`mise run check` reports it). shfmt formats
   `docs/s8/*.sh` (`docs/s8/.editorconfig`); shellcheck checks every script.
   oxfmt is the native binary from the oxc GitHub release, so no npm download
@@ -255,7 +265,7 @@ This section is fork-only. Keep it out of upstream pull requests.
   broken links) goes to the `repo-mdsmith-fixer` omp agent
   (`~/.omp/agent/agents/repo-mdsmith-fixer.md`, Sonnet) through
   `docs/s8/mdsmith-fix.sh`, the mdsmith step's fixer. It edits only the
-  committed notes, and its edits are staged into the commit; hk prints its
+  notes with findings, and its edits are staged into the commit; hk prints its
   report. Review them with `git show`. Without omp or the agent file, or with
   `MDSMITH_AGENT=0`, the commit stays blocked until the findings are fixed by
   hand. `mise run check` never runs the agent.
