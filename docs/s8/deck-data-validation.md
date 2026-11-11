@@ -2,8 +2,10 @@
 
 What the deck pages are built from, and their limits:
 [deck-pages.md](deck-pages.md). This page holds the attended check of the
-live djay deck data on the S8: the plan, and the one run of 2026-11-10
-under [Observed on the S8](#observed-on-the-s8-attended-run-2026-11-10).
+live djay deck data on the S8: the plan, the run of 2026-11-10 under
+[Observed on the S8](#observed-on-the-s8-attended-run-2026-11-10) and the
+run after the fixes for #92 to #95 under
+[Observed on the S8, 2026-11-11](#observed-on-the-s8-attended-run-2026-11-11).
 
 ## State before this check
 
@@ -314,6 +316,118 @@ was sent to the S8. Logs, pictures and the observer's answers:
 Limits: one track per step and one run. A cue point in a slot that was
 empty before, a deck that plays while hidden, a shown deck without a track
 and the findings of #94 were not part of it. None of it was on the S8.
+
+## Observed on the S8: attended run, 2026-11-11
+
+`mise run s8:deck-data` at commit `def6f1c`, run by the user at the S8 with
+djay Pro and Controller Editor open. The runner stopped NIHardwareAgent,
+ran part A (00:55 to 01:03 UTC), part B (01:03 to 01:05) and part C (01:05
+to 01:06), and relaunched the agent. S8Preview and the bridge were release
+builds, S8Host the debug build.
+
+Sent to the S8: full-panel screen frames and the black exit frames through
+the bridge's `--s8-screens-stdin` transport. Nothing else.
+
+Record:
+[captures/deck-data-20261111T005523Z](captures/deck-data-20261111T005523Z/).
+
+The "Reported" column is the user's answer, unchanged. Before the stop the
+panels showed "Controller Editor labels".
+
+| Row | Action | Expected | Reported |
+| --- | --- | --- | --- |
+| 1 | Part A starts: title, artist, BPM and key of each panel the same as djay shows for that deck? | yes, layout as `01-decks-1-2` | "y" |
+| 2 | REMAINING on each panel the same as in djay? | yes | "y" |
+| 3 | Cue flags: same number, colours and order as the deck's cue points in djay? Playhead at the same place as in djay's overview waveform? | yes | "y" |
+| 4 | Play both decks about 15 s, pause both: both PLAYING, both times moving with djay's, no panel stalling? | yes | "y" |
+| 5 | Deck 1 paused, moved to another position: do time and playhead follow within about 1 s? | yes | "y" |
+| 6 | Deck 1 playing, jump again: does the left panel follow and go on with djay's time? | yes | "y" |
+| 7 | Deck 2 tempo to about +8 %: does BPM change to djay's BPM? | yes | "y" |
+| 8 | Deck 2 played about 20 s at that tempo: does REMAINING stay the same as djay's? | yes | "y" |
+| 9 | Deck 1: 4-beat loop for about 10 s while playing. What did time and playhead do? | – | "followed djay's time and playhead and looped" |
+| 10 | Another track loaded on deck 1: title, artist, BPM, key, waveform, cue flags, playhead at the start? How long did it take? | yes | "yes. instant" |
+| 11 | New cue point set on deck 2 without reloading the track: does a new flag appear within about 10 s? | yes (#92) | "yes, about 5 seconds. but the color is wrong. it added a yellow cue point, but i added cue 7 which is teal" |
+| 12 | A track djay has not analysed on deck 2: "No analysis for this track", then the waveform once djay has analysed it? How long after djay? | yes (#95) | "yes. about 3-4 seconds" |
+| 13 | One Deck view for about 10 s and back: which deck did djay show? Did the other deck's panel say "Deck N is not shown in djay" and return afterwards? | yes (#93) | "showed deck 1. deck 2 says not shown and it stayed that way" |
+| 14 | Any flicker, tearing, wrong colours or a frozen panel so far? | no | "no" |
+| 15 | After the stream ended, agent still stopped: what do the panels show? | both black | "both black" |
+| 16 | Part B starts, djay in Two Decks: "Deck 3 is not shown in djay" and "Deck 4 is not shown in djay"? | yes, as `02-decks-3-4-two-deck-layout` | "y" |
+| 17 | Four Decks, decks 3 and 4 loaded: do the panels fill with title, artist, BPM, key and remaining time as in djay? How long after the switch? | yes | "yes. instant" |
+| 18 | Decks 1 and 3 played together about 10 s: left panel moving with deck 3, right panel (deck 4) standing still? | yes | "y" |
+| 19 | Back to Two Decks: "Deck 3 is not shown in djay" and "Deck 4 is not shown in djay" again? | yes | "y" |
+| 20 | After the stream ended: what do the panels show? | both black | "both black" |
+| 21 | Part C starts: deck 2 page on the right, library list on the left? | yes, layout as `10-deck` | "y" |
+| 22 | Deck 2 played: PLAYING with moving time and playhead? Left screen encoder through some rows: does the left panel follow while the deck page keeps moving? | yes | "y" |
+| 23 | After S8Host's stdin closed: what do the panels show? | both black | "both black" |
+| 24 | After the agent was relaunched: what do the panels show? | Controller Editor labels | "Controller Editor labels" |
+| 25 | Left PLAY: did djay react? | yes | "y" |
+| 26 | Display button 1 or 4: does the NI action work again? | yes | "y" |
+
+Noted by the runner:
+
+- Parts A and B: bridge exit status 0, status lines `S8_SCREEN_STATUS
+  pending`, `active`, `inactive`, no bridge process left. Part A wrote 488
+  records (left 287, right 201), part B 66 (left 63, right 3).
+- Part C: S8Host exit status 0, the same three status lines, no bridge
+  process left.
+
+The logs hold no warning or error line, and the bridge logs of parts A and
+B no input event.
+
+### From the stream logs of this run
+
+They are what was sent, not what djay showed. A record names the deck's
+time, play state and title, not the notice on a page without a track.
+
+| Row | In the log |
+| --- | --- |
+| 1 to 2 | Both panels went to a page without a title 16.8 s into the stream and returned with their tracks at 40.8 s. No row asked for it and no answer mentions it. |
+| 4 | Deck 1 playing from 71.3 s to 101.0 s of the stream, deck 2 from 74.1 s to 99.1 s; 116 and 93 records. |
+| 5 | One position change on the paused deck 1, from 29.78 to 51.53. |
+| 6 | While playing, elapsed went from 55.71 to 13.68 between two records and counted on from there. |
+| 7 | Five records for the right panel with elapsed unchanged at 25.60. The BPM is not in the stream log. |
+| 8 | Deck 2 playing for 22.3 s of the stream while elapsed went from 26.55 to 50.77, 1.086 times as fast. Elapsed plus remaining stayed 203.60. |
+| 9 | Deck 1 playing for 23.6 s, 99 records, while elapsed stayed between 25.60 and 27.03. It stepped back 14 times. |
+| 10 | The title changed from "Duro" to "Diwali" with elapsed 0.00 and remaining 186.70. |
+| 11 | Three records for the right panel, at 290.1 s, 320.9 s and 331.4 s, with the track, time and play state unchanged ("Noche Without You", paused at 50.87). |
+| 12 | "Pente Rala", elapsed 0.00, remaining 219.45: three records within 1.3 s from 386.8 s, and one more at 391.9 s. |
+| 13 | The right panel went to a page without a title 424.3 s into the stream. No record for it followed until the stream stopped about 35 s later. The left panel got no record after row 10, so deck 1 was read with the same content throughout. |
+| 16 | Both panels on a page without a title from the start of part B. |
+| 17 | Both panels filled in the same pass, 22.7 s into the stream: deck 3 "É o Bonde" at 191.54 of 282.04 s, deck 4 "Scut 2" at 59.84 of 178.34 s. |
+| 18 | Deck 3 playing from 48.1 s to 66.0 s of the stream, 59 records for the left panel, none for the right. |
+| 19 | Both panels back on a page without a title at 83.3 s; deck 3 was paused before. |
+
+Deck reads during part C, from `host-deck-2.log.gz`: 257 reads in 63.6 s,
+mean gap 0.250 s. The first read took 0.483 s; no other took longer than
+0.123 s, and the median was 0.067 s. The two slow reads of the run before
+(#96) had no counterpart here.
+
+### Limits of this run
+
+- Row 11: the flag appeared, in the wrong colour. djay stores no colour for
+  that cue point (`number: 7`, no `color`), and the page drew a cue without
+  one in amber. Row 3, answered before the cue was set, reports the colours
+  of the other flags as djay's. The page now takes the colour of the cue's
+  number (#101); that has not been on the S8.
+- Row 13: the deck 2 page said "Deck 2 is not shown in djay" and did not
+  return. The log does not hold the times of the switches, so it cannot say
+  whether djay was back in Two Decks before the stream stopped. The
+  observer afterwards: "might have been because i moved djay from one
+  monitor to the other". Not settled. In the check against djay on
+  2026-11-10 the page returned after the switch back. The text itself was
+  on the S8 in rows 13, 16 and 19.
+- Rows 1 to 2: both pages lost their track for 24 s. After the run, with
+  djay's window in another Space, every deck read as not shown: the
+  application then lists only its menu bar, and the window answers through
+  the focused window alone (#100). Whether djay left the visible Space in
+  those 24 s was not recorded.
+- Row 12 was one track. The log gives 5.1 s from the first record of the
+  track to the last change of the page; the time djay ended its analysis is
+  not in the log.
+- Row 9 was one 4-beat loop on one track, as in the run before.
+- Rows 5, 10 and 17 report delays by eye; no delay was measured.
+- "djay is not answering" (#94) did not occur. No fault was provoked. One
+  run, one S8.
 
 ## Checked without the S8
 
