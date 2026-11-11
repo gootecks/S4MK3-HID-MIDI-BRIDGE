@@ -22,6 +22,10 @@ their detailed notes stay in `docs/release-*.md`.
   ([mapping.md](docs/s8/mapping.md#led-feedback), #22, #23). Checked on the
   S8 in two runs; open: which mode button is full in some pad modes, hot
   cue 8's colour, and LEDs that stay dim after the stop.
+- Architecture overview in the README: the two controllers, the one Rust
+  bridge binary with its two device profiles, the Swift S8 tools and djay Pro
+  in one diagram, with links to the repositories the bridge builds on (#122).
+  Its source is `docs/s8/images/architecture.html`.
 - `S8Host --screens` shows djay Pro's sidebar on both Kontrol S8 panels and
   keeps it current: the list of the open tab on the left, the selected
   track on the right, or one deck with `--deck N`
