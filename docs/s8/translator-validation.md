@@ -1,6 +1,7 @@
 ---
-summary: "What the input-to-MIDI translator tests cover, their limits, and the attended checks of 2026-11-10 (#15)."
+summary: "What the input-to-MIDI translator tests cover, their limits, and the attended checks of 2026-11-10."
 type: validation
+issues: [15]
 ---
 
 # S8 input-to-MIDI translator validation

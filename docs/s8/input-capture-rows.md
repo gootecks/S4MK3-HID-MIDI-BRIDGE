@@ -1,6 +1,7 @@
 ---
-summary: "Per-control results of the agent-stopped S8 input capture: field, observed range and status for all 191 checklist rows (#10)."
+summary: "Per-control results of the agent-stopped S8 input capture: field, observed range and status for all 191 checklist rows."
 type: validation
+issues: [10]
 ---
 
 # S8 input capture: results per control

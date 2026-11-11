@@ -1,6 +1,7 @@
 ---
 summary: "Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan."
 type: reference
+issues: []
 ---
 
 # S8 screens

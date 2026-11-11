@@ -1,9 +1,10 @@
 ---
-summary: "Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation (#45)."
+summary: "Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation."
 type: reference
+issues: [45]
 ---
 
-# Deck pages (#45)
+# Deck pages
 
 A 480×272 page for one djay deck. It shows title, artist, BPM, key, elapsed and
 remaining time, play state, the overview waveform with a playhead, bar and beat

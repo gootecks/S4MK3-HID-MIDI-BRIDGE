@@ -256,9 +256,11 @@ This section is fork-only. Keep it out of upstream pull requests.
   are checked for readability. Every file in a folder needs front matter
   with `summary` and `type`; the root `README.md` has none, because GitHub
   would show it as a table on the front page, and this file has none either.
-  A README next to the code
-  uses `type: readme`; a `title` field would clash with the H1
-  (MDS051). mdsmith pads a right-aligned table
+  A README next to the code uses `type: readme`. Every note also carries
+  `issues`, the list of issue numbers it belongs to (`issues: [51]`, or
+  `[]`): the index links them, and it fails on a note without the field.
+  Do not write "(#51)" into a summary or an H1. Leave `title` out: the H1
+  is the title. mdsmith pads a right-aligned table
   column differently from oxfmt, so keep table columns left-aligned. The
   index in `docs/s8/README.md` is generated from the front matter by
   `<?catalog?>`, READMEs next to the code included, and notes over
@@ -358,17 +360,17 @@ footer: "\n"
 - [`docs/s8/capture-checklist.md`](docs/s8/capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture.
 - [`docs/s8/capture-recorder.md`](docs/s8/capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture.
 - [`docs/s8/deck-pages-attended-check.md`](docs/s8/deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8.
-- [`docs/s8/deck-pages.md`](docs/s8/deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation (#45).
-- [`docs/s8/display-buttons.md`](docs/s8/display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51).
-- [`docs/s8/djay-sidebar-access.md`](docs/s8/djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
-- [`docs/s8/driverkit-evaluation.md`](docs/s8/driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish (#55).
+- [`docs/s8/deck-pages.md`](docs/s8/deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation.
+- [`docs/s8/display-buttons.md`](docs/s8/display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host).
+- [`docs/s8/djay-sidebar-access.md`](docs/s8/djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures.
+- [`docs/s8/driverkit-evaluation.md`](docs/s8/driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish.
 - [`docs/s8/hardware-notes.md`](docs/s8/hardware-notes.md): S8 USB identity, interfaces, input and output evidence, and open questions.
-- [`docs/s8/mapping.md`](docs/s8/mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14).
+- [`docs/s8/mapping.md`](docs/s8/mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls.
 - [`docs/s8/mappings/README.md`](docs/s8/mappings/README.md): Frozen copies of Djay mappings that were checked on the S8, with install steps.
-- [`docs/s8/panel-views.md`](docs/s8/panel-views.md): The library and deck views on the panels (S8Host --screens, #27): run, expected pictures, state at stop, limits and check plan.
+- [`docs/s8/panel-views.md`](docs/s8/panel-views.md): The library and deck views on the panels (S8Host --screens): run, expected pictures, state at stop, limits and check plan.
 - [`docs/s8/research-sources.md`](docs/s8/research-sources.md): Survey of kontrol-s8-protocol, Encdr and Mixxx, with licensing notes.
 - [`docs/s8/s4-coupling-audit.md`](docs/s8/s4-coupling-audit.md): S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam.
-- [`docs/s8/screen-transport.md`](docs/s8/screen-transport.md): The app-to-bridge channel for screen frames and status (#44): record layout, status lines and worker policy.
+- [`docs/s8/screen-transport.md`](docs/s8/screen-transport.md): The app-to-bridge channel for screen frames and status: record layout, status lines and worker policy.
 - [`docs/s8/screens.md`](docs/s8/screens.md): Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan.
 - [`docs/s8/upstream-workflow.md`](docs/s8/upstream-workflow.md): Remotes, branches, commit separation and the upstream pull-request procedure.
 

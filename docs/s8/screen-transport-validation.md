@@ -1,9 +1,10 @@
 ---
-summary: "The attended check of the screen transport on the S8 (#44)."
+summary: "The attended check of the screen transport on the S8."
 type: validation
+issues: [44]
 ---
 
-# S8 screen transport: attended check (#44)
+# S8 screen transport: attended check
 
 The check of `--s8-screens-stdin` on the S8, as planned in
 [screen-transport.md](screen-transport.md#attended-check). It ran on

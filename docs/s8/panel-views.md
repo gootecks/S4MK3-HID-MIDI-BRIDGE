@@ -1,9 +1,10 @@
 ---
-summary: "The library and deck views on the panels (S8Host --screens, #27): run, expected pictures, state at stop, limits and check plan."
+summary: "The library and deck views on the panels (S8Host --screens): run, expected pictures, state at stop, limits and check plan."
 type: reference
+issues: [27]
 ---
 
-# Views on the S8 panels (#27)
+# Views on the S8 panels
 
 `S8Host --screens` shows djay Pro's right-hand sidebar on the two S8 panels
 and keeps it current. The left panel is the list of the open tab. The right

@@ -1,6 +1,7 @@
 ---
 summary: "Survey of kontrol-s8-protocol, Encdr and Mixxx, with licensing notes."
 type: reference
+issues: []
 ---
 
 # S8 research sources

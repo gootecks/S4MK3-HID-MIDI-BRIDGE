@@ -1,6 +1,7 @@
 ---
-summary: "Passive HID and MIDI capture in Controller Editor MIDI mode: controls without MIDI and undocumented bytes (#10)."
+summary: "Passive HID and MIDI capture in Controller Editor MIDI mode: controls without MIDI and undocumented bytes."
 type: validation
+issues: [10]
 ---
 
 # S8 input capture on macOS (MIDI mode)

@@ -1,6 +1,7 @@
 ---
-summary: "The app-to-bridge channel for screen frames and status (#44): record layout, status lines and worker policy."
+summary: "The app-to-bridge channel for screen frames and status: record layout, status lines and worker policy."
 type: reference
+issues: [44]
 ---
 
 # S8 screen transport channel

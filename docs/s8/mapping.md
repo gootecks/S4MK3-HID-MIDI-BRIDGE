@@ -1,6 +1,7 @@
 ---
-summary: "The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14)."
+summary: "The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls."
 type: reference
+issues: [14]
 ---
 
 # S8 default Djay mapping

@@ -1,6 +1,7 @@
 ---
-summary: "Recovered logs of the agent-stopped input capture of 2026-11-09 (#10)."
+summary: "Recovered logs of the agent-stopped input capture of 2026-11-09."
 type: capture
+issues: [10]
 ---
 
 # S8 input capture, 2026-11-09 (recovered copy)

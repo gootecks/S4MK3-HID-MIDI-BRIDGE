@@ -149,8 +149,8 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 
 ## Documents
 
-Each note's front matter holds its `summary` and `type`; `mdsmith fix` regenerates
-these lists from it. The last list holds the READMEs kept next to the code.
+Each note's front matter holds its `summary`, `type` and `issues`; `mdsmith fix`
+regenerates these lists from it. The last list holds the READMEs kept next to the code.
 
 ### Reference
 
@@ -159,21 +159,25 @@ glob: "**/*.md"
 where: 'type: "reference"'
 sort: path
 header: "\n"
-row: "- [{filename}]({filename}): {summary}"
+row-expr: |
+  "- [\(filename)](\(filename)): \(summary)" + strings.Join(
+    [for i in issues {" [#\(i)](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/\(i))"}],
+    ""
+  )
 footer: "\n"
 ?>
 
-- [deck-pages.md](deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation (#45).
-- [display-buttons.md](display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51).
-- [djay-sidebar-access.md](djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
-- [driverkit-evaluation.md](driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish (#55).
+- [deck-pages.md](deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation. [#45](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/45)
+- [display-buttons.md](display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host). [#51](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/51)
+- [djay-sidebar-access.md](djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures. [#48](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/48)
+- [driverkit-evaluation.md](driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish. [#55](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/55)
 - [hardware-notes.md](hardware-notes.md): S8 USB identity, interfaces, input and output evidence, and open questions.
-- [mapping.md](mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14).
+- [mapping.md](mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls. [#14](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/14)
 - [mappings/README.md](mappings/README.md): Frozen copies of Djay mappings that were checked on the S8, with install steps.
-- [panel-views.md](panel-views.md): The library and deck views on the panels (S8Host --screens, #27): run, expected pictures, state at stop, limits and check plan.
+- [panel-views.md](panel-views.md): The library and deck views on the panels (S8Host --screens): run, expected pictures, state at stop, limits and check plan. [#27](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/27)
 - [research-sources.md](research-sources.md): Survey of kontrol-s8-protocol, Encdr and Mixxx, with licensing notes.
 - [s4-coupling-audit.md](s4-coupling-audit.md): S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam.
-- [screen-transport.md](screen-transport.md): The app-to-bridge channel for screen frames and status (#44): record layout, status lines and worker policy.
+- [screen-transport.md](screen-transport.md): The app-to-bridge channel for screen frames and status: record layout, status lines and worker policy. [#44](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/44)
 - [screens.md](screens.md): Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan.
 
 <?/catalog?>
@@ -207,23 +211,27 @@ glob: "**/*.md"
 where: 'type: "validation"'
 sort: path
 header: "\n"
-row: "- [{filename}]({filename}): {summary}"
+row-expr: |
+  "- [\(filename)](\(filename)): \(summary)" + strings.Join(
+    [for i in issues {" [#\(i)](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/\(i))"}],
+    ""
+  )
 footer: "\n"
 ?>
 
 - [agent-stop-validation.md](agent-stop-validation.md): Phase 0: what changes when NIHardwareAgent stops, and the attended check (agent-stop-check.sh).
-- [deck-data-validation.md](deck-data-validation.md): The attended check of live djay deck data on the panels (#45): plan, expected pictures and the run on the S8.
-- [deck-pages-time-validation.md](deck-pages-time-validation.md): The deck page time handling: the paused-deck fix and Four Decks (#80), and the cut-off time label (#83).
-- [display-buttons-validation.md](display-buttons-validation.md): The stand-in test and the attended run of the display buttons on the S8 (#51).
-- [input-capture-rows.md](input-capture-rows.md): Per-control results of the agent-stopped S8 input capture: field, observed range and status for all 191 checklist rows (#10).
-- [input-capture.md](input-capture.md): Passive HID and MIDI capture in Controller Editor MIDI mode: controls without MIDI and undocumented bytes (#10).
-- [panel-views-validation.md](panel-views-validation.md): The attended run of the panel views on the S8 (#27).
+- [deck-data-validation.md](deck-data-validation.md): The attended check of live djay deck data on the panels: plan, expected pictures and the run on the S8. [#45](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/45)
+- [deck-pages-time-validation.md](deck-pages-time-validation.md): The deck page time handling: the paused-deck fix and Four Decks, and the cut-off time label. [#80](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/80) [#83](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/83)
+- [display-buttons-validation.md](display-buttons-validation.md): The stand-in test and the attended run of the display buttons on the S8. [#51](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/51)
+- [input-capture-rows.md](input-capture-rows.md): Per-control results of the agent-stopped S8 input capture: field, observed range and status for all 191 checklist rows. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
+- [input-capture.md](input-capture.md): Passive HID and MIDI capture in Controller Editor MIDI mode: controls without MIDI and undocumented bytes. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
+- [panel-views-validation.md](panel-views-validation.md): The attended run of the panel views on the S8. [#27](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/27) [#89](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/89)
 - [screen-claim-validation.md](screen-claim-validation.md): Phase 1: claiming interface 6 without transfers (screen-claim-check.sh).
 - [screen-frame-validation.md](screen-frame-validation.md): Phases 2 to 4: first frames, colour order and a full uncompressed frame (screen-frame-check.sh).
 - [screen-stream-expected.md](screen-stream-expected.md): Pictures of what each phase 5 step should show, decoded from the frames the tool sends (mise run s8:phase5-images).
 - [screen-stream-validation.md](screen-stream-validation.md): Phase 5: repeated frames with a held claim, the transfer ceiling, partial updates and the exit state (screen-stream-check.sh, shared helpers in screen-lib.sh).
-- [screen-transport-validation.md](screen-transport-validation.md): The attended check of the screen transport on the S8 (#44).
-- [translator-validation.md](translator-validation.md): What the input-to-MIDI translator tests cover, their limits, and the attended checks of 2026-11-10 (#15).
+- [screen-transport-validation.md](screen-transport-validation.md): The attended check of the screen transport on the S8. [#44](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/44)
+- [translator-validation.md](translator-validation.md): What the input-to-MIDI translator tests cover, their limits, and the attended checks of 2026-11-10. [#15](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/15)
 
 <?/catalog?>
 
@@ -234,13 +242,17 @@ glob: "**/*.md"
 where: 'type: "capture"'
 sort: path
 header: "\n"
-row: "- [{filename}]({filename}): {summary}"
+row-expr: |
+  "- [\(filename)](\(filename)): \(summary)" + strings.Join(
+    [for i in issues {" [#\(i)](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/\(i))"}],
+    ""
+  )
 footer: "\n"
 ?>
 
-- [captures/2026-11-09-input-capture/README.md](captures/2026-11-09-input-capture/README.md): Recovered logs of the agent-stopped input capture of 2026-11-09 (#10).
+- [captures/2026-11-09-input-capture/README.md](captures/2026-11-09-input-capture/README.md): Recovered logs of the agent-stopped input capture of 2026-11-09. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
 - [captures/djay-check-20261111T003350Z/README.md](captures/djay-check-20261111T003350Z/README.md): Deck page against djay on 2026-11-10: cue points, analysis and the One Deck view.
-- [captures/one-deck-view-20261111T000921Z/README.md](captures/one-deck-view-20261111T000921Z/README.md): Read-only Accessibility dumps of djay's One Deck view, taken on 2026-11-10 (#93).
+- [captures/one-deck-view-20261111T000921Z/README.md](captures/one-deck-view-20261111T000921Z/README.md): Read-only Accessibility dumps of djay's One Deck view, taken on 2026-11-10. [#93](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/93)
 
 <?/catalog?>
 
@@ -253,7 +265,11 @@ glob:
 where: 'type: "readme"'
 sort: path
 header: "\n"
-row: "- [`{filename}`]({filename}): {summary}"
+row-expr: |
+  "- [`\(filename)`](\(filename)): \(summary)" + strings.Join(
+    [for i in issues {" [#\(i)](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/\(i))"}],
+    ""
+  )
 footer: "\n"
 ?>
 

@@ -1,6 +1,7 @@
 ---
-summary: "Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48)."
+summary: "Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures."
 type: reference
+issues: [48]
 ---
 
 # djay Pro sidebar through Accessibility
