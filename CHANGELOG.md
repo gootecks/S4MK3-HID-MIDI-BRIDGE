@@ -206,6 +206,10 @@ their detailed notes stay in `docs/release-*.md`.
   S8 (#93).
 - The deck page no longer crashes the app on a negative bar index from djay's
   analysis, and bar ticks keep their phase over gaps in the beat list (#94).
+- A cue flag on the deck page takes the colour of its cue number when djay
+  stores no colour for the cue: a cue set as cue 7 was drawn yellow instead
+  of teal. Covered by tests on entries shaped like djay's; not yet seen
+  against djay or on the S8 (#101).
 - When djay does not answer an Accessibility read, the deck page shows
   "djay is not answering" instead of "Accessibility permission needed", keeps
   its track and analysis, and carries on with the next answer; one unanswered
