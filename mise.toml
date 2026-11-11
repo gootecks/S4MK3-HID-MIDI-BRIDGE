@@ -171,8 +171,8 @@ run = "bash docs/s8/translator-check.sh"
 raw = true
 
 [tasks."hooks:install"]
-description = "Install hk Git hooks"
-run = "hk install"
+description = "Install hk Git hooks and the mdsmith merge driver"
+run = ["hk install", "mdsmith merge-driver install 'docs/s8/**/*.md'"]
 
 [tasks."secrets:check"]
 description = "Validate configured secrets"

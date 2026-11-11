@@ -212,9 +212,9 @@ This section is fork-only. Keep it out of upstream pull requests.
   issues.
 - Upstream friendliness: follow `docs/s8/upstream-workflow.md`. Never mix
   fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`,
-  `.mdsmith.yml`, `communique.toml`, `fnox.toml`, this section) with feature
-  changes in one commit. Do not reformat or rename upstream code or docs
-  without need.
+  `.mdsmith.yml`, `.gitattributes`, `communique.toml`, `fnox.toml`, this
+  section) with feature changes in one commit. Do not reformat or rename
+  upstream code or docs without need.
 - Record user-visible changes under `Unreleased` in `CHANGELOG.md` in a
   separate commit from upstream-candidate feature commits.
 - S8 hardware: reading interface 5 HID input in shared mode is allowed for
@@ -234,11 +234,17 @@ This section is fork-only. Keep it out of upstream pull requests.
   not reformat upstream Swift. Regenerate the baseline only for deliberately
   accepted violations (`mise run lint:swift:baseline`).
 - Docs and script style: oxfmt formats and mdsmith lints Markdown under
-  `docs/s8/` (lines up to 95 characters, `.mdsmith.yml`); `hk fix` applies
-  the formatting. shfmt formats `docs/s8/*.sh` (`docs/s8/.editorconfig`);
-  shellcheck checks every script. oxfmt is the native binary from the oxc
-  GitHub release, so no npm download is needed. Upstream Markdown and
-  scripts keep upstream style.
+  `docs/s8/` (GitHub convention, lines up to 95 characters, `.mdsmith.yml`);
+  `hk fix` applies the formatting. Every note there needs front matter with
+  `summary` and `type`; the index in `docs/s8/README.md` is generated from it
+  by `<?catalog?>`, and notes over 200 lines carry a `<?toc?>`. Run
+  `mdsmith fix <file>` after adding a note or a heading. `mise run
+  hooks:install` also registers mdsmith's merge driver for `docs/s8/**/*.md`
+  (`.gitattributes`) and its pre-merge-commit hook, which regenerate those
+  sections during merges. shfmt formats `docs/s8/*.sh`
+  (`docs/s8/.editorconfig`); shellcheck checks every script. oxfmt is the
+  native binary from the oxc GitHub release, so no npm download is needed.
+  Upstream Markdown and scripts keep upstream style.
 
 ### S8 code and commands
 
