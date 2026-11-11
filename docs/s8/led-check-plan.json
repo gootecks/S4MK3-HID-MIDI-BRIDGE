@@ -1,0 +1,249 @@
+{
+  "steps": [
+    {
+      "id": "T0",
+      "writes": [
+        {"report": "0x80", "set": []},
+        {"report": "0x81", "set": []}
+      ],
+      "expect": "Both writes return 119. Deck LEDs that NI left lit go dark; the mixer is unchanged.",
+      "ask": "Did any deck LEDs change? Did anything on the mixer change?",
+      "why": "Settles framing acceptance and snapshot semantics. If a write errors, the single fallback is 118 payload bytes without the ID."
+    },
+    {
+      "id": "T1",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 59, "value": "0x7F"}]}
+      ],
+      "expect": "Left PLAY lit.",
+      "ask": "Is left PLAY lit, and only it?",
+      "why": "Hardware-tested elsewhere; confirms the framing on this Mac."
+    },
+    {
+      "id": "T2",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 58, "value": "0x7F"}]}
+      ],
+      "expect": "CUE lit, PLAY dark.",
+      "ask": "Is CUE lit and PLAY now dark?",
+      "why": "This report replaces T1's: settles full-state snapshot per report."
+    },
+    {
+      "id": "T3",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 52, "value": "0x7F"}]}
+      ],
+      "expect": "FLUX lit.",
+      "ask": "Which button lit?",
+      "why": "Third physically passed LED."
+    },
+    {
+      "id": "T4",
+      "writes": [
+        {"report": "0x81", "set": [{"offset": 59, "value": "0x7F"}]}
+      ],
+      "expect": "Right PLAY lit.",
+      "ask": "Is right PLAY lit? Did anything on the left change?",
+      "why": "Confirms the right mirror and the independence of 0x80 and 0x81."
+    },
+    {
+      "id": "T5",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 52, "value": "0x7F"}, {"offset": 57, "value": "0x7F"}]}
+      ],
+      "expect": "FLUX and SYNC lit.",
+      "ask": "What colour is SYNC? Is a second SYNC LED (green) also lit?",
+      "why": "Resolves contradiction 4 for byte 57."
+    },
+    {
+      "id": "T6",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 56, "value": "0x7F"}]}
+      ],
+      "expect": "SYNC (green?) or nothing.",
+      "ask": "Which LED, what colour?",
+      "why": "Resolves contradiction 4 for byte 56."
+    },
+    {
+      "id": "T7a",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 24, "to": 28, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 24-28 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 24-28), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7b",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 29, "to": 36, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 29-36 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 29-36), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7c",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 37, "to": 39, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 37-39 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 37-39), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7d",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 40, "to": 43, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 40-43 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 40-43), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7e",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 44, "to": 51, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 44-51 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 44-51), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7f",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 53, "to": 55, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 53-55 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 53-55), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7g",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 60, "to": 63, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 60-63 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 60-63), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T7h",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 64, "to": 67, "value": "0x7F"}]}
+      ],
+      "expect": "Left deck LEDs at offsets 64-67 lit, all others dark.",
+      "ask": "Which physical LEDs lit (offsets 64-67), left to right? Colours?",
+      "why": "Verifies the deck byte map for #22 one group per write. If a group disagrees, bisect that group."
+    },
+    {
+      "id": "T8a",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 0, "value": "0x10"}]}
+      ],
+      "expect": "Pad 1 shows one of red, green or blue.",
+      "ask": "Pad 1 colour for this write (offset 0, byte 0)?",
+      "why": "Resolves contradiction 3 (RGB vs BGR)."
+    },
+    {
+      "id": "T8b",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 1, "value": "0x10"}]}
+      ],
+      "expect": "Pad 1 shows one of red, green or blue.",
+      "ask": "Pad 1 colour for this write (offset 1, byte 1)?",
+      "why": "Resolves contradiction 3 (RGB vs BGR)."
+    },
+    {
+      "id": "T8c",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 2, "value": "0x10"}]}
+      ],
+      "expect": "Pad 1 shows one of red, green or blue.",
+      "ask": "Pad 1 colour for this write (offset 2, byte 2)?",
+      "why": "Resolves contradiction 3 (RGB vs BGR)."
+    },
+    {
+      "id": "T9a",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 0, "value": "0x7F"}]}
+      ],
+      "expect": "Pad 1 byte 0 at 0x7F.",
+      "ask": "Pad 1 colour and brightness?",
+      "why": "Baseline for contradiction 7 (values above 0x7F)."
+    },
+    {
+      "id": "T9b",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 0, "value": "0xFF"}], "above_logical_max": true}
+      ],
+      "expect": "Brighter than T9a, or equal.",
+      "ask": "Is this brighter than the previous write, the same, or a different colour?",
+      "why": "Resolves contradiction 7: the descriptor maximum is 0x7F, Encdr sends 0xFF."
+    },
+    {
+      "id": "T10a",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 68, "value": "0x7F"}]}
+      ],
+      "expect": "One blue strip LED lit (offset 68).",
+      "ask": "Which position on the strip (left, middle, right), what colour?",
+      "why": "Gives #23 the strip count, direction and blue colour."
+    },
+    {
+      "id": "T10b",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 80, "value": "0x7F"}]}
+      ],
+      "expect": "One blue strip LED lit (offset 80).",
+      "ask": "Which position on the strip (left, middle, right), what colour?",
+      "why": "Gives #23 the strip count, direction and blue colour."
+    },
+    {
+      "id": "T10c",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 92, "value": "0x7F"}]}
+      ],
+      "expect": "One blue strip LED lit (offset 92).",
+      "ask": "Which position on the strip (left, middle, right), what colour?",
+      "why": "Gives #23 the strip count, direction and blue colour."
+    },
+    {
+      "id": "T11a",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 93, "value": "0x7F"}]}
+      ],
+      "expect": "One orange strip LED lit (offset 93).",
+      "ask": "Which position on the strip (left, middle, right), what colour?",
+      "why": "Same for the orange bank."
+    },
+    {
+      "id": "T11b",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 117, "value": "0x7F"}]}
+      ],
+      "expect": "One orange strip LED lit (offset 117).",
+      "ask": "Which position on the strip (left, middle, right), what colour?",
+      "why": "Same for the orange bank."
+    },
+    {
+      "id": "T12",
+      "writes": [
+        {"report": "0x80", "set": [{"from": 68, "to": 117, "value": "0x7F"}]}
+      ],
+      "expect": "Blue and orange banks both lit (Encdr says purple).",
+      "ask": "Do both banks light, what is the colour?",
+      "why": "Cross-check of Encdr's claim."
+    },
+    {
+      "id": "T13",
+      "writes": [
+        {"report": "0x80", "set": [{"offset": 59, "value": "0x7F"}]},
+        {"report": "0x80", "set": [{"offset": 52, "value": "0x7F"}]}
+      ],
+      "expect": "PLAY lit after the first write, dark after the second (FLUX lit).",
+      "ask": "Did PLAY go dark?",
+      "why": "Final confirmation that omitted bytes are cleared (full-state)."
+    }
+  ]
+}

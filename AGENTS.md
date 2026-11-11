@@ -365,6 +365,9 @@ footer: "\n"
 - [`docs/s8/djay-sidebar-access.md`](docs/s8/djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures.
 - [`docs/s8/driverkit-evaluation.md`](docs/s8/driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish.
 - [`docs/s8/hardware-notes.md`](docs/s8/hardware-notes.md): S8 USB identity, interfaces, input and output evidence, and open questions.
+- [`docs/s8/led-output-mixer.md`](docs/s8/led-output-mixer.md): S8 mixer LED output: report 0x82, VU meters, deck selectors, feature reports and Encdr corrections.
+- [`docs/s8/led-output-questions.md`](docs/s8/led-output-questions.md): S8 deck LED open questions Q1-18 and Q34-39 with the answers the 2026-11-11 probe run and two djay-driven LED checks gave.
+- [`docs/s8/led-output.md`](docs/s8/led-output.md): S8 LED output for decks: report framing, write API, the 0x80 and 0x81 byte map, values and state.
 - [`docs/s8/mapping.md`](docs/s8/mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls.
 - [`docs/s8/mappings/README.md`](docs/s8/mappings/README.md): Frozen copies of Djay mappings that were checked on the S8, with install steps.
 - [`docs/s8/panel-views.md`](docs/s8/panel-views.md): The library and deck views on the panels (S8Host --screens): run, expected pictures, state at stop, limits and check plan.

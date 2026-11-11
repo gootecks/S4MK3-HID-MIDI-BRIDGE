@@ -101,6 +101,11 @@ overrides:
     rules:
       required-frontmatter:
         fields: [summary, type]
+  # The Answer column holds the user's words unchanged; the longest is 47 words.
+  - glob: ["docs/s8/led-output-validation.md"]
+    rules:
+      table-readability:
+        max-words-per-cell: 60
 rules:
   # oxfmt always leaves a blank line after front matter; MDS004 rejects it.
   first-line-heading: false

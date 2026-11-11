@@ -3,23 +3,38 @@
 # on its own.
 #   screen_init NAME      create docs/s8/captures/NAME-UTC and set $run
 #   screen_preflight      refuse unless one S8, no rival apps, one genuine agent
-#   screen_build PROFILE  build the recorder and screen tool; sets $tool, $recorder_bin
+#   screen_build PROFILE [TOOL]  build the recorder and TOOL (default s8-screen-frame); sets $tool, $recorder_bin
 #   screen_start          start the passive recorder and the restore trap
 #   screen_agent_stop     baseline PLAY check, SIGKILL the agent, PLAY check
 #   screen_finish         release wait, recovery, PLAY check, jq per-window summary
 #   row QUESTION          ask and record; false when the answer is "stop"
+#   note TEXT [STYLE]     print TEXT, in STYLE on a terminal, and record it plain
 #   start_host NAME ARGS  run S8Host --screens ARGS with $host and $bridge, log to $run/NAME.log
 #   stop_host NAME HOW    stop it with Ctrl-C (int) or by closing its stdin (eof)
+# Styles ($bold $dim $red $green $yellow $cyan, closed by $reset) are empty when
+# stdout is not a terminal or NO_COLOR is set. The log files never get them.
 
 bundle="/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app"
 exe="$bundle/Contents/MacOS/NIHardwareAgent"
 answer=""
+# shellcheck disable=SC2034 # the runners that source this file use the styles
+{
+    bold="" dim="" red="" green="" yellow="" cyan="" reset=""
+    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+        bold=$'\033[1m' dim=$'\033[2m' reset=$'\033[0m'
+        red=$'\033[1;31m' green=$'\033[1;32m' yellow=$'\033[1;33m' cyan=$'\033[1;36m'
+    fi
+}
 
 now_ms() { echo $(($(date +%s) * 1000)); }
 mark() { echo "$1 $(now_ms)" >> "$run/events.txt"; }
-note() { printf '%s\n' "$1" | tee -a "$run/notes.txt"; }
+note() {
+    printf '%s\n' "$1" >> "$run/notes.txt"
+    printf '%s%s%s\n' "${2:-}" "$1" "$reset"
+}
 ask() {
-    read -r -p "$1 " answer
+    printf '\n%s%s%s\n' "$bold" "$1" "$reset"
+    read -r -p "$green> $reset" answer
     printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"
 }
 agent_pid() { pgrep -f "$exe" || true; }
@@ -63,11 +78,11 @@ screen_preflight() {
 }
 
 screen_build() {
-    local flag=()
+    local flag=() example="${2:-s8-screen-frame}"
     [ "$1" != release ] || flag=(--release)
-    cargo build --locked --quiet "${flag[@]+"${flag[@]}"}" --example s8-passive-recorder --example s8-screen-frame
+    cargo build --locked --quiet "${flag[@]+"${flag[@]}"}" --example s8-passive-recorder --example "$example"
     # shellcheck disable=SC2034 # read by the runner that sources this file
-    tool="target/$1/examples/s8-screen-frame"
+    tool="target/$1/examples/$example"
     recorder_bin="target/$1/examples/s8-passive-recorder"
 }
 

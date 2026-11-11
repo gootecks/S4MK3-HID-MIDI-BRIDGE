@@ -1,0 +1,367 @@
+{
+  "frames": {
+    "B0": {"report": "0x82", "set": [{"offset": 11, "value": "0x7F"}, {"offset": 12, "value": "0x7F"}, {"offset": 44, "value": "0x7F"}, {"from": 45, "to": 47, "value": "0x14"}, {"offset": 48, "value": "0x7F"}, {"offset": 49, "value": "0x7F"}, {"from": 50, "to": 52, "value": "0x14"}, {"offset": 53, "value": "0x7F"}, {"offset": 72, "value": "0x7F"}]}
+  },
+  "steps": [
+    {
+      "id": "M1",
+      "writes": [
+        {"report": "0x82", "set": []}
+      ],
+      "expect": "Every LED that a 0x82 byte controls goes off.",
+      "ask": "Did any mixer LED change? Which?",
+      "why": "Open question 1: does 82 plus 73 zeros extinguish everything 0x82 controls?"
+    },
+    {
+      "id": "M2",
+      "writes": [
+        {"base": "B0", "set": []}
+      ],
+      "expect": "Seed state: FX C-1, FX D-2, SNAP, QUANT lit; the other FX assign LEDs dim.",
+      "ask": "Are FX C-1, FX D-2, SNAP and QUANT lit and FX A-1, A-2, B-1, B-2, C-2, D-1 dim? Answer yes or no for each.",
+      "why": "Open question 2: writes the Mixxx seed frame B0 whole as the baseline."
+    },
+    {
+      "id": "M3",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 48, "value": "0x14"}]}
+      ],
+      "expect": "SNAP dim.",
+      "ask": "Did SNAP go dim?",
+      "why": "Open question 4: does offset 48 control SNAP?"
+    },
+    {
+      "id": "M4",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 49, "value": "0x14"}]}
+      ],
+      "expect": "QUANT dim.",
+      "ask": "Did QUANT go dim?",
+      "why": "Open question 4: does offset 49 control QUANT?"
+    },
+    {
+      "id": "M5",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 44, "value": "0x14"}]}
+      ],
+      "expect": "FX C-1 dim.",
+      "ask": "Did FX C-1 dim?",
+      "why": "Checks offset 44 is FX assign C-1."
+    },
+    {
+      "id": "M6",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 46, "value": "0x7F"}]}
+      ],
+      "expect": "FX A-1 lit.",
+      "ask": "Did FX A-1 light?",
+      "why": "Checks offset 46 is FX assign A-1."
+    },
+    {
+      "id": "M7",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 50, "value": "0x7F"}]}
+      ],
+      "expect": "FX B-1 lit.",
+      "ask": "Did FX B-1 light?",
+      "why": "Checks offset 50 is FX assign B-1."
+    },
+    {
+      "id": "M8",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 52, "value": "0x7F"}]}
+      ],
+      "expect": "FX D-1 lit.",
+      "ask": "Did FX D-1 light?",
+      "why": "Checks offset 52 is FX assign D-1."
+    },
+    {
+      "id": "M9",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 46, "value": "0x00"}]}
+      ],
+      "expect": "FX A-1 fully off, or still dim.",
+      "ask": "Does 00 turn FX A-1 fully off, compared with the dim 14?",
+      "why": "Open question 3: is 0x00 valid for a 0x14-class LED."
+    },
+    {
+      "id": "M10a",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 72, "value": "0x14"}]}
+      ],
+      "expect": "Unknown: some LED changes, or nothing.",
+      "ask": "Which LED changed, if any?",
+      "why": "Open question 5: offset 72 is 7F in the seed with no known meaning."
+    },
+    {
+      "id": "M10b",
+      "writes": [
+        {"base": "B0", "set": [{"offset": 72, "value": "0x00"}]}
+      ],
+      "expect": "Unknown: some LED changes, or nothing.",
+      "ask": "Which LED changed, if any, compared with the previous write?",
+      "why": "Open question 5, second level."
+    },
+    {
+      "id": "M11a",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 11, "to": 21, "value": "0x7F"}]}
+      ],
+      "expect": "VU channel 1 segments lit (claimed range 11-21).",
+      "ask": "Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves?",
+      "why": "Open questions 6 and 8: VU channel 1 claim, and whether the device drives the meters itself."
+    },
+    {
+      "id": "M11b",
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 11, "value": "0x7F"}]}
+      ],
+      "expect": "One VU channel 1 segment lit.",
+      "ask": "Which segment lit (bottom, top, other)? Do the meters still move with audio by themselves?",
+      "why": "Open question 6: finds the lowest segment by offset."
+    },
+    {
+      "id": "M11c",
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 21, "value": "0x7F"}]}
+      ],
+      "expect": "One VU channel 1 segment lit.",
+      "ask": "Which segment lit (bottom, top, other)? Do the meters still move with audio by themselves?",
+      "why": "Open question 6: finds the other end of the range."
+    },
+    {
+      "id": "M12",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 0, "to": 10, "value": "0x7F"}]}
+      ],
+      "expect": "VU channel 3 segments lit (claimed range 0-10).",
+      "ask": "Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves?",
+      "why": "Open question 7: VU channel 3 claim."
+    },
+    {
+      "id": "M13",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 22, "to": 32, "value": "0x7F"}]}
+      ],
+      "expect": "VU channel 2 segments lit (claimed range 22-32).",
+      "ask": "Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves?",
+      "why": "Open question 7: VU channel 2 claim."
+    },
+    {
+      "id": "M14",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 33, "to": 43, "value": "0x7F"}]}
+      ],
+      "expect": "VU channel 4 segments lit (claimed range 33-43).",
+      "ask": "Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves?",
+      "why": "Open question 7: VU channel 4 claim."
+    },
+    {
+      "id": "M15a",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 54, "to": 62, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: some LED lit, or nothing.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Open question 9: offsets 54-71 have no known meaning (62 and 63 are claimed to be MIC)."
+    },
+    {
+      "id": "M15b",
+      "writes": [
+        {"report": "0x82", "set": [{"from": 63, "to": 71, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: some LED lit, or nothing.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Open question 9, second half."
+    },
+    {
+      "id": "M16-54",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 54, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 54 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-55",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 55, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 55 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-56",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 56, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 56 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-57",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 57, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 57 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-58",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 58, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 58 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-59",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 59, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 59 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-60",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 60, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 60 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-61",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 61, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 61 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-62",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 62, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 62 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-63",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 63, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 63 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-64",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 64, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 64 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-65",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 65, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 65 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-66",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 66, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 66 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-67",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 67, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 67 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-68",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 68, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 68 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-69",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 69, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 69 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-70",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 70, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 70 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M16-71",
+      "optional": true,
+      "writes": [
+        {"report": "0x82", "set": [{"offset": 71, "value": "0x7F"}]}
+      ],
+      "expect": "Unknown: offset 71 only.",
+      "ask": "Which LED lit, if any? Where on the mixer?",
+      "why": "Bisects M15 one byte at a time."
+    },
+    {
+      "id": "M17",
+      "writes": [
+        {"base": "B0", "set": []}
+      ],
+      "expect": "Seed state again.",
+      "ask": "Are the mixer LEDs back in the M2 state?",
+      "why": "Returns the mixer to the baseline frame."
+    }
+  ]
+}

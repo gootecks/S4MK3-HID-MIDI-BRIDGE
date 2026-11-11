@@ -1,0 +1,130 @@
+Plan docs/s8/led-check-mixer-plan.json, steps: M1 M2 M3 M4 M5 M6 M7 M8 M9 M10a M10b M11a M11b M11c M12 M13 M14 M15a M15b M17. Djay open, no track playing, Controller Editor open with panel labels visible.
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+== M1 (1 of 20)
+Expect: Every LED that a 0x82 byte controls goes off.
+M1 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M1: Did any mixer LED change? Which? (or 'stop'): no
+== M2 (2 of 20)
+Expect: Seed state: FX C-1, FX D-2, SNAP, QUANT lit; the other FX assign LEDs dim.
+M2 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M2: Are FX C-1, FX D-2, SNAP and QUANT lit and FX A-1, A-2, B-1, B-2, C-2, D-1 dim? Answer yes or no for each. (or 'stop'): yes
+== M3 (3 of 20)
+Expect: SNAP dim.
+M3 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M3: Did SNAP go dim? (or 'stop'): yes
+== M4 (4 of 20)
+Expect: QUANT dim.
+M4 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M4: Did QUANT go dim? (or 'stop'): yes
+== M5 (5 of 20)
+Expect: FX C-1 dim.
+M5 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M5: Did FX C-1 dim? (or 'stop'): yes
+== M6 (6 of 20)
+Expect: FX A-1 lit.
+M6 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M6: Did FX A-1 light? (or 'stop'): Yes FX A-1 and FX C-1 came on
+== M7 (7 of 20)
+Expect: FX B-1 lit.
+M7 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M7: Did FX B-1 light? (or 'stop'): yes
+== M8 (8 of 20)
+Expect: FX D-1 lit.
+M8 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M8: Did FX D-1 light? (or 'stop'): yes FX D-1 and FX D-2 are on
+== M9 (9 of 20)
+Expect: FX A-1 fully off, or still dim.
+M9 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M9: Does 00 turn FX A-1 fully off, compared with the dim 14? (or 'stop'): yes
+== M10a (10 of 20)
+Expect: Unknown: some LED changes, or nothing.
+M10a exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M10a: Which LED changed, if any? (or 'stop'): FX A-1 is back on
+== M10b (11 of 20)
+Expect: Unknown: some LED changes, or nothing.
+M10b exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M10b: Which LED changed, if any, compared with the previous write? (or 'stop'): FX A-1 went dim
+== M11a (12 of 20)
+Expect: VU channel 1 segments lit (claimed range 11-21).
+M11a exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M11a: Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves? (or 'stop'): all four decks' FX 1 and FX 2 buttons went off
+== M11b (13 of 20)
+Expect: One VU channel 1 segment lit.
+M11b exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M11b: Which segment lit (bottom, top, other)? Do the meters still move with audio by themselves? (or 'stop'): none
+== M11c (14 of 20)
+Expect: One VU channel 1 segment lit.
+M11c exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M11c: Which segment lit (bottom, top, other)? Do the meters still move with audio by themselves? (or 'stop'): none
+== M12 (15 of 20)
+Expect: VU channel 3 segments lit (claimed range 0-10).
+M12 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M12: Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves? (or 'stop'): none
+== M13 (16 of 20)
+Expect: VU channel 2 segments lit (claimed range 22-32).
+M13 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M13: Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves? (or 'stop'): none
+== M14 (17 of 20)
+Expect: VU channel 4 segments lit (claimed range 33-43).
+M14 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M14: Did any VU segment light? Which channel, how many segments, bottom up? Do the meters still move with audio by themselves? (or 'stop'): no, none
+== M15a (18 of 20)
+Expect: Unknown: some LED lit, or nothing.
+M15a exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M15a: Which LED lit, if any? Where on the mixer? (or 'stop'): none
+== M15b (19 of 20)
+Expect: Unknown: some LED lit, or nothing.
+M15b exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M15b: Which LED lit, if any? Where on the mixer? (or 'stop'): none
+== M17 (20 of 20)
+Expect: Seed state again.
+M17 exit status 0:
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x82, requested 74, returned 74
+M17: Are the mixer LEDs back in the M2 state? (or 'stop'): decks 1-4's FX 1-2 all came on and so did snap and quantize.  but FX C-1 and FX D-2 are brighter
+Clearing LEDs.
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x80, requested 119, returned 119
+write 2: report 0x81, requested 119, returned 119
+write 3: report 0x82, requested 74, returned 74
+Are the panel labels and LEDs back?: yes
+Recorded in docs/s8/captures/led-check-mixer-20261111T092527Z
