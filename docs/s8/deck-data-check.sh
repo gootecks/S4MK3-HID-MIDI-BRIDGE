@@ -170,9 +170,9 @@ part_a() {
     srow 8 "Play deck 2 for about 20 s at that tempo. Does REMAINING on the right panel stay the same as djay's? Then pause deck 2 and reset its tempo. y/n, or describe" || return 0
     srow 9 "Play deck 1, set a 4-beat loop for about 10 s, release it, pause. What did the left panel's time and playhead do during the loop? (looping is not modelled) Describe, or 'skip'." || return 0
     srow 10 "Load another track on deck 1. Does the left panel change to its title, artist, BPM, key, waveform and cue flags, with the playhead at the start? How long did it take? Describe." || return 0
-    srow 11 "Optional: set a new cue point on deck 2. Does a new flag appear on the right panel? (expected: no; cue points are read when the track is loaded) y/n, or 'skip'" || return 0
-    srow 12 "Optional: load on deck 2 a track djay has not analysed, or one with a title in a non-Latin script. What does the right panel show? Describe, or 'skip'." || return 0
-    srow 13 "Optional: if djay has a view that hides the decks or their times (for example the library at full size), switch to it for about 10 s and back. What did the panels show meanwhile and afterwards? Describe, or 'skip'." || return 0
+    srow 11 "Optional: set a new cue point on deck 2 without reloading the track. Does a new flag appear on the right panel within about 10 s? y/n and how long, or 'skip'" || return 0
+    srow 12 "Optional: load on deck 2 a track djay has not analysed. Does the right panel say 'No analysis for this track' and then show the waveform once djay has analysed it? How long after djay? Describe, or 'skip'." || return 0
+    srow 13 "Optional: switch djay to One Deck view for about 10 s and back. Which deck did djay show? Did the other deck's panel say 'Deck N is not shown in djay' and return afterwards? Describe, or 'skip'." || return 0
     srow 14 "Any flicker, tearing, wrong colours or a frozen panel so far? Describe, or 'no'." || return 0
 }
 

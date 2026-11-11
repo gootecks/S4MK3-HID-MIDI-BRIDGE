@@ -28,8 +28,10 @@ layout change while the stream runs, and `S8Host --deck 2`.
 
 ## Attended check
 
-This section is the plan. Run once, on 2026-11-10. Every run needs explicit
-approval because it stops NIHardwareAgent and sends screen frames to the S8.
+This section is the plan. Run once, on 2026-11-10, with the rows as they
+stood then; rows 11 to 13, 16 and 19 have changed since (see *After the
+run*). Every run needs explicit approval because it stops NIHardwareAgent
+and sends screen frames to the S8.
 
 `mise run s8:deck-data` (`deck-data-check.sh`), at the S8 with djay Pro and
 Controller Editor open, djay in its Two Decks layout, a track with cue
@@ -98,9 +100,9 @@ play state and title of the last one.
 | 8 | Play deck 2 about 20 s at that tempo, pause, reset tempo | REMAINING stays the same as djay's |
 | 9 | Deck 1: 4-beat loop for about 10 s while playing | Reported; looping is not modelled |
 | 10 | Load another track on deck 1 | Left panel changes to its title, artist, BPM, key, waveform and cue flags, playhead at the start; delay reported |
-| 11 | Optional: set a new cue point on deck 2 | No new flag: the cue points are read when the track is loaded |
-| 12 | Optional: load a track without analysis, or with a title in a non-Latin script | Reported |
-| 13 | Optional: a djay view that hides the decks or their times, about 10 s, and back | Reported |
+| 11 | Optional: set a new cue point on deck 2, without reloading the track | A new flag on the right panel within about 10 s (#92) |
+| 12 | Optional: load on deck 2 a track djay has not analysed | "No analysis for this track", then waveform, beat ticks and cue flags within about 10 s of djay ending its analysis (#95) |
+| 13 | Optional: switch djay to One Deck view for about 10 s, and back | The panel of the deck djay does not show says "Deck N is not shown in djay", the other keeps its page; after the switch back both are as before (#93) |
 | 14 | Part A as a whole | No flicker, tearing, wrong colours or frozen panel |
 | 15 | Runner ends the stream | Both panels black, bridge exit status 0 |
 | 16 | Part B starts, djay in Two Decks | "Deck 3 is not shown in djay" and "Deck 4 is not shown in djay", as `02-decks-3-4-two-deck-layout` |
@@ -272,7 +274,9 @@ The observer's remarks on the record, 2026-11-10, and what followed:
   djay" (#93). Rows 16 and 19 above were asked and answered with the
   earlier text, "No track on deck N"; the plan and the runner now name the
   new text, and picture `02-decks-3-4-two-deck-layout` was made again. The
-  new text has not been on the S8.
+  new text has not been on the S8. Rows 11 to 13 of the plan and the runner
+  now expect the behaviour after #92, #95 and #93; the record above keeps
+  the questions as they were asked.
 - Row 17: "maybe i answered it wrong but it looked right". The record keeps
   the answer as given.
 - Row 22: the two slow reads started on time (gaps of 0.250 s and 0.249 s
