@@ -313,7 +313,7 @@ white one.
 | ------------------------------ | ------------------------------------------- | -------------------------------- |
 | PLAY                           | root `playing` of the deck                  | on while playing, else off       |
 | CUE                            | note 1, or CUE held (unshifted, shown deck) | on, else off                     |
-| SYNC                           | note 2                                      | on, else dim                     |
+| SYNC (green LED)               | note 2                                      | on, else dim                     |
 | FLUX                           | note 4                                      | on, else off                     |
 | Loop ring (4 segments)         | note 6                                      | on, else dim                     |
 | FX 1-4                         | notes 32-35 left, 36-39 right               | on, else dim                     |
@@ -394,16 +394,39 @@ movement after a touch and goes out on release.
 
 ### Not verified on the S8
 
-Nothing has been sent to the S8 by this feature. `src/s8/leds/map.rs` lists
-these as unconfirmed on hardware:
+The `--s8-leds` run has not happened. The deck report layout in
+`src/s8/leds/map.rs` was probed on its own.
 
-- The byte order of a pad's colour (red, green, blue is assumed).
-- The dim level, 20 of 127 (the on level is 127).
-- The SYNC LED offset (57; 56 appears only in tests) and the display button
-  offsets.
-- The strip direction: index 0 as the low offset of each bank.
+Established by the LED output check of 2026-11-11 (`led-output-validation.md`).
+Each write was one 119-byte report, `0x80` or `0x81`. Each returned 119.
 
-Also unconfirmed: that `songProgress` runs 0-127 over the whole track.
+- A write replaces the whole side. `0x80` and `0x81` are independent.
+- Offset 59 lit PLAY, 58 lit CUE and 52 lit FLUX.
+- Offset 57 lit SYNC red and offset 56 lit SYNC green: one button, two colours.
+- Offsets 24-28 together lit FX SELECT and the four buttons below FX 1-4.
+- Offsets 29-36 lit the eight display buttons, four left and four right of the display.
+- Offsets 37-39 lit BACK, CAPTURE and EDIT.
+- Offsets 40-43 lit the four ON buttons below the display.
+- Offsets 44-51 lit HOTCUE, LOOP, FREEZE and REMIX, all white.
+- Offsets 53-55 lit DECK and SHIFT, both white.
+- Offsets 60-63 lit the loop encoder white and 64-67 lit it blue.
+- Pad 1 lit red at offset 0, green at offset 1 and blue at offset 2. `0x7f` was
+  bright; `0xff` looked the same.
+- Blue strip bank: offset 68 lit the left end, 80 the middle and 92 the right end.
+  Orange bank: offset 93 lit the left end and 117 the right end.
+- With both banks fully lit, the top row of the touchstrip was all purple.
+
+Those groups were lit together, so the order inside a group is not established.
+
+Still not verified:
+
+- The dim level, 20 of 127 (the on level is 127), on any deck LED.
+- The order inside each button group.
+- The colour of each single byte in 44-51 and 53-54.
+- The bottom row of the touchstrip, which stayed off with both banks lit.
+- That `songProgress` runs 0-127 over the whole track.
+- Right-side offsets other than PLAY.
+- Everything driven from Djay: no `--s8-leds` run has happened.
 
 ## Hardware-local controls
 
