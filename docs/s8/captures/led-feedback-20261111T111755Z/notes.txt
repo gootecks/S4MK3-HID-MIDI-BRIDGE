@@ -1,0 +1,24 @@
+LED feedback check (#22, #23). Mapping: Kontrol S8 Bridge r8. Bridge: target/debug/s4mk3-hid-midi-bridge (debug).
+Asking only these rows: L3 L7 L9 L11 L15 L16 L17 L18 L19 L20 
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+Bridge running, pid 99670. Its log is docs/s8/captures/led-feedback-20261111T111755Z/bridge.log.
+Mapping selected? Press Enter.: 
+L3 What changed on each side after loading? Describe, including the pads and the strip.: te pads are the right color except hotcue 8, but when i changed the color in djay to purple, the pads changed to purple as well.  and the touchstrip top row lights up relative to how far along the traack is. so this works!
+L7 Is FLUX steady or blinking, and is deck A playing or paused at that moment? Answer for slip on and for slip off.: flux blinks when it's on and when it's off it's dark.  when it's activated and you hold the touchstrip and pull back, it blinks and when it's playing it's solid orange.  so this works too!
+L9 After each of the four presses, say for HOTCUE, LOOP, FREEZE and REMIX: bright, dim or off.: hotcue is dim but the pads are green.  freeze is teal, remix is orange, loop doesn't change colors.  pressing hotcue again puts the pads back to the 8 hotcue colors.  loop doesn't do anything.  shift + hotcue turns the pads green and makes LOOP bright blue but hotcue stays dim
+L11 Which colour do pad 1 and pad 2 show against djay's cue colours, and what does pad 2 show after the delete? Describe.: yes they're the expected colors and then off when you delete the hotcue
+L15 On C and back on A, what do DECK, PLAY, SYNC, the pads and the strip show? Describe the DECK colour.: on deck A, play is off until i press play. switching to deck C turns all the pads off and cue stops blinking. on deck A, the touchstrip lights up blue relative to how far along the track is.
+L16 Per right-side control, same as the left, yes or no: PLAY, CUE, SYNC, FLUX, each mode button, the pads, each FX button, DECK. Does the left side stay unchanged?: yes works as expected
+L17 At progress 0, how many strip LEDs are lit, out of how many, and on which row?: 0 LEDs are lit at progress 0 out of i dunno 20?  top row.  works as expected and touching the touchstrip makes a single orange LED turn on where that tracks your finger and turns off when you release
+L18 At about half, how many strip LEDs are lit out of how many, and does the bar start at the left end?: about half are on when it's at halfway.  bar starts at the elft end. works as expected
+L19 Near the end, how many strip LEDs are lit out of how many, and does the bar grow as the playhead moves?: 24 out of 25, it grows as the playhead moves and then turns off when the track ends. works as expected
+L20 When does the orange dot appear, does it follow the finger and go out on release, and which row is it on? Describe.: orange dot appears when i touch the touchstrip. it follows my finger and goes out on release.  top row only.  bottom row has yet to come on ever.
+Bridge exit status 0.
+Bridge log: S8_LEDS_ENABLED 1, S8_LEDS_DISABLED 0, S8_LEDS_CLEAR_FAILED 0.
+Bridge counts: input_events=1450 led_writes=7678 midi_messages=1109 feedback_messages=17498
+Bridge processes left: 
+L22 Which LEDs are still lit on each side? Describe.: FX 1-2 of all decks, mic 1 and mic 2, snap, quantize, all 4 CUEs, all 4 filter buttons.  all are dim everything else is off
+L23 What do the panels and the LEDs show? Describe.: panels show Controller Editor labels and the template's LEDs are back.
+L24 Did djay react to left PLAY, and does the display button work again? Describe.: yes. display buttons 1 and 4 work as expected to adjust color and switch templates
+Recorded in docs/s8/captures/led-feedback-20261111T111755Z

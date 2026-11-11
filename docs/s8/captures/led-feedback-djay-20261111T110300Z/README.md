@@ -10,7 +10,7 @@ Taken on 2026-11-11 with the `feedback-capture` example on the virtual port
 `Kontrol S8 MIDI Full` only. The S8 was not opened and NIHardwareAgent kept running.
 The mapping was `Kontrol S8 Bridge r8`. osascript drove djay through its Deck 1 and
 Deck 2 menus. The record is
-[led-feedback-validation.md](../../led-feedback-validation.md#check-against-djay-without-the-s8).
+[led-feedback-causes.md](../../led-feedback-causes.md#check-against-djay-without-the-s8).
 
 - `feedback.txt.gz`: the raw capture.
 - `actions-marks.txt`: the UTC times of the scripted menu actions (Go to Beginning and

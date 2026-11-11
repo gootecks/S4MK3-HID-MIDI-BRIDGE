@@ -23,14 +23,27 @@ The bridge exited with status 0, with `S8_LEDS_DISABLED` 0 and
 `led_writes=10886`, `midi_messages=1055` and `feedback_messages=30587`.
 
 Several rows did not match the expected result; see [Results](#results) and
-[Causes](#causes). Fixes for the causes are in the worktree (mapping r8 and the bridge).
-None of them has been seen on the S8 yet: they were checked against djay without the S8
-only. The second run on the S8 is not run yet; see [Second run](#second-run).
-Issues #22 and #23 stay open.
+[Causes](led-feedback-causes.md#causes). Fixes for the causes are in the worktree
+(mapping r8 and the bridge). Run 2 on 2026-11-11 put them on the S8
+([Second run](#second-run)). The Run 2 column of the [Plan](#plan) table gives the
+latest state of each row.
+
+Run 2 settled the strip rows (L5 in part, L17-L20), the cue colours (L3 in part, L11) and
+the right side (L16). Still open on the S8:
+
+- L9: which mode button is full in each pad mode.
+- L10: the dim resting pads.
+- L15: the DECK colour and the pads on deck C.
+- L3: hot cue 8.
+- L22: the LEDs left dim after the stop.
+- The user's remark after run 1, which run 2 did not answer.
+
+What was found about them without the S8 is in
+[Findings after run 2](led-feedback-causes.md#findings-after-run-2). The open rows are
+collected in #125. Issues #22 and #23 stay open.
 
 An earlier attempt, `led-feedback-20261111T095724Z`, was ended with Ctrl-C at the
-mapping prompt, before any row. The bridge exited with status 0 and NIHardwareAgent
-was restored.
+mapping prompt, before any row; NIHardwareAgent was restored.
 
 ## Scope
 
@@ -120,32 +133,32 @@ are marked "open in the output check": the order inside multi-byte groups, the
 dim level on deck LEDs and the bottom row of the touchstrip. Those questions
 ask for a description.
 
-| Row | Action                                                                                                                                             | Expected                                                                                                                                                  | Result          |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| L1  | Nothing is loaded on decks A to D. Look at both sides and touch nothing.                                                                           | PLAY, CUE, FLUX off; DECK full; HOTCUE full; the other mode buttons, SYNC, ring, FX and ON dim; pads and strips dark. Dim level open in the output check. | Not settled     |
-| L2  | Look at the LEDs the bridge does not write: filter on and the arrows at the top of each deck, the mixer CUE buttons, MIC 1, MIC 2, SNAP, QUANTIZE. | They stay as the firmware leaves them. The bridge writes only `0x80` and `0x81`, so it does not change them.                                              | Not settled     |
-| L3  | In djay load one test track on deck A and one on deck B. Do not play.                                                                              | Left shows A, right shows B. PLAY off; strip blue bank dark at progress 0; pads dark unless the track has saved cues, which light in their cue colours.   | Differs         |
-| L4  | Press left PLAY to play deck A, then again to pause it.                                                                                            | PLAY full while A plays, off when paused (root `playing` output).                                                                                         | Matches         |
-| L5  | Pause deck A at its start. Hold left CUE, then release it. Do not hold Shift.                                                                      | CUE full while it is held, from the local state and from djay's CUE note. After the release it follows djay's CUE feedback.                               | Differs         |
-| L6  | Play deck B, play deck A, press left SYNC to switch sync on, then again to switch it off.                                                          | SYNC (green LED) full with sync on, dim with sync off. The red SYNC LED stays off. Open in the output check: the dim level.                               | Matches in part |
-| L7  | Press left FLUX, then again.                                                                                                                       | FLUX full while slip is on, off otherwise.                                                                                                                | Differs         |
-| L8  | Press the left loop encoder to start a loop on deck A, then again to end it.                                                                       | All four ring segments full while the loop is active, dim otherwise: blue on decks A and B, white on C and D.                                             | Matches         |
-| L9  | On the left side press HOTCUE, FREEZE, REMIX, then Shift + HOTCUE.                                                                                 | The button of the active pad mode is full and the other three are dim. Shift + HOTCUE makes LOOP the full one.                                            | Not settled     |
-| L10 | On the left side select FREEZE, then Shift + HOTCUE, then REMIX, and look at the eight pads each time. Do not press a pad.                         | FREEZE: all pads dim blue. Shift + HOTCUE: all pads dim green. REMIX: all pads dim orange. Dim is the lit colour divided by 6.                            | Not settled     |
-| L11 | Select HOTCUE. On deck A set a hot cue on pad 1 and pad 2, then delete the cue of pad 2 in djay.                                                   | Set pads light in djay's cue colour (tokens 1-8 from the S4 bridge's default colours, 9 white); unset pads are dark; the deleted pad goes dark.           | Differs         |
-| L12 | Select REMIX. Press sampler pad 1 to play its sample, then stop it. The slot needs a sample.                                                       | The pad is orange while its sample plays and dim orange when it stops. Deck A and deck C read the same sampler bank, B and D the other.                   | Matches         |
-| L13 | Press left FX 1, 2, 3 and 4 on, then off.                                                                                                          | Each FX LED is full while its effect is on, dim while off. The side shows the unit's target deck, chosen with the mixer FX buttons.                       | Differs         |
-| L14 | Needs a stem track on deck A. Press left ON 1, 2, 3 and 4 to mute and unmute stems.                                                                | Each ON LED is full when djay reports that stem muted, dim otherwise.                                                                                     | Matches         |
-| L15 | Press left DECK to switch to deck C, look at the left side, then press DECK again.                                                                 | On C the DECK LED is white; PLAY off, pads dark, ring dim. Back on A it shows A again. Group order open in the output check.                              | Not settled     |
-| L16 | Repeat on the right side with deck B: play, hold CUE, SYNC, loop, FLUX, FX 1, a pad-mode button and a hot cue pad.                                 | The right side behaves as the left with its own report `0x81`, independent of the left. Only PLAY on the right is established.                            | Not settled     |
-| L17 | Put deck A at the very start of its track (progress 0) and look at the left touchstrip.                                                            | The blue bank is dark at progress 0; one LED once progress is above 0. Open in the output check: which row of the strip the blue bank lights.             | Not settled     |
-| L18 | Seek deck A to about half of the track and look at the left strip.                                                                                 | A blue bar from the physical left end, about 12 or 13 of 25 LEDs.                                                                                         | Differs         |
-| L19 | Seek deck A to its last seconds, then let it play on.                                                                                              | The bar grows to 24 or 25 LEDs near the end. Open in the output check: whether progress covers the whole track.                                           | Not settled     |
-| L20 | Touch the left strip at its left end without moving, slide to the middle and to the right end, then release.                                       | No orange dot while still; one orange dot at the finger once it moves; out on release. Blue bar stays. Bottom row open in the output check.               | Differs         |
-| L21 | Hold left Shift, then release it.                                                                                                                  | SHIFT full while held, dim otherwise. Nothing else on that side changes.                                                                                  | Matches         |
-| L22 | The bridge has stopped with Ctrl-C. NIHardwareAgent is still stopped. Look at both sides.                                                          | Every LED the bridge owns is dark on both sides: buttons, pads, loop ring, strips. The LEDs of L2 are as before.                                          | Not settled     |
-| L23 | NIHardwareAgent has been started again. Look at both panels and the LEDs.                                                                          | Controller Editor labels on both panels and the template's LEDs are back.                                                                                 | Not settled     |
-| L24 | Press left PLAY once, then display button 1 or 4.                                                                                                  | Djay reacts to PLAY through the Controller Editor template; the NI action of the display button works.                                                    | Matches         |
+| Row | Action                                                                                                                                             | Expected                                                                                                                                                  | Result          | Run 2                                     |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------- |
+| L1  | Nothing is loaded on decks A to D. Look at both sides and touch nothing.                                                                           | PLAY, CUE, FLUX off; DECK full; HOTCUE full; the other mode buttons, SYNC, ring, FX and ON dim; pads and strips dark. Dim level open in the output check. | Not settled     | Not asked; run 1 state stands.            |
+| L2  | Look at the LEDs the bridge does not write: filter on and the arrows at the top of each deck, the mixer CUE buttons, MIC 1, MIC 2, SNAP, QUANTIZE. | They stay as the firmware leaves them. The bridge writes only `0x80` and `0x81`, so it does not change them.                                              | Not settled     | Not asked; run 1 state stands.            |
+| L3  | In djay load one test track on deck A and one on deck B. Do not play.                                                                              | Left shows A, right shows B. PLAY off; strip blue bank dark at progress 0; pads dark unless the track has saved cues, which light in their cue colours.   | Differs         | Not settled: hot cue 8 colour not stated. |
+| L4  | Press left PLAY to play deck A, then again to pause it.                                                                                            | PLAY full while A plays, off when paused (root `playing` output).                                                                                         | Matches         | Not asked; run 1 state stands.            |
+| L5  | Pause deck A at its start. Hold left CUE, then release it. Do not hold Shift.                                                                      | CUE full while it is held, from the local state and from djay's CUE note. After the release it follows djay's CUE feedback.                               | Differs         | Strip part: see L17. CUE hold not asked.  |
+| L6  | Play deck B, play deck A, press left SYNC to switch sync on, then again to switch it off.                                                          | SYNC (green LED) full with sync on, dim with sync off. The red SYNC LED stays off. Open in the output check: the dim level.                               | Matches in part | Not asked; run 1 state stands.            |
+| L7  | Press left FLUX, then again.                                                                                                                       | FLUX full while slip is on, off otherwise.                                                                                                                | Differs         | Matches by the report.                    |
+| L8  | Press the left loop encoder to start a loop on deck A, then again to end it.                                                                       | All four ring segments full while the loop is active, dim otherwise: blue on decks A and B, white on C and D.                                             | Matches         | Not asked; run 1 state stands.            |
+| L9  | On the left side press HOTCUE, FREEZE, REMIX, then Shift + HOTCUE.                                                                                 | The button of the active pad mode is full and the other three are dim. Shift + HOTCUE makes LOOP the full one.                                            | Not settled     | Differs from the text; by design.         |
+| L10 | On the left side select FREEZE, then Shift + HOTCUE, then REMIX, and look at the eight pads each time. Do not press a pad.                         | FREEZE: all pads dim blue. Shift + HOTCUE: all pads dim green. REMIX: all pads dim orange. Dim is the lit colour divided by 6.                            | Not settled     | Not asked; open.                          |
+| L11 | Select HOTCUE. On deck A set a hot cue on pad 1 and pad 2, then delete the cue of pad 2 in djay.                                                   | Set pads light in djay's cue colour (tokens 1-8 from the S4 bridge's default colours, 9 white); unset pads are dark; the deleted pad goes dark.           | Differs         | Matches by the report.                    |
+| L12 | Select REMIX. Press sampler pad 1 to play its sample, then stop it. The slot needs a sample.                                                       | The pad is orange while its sample plays and dim orange when it stops. Deck A and deck C read the same sampler bank, B and D the other.                   | Matches         | Not asked; run 1 state stands.            |
+| L13 | Press left FX 1, 2, 3 and 4 on, then off.                                                                                                          | Each FX LED is full while its effect is on, dim while off. The side shows the unit's target deck, chosen with the mixer FX buttons.                       | Differs         | Not asked; run 1 state stands.            |
+| L14 | Needs a stem track on deck A. Press left ON 1, 2, 3 and 4 to mute and unmute stems.                                                                | Each ON LED is full when djay reports that stem muted, dim otherwise.                                                                                     | Matches         | Not asked; run 1 state stands.            |
+| L15 | Press left DECK to switch to deck C, look at the left side, then press DECK again.                                                                 | On C the DECK LED is white; PLAY off, pads dark, ring dim. Back on A it shows A again. Group order open in the output check.                              | Not settled     | Not settled: DECK colour not stated.      |
+| L16 | Repeat on the right side with deck B: play, hold CUE, SYNC, loop, FLUX, FX 1, a pad-mode button and a hot cue pad.                                 | The right side behaves as the left with its own report `0x81`, independent of the left. Only PLAY on the right is established.                            | Not settled     | Matches by the report.                    |
+| L17 | Put deck A at the very start of its track (progress 0) and look at the left touchstrip.                                                            | The blue bank is dark at progress 0; one LED once progress is above 0. Open in the output check: which row of the strip the blue bank lights.             | Not settled     | Matches by the report.                    |
+| L18 | Seek deck A to about half of the track and look at the left strip.                                                                                 | A blue bar from the physical left end, about 12 or 13 of 25 LEDs.                                                                                         | Differs         | Matches by the report.                    |
+| L19 | Seek deck A to its last seconds, then let it play on.                                                                                              | The bar grows to 24 or 25 LEDs near the end. Open in the output check: whether progress covers the whole track.                                           | Not settled     | Matches by the report.                    |
+| L20 | Touch the left strip at its left end without moving, slide to the middle and to the right end, then release.                                       | No orange dot while still; one orange dot at the finger once it moves; out on release. Blue bar stays. Bottom row open in the output check.               | Differs         | Matches by the report.                    |
+| L21 | Hold left Shift, then release it.                                                                                                                  | SHIFT full while held, dim otherwise. Nothing else on that side changes.                                                                                  | Matches         | Not asked; run 1 state stands.            |
+| L22 | The bridge has stopped with Ctrl-C. NIHardwareAgent is still stopped. Look at both sides.                                                          | Every LED the bridge owns is dark on both sides: buttons, pads, loop ring, strips. The LEDs of L2 are as before.                                          | Not settled     | Not settled: FX 1-2 location not stated.  |
+| L23 | NIHardwareAgent has been started again. Look at both panels and the LEDs.                                                                          | Controller Editor labels on both panels and the template's LEDs are back.                                                                                 | Not settled     | Matches by the report.                    |
+| L24 | Press left PLAY once, then display button 1 or 4.                                                                                                  | Djay reacts to PLAY through the Controller Editor template; the NI action of the display button works.                                                    | Matches         | Matches by the report.                    |
 
 ### Answers
 
@@ -179,8 +192,7 @@ L23: the Controller Editor labels have  evan's hotcues s8 template on both.  but
 L24: yes buttons 1 and 4 both work as expected to switch colors or switch templates
 ```
 
-The question the runner asks for each row is in `plan()` in
-`led-feedback-check.sh`.
+The runner's question for each row is in `plan()` in `led-feedback-check.sh`.
 
 ## Code behind each row
 
@@ -189,7 +201,7 @@ Line numbers are those of this worktree.
 | Row | Source                                                                                                                                                                |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | L1  | `src/s8/led_state.rs` 132-176 (`present`: levels, DECK, mode buttons, FX SELECT/BACK/CAPTURE/EDIT dim, display off); `src/s8/leds/map.rs` 4-6 (`ON` 0x7f, `DIM` 0x14) |
-| L2  | `src/s8/leds.rs` 139-179 (`render` writes only the `0x80`/`0x81` offsets); `docs/s8/mapping.md` "Not verified on the S8"                                              |
+| L2  | `src/s8/leds.rs` 139-179 (`render` writes only the `0x80`/`0x81` offsets); `docs/s8/mapping.md` "Checked on the S8 and open points"                                   |
 | L3  | `src/s8/feedback.rs` 70-98 (loaded, playing and progress per deck); `led_state.rs` 85-98 (hot cue pads), 120-129 (strip)                                              |
 | L4  | `led_state.rs` 168-172; `feedback.rs` 70-81, 111-113                                                                                                                  |
 | L5  | `led_state.rs` 163-167; `src/s8/translator/mod.rs` 161 (`cue_held`)                                                                                                   |
@@ -304,70 +316,90 @@ the CUE flash in L6 is listed below.
 
 ## Causes
 
-The causes of the run 1 rows, with the evidence level of each. No fix below has been seen
-on the S8 yet. Evidence levels: capture, code and test, checked against djay without the
-S8, inference, unexplained.
-
-- Hot cue pads dark (L3, L9, L11). Evidence: capture. With mapping r7 djay sent value
-  127 on notes 40-47 (channels 1-4) for a set cue point and 0 for an unset one. The
-  bridge reads a colour token 1-9 there, so 127 lit nothing. r7 had an empty `userInfo`.
-  Fix: mapping r8 carries `userInfo` with `padColorOff` 0, `padColorWhiteActive` 9 and
-  `padColorsActive` 1-8. Checked against djay without the S8: notes 40-47 carry tokens
-  1-8 for set cue points on all four decks and 0 for the unset cue 5 of deck B.
-- Strip bar full at any progress (L5, L17, L18, L19). Evidence: capture. With r7 djay
-  sent `songProgress` (CC 8-11 on channel 7) as 0 or 127 only. Fix: r8 marks these
-  outputs `controlType: control`. Checked against djay without the S8: deck 1 playing
-  from the start for 25 s sent 0, 1, 3, 4 ... 22 in steps; deck 2 sent 61-66 over 8 s.
-- Purple dot (L20). Evidence: code and test. The orange and blue LED banks share the
-  top row of the strip, and lit together they look purple. Fix: the bridge blanks the
-  blue LED under the orange dot, with a unit test. "Stays on after release" was the
-  full bar of the cause above.
-- FX 4 on with FX 1-3 (L13). Evidence: capture. This is not a fault. FX 4 is bound to
-  `turntable{deck}.fxActive`, which is on while any of FX 1-3 of that deck is on
-  (catalog, [mapping.md](mapping.md)); the capture shows it following. The Expected text
-  of L13 in the plan was wrong; FX 4 behaved as mapped. Fix: none; the Expected text
-  stays as written above as a record of the plan.
-- HOTCUE button after Shift + HOTCUE (L10). Evidence: inference from the step order.
-  The sequence is FREEZE, then Shift + HOTCUE, then REMIX, so HOTCUE was already dim
-  when the question was asked. "No effect on the HOTCUE button" fits correct
-  behaviour. L10 is Not settled. Fix: none.
-- FREEZE pads "teal" (L9, L10). Evidence: code. The bridge sends `Rgb(0, 80, 127)`;
-  the plan's "dim blue" was loose wording. Fix: none.
-- CUE flashing on a paused deck (L3, L6). Evidence: capture. djay toggles note 1 about
-  every 500 ms while a deck is paused away from its cue point. This is djay behaviour,
-  not a bridge fault. Fix: none.
-- FLUX "flashes" (L7). Evidence: unexplained. The capture shows a steady 127. Fix: none.
-- L16 right side. Evidence: unexplained, not settled. The bridge log of run 1 shows only
-  `right_play`, `right_cue`, `right_pad_1`, `right_deck`, `right_remix`, the strip,
-  faders and dials on the right. Fix: none; the second run asks it again.
-
-All four djay decks had a track loaded during the djay check (loaded notes 0-3 on
-channel 7 all 127). Evan's S8 mapping (`Evan's Traktor Kontrol S8 1.1.djayMidiMapping`),
-offered as a source for hot cue colours, has no `userInfo` and no outputs, so it carries
-no colour settings.
-
-## Check against djay without the S8
-
-Mapping r8 was selected in djay for the `Kontrol S8 MIDI Full` port. The
-`feedback-capture` example held the virtual port only: the S8 was not opened and
-NIHardwareAgent kept running. osascript drove djay through its Deck 1 and Deck 2 menus
-(Go to Beginning, Play / Pause). Results are in [Causes](#causes): cue tokens 1-8 on
-notes 40-47 for set cues and 0 for the unset one, and progress that rises in steps. The
-capture is
-[led-feedback-djay-20261111T110300Z](captures/led-feedback-djay-20261111T110300Z/README.md).
-
-This does not make any row checked on the S8. A row counts as checked only from what
-the user reports on the S8. Run 1, with mapping r7, was captured the same way on the
-virtual port at about 10:54Z in
-[led-feedback-debug-20261111T120000Z](captures/led-feedback-debug-20261111T120000Z/README.md).
+The cause of each row that differed, its evidence level and the check of the fixes against
+djay without the S8 are in [led-feedback-causes.md](led-feedback-causes.md).
 
 ## Second run
 
-Not run yet. Command, in the worktree, with mapping `Kontrol S8 Bridge r8`:
+Run 2 on 2026-11-11 with the mapping `Kontrol S8 Bridge r8` and the debug build at commit
+`d49a291`. Rows asked: L3, L7, L9, L11, L15, L16, L17, L18, L19 and L20, then the exit
+rows L22, L23 and L24. The run folder is
+[led-feedback-20261111T111755Z](captures/led-feedback-20261111T111755Z/README.md).
+The bridge exited with status 0, `S8_LEDS_DISABLED` 0 and `S8_LEDS_CLEAR_FAILED` 0. Its
+closing counts were `input_events=1450`, `led_writes=7678`, `midi_messages=1109` and
+`feedback_messages=17498`.
+
+Command:
 
 ```text
 mise run s8:leds only L3 L7 L9 L11 L15 L16 L17 L18 L19 L20
 ```
+
+### Run 2 answers
+
+The lines of `notes.txt` from L3 to L24, unchanged, except the empty line
+`Bridge processes left:`.
+
+```text
+L3 What changed on each side after loading? Describe, including the pads and the strip.: te pads are the right color except hotcue 8, but when i changed the color in djay to purple, the pads changed to purple as well.  and the touchstrip top row lights up relative to how far along the traack is. so this works!
+L7 Is FLUX steady or blinking, and is deck A playing or paused at that moment? Answer for slip on and for slip off.: flux blinks when it's on and when it's off it's dark.  when it's activated and you hold the touchstrip and pull back, it blinks and when it's playing it's solid orange.  so this works too!
+L9 After each of the four presses, say for HOTCUE, LOOP, FREEZE and REMIX: bright, dim or off.: hotcue is dim but the pads are green.  freeze is teal, remix is orange, loop doesn't change colors.  pressing hotcue again puts the pads back to the 8 hotcue colors.  loop doesn't do anything.  shift + hotcue turns the pads green and makes LOOP bright blue but hotcue stays dim
+L11 Which colour do pad 1 and pad 2 show against djay's cue colours, and what does pad 2 show after the delete? Describe.: yes they're the expected colors and then off when you delete the hotcue
+L15 On C and back on A, what do DECK, PLAY, SYNC, the pads and the strip show? Describe the DECK colour.: on deck A, play is off until i press play. switching to deck C turns all the pads off and cue stops blinking. on deck A, the touchstrip lights up blue relative to how far along the track is.
+L16 Per right-side control, same as the left, yes or no: PLAY, CUE, SYNC, FLUX, each mode button, the pads, each FX button, DECK. Does the left side stay unchanged?: yes works as expected
+L17 At progress 0, how many strip LEDs are lit, out of how many, and on which row?: 0 LEDs are lit at progress 0 out of i dunno 20?  top row.  works as expected and touching the touchstrip makes a single orange LED turn on where that tracks your finger and turns off when you release
+L18 At about half, how many strip LEDs are lit out of how many, and does the bar start at the left end?: about half are on when it's at halfway.  bar starts at the elft end. works as expected
+L19 Near the end, how many strip LEDs are lit out of how many, and does the bar grow as the playhead moves?: 24 out of 25, it grows as the playhead moves and then turns off when the track ends. works as expected
+L20 When does the orange dot appear, does it follow the finger and go out on release, and which row is it on? Describe.: orange dot appears when i touch the touchstrip. it follows my finger and goes out on release.  top row only.  bottom row has yet to come on ever.
+Bridge exit status 0.
+Bridge log: S8_LEDS_ENABLED 1, S8_LEDS_DISABLED 0, S8_LEDS_CLEAR_FAILED 0.
+Bridge counts: input_events=1450 led_writes=7678 midi_messages=1109 feedback_messages=17498
+L22 Which LEDs are still lit on each side? Describe.: FX 1-2 of all decks, mic 1 and mic 2, snap, quantize, all 4 CUEs, all 4 filter buttons.  all are dim everything else is off
+L23 What do the panels and the LEDs show? Describe.: panels show Controller Editor labels and the template's LEDs are back.
+L24 Did djay react to left PLAY, and does the display button work again? Describe.: yes. display buttons 1 and 4 work as expected to adjust color and switch templates
+```
+
+The user's remark after run 2, unchanged:
+
+```text
+if there's a bottom row of lights for the touchstrip i've never seen them turn on.  but i don't think there are.  i think there's just the top row with blue or orange
+```
+
+### Run 2 results
+
+Matches by the user's report:
+
+- L7: blinks while slip is on, solid orange while playing, dark when off.
+- L11: the expected colours; pad 2 is off after the delete.
+- L16: "yes works as expected".
+- L17: 0 LEDs lit at progress 0, top row.
+- L18: about half lit at halfway, bar starts at the left end.
+- L19: 24 out of 25, grows with the playhead, off when the track ends.
+- L20: orange dot on touch, follows the finger, out on release, top row only.
+- L23: labels and the template's LEDs are back.
+- L24: display buttons 1 and 4 work.
+
+Not settled:
+
+- L3: the pads show the cue colours and follow a colour change made in djay, and the strip
+  follows progress. The exception is hot cue 8 ("except hotcue 8"): the answer does not
+  state the colour it shows.
+- L15: the answer does not state the DECK button colour. It reports that switching to
+  deck C turns all pads off and CUE stops blinking, which is not explained.
+- L22: what stayed lit is "FX 1-2 of all decks, mic 1 and mic 2, snap, quantize, all 4
+  CUEs, all 4 filter buttons"; it does not say whether the FX 1-2 are on the side panels
+  or the mixer. Run 1 L22 lists the same controls.
+
+Differs from the plan's text; by design according to
+[Findings after run 2](led-feedback-causes.md#findings-after-run-2):
+
+- L9: HOTCUE stays dim and the pads are green; FREEZE teal; REMIX orange; the LOOP button
+  does nothing; Shift + HOTCUE turns the pads green and LOOP bright blue while HOTCUE
+  stays dim.
+
+Rows not asked in run 2 keep their run 1 state.
+
+### Rows asked and why
 
 The exit rows L22-L24 are always asked. The rows and why each is in it:
 

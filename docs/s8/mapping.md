@@ -13,8 +13,8 @@ endpoint `Kontrol S8 MIDI Full`. Every address comes from
 This is the working default layout. It assumes the S8 is the only controller
 Djay uses. A second layout based on Evan's mapping is tracked in
 gootecks/S4MK3-HID-MIDI-BRIDGE issue #65. The mapping has no screen feedback;
-its LED feedback is in [LED feedback](#led-feedback). Nothing here is
-hardware-verified until the attended check.
+its LED feedback is in [LED feedback](#led-feedback). What was checked on the S8 is in
+[translator-validation.md](translator-validation.md) and the LED record linked below.
 
 <?toc?>
 
@@ -36,7 +36,7 @@ hardware-verified until the attended check.
   - [Touchstrip banks](#touchstrip-banks)
   - [Clearing and old mappings](#clearing-and-old-mappings)
   - [Write failures and limits](#write-failures-and-limits)
-  - [Not verified on the S8](#not-verified-on-the-s8)
+  - [Checked on the S8 and open points](#checked-on-the-s8-and-open-points)
 - [Hardware-local controls](#hardware-local-controls)
 - [Unassigned controls](#unassigned-controls)
 
@@ -155,7 +155,8 @@ and C use sampler bank 1; decks B and D use bank 2.
 Each unit targets the deck chosen by its mixer-channel FX buttons, and sends
 on that deck's channel. The right unit has its own numbers so both units can
 target the same deck. Buttons and dials 1-3 are Djay's three effect slots;
-button 4 switches the deck's FX on or off and dial 4 is dry/wet for all three
+button 4 is `fxActive`, which switches the deck's FX on or off, and its LED is on
+while any of FX 1-3 of that deck is on. Dial 4 is dry/wet for all three
 slots.
 
 | Control      | Left unit | Right unit | Base                                                 | Shift           |
@@ -259,9 +260,10 @@ reports `0x80` (left) and `0x81` (right). Report framing is in `led-output.md`.
 The code is in `src/s8/`: `catalog/outputs.rs`, `feedback.rs`,
 `led_state.rs`, `leds.rs` and `led_output.rs`.
 
-The attended hardware check is planned in
-[led-feedback-validation.md](led-feedback-validation.md) and run with
-`mise run s8:leds`.
+The attended hardware check ran twice on 2026-11-11, recorded in
+[led-feedback-validation.md](led-feedback-validation.md) and
+[led-feedback-causes.md](led-feedback-causes.md). `mise run s8:leds` asks the
+rows, and `mise run s8:leds only ROW...` asks single rows.
 
 ### Feedback addresses
 
@@ -286,9 +288,11 @@ that `embedded_number` accepts (0-4, 6, 8, 15-19 and 32-63).
 | 56-59  | Stem ON 1-4        | `turntable{deck}.unmixerFourTrackChannel{1-4}Muted`                 | 0-127 |
 
 Rows 40-47 carry a cue colour token in the velocity, so their `output`
-dictionary has no value range. The other rows have `midiMinValue` 0 and
-`midiMaxValue` 127. Shift rows, other notes and every CC have no embedded
-output. No LED reads PLAY's note; PLAY uses the root output below.
+dictionary has no value range. The mapping carries `userInfo` with `padColorOff` 0,
+`padColorWhiteActive` 9 and `padColorsActive` 1-8. Without it Djay sends 127 for a
+set cue point instead of a colour token, and no pad lights. The other rows have
+`midiMinValue` 0 and `midiMaxValue` 127. Shift rows, other notes and every CC have
+no embedded output. No LED reads PLAY's note; PLAY uses the root output below.
 
 Three root outputs cover state no control carries. There is one per deck, on
 channel 7, in the mapping's root `outputs` array. Type is 3 for CCs and 1
@@ -302,7 +306,9 @@ is also an input.
 | C    | 6, `turntable3.playing`   | 2, `turntable3.song.loadingSuccess` | 10, `turntable3.display.songProgress` |
 | D    | 7, `turntable4.playing`   | 3, `turntable4.song.loadingSuccess` | 11, `turntable4.display.songProgress` |
 
-A note-on above velocity 0 on a deck's loaded address marks it loaded. Any
+The `songProgress` outputs are `control` outputs. Otherwise Djay reports only 0 or 127
+for them and the bar would be empty or full. A note-on above velocity 0 on a deck's
+loaded address marks it loaded. Any
 other state clears that deck's cue colours, playing and progress until Djay
 reports them again. A sampler row reported for deck A also updates deck C,
 and one for B updates D, because A/C share sampler bank 1 and B/D bank 2.
@@ -331,6 +337,12 @@ white one.
 The FX LEDs read the deck the side's FX unit targets (chosen with the mixer
 FX buttons), which can differ from the deck the side controls. Every other
 Djay-driven LED reads the deck the side controls.
+
+FX 4 follows `fxActive`: on while any of FX 1-3 of the targeted deck is on (checked on
+the S8, run 1 L13). LOOP is the full button in the Shift + HOTCUE (loop pads) mode; the
+plain LOOP button is no pad-mode button (note 26, `looper.toggleLooperShown`) and changes
+no LED. Djay blinks CUE about every 500 ms while a deck is paused away from its cue
+point (capture evidence in [led-feedback-causes.md](led-feedback-causes.md)).
 
 Driven locally: SHIFT, DECK, the pad-mode buttons and CUE while held on the
 shown deck come from the bridge's own state. Left dim or off: FX SELECT,
@@ -371,6 +383,9 @@ The bar has at least one LED while progress is above 0. With no progress
 report from Djay the blue bank is dark. The orange dot appears at the first
 movement after a touch and goes out on release.
 
+Both banks light the top row. The bridge blanks the blue LED under the orange dot, so
+the dot is orange, not purple (checked on the S8: run 2 L20 orange, run 1 L20 purple).
+
 ### Clearing and old mappings
 
 - The bridge writes a report only when it changed, at most once every 10 ms
@@ -379,6 +394,8 @@ movement after a touch and goes out on release.
 - A mapping generated before this change has no `outputs`, so Djay sends
   nothing back. Install a new revision of the mapping. The generator does not
   overwrite a file; give it a new name or folder.
+- A mapping older than r8 also lacks the `userInfo` pad colours and the `control` type
+  on `songProgress`: hot cue pads stay dark and the strip bar is full at any progress.
 
 ### Write failures and limits
 
@@ -396,23 +413,23 @@ movement after a touch and goes out on release.
   `gotoZero` and does not light it. Switching the deck while CUE is held
   turns the LED off until Djay's own CUE state or the original deck returns.
 
-### Not verified on the S8
+### Checked on the S8 and open points
 
-The `--s8-leds` run has not happened. The deck report layout in
-`src/s8/leds/map.rs` was probed on its own.
+The deck report layout in `src/s8/leds/map.rs` was probed on its own. The `--s8-leds` run
+was then done twice on 2026-11-11 (run 1 with mapping r7, run 2 with r8). Answers,
+unchanged: [led-feedback-validation.md](led-feedback-validation.md). Causes:
+[led-feedback-causes.md](led-feedback-causes.md). L1-L24 are row ids; "checked on the S8"
+means what the user reported in a run.
 
 Established by the LED output check of 2026-11-11 (`led-output-validation.md`).
-Each write was one 119-byte report, `0x80` or `0x81`. Each returned 119.
+Each write was one 119-byte report, `0x80` or `0x81`. Each returned 119. Each group
+below was lit together, so the order inside a group is not established.
 
 - A write replaces the whole side. `0x80` and `0x81` are independent.
-- Offset 59 lit PLAY, 58 lit CUE and 52 lit FLUX.
-- Offset 57 lit SYNC red and offset 56 lit SYNC green: one button, two colours.
-- Offsets 24-28 together lit FX SELECT and the four buttons below FX 1-4.
-- Offsets 29-36 lit the eight display buttons, four left and four right of the display.
-- Offsets 37-39 lit BACK, CAPTURE and EDIT.
-- Offsets 40-43 lit the four ON buttons below the display.
-- Offsets 44-51 lit HOTCUE, LOOP, FREEZE and REMIX, all white.
-- Offsets 53-55 lit DECK and SHIFT, both white.
+- Offset 59 lit PLAY, 58 CUE and 52 FLUX. Offset 57 lit SYNC red and 56 SYNC green.
+- Offsets 24-28 together lit FX SELECT and the four buttons below FX 1-4; 29-36 lit the
+  eight display buttons, 37-39 BACK, CAPTURE and EDIT, 40-43 the four ON buttons.
+- Offsets 44-51 lit HOTCUE, LOOP, FREEZE and REMIX, 53-55 DECK and SHIFT, all white.
 - Offsets 60-63 lit the loop encoder white and 64-67 lit it blue.
 - Pad 1 lit red at offset 0, green at offset 1 and blue at offset 2. `0x7f` was
   bright; `0xff` looked the same.
@@ -420,17 +437,47 @@ Each write was one 119-byte report, `0x80` or `0x81`. Each returned 119.
   Orange bank: offset 93 lit the left end and 117 the right end.
 - With both banks fully lit, the top row of the touchstrip was all purple.
 
-Those groups were lit together, so the order inside a group is not established.
+Results of the runs and of the checks after them:
 
-Still not verified:
+- Run 1 (r7), checked on the S8: PLAY follows the deck (L4). SYNC goes from green to
+  bright green, never red (L6). The loop ring is blue on A, white on C, brighter in the
+  loop (L8). DECK is blue on A and white on C (L15).
+- Run 1, checked on the S8: a sampler pad lights while its sample plays and dims after
+  (L12). The ON LEDs follow the stem mute state (L14). FX 4 is on while any of FX 1-3 is
+  (L13). SHIFT changes nothing else (L21). Display buttons 1 and 4 work again (L24).
+- Run 1, checked on the S8: a dim level is visible (L1, L8, L12); its value, 20 of 127,
+  was not measured. CUE blinks while a deck is paused (L3, L6).
+- Run 2 (r8), checked on the S8: hot cue pads show the cue colours, follow a colour
+  change in Djay and go dark after a delete (L11, L3), except hot cue 8.
+- Run 2, checked on the S8: the strip bar starts at the left end, is empty at progress
+  0, about half lit at half the track and 24 of 25 LEDs near the end, grows with the
+  playhead and goes out when the track ends (L3, L17-L19). So `songProgress` covers the
+  whole track. The orange dot appears on touch, follows the finger, goes out on release,
+  top row only (L17, L20).
+- Run 2, checked on the S8: FLUX blinks with slip on and is solid orange while playing
+  (L7). Shift + HOTCUE lights LOOP bright blue, leaves HOTCUE dim and turns the pads
+  green; FREEZE pads are teal and REMIX pads orange (L9). The right side, answered as a
+  whole as "works as expected" (L16), not per control. Labels and the template's LEDs
+  are back after the stop (L23).
+- Not on the S8: r8 makes Djay send cue tokens 1-8 on notes 40-47 and a rising
+  `songProgress` (capture of Djay). Plain LOOP sends note 26 and changes no LED (code).
+  Pads off on deck C fit an empty deck (inference).
 
-- The dim level, 20 of 127 (the on level is 127), on any deck LED.
-- The order inside each button group.
-- The colour of each single byte in 44-51 and 53-54.
-- The bottom row of the touchstrip, which stayed off with both banks lit.
-- That `songProgress` runs 0-127 over the whole track.
-- Right-side offsets other than PLAY.
-- Everything driven from Djay: no `--s8-leds` run has happened.
+Still open:
+
+- The order inside each button group, and the colour of each byte in 44-51 and 53-54.
+- The bottom row of the touchstrip, never seen lit (L5, L18, L20 of run 1 and the user's
+  remark after run 2, which doubts that it exists).
+- Which mode button is full in the HOTCUE, FREEZE and REMIX modes, whether LOOP opens
+  Djay's Looper view (L9), and the dim pads of those modes against the lit ones (L10).
+- LEDs dim after the stop (L22): FX 1-2, MIC 1-2, SNAP, QUANTIZE, the mixer CUE and
+  FILTER buttons. The bridge writes no mixer report, so its clear cannot reach them (code).
+- The colour of hot cue 8 on the S8 before the change in Djay (L3, run 2; Djay sent the
+  token of cue 6 for it at 11:08Z), and the DECK colour in run 2 with why pads went off
+  and CUE stopped blinking on C (L15).
+- PLAY lighting while CUE is held (L5, run 1), why FLUX blinks (L7; the capture shows a
+  steady 127), and whether the LEDs the bridge does not write change at start (L2).
+- The user's remark after run 1 on 5 of 7 hot cues for deck B, unanswered by run 2.
 
 ## Hardware-local controls
 
