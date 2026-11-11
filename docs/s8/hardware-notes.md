@@ -1,6 +1,7 @@
 ---
 summary: "S8 USB identity, interfaces, input and output evidence, and open questions."
 type: reference
+issues: []
 ---
 
 # Kontrol S8 hardware notes

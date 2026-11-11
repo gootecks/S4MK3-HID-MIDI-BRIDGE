@@ -1,6 +1,7 @@
 ---
 summary: "Phase 1: claiming interface 6 without transfers (screen-claim-check.sh)."
 type: validation
+issues: [33]
 ---
 
 # S8 screen phase 1: claim interface 6

@@ -1,6 +1,7 @@
 ---
 summary: "Deck page against djay on 2026-11-10: cue points, analysis and the One Deck view."
 type: capture
+issues: [92, 93, 94, 95]
 ---
 
 # Deck page against djay: cue points, analysis, One Deck view

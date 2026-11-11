@@ -1,6 +1,7 @@
 ---
-summary: "Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture (#10)."
+summary: "Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture."
 type: procedure
+issues: [10]
 ---
 
 # S8 agent-stopped input capture: checklist

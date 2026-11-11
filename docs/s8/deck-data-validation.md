@@ -1,9 +1,10 @@
 ---
-summary: "The attended check of live djay deck data on the panels (#45): plan, expected pictures and the run on the S8."
+summary: "The attended check of live djay deck data on the panels: plan, expected pictures and the run on the S8."
 type: validation
+issues: [45]
 ---
 
-# Deck data on the S8 panels: validation (#45)
+# Deck data on the S8 panels: validation
 
 What the deck pages are built from, and their limits:
 [deck-pages.md](deck-pages.md). This page holds the attended check of the

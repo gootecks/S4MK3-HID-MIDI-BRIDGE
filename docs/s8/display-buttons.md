@@ -1,9 +1,10 @@
 ---
-summary: "Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51)."
+summary: "Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host)."
 type: reference
+issues: [51]
 ---
 
-# Display buttons and screen encoders (#51)
+# Display buttons and screen encoders
 
 The eight buttons and four encoders beside each S8 screen drive djay Pro's
 right-hand sidebar. Buttons 1 and 4 stay with Native Instruments (colour

@@ -1,9 +1,10 @@
 ---
-summary: "The deck page time handling: the paused-deck fix and Four Decks (#80), and the cut-off time label (#83)."
+summary: "The deck page time handling: the paused-deck fix and Four Decks, and the cut-off time label."
 type: validation
+issues: [80, 83]
 ---
 
-# Deck page time validation (#80, #83)
+# Deck page time validation
 
 Records of how the deck page time behaved on a live djay and in replays. The page
 design, data sources and limits are in [deck-pages.md](deck-pages.md). The attended

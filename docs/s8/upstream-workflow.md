@@ -1,6 +1,7 @@
 ---
 summary: "Remotes, branches, commit separation and the upstream pull-request procedure."
 type: procedure
+issues: []
 ---
 
 # Upstream workflow

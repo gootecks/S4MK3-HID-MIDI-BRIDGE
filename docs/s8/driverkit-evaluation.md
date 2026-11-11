@@ -1,6 +1,7 @@
 ---
-summary: "DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish (#55)."
+summary: "DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish."
 type: reference
+issues: [55]
 ---
 
 # DriverKit evaluation for the Traktor Kontrol S8 + djay Pro bridge

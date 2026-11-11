@@ -1,9 +1,10 @@
 ---
-summary: "The attended run of the panel views on the S8 (#27)."
+summary: "The attended run of the panel views on the S8."
 type: validation
+issues: [27, 89]
 ---
 
-# Views on the S8 panels: validation (#27, #89)
+# Views on the S8 panels: validation
 
 Plan, expected pictures and limits: [panel-views.md](panel-views.md). The
 tests and the measurement without the S8 are listed there under _Validation

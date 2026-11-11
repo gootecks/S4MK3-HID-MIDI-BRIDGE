@@ -1,6 +1,7 @@
 ---
 summary: "Phase 5: repeated frames with a held claim, the transfer ceiling, partial updates and the exit state (screen-stream-check.sh, shared helpers in screen-lib.sh)."
 type: validation
+issues: [43]
 ---
 
 # S8 screen phase 5: repeated frames, held claim and partial updates

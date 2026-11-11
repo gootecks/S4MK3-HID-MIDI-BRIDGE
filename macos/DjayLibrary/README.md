@@ -1,6 +1,7 @@
 ---
 summary: "Read-only model of djay Pro's media library for the S8 screens."
 type: readme
+issues: [49]
 ---
 
 # DjayLibrary

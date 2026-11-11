@@ -1,9 +1,10 @@
 ---
-summary: "The stand-in test and the attended run of the display buttons on the S8 (#51)."
+summary: "The stand-in test and the attended run of the display buttons on the S8."
 type: validation
+issues: [51]
 ---
 
-# Display buttons and screen encoders: validation (#51)
+# Display buttons and screen encoders: validation
 
 Three kinds of evidence, kept apart: a stand-in test without the S8, the
 automated tests, and one attended run on the S8.

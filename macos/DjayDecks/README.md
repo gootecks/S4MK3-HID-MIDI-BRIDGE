@@ -1,6 +1,7 @@
 ---
 summary: "Reads djay Pro's decks for the S8 deck page: Accessibility state per deck plus per-track analysis from djay's metadata cache."
 type: readme
+issues: [45]
 ---
 
 # DjayDecks

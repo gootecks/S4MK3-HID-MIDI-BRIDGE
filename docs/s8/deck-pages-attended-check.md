@@ -1,6 +1,7 @@
 ---
-summary: "Preview and stream commands for deck pages, and the plan for the attended check on the S8 (#85)."
+summary: "Preview and stream commands for deck pages, and the plan for the attended check on the S8."
 type: procedure
+issues: [85]
 ---
 
 # Deck pages: preview, stream and attended check

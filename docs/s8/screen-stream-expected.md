@@ -1,6 +1,7 @@
 ---
 summary: "Pictures of what each phase 5 step should show, decoded from the frames the tool sends (mise run s8:phase5-images)."
 type: validation
+issues: [43]
 ---
 
 # Phase 5: expected panel pictures

@@ -1,6 +1,7 @@
 ---
 summary: "S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam."
 type: reference
+issues: [5]
 ---
 
 # S4 MK3 coupling audit
