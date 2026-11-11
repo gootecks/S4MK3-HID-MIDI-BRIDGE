@@ -1,0 +1,3 @@
+device: interface 5, usage page 0xff01, usage 0x0000
+write 1: report 0x80, requested 119, returned 119
+write 2: report 0x81, requested 119, returned 119

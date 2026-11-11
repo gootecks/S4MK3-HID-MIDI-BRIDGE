@@ -96,6 +96,18 @@ arg "[order]" help="pattern colour order: rgb or bgr"
 run = 'bash docs/s8/screen-frame-check.sh "$usage_phase" ${usage_order:-}'
 raw = true
 
+[tasks."s8:led-check"]
+description = "Attended S8 LED check: stop NIHardwareAgent, send LED output reports step by step, clear and restore (#21, #24); sends LED reports to the S8"
+usage = '''
+arg "[args]" var=#true help="mixer for the 0x82 mixer plan (default the deck plan), then optional step ids"
+'''
+run = 'bash docs/s8/led-check.sh ${usage_args:-}'
+raw = true
+
+[tasks."s8:led-check-plan"]
+description = "Print every step and wire bytes of the deck and mixer LED check plans (#21, #24); sends nothing"
+run = 'bash docs/s8/led-check.sh dump && bash docs/s8/led-check.sh dump mixer'
+
 [tasks."s8:screen-stream"]
 description = "Attended S8 screen phase 5: stop NIHardwareAgent, stream frames, partial updates, exit state, restore (#43)"
 run = "bash docs/s8/screen-stream-check.sh"

@@ -1,0 +1,14 @@
+{"src":"hid-open","t":0.019058709,"unix_ms":1794388161648,"usage":0,"usage_page":65281}
+{"destinations":["Traktor Kontrol S8","Traktor Kontrol S8 Output"],"sources":["Traktor Kontrol S8","Traktor Kontrol S8 Input"],"src":"midi-endpoints","t":0.036388959,"unix_ms":1794388161666}
+{"port":"Traktor Kontrol S8","src":"midi-connect","t":0.036581459,"unix_ms":1794388161666}
+{"port":"Traktor Kontrol S8 Input","src":"midi-connect","t":0.036795459,"unix_ms":1794388161666}
+{"hex":"017fffff000000e0001000000000004000000000000000005a00d64d00000000d44d0000000000000e","id":1,"len":41,"src":"hid","t":4.764760917,"unix_ms":1794388166394}
+{"hex":"b00a7f","port":"Traktor Kontrol S8 Input","src":"midi","t":4.77275425,"unix_ms":1794388166402}
+{"hex":"017fffff000000e0000000000000004000000000000000005a00bf4e00000000be4e0000000000000e","id":1,"len":41,"src":"hid","t":4.920210209,"unix_ms":1794388166549}
+{"hex":"b00a00","port":"Traktor Kontrol S8 Input","src":"midi","t":4.920384667,"unix_ms":1794388166550}
+{"destinations":["Traktor Kontrol S8"],"sources":["Traktor Kontrol S8"],"src":"midi-endpoints","t":9.451275667,"unix_ms":1794388171080}
+{"hex":"017fffff000000e0001000000000004000000000000000005a00247d00000000237d0000000000000e","id":1,"len":41,"src":"hid","t":12.70341875,"unix_ms":1794388174333}
+{"hex":"017fffff000000e0000000000000004000000000000000005a00b67d00000000b57d0000000000000e","id":1,"len":41,"src":"hid","t":12.797849625,"unix_ms":1794388174427}
+{"destinations":["Traktor Kontrol S8","Traktor Kontrol S8 Output"],"sources":["Traktor Kontrol S8","Traktor Kontrol S8 Input"],"src":"midi-endpoints","t":485.8560835,"unix_ms":1794388647480}
+{"port":"Traktor Kontrol S8 Input","src":"midi-connect","t":485.8565265,"unix_ms":1794388647481}
+{"src":"end","t":495.32952825,"unix_ms":1794388656954}

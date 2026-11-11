@@ -3,7 +3,7 @@
 # on its own.
 #   screen_init NAME      create docs/s8/captures/NAME-UTC and set $run
 #   screen_preflight      refuse unless one S8, no rival apps, one genuine agent
-#   screen_build PROFILE  build the recorder and screen tool; sets $tool, $recorder_bin
+#   screen_build PROFILE [TOOL]  build the recorder and TOOL (default s8-screen-frame); sets $tool, $recorder_bin
 #   screen_start          start the passive recorder and the restore trap
 #   screen_agent_stop     baseline PLAY check, SIGKILL the agent, PLAY check
 #   screen_finish         release wait, recovery, PLAY check, jq per-window summary
@@ -78,11 +78,11 @@ screen_preflight() {
 }
 
 screen_build() {
-    local flag=()
+    local flag=() example="${2:-s8-screen-frame}"
     [ "$1" != release ] || flag=(--release)
-    cargo build --locked --quiet "${flag[@]+"${flag[@]}"}" --example s8-passive-recorder --example s8-screen-frame
+    cargo build --locked --quiet "${flag[@]+"${flag[@]}"}" --example s8-passive-recorder --example "$example"
     # shellcheck disable=SC2034 # read by the runner that sources this file
-    tool="target/$1/examples/s8-screen-frame"
+    tool="target/$1/examples/$example"
     recorder_bin="target/$1/examples/s8-passive-recorder"
 }
 
