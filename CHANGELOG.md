@@ -215,6 +215,12 @@ their detailed notes stay in `docs/release-*.md`.
   djay shows. Checked by replaying a recorded djay session and in one run
   on the S8. The time still stands until playback is confirmed and then moves
   forward once by less than 1 s (#83, #87).
+- The deck page picks up cue points added, moved or deleted in djay, and an
+  analysis finished after the track was loaded, without reloading the track.
+  The deck is looked at again every 5 s and the library is copied only when
+  its files changed, off the deck poll; a change shows within about 10 s
+  of djay writing it to disk. Covered by tests; not yet seen in djay (#92,
+  #95).
 
 ## [0.2.1-beta.1] - 2026-10-26
 

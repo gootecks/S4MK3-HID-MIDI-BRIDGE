@@ -36,7 +36,7 @@ public struct DeckTracker {
             entry = resolved
             interpolator = TimeInterpolator()
             debouncer = PlayStateDebouncer()
-        } else if entry == nil {
+        } else if let resolved {
             entry = resolved
         }
         self.reading = reading

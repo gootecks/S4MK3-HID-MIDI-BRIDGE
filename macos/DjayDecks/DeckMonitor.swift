@@ -6,9 +6,14 @@ public final class DeckMonitor {
     private let catalog: TrackCatalog
     private let decks: [Int]
     private var trackers: [Int: DeckTracker]
+    private let lookInterval: TimeInterval
+    private var lastLook: [Int: Date] = [:]
     private let lock = NSLock()
 
-    public init(source: DeckAccessibility, catalog: TrackCatalog, decks: [Int] = [1, 2]) {
+    public init(
+        source: DeckAccessibility, catalog: TrackCatalog, decks: [Int] = [1, 2], lookInterval: TimeInterval = 5
+    ) {
+        self.lookInterval = lookInterval
         reader = DeckReader(source: source)
         self.catalog = catalog
         self.decks = decks
@@ -33,8 +38,10 @@ public final class DeckMonitor {
             let current = withLock { trackers[deck] }
             var entry: CatalogEntry?
             let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
-            if reading.hasTrack, let title = reading.title, changed {
+            let due = withLock { lastLook[deck].map { now.timeIntervalSince($0) >= lookInterval } ?? true }
+            if reading.hasTrack, let title = reading.title, changed || due {
                 entry = catalog.entry(title: title, artist: reading.artist)
+                withLock { lastLook[deck] = now }
             }
             withLock { trackers[deck]?.ingest(reading, entry: entry, now: now) }
         }

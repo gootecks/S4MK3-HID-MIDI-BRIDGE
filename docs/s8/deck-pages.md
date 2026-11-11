@@ -54,9 +54,24 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   synthetic data. On the S8 the flags of two tracks were compared with
   djay's cue points by eye
   ([deck-data-validation.md](deck-data-validation.md), row 3).
-- Cue points and analysis are read once, when the track is first seen on
-  the deck. A cue point set later got no flag on the S8 (row 11 of the same
-  record).
+- Cue points and analysis are read again while the track stays on the deck
+  (#92, #95; before that they were read once per track, and a cue point set
+  later got no flag on the S8, row 11 of the same record). Every 5 s per
+  deck with a track the monitor asks the catalog again. A look costs a
+  directory listing and, until the file is found, one plist read for the
+  analysis (kept once found), and two `stat` calls (modification date and
+  size of `MediaLibrary.db` and `MediaLibrary.db-wal`), at most once per 5 s.
+  The database is copied only when those changed since the last load, and the
+  copy runs on the catalog's own background queue, so the 0.25 s deck poll
+  never waits for it; the first load is synchronous. A failed reload keeps
+  the previous library and is tried again at the next check. Adopting a
+  refreshed entry for the same track does not touch the position or the
+  play state. From the write of a change to the page: up to 5 s until the
+  files are checked, the reload (about 0.4 s measured for a 34.5 MB
+  database), then up to 5 s until the next look, so about 10 s at most.
+  Not measured: when djay writes a new cue point or a finished analysis to
+  disk (an attended check is needed). A change djay keeps only in memory
+  cannot appear on the page.
 - djay shows whole seconds, so the page knows the position exactly only at
   the moment a label moves. In the tests, with a poll every 0.25 s: a
   playing deck is 0 to 0.25 s behind djay once a poll has seen its label
