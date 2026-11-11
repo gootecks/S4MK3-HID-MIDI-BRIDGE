@@ -1,7 +1,7 @@
 ---
 summary: "Runs the Rust bridge as a child process and drives djay's sidebar from the Kontrol S8 display buttons and screen encoders."
 type: readme
-issues: []
+issues: [27, 51]
 ---
 
 # S8Host

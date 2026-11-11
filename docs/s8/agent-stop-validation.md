@@ -1,7 +1,7 @@
 ---
 summary: "Phase 0: what changes when NIHardwareAgent stops, and the attended check (agent-stop-check.sh)."
 type: validation
-issues: []
+issues: [32]
 ---
 
 # S8 screen phase 0: NIHardwareAgent stop

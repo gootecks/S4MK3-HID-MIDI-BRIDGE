@@ -1,7 +1,7 @@
 ---
 summary: "Renders djay Pro's right-hand sidebar onto the two Kontrol S8 panels and encodes the result as S8 screen frames."
 type: readme
-issues: []
+issues: [50]
 ---
 
 # S8Views

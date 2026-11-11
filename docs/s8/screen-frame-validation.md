@@ -1,7 +1,7 @@
 ---
 summary: "Phases 2 to 4: first frames, colour order and a full uncompressed frame (screen-frame-check.sh)."
 type: validation
-issues: []
+issues: [34, 35]
 ---
 
 # S8 screen phases 2–4: first frames and full frame
