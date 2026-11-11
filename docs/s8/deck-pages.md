@@ -25,10 +25,12 @@ it), `key` (string as djay shows it), `elapsed`, `remaining`, `duration`
 `bands` as three 0–255 channels, `bandRate`, `beats`, `bars`, `bpm`) and `cues`
 (`time`, `name`, `color`). Optional fields are omitted when unknown.
 
-Empty states: no track shows "No track on deck n" (or `notice`, for example
-"djay is not running" or "Accessibility permission needed"); a track without
-analysis shows its header and "No analysis for this track". Beat ticks are
-drawn only when beats are at least 5 px apart; bar ticks always are.
+Empty states: a deck that djay shows without a track says "No track on deck
+n"; a deck that djay's current view does not show says "Deck n is not shown
+in djay" (#93); other notices are, for example, "djay is not running" or
+"Accessibility permission needed"; a track without analysis shows its header
+and "No analysis for this track". Beat ticks are drawn only when beats are at
+least 5 px apart; bar ticks always are.
 
 ## Layout and dependencies
 
@@ -112,10 +114,21 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
 - The track start is recognised only when the track length is known from the
   library. The remaining label is taken as the remaining time cut to a whole
   second, which matches capture C of the #80 record.
-- Decks 3 and 4 are read in djay's Four Decks layout. A deck that is not in
-  the current layout looks the same as an empty deck. In djay's One Deck
-  view deck 1 was shown as empty on the S8 while deck 2 was still read
-  (row 13 of the same record); that view was not looked into further.
+- djay exposes only the decks its current view shows
+  ([captures](captures/one-deck-view-20261111T000921Z/README.md), #93). Two
+  Decks exposes decks 1 and 2, Four Decks all four. One Deck exposes one
+  deck: in the captures it was the deck whose deck controls were used last
+  (a cue jump on deck 2 gave deck 2, a jump to the start point of deck 1
+  gave deck 1). Loading a track or opening the Deck menu did not change it,
+  and a track dragged in while in One Deck went to the deck shown. A deck
+  that is not shown keeps its track in djay. Its page says "Deck n is not
+  shown in djay" and keeps the track, library entry and last reading, as for
+  "djay is not answering" above; the page returns with the first read that
+  has the deck again, without a new library lookup. The time of a hidden
+  deck is not known while it is hidden, also when it plays. Not looked at:
+  the shown deck changing while One Deck stays open, One Deck right after
+  djay starts, and the labels of a shown deck without a track (the "No
+  track" case is covered by fake labels only).
 - Library entries are matched by title and artist. When no entry has the
   deck's artist text, the entries with the title are used, and the deck's
   length (#94) decides among them. With both time labels the length is

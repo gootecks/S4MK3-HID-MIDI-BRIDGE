@@ -177,10 +177,10 @@ part_a() {
 }
 
 part_b() {
-    srow 16 "djay in Two Decks: do the panels say 'No track on deck 3' and 'No track on deck 4' (as 02-decks-3-4-two-deck-layout)? y/n, or describe" || return 0
+    srow 16 "djay in Two Decks: do the panels say 'Deck 3 is not shown in djay' and 'Deck 4 is not shown in djay' (as 02-decks-3-4-two-deck-layout)? y/n, or describe" || return 0
     srow 17 "Switch djay to Four Decks and load a track on decks 3 and 4 if they are empty. Do the panels fill with decks 3 and 4, with title, artist, BPM, key and remaining time as in djay? How long after the switch? Describe." || return 0
     srow 18 "Play deck 1 and deck 3 together for about 10 s, then pause both. Did the left panel move with deck 3's time, and did the right panel (deck 4) stand still? y/n, or describe" || return 0
-    srow 19 "Switch djay back to Two Decks. Do the panels return to 'No track on deck 3' and 'No track on deck 4'? y/n, or describe" || return 0
+    srow 19 "Switch djay back to Two Decks. Do the panels return to 'Deck 3 is not shown in djay' and 'Deck 4 is not shown in djay'? y/n, or describe" || return 0
 }
 
 part_c() {

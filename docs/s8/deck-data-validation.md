@@ -73,6 +73,12 @@ the pictures show the layout and the kind of content, not the text.
 | `01-decks-1-2`: part A at its start, both decks paused | ![01 left](images/deck-data/01-decks-1-2-left.png) | ![01 right](images/deck-data/01-decks-1-2-right.png) |
 | `02-decks-3-4-two-deck-layout`: part B while djay shows Two Decks | ![02 left](images/deck-data/02-decks-3-4-two-deck-layout-left.png) | ![02 right](images/deck-data/02-decks-3-4-two-deck-layout-right.png) |
 | `10-deck` of [panel-views.md](panel-views.md): part C, with deck 2 in place of deck 1 and a synthetic track | ![10 left](images/panel-views/10-deck-left.png) | ![10 right](images/panel-views/10-deck-right.png) |
+| `03-deck-not-shown`: `S8Host --screens --deck 1` while djay's One Deck view shows deck 2 (#93) | ![03 left](images/deck-data/03-deck-not-shown-left.png) | ![03 right](images/deck-data/03-deck-not-shown-right.png) |
+
+Picture `02` was made again the same way after #93 changed its text.
+Picture `03` comes from `S8Host --replay` with the snapshot of `10-deck` and
+a deck snapshot that holds only the notice, decoded by `s8-screen-png`; djay
+was not in One Deck view for it.
 
 ### Rows
 
@@ -97,10 +103,10 @@ play state and title of the last one.
 | 13 | Optional: a djay view that hides the decks or their times, about 10 s, and back | Reported |
 | 14 | Part A as a whole | No flicker, tearing, wrong colours or frozen panel |
 | 15 | Runner ends the stream | Both panels black, bridge exit status 0 |
-| 16 | Part B starts, djay in Two Decks | "No track on deck 3" and "No track on deck 4", as `02-decks-3-4-two-deck-layout` |
+| 16 | Part B starts, djay in Two Decks | "Deck 3 is not shown in djay" and "Deck 4 is not shown in djay", as `02-decks-3-4-two-deck-layout` |
 | 17 | Switch djay to Four Decks, load decks 3 and 4 | The panels fill with decks 3 and 4, content as in djay; delay reported |
 | 18 | Play decks 1 and 3 together about 10 s, pause both | Left panel moves with deck 3; right panel (deck 4) stands still |
-| 19 | Switch djay back to Two Decks | Both panels return to "No track on deck N" |
+| 19 | Switch djay back to Two Decks | Both panels return to "Deck N is not shown in djay" |
 | 20 | Runner ends the stream | Both panels black, bridge exit status 0 |
 | 21 | Part C starts | Right: deck 2 page, layout as `10-deck`; left: library list |
 | 22 | Play deck 2; turn a left screen encoder through some rows; pause | PLAYING with moving time and playhead; the left panel follows while the deck page keeps moving |
@@ -246,6 +252,41 @@ into the scrolling.
   that appears twice in the library and djay quitting during the stream
   were not tried.
 - No fault was provoked. One run, one S8.
+
+## After the run
+
+The observer's remarks on the record, 2026-11-10, and what followed:
+
+- Row 12: "there was no analysis". djay held no analysis for the track, so
+  the page was right at that moment. The observer expects djay to analyse
+  an unanalysed track once it is loaded. The page read the analysis once
+  per track and would have kept "No analysis for this track"; it now reads
+  it again every 5 s (#95, #92). Not seen in djay yet.
+- Row 13: "i had two tracks loaded and switched to One Deck view and it
+  loaded Deck 1". One Deck view does not always show deck 1: djay exposes
+  the one deck it shows, and in captures taken afterwards that was the deck
+  whose controls were used last
+  ([captures](captures/one-deck-view-20261111T000921Z/README.md),
+  [deck-pages.md](deck-pages.md#limits)). In this run cue jumps on deck 2
+  (row 6) came before the switch, which fits deck 2 being the deck read.
+  The page of a deck that is not shown now says "Deck n is not shown in
+  djay" (#93). Rows 16 and 19 above were asked and answered with the
+  earlier text, "No track on deck N"; the plan and the runner now name the
+  new text, and picture `02-decks-3-4-two-deck-layout` was made again. The
+  new text has not been on the S8.
+- Row 17: "maybe i answered it wrong but it looked right". The record keeps
+  the answer as given.
+- Row 22: the two slow reads started on time (gaps of 0.250 s and 0.249 s
+  before them) and then took 0.634 s and 0.775 s themselves. A read is one
+  pass over djay's window that djay answers, plus a library lookup when the
+  track changes, so the separate queues of S8Host (#89) cannot shorten it;
+  they kept the sidebar from delaying it: during the encoder turn no read
+  took longer than 0.273 s. One pass reads every deck djay shows, and
+  `--deck` takes 1 to 4, so the reads do not depend on which decks go
+  through S8Host. The log does not say what the two reads spent their time
+  on (#96).
+- A title in a non-Latin script, hour-long tracks and a djay in French are
+  not needed and stay untried.
 
 ## Checked without the S8
 

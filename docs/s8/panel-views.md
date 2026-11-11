@@ -134,8 +134,9 @@ Decision for #27: **a clean stop leaves both panels black.**
   the default poll, no gap between deck reads exceeded 0.45 s during
   scrolling and tab switching
   ([panel-views-validation.md](panel-views-validation.md)).
-- One deck page at a time, on the right panel. Decks 3 and 4 depend on how
-  djay's four-deck layouts appear through Accessibility (#45).
+- One deck page at a time, on the right panel. A deck that djay's current
+  view does not show, such as decks 3 and 4 in Two Decks, says "Deck n is
+  not shown in djay" ([deck-pages.md](deck-pages.md#limits), #93).
 - Buttons 1 and 4 stay with NI and do nothing while the agent is stopped.
 - There is no LED feedback (#21).
 
