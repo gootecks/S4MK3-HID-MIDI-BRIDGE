@@ -13,6 +13,26 @@ exclude = List(
     "**/age.txt"
 )
 
+// mdsmith lints the whole docs/s8 tree (.mdsmith.yml), not only the changed notes:
+// a rename or a deletion breaks links and the index in notes the commit leaves alone.
+local mdsmith_check = new CommandSpec {
+    command = new Command {
+        argv = List("mdsmith", "check", ".")
+    }
+    effect = "read"
+}
+// mdsmith fix, then the repo-mdsmith-fixer agent on what it cannot fix.
+local mdsmith_fix = new CommandSpec {
+    command = new Command {
+        argv = List("docs/s8/mdsmith-fix.sh", ".")
+    }
+    effect = "write"
+}
+// hk pipes step output, so mdsmith colours it only when told to. NO_COLOR=1 still wins.
+local mdsmith_env = new Mapping {
+    ["FORCE_COLOR"] = "1"
+}
+
 steps {
     ["cargo_fmt"] = Builtins.cargo_fmt
     ["cargo_clippy"] {
@@ -49,47 +69,27 @@ steps {
         match_any = null
         glob = "docs/s8/*.sh"
     }
-    // Fork-owned Markdown only. oxfmt formats; mdsmith lints (.mdsmith.yml).
+    // Fork-owned Markdown only. oxfmt formats; mdsmith lints.
     // The pinned oxfmt 0.76 has no --stdin-filepath, which the builtin's check_diff needs.
     ["oxfmt"] = (Builtins.oxfmt) {
         glob = "docs/s8/**/*.md"
         check_diff = null
     }
     ["mdsmith"] {
-        glob = "docs/s8/**/*.md"
-        batch = true
+        glob = List("docs/s8/**/*.md", ".mdsmith.yml")
         depends = "oxfmt"
-        check = new CommandSpec {
-            command = new Command {
-                argv = List("mdsmith", "check", "--no-color", "{{files}}")
-            }
-            effect = "read"
-        }
-        // mdsmith fix, then the repo-mdsmith-fixer agent on what it cannot fix.
-        fix = new CommandSpec {
-            command = new Command {
-                argv = List("docs/s8/mdsmith-fix.sh", "{{files}}")
-            }
-            effect = "write"
-        }
+        stage = "docs/s8/*.md"
+        env = mdsmith_env
+        check = mdsmith_check
+        fix = mdsmith_fix
     }
-    // Any staged note can make the index in docs/s8/README.md stale, so check it too.
-    ["mdsmith_index"] {
-        glob = "docs/s8/**/*.md"
+    // A deleted note matches no glob, so the step above is skipped for it. hk stages
+    // nothing for a step without files, so this one only checks.
+    ["mdsmith_deleted"] {
+        step_condition = #"any(git.staged_deleted_files, {hasPrefix(#, "docs/s8/") and hasSuffix(#, ".md")})"#
         depends = "mdsmith"
-        stage = "docs/s8/README.md"
-        check = new CommandSpec {
-            command = new Command {
-                argv = List("mdsmith", "check", "--no-color", "docs/s8/README.md")
-            }
-            effect = "read"
-        }
-        fix = new CommandSpec {
-            command = new Command {
-                argv = List("mdsmith", "fix", "--no-color", "docs/s8/README.md")
-            }
-            effect = "write"
-        }
+        env = mdsmith_env
+        check = mdsmith_check
     }
     // Upstream violations are grandfathered by the baseline; new violations fail.
     ["swiftlint"] {
@@ -163,6 +163,17 @@ hooks {
         fix = true
         stage = false
         stash = "none"
+    }
+    // Merges, rebases and --no-verify commits skip pre-commit. The stash keeps
+    // uncommitted and untracked notes out of the check.
+    ["pre-push"] {
+        stash = "git"
+        steps {
+            ["mdsmith"] {
+                env = mdsmith_env
+                check = mdsmith_check
+            }
+        }
     }
     ["commit-msg"] {
         steps {

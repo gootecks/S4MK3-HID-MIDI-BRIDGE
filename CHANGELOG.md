@@ -53,7 +53,8 @@ their detailed notes stay in `docs/release-*.md`.
 - hk hooks running formatting, Clippy, plist and shell checks, plus
   conventional-commit messages. Commits apply and stage the formatters'
   fixes; mdsmith findings no fixer can repair go to the `repo-mdsmith-fixer`
-  omp agent.
+  omp agent. A commit that touches a note lints all of `docs/s8/`, and so
+  does a push.
 - SwiftLint with a baseline for existing upstream code, and SwiftFormat for
   Swift files added by the fork.
 - Communiqué release-note and changelog tasks for this fork, with the LLM
