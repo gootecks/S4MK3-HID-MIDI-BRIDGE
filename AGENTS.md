@@ -340,6 +340,40 @@ Read before changing S8 behaviour: `docs/s8/mapping.md`,
 - `swift test --package-path macos`: the Swift tests, the screen tools
   included.
 
+### S8 notes
+
+One line per reference note and procedure. Open a note when the task needs
+it. `docs/s8/README.md` also lists the validation records and captures.
+`mdsmith fix` writes this list from each note's `summary`; do not edit it.
+
+<?catalog
+glob: "docs/s8/**/*.md"
+where: 'type: "reference" | "procedure"'
+sort: path
+header: "\n"
+row: "- [`{filename}`]({filename}): {summary}"
+footer: "\n"
+?>
+
+- [`docs/s8/capture-checklist.md`](docs/s8/capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture.
+- [`docs/s8/capture-recorder.md`](docs/s8/capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture.
+- [`docs/s8/deck-pages-attended-check.md`](docs/s8/deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8.
+- [`docs/s8/deck-pages.md`](docs/s8/deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation (#45).
+- [`docs/s8/display-buttons.md`](docs/s8/display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51).
+- [`docs/s8/djay-sidebar-access.md`](docs/s8/djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48).
+- [`docs/s8/driverkit-evaluation.md`](docs/s8/driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish (#55).
+- [`docs/s8/hardware-notes.md`](docs/s8/hardware-notes.md): S8 USB identity, interfaces, input and output evidence, and open questions.
+- [`docs/s8/mapping.md`](docs/s8/mapping.md): The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14).
+- [`docs/s8/mappings/README.md`](docs/s8/mappings/README.md): Frozen copies of Djay mappings that were checked on the S8, with install steps.
+- [`docs/s8/panel-views.md`](docs/s8/panel-views.md): The library and deck views on the panels (S8Host --screens, #27): run, expected pictures, state at stop, limits and check plan.
+- [`docs/s8/research-sources.md`](docs/s8/research-sources.md): Survey of kontrol-s8-protocol, Encdr and Mixxx, with licensing notes.
+- [`docs/s8/s4-coupling-audit.md`](docs/s8/s4-coupling-audit.md): S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam.
+- [`docs/s8/screen-transport.md`](docs/s8/screen-transport.md): The app-to-bridge channel for screen frames and status (#44): record layout, status lines and worker policy.
+- [`docs/s8/screens.md`](docs/s8/screens.md): Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan.
+- [`docs/s8/upstream-workflow.md`](docs/s8/upstream-workflow.md): Remotes, branches, commit separation and the upstream pull-request procedure.
+
+<?/catalog?>
+
 ### Verification
 
 Check a change at the first tier that can show it wrong. Name in the PR the

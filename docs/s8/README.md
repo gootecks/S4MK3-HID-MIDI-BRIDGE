@@ -185,13 +185,17 @@ glob: "**/*.md"
 where: 'type: "procedure"'
 sort: path
 header: "\n"
-row: "- [{filename}]({filename}): {summary}"
+row-expr: |
+  "- [\(filename)](\(filename)): \(summary)" + strings.Join(
+    [for i in issues {" [#\(i)](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/\(i))"}],
+    ""
+  )
 footer: "\n"
 ?>
 
-- [capture-checklist.md](capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture (#10).
-- [capture-recorder.md](capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture (#10).
-- [deck-pages-attended-check.md](deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8 (#85).
+- [capture-checklist.md](capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
+- [capture-recorder.md](capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
+- [deck-pages-attended-check.md](deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8. [#85](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/85)
 - [upstream-workflow.md](upstream-workflow.md): Remotes, branches, commit separation and the upstream pull-request procedure.
 
 <?/catalog?>

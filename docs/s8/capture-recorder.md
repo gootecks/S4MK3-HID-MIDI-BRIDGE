@@ -1,6 +1,7 @@
 ---
-summary: "Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture (#10)."
+summary: "Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture."
 type: procedure
+issues: [10]
 ---
 
 # S8 input recorder
