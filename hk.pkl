@@ -82,8 +82,8 @@ steps {
     }
     // Also runs for a new or deleted note: the mdsmith block names the fork's READMEs.
     ["upstream_files"] {
-        glob = List("**/*.md", ".mdsmith.yml", "docs/s8/upstream-files.*")
-        stage = List(".mdsmith.yml", "docs/s8/upstream-files.txt")
+        glob = List("**/*.md", ".mdsmith.yml", ".gitattributes", "docs/s8/upstream-files.*")
+        stage = List(".mdsmith.yml", ".gitattributes", "docs/s8/upstream-files.txt")
         check = upstream_files_check
         fix = new CommandSpec {
             command = new Command {

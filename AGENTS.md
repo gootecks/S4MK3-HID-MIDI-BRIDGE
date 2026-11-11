@@ -234,11 +234,12 @@ This section is fork-only. Keep it out of upstream pull requests.
   Xcode SDK and XCTest the app needs.
 - Fork-owned files: a file is the fork's own when it is not in
   `upstream/main`. `docs/s8/upstream-files.txt` lists upstream's Markdown,
-  Swift and shell files; `hk.pkl` reads it and `.mdsmith.yml` carries the
-  same Markdown paths in a generated `ignore:` block. A Markdown file created
-  anywhere is therefore formatted and linted without being added to a glob.
-  Do not edit the list or that block by hand. After merging from upstream run
-  `mise run upstream:files`; the hooks fail while either is out of date. The
+  Swift and shell files; `hk.pkl` reads it, `.mdsmith.yml` carries the same
+  Markdown paths in a generated `ignore:` block, and `.gitattributes` takes
+  the merge driver off them in another. A Markdown file created anywhere is
+  therefore formatted, linted and merged without being added to a glob. Do
+  not edit the list or those blocks by hand. After merging from upstream run
+  `mise run upstream:files`; the hooks fail while any of them is out of date. The
   root `README.md` is the fork's front page: the script leaves it off the
   list, so it is gated like the fork's own files. mdsmith matches an ignore
   pattern without a slash against the file name in every folder, so never
@@ -270,8 +271,9 @@ This section is fork-only. Keep it out of upstream pull requests.
   Pushing runs the same check on the committed tree, which also covers
   merges, rebases and `--no-verify` commits. Untracked and unstaged notes
   are set aside for both. mdsmith output is coloured; `NO_COLOR=1` turns
-  that off. `mise run hooks:install` also registers mdsmith's merge driver
-  for `docs/s8/**/*.md` (`.gitattributes`), so generated sections no longer
+  that off. `mise run hooks:install` also registers mdsmith's merge driver.
+  `.gitattributes` gives it every Markdown file except upstream's (a block
+  written by `docs/s8/upstream-files.sh`), so generated sections no longer
   conflict. It writes the driver to the Git config and leaves
   `.gitattributes` alone: `mdsmith merge-driver install` and the
   `git-hook-sync` rule rewrite that file from the `ignore:` list and turn
