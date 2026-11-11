@@ -43,6 +43,12 @@ version of the menu-bar app runs it.
   run it and its limits.
 - **Missing:** LED feedback. The S8's LEDs do not follow Djay.
 
+![Architecture of the bridge and the S8 tools](docs/s8/images/architecture.png)
+
+How the parts fit together. The S8 path is this fork's work; the S4 MK3 path
+comes from upstream and is shown in outline only. The picture is exported from
+[architecture.html](docs/s8/images/architecture.html).
+
 To use it you need this repository, [mise](https://mise.jdx.dev) for the
 pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.
 
