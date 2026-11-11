@@ -118,7 +118,8 @@ rules:
   proper-names:
     names: [GitHub, macOS, Xcode, AppKit, SwiftUI, Traktor, Rust, Swift]
   list-indent: true
-  table-format: true
+  # oxfmt formats tables; mdsmith pads right-aligned columns differently.
+  table-format: false
   no-duplicate-headings: true
   max-file-length:
     max: 500

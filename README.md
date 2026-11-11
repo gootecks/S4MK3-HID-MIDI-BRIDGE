@@ -238,8 +238,8 @@ four decks. The calibrated defaults are:
 
 | Action                   | Speed | Reaction |
 | ------------------------ | ----: | -------: |
-| Scratch while touching   | 2.7%  | 150%     |
-| Pitch bend without touch | 2.7%  | 17%      |
+| Scratch while touching   |  2.7% |     150% |
+| Pitch bend without touch |  2.7% |      17% |
 
 Save your preferences, then use **Install Djay mapping…** to export a new
 mapping and select it in Djay. Export uses the current editor values and can
