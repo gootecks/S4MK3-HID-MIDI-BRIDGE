@@ -55,7 +55,12 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   permission, or "cannot complete" without permission, still shows
   "Accessibility permission needed", and a missing djay shows "djay is not
   running"; both reset the deck. Each read waits at most 3 s (the sidebar
-  reader uses the same limit). Read from code; not seen in djay.
+  reader uses the same limit). Read from code; not seen in djay. The page as
+  `S8Host --screens --deck 1` would send it, made with `S8Host --replay`
+  from a deck snapshot that holds only the notice and decoded by
+  `s8-screen-png`:
+
+  ![Deck page while djay is not answering](images/deck-data/04-djay-not-answering-right.png)
 - Bars come from `firstDownBeatIndex` and the beat list; djay's own bar
   lines were not compared. The index may be negative or beyond the list (the
   bar phase is the index modulo 4, mathematically). Where the list skips
