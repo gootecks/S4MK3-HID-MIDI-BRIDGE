@@ -13,6 +13,8 @@ use s4mk3_hid_midi_bridge::device::S8;
 
 use super::catalog::{self, Entry, Kind};
 
+mod feedback_config;
+
 /// The control that owns each address, and the actions already bound to it.
 type Addresses = BTreeMap<(u8, u8, u8), (&'static str, Vec<String>)>;
 
@@ -51,7 +53,7 @@ fn generate() -> Result<Value> {
     );
     root.insert(
         String::from("userInfo"),
-        Value::Dictionary(Dictionary::new()),
+        Value::Dictionary(feedback_config::user_info()),
     );
     Ok(Value::Dictionary(root))
 }
@@ -167,6 +169,12 @@ fn root_outputs(addresses: &Addresses) -> Result<Vec<Value>> {
             );
             output.insert(String::from("midiMinValue"), Value::Integer(0.into()));
             output.insert(String::from("midiMaxValue"), Value::Integer(127.into()));
+            if root.continuous() {
+                output.insert(
+                    String::from("controlType"),
+                    Value::String(String::from("control")),
+                );
+            }
             outputs.push(Value::Dictionary(output));
         }
     }

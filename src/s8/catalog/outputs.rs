@@ -66,6 +66,12 @@ impl RootOutput {
             .unwrap_or((self.target, ""));
         format!("{head}{deck}{tail}")
     }
+
+    /// Djay reports a continuous value only for a `control` output; any other
+    /// output is on or off.
+    pub const fn continuous(&self) -> bool {
+        matches!(self.family, RootFamily::Progress)
+    }
 }
 
 pub const ROOT_OUTPUTS: [RootOutput; 3] = [
