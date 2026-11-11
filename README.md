@@ -45,9 +45,21 @@ version of the menu-bar app runs it.
 
 ![Architecture of the bridge and the S8 tools](docs/s8/images/architecture.png)
 
-How the parts fit together. The S8 path is this fork's work; the S4 MK3 path
-comes from upstream and is shown in outline only. The picture is exported from
+How the parts fit together. Both controllers use one Rust bridge binary:
+`S8Host` and the S4 MK3 menu-bar app each start it with their own device
+profile. The S8 profile and the Swift S8 tools are this fork's work; the rest
+comes from upstream. The picture is exported from
 [architecture.html](docs/s8/images/architecture.html).
+
+The bridge builds on these repositories:
+
+- [jtoronto/S4MK3-HID-MIDI-BRIDGE](https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE):
+  the S4 MK3 bridge this fork extends.
+- [RufusIbiza/Encdr](https://github.com/RufusIbiza/Encdr): controller
+  descriptors and HID decoding.
+- [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge):
+  reading Djay's decks through Accessibility. `DjayDecks` is ported from a
+  prototype built on it.
 
 To use it you need this repository, [mise](https://mise.jdx.dev) for the
 pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.

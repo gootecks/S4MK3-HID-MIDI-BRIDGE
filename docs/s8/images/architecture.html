@@ -71,9 +71,9 @@
     <h1>Two controllers, one bridge, djay Pro</h1>
 
     <div class="diagram-container">
-      <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+      <svg viewBox="0 0 960 656" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
         <title id="architecture-title">Bridge architecture: Kontrol S8 and S4 MK3 to djay Pro</title>
-        <desc id="architecture-desc">The Rust bridge turns Kontrol S8 and S4 MK3 HID input into virtual MIDI for djay Pro, while the Swift S8Host reads djay through Accessibility and sends panel frames back to the S8 through the bridge.</desc>
+        <desc id="architecture-desc">One Rust bridge binary serves both controllers: S8Host and the S4 Bridge app each run it with their device profile, and it turns HID input into virtual MIDI for djay Pro, while S8Host reads djay through Accessibility and sends panel frames back to the S8.</desc>
         <defs>
           <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bfc0c0"/></marker>
           <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f08a59"/></marker>
@@ -87,47 +87,50 @@
 
         <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
         <!-- Zones (drawn before arrows and nodes) -->
-        <rect x="232" y="84" width="200" height="384" rx="8" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
+        <rect x="232" y="84" width="200" height="416" rx="8" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
         <rect x="244" y="90" width="68" height="12" rx="2" fill="#2d3142"/>
         <text x="278" y="99" fill="#949eb2" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">RUST BRIDGE</text>
-        <rect x="528" y="84" width="200" height="384" rx="8" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
+        <rect x="528" y="84" width="200" height="416" rx="8" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
         <rect x="540" y="90" width="68" height="12" rx="2" fill="#2d3142"/>
         <text x="574" y="99" fill="#949eb2" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SWIFT TOOLS</text>
 
         <!-- Arrows first (behind boxes) -->
-        <line x1="160" y1="140" x2="248" y2="140" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <line x1="248" y1="228" x2="160" y2="228" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <line x1="160" y1="144" x2="248" y2="144" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="248" y1="232" x2="160" y2="232" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
         <path d="M 332,108 V 68 Q 332,60 340,60 H 856 Q 864,60 864,68 V 108" fill="none" stroke="#f08a59" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
-        <line x1="416" y1="140" x2="544" y2="140" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <line x1="544" y1="228" x2="416" y2="228" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <line x1="628" y1="260" x2="628" y2="292" stroke="#739fdf" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="416" y1="144" x2="544" y2="144" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="544" y1="188" x2="416" y2="188" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 544,232 H 488 Q 480,232 480,240 V 300 Q 480,308 472,308 H 416" fill="none" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="628" y1="260" x2="628" y2="284" stroke="#739fdf" stroke-width="1.2" marker-end="url(#arrow-link)"/>
         <line x1="712" y1="324" x2="808" y2="324" stroke="#739fdf" stroke-width="1.2" marker-end="url(#arrow-link)"/>
-        <line x1="160" y1="408" x2="248" y2="408" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <line x1="248" y1="432" x2="160" y2="432" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
-        <line x1="544" y1="420" x2="416" y2="420" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <path d="M 332,452 V 492 Q 332,500 340,500 H 856 Q 864,500 864,492 V 452" fill="none" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 544,420 H 488 Q 480,420 480,412 V 348 Q 480,340 472,340 H 416" fill="none" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="160" y1="424" x2="248" y2="424" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="248" y1="448" x2="160" y2="448" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <path d="M 332,484 V 516 Q 332,524 340,524 H 856 Q 864,524 864,516 V 484" fill="none" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
 
         <!-- Arrow labels -->
-        <rect x="182" y="120" width="44" height="12" rx="2" fill="#2d3142"/>
-        <text x="204" y="129" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HID IN</text>
-        <rect x="178" y="208" width="52" height="12" rx="2" fill="#2d3142"/>
-        <text x="204" y="217" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USB BULK</text>
+        <rect x="182" y="124" width="44" height="12" rx="2" fill="#2d3142"/>
+        <text x="204" y="133" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HID IN</text>
+        <rect x="178" y="212" width="52" height="12" rx="2" fill="#2d3142"/>
+        <text x="204" y="221" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USB BULK</text>
         <rect x="560" y="40" width="76" height="12" rx="2" fill="#2d3142"/>
         <text x="598" y="49" fill="#f08a59" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">VIRTUAL MIDI</text>
-        <rect x="436" y="120" width="88" height="12" rx="2" fill="#2d3142"/>
-        <text x="480" y="129" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CONTROL EVENTS</text>
-        <rect x="440" y="208" width="80" height="12" rx="2" fill="#2d3142"/>
-        <text x="480" y="217" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FRAME RECORDS</text>
+        <rect x="436" y="124" width="88" height="12" rx="2" fill="#2d3142"/>
+        <text x="480" y="133" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CONTROL EVENTS</text>
+        <rect x="440" y="168" width="80" height="12" rx="2" fill="#2d3142"/>
+        <text x="480" y="177" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FRAME RECORDS</text>
+        <rect x="488" y="264" width="32" height="12" rx="2" fill="#2d3142"/>
+        <text x="504" y="273" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RUNS</text>
         <rect x="720" y="304" width="80" height="12" rx="2" fill="#2d3142"/>
         <text x="760" y="313" fill="#739fdf" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ACCESSIBILITY</text>
-        <rect x="182" y="388" width="44" height="12" rx="2" fill="#2d3142"/>
-        <text x="204" y="397" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HID IN</text>
-        <rect x="164" y="440" width="80" height="12" rx="2" fill="#2d3142"/>
-        <text x="204" y="449" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LEDS, SCREENS</text>
-        <rect x="464" y="400" width="32" height="12" rx="2" fill="#2d3142"/>
-        <text x="480" y="409" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RUNS</text>
-        <rect x="560" y="480" width="76" height="12" rx="2" fill="#2d3142"/>
-        <text x="598" y="489" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">VIRTUAL MIDI</text>
+        <rect x="488" y="374" width="32" height="12" rx="2" fill="#2d3142"/>
+        <text x="504" y="383" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RUNS</text>
+        <rect x="182" y="404" width="44" height="12" rx="2" fill="#2d3142"/>
+        <text x="204" y="413" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HID IN</text>
+        <rect x="164" y="456" width="80" height="12" rx="2" fill="#2d3142"/>
+        <text x="204" y="465" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LEDS, SCREENS</text>
+        <rect x="560" y="504" width="76" height="12" rx="2" fill="#2d3142"/>
+        <text x="598" y="513" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">VIRTUAL MIDI</text>
 
         <!-- Node: Kontrol S8 -->
         <rect x="40" y="108" width="120" height="152" rx="6" fill="#2d3142"/>
@@ -137,49 +140,55 @@
         <text x="100" y="180" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Kontrol S8</text>
         <text x="100" y="196" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">controls, 2 panels</text>
         <!-- Node: Kontrol S4 MK3 -->
-        <rect x="40" y="388" width="120" height="64" rx="6" fill="#2d3142"/>
-        <rect x="40" y="388" width="120" height="64" rx="6" fill="rgba(191,192,192,0.10)" stroke="#949eb2" stroke-width="1"/>
+        <rect x="40" y="388" width="120" height="96" rx="6" fill="#2d3142"/>
+        <rect x="40" y="388" width="120" height="96" rx="6" fill="rgba(191,192,192,0.10)" stroke="#949eb2" stroke-width="1"/>
         <rect x="48" y="396" width="24" height="12" rx="2" fill="transparent" stroke="rgba(148,158,178,0.50)" stroke-width="0.8"/>
         <text x="60" y="405" fill="#949eb2" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HID</text>
-        <text x="100" y="424" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Kontrol S4 MK3</text>
-        <text x="100" y="440" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">jog wheels, panels</text>
-        <!-- Node: S8 translator (focal) -->
-        <rect x="248" y="108" width="168" height="64" rx="6" fill="#2d3142"/>
-        <rect x="248" y="108" width="168" height="64" rx="6" fill="rgba(240,138,89,0.10)" stroke="#f08a59" stroke-width="1"/>
+        <text x="100" y="436" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Kontrol S4 MK3</text>
+        <text x="100" y="452" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">jog wheels, panels</text>
+        <!-- Node: S8 profile (focal) -->
+        <rect x="248" y="108" width="168" height="152" rx="6" fill="#2d3142"/>
+        <rect x="248" y="108" width="168" height="152" rx="6" fill="rgba(240,138,89,0.10)" stroke="#f08a59" stroke-width="1"/>
         <rect x="256" y="116" width="20" height="12" rx="2" fill="transparent" stroke="rgba(240,138,89,0.50)" stroke-width="0.8"/>
         <text x="266" y="125" fill="#f08a59" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">S8</text>
-        <text x="332" y="144" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S8 translator</text>
-        <text x="332" y="160" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/s8 · catalog, mapping</text>
-        <!-- Node: S8 screen transport -->
-        <rect x="248" y="196" width="168" height="64" rx="6" fill="#2d3142"/>
-        <rect x="248" y="196" width="168" height="64" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
-        <rect x="256" y="204" width="20" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
-        <text x="266" y="213" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">S8</text>
-        <text x="332" y="232" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S8 screen transport</text>
-        <text x="332" y="248" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/device/s8/screen</text>
-        <!-- Node: S4 MK3 bridge -->
-        <rect x="248" y="388" width="168" height="64" rx="6" fill="#2d3142"/>
-        <rect x="248" y="388" width="168" height="64" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+        <text x="332" y="164" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S8 profile</text>
+        <text x="332" y="180" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">--device s8</text>
+        <text x="332" y="194" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/s8 · src/device/s8</text>
+        <text x="332" y="208" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">translator · catalog</text>
+        <text x="332" y="222" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">mapping · screen transport</text>
+        <!-- Node: Bridge core -->
+        <rect x="248" y="284" width="168" height="80" rx="6" fill="#2d3142"/>
+        <rect x="248" y="284" width="168" height="80" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+        <rect x="256" y="292" width="56" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
+        <text x="284" y="301" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ONE BINARY</text>
+        <text x="332" y="320" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Bridge core</text>
+        <text x="332" y="336" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">s4mk3-hid-midi-bridge</text>
+        <text x="332" y="350" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/main.rs · HID · Encdr</text>
+        <!-- Node: S4 MK3 profile -->
+        <rect x="248" y="388" width="168" height="96" rx="6" fill="#2d3142"/>
+        <rect x="248" y="388" width="168" height="96" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
         <rect x="256" y="396" width="48" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
         <text x="280" y="405" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">UPSTREAM</text>
-        <text x="332" y="424" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S4 MK3 bridge</text>
-        <text x="332" y="440" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/full · LEDs, screens</text>
+        <text x="332" y="424" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S4 MK3 profile</text>
+        <text x="332" y="440" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">--device s4mk3 · src/full</text>
+        <text x="332" y="454" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">catalog · mapping · feedback</text>
+        <text x="332" y="468" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">LEDs · jog · screens</text>
         <!-- Node: S8Host (focal) -->
         <rect x="544" y="108" width="168" height="152" rx="6" fill="#2d3142"/>
         <rect x="544" y="108" width="168" height="152" rx="6" fill="rgba(240,138,89,0.10)" stroke="#f08a59" stroke-width="1"/>
         <rect x="552" y="116" width="20" height="12" rx="2" fill="transparent" stroke="rgba(240,138,89,0.50)" stroke-width="0.8"/>
         <text x="562" y="125" fill="#f08a59" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">S8</text>
-        <text x="628" y="164" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S8Host</text>
-        <text x="628" y="180" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">runs the bridge</text>
-        <text x="628" y="194" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">S8Views · renderer</text>
-        <text x="628" y="208" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">S8Session · S8Control</text>
+        <text x="628" y="176" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S8Host</text>
+        <text x="628" y="192" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">S8Views · renderer</text>
+        <text x="628" y="206" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">S8Session · S8Control</text>
         <!-- Node: djay access -->
-        <rect x="544" y="292" width="168" height="64" rx="6" fill="#2d3142"/>
-        <rect x="544" y="292" width="168" height="64" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
-        <rect x="552" y="300" width="20" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
-        <text x="562" y="309" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">S8</text>
-        <text x="628" y="328" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">djay access</text>
-        <text x="628" y="344" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Decks · Library · Sidebar</text>
+        <rect x="544" y="284" width="168" height="80" rx="6" fill="#2d3142"/>
+        <rect x="544" y="284" width="168" height="80" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+        <rect x="552" y="292" width="20" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
+        <text x="562" y="301" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">S8</text>
+        <text x="628" y="320" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">djay access</text>
+        <text x="628" y="336" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Decks · Library · Sidebar</text>
+        <text x="628" y="350" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Decks from djay-pro-bridge</text>
         <!-- Node: S4 Bridge app -->
         <rect x="544" y="388" width="168" height="64" rx="6" fill="#2d3142"/>
         <rect x="544" y="388" width="168" height="64" rx="6" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
@@ -188,32 +197,37 @@
         <text x="628" y="424" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">S4 Bridge app</text>
         <text x="628" y="440" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">macos/S4BridgeApp.swift</text>
         <!-- Node: djay Pro -->
-        <rect x="808" y="108" width="112" height="344" rx="6" fill="#2d3142"/>
-        <rect x="808" y="108" width="112" height="344" rx="6" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
+        <rect x="808" y="108" width="112" height="376" rx="6" fill="#2d3142"/>
+        <rect x="808" y="108" width="112" height="376" rx="6" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
         <rect x="816" y="116" width="24" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.22)" stroke-width="0.8"/>
         <text x="828" y="125" fill="#949eb2" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
-        <text x="864" y="272" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">djay Pro</text>
-        <text x="864" y="288" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">generated</text>
-        <text x="864" y="302" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">MIDI mappings</text>
+        <text x="864" y="276" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">djay Pro</text>
+        <text x="864" y="292" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">generated</text>
+        <text x="864" y="306" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">MIDI mappings</text>
         <!-- Legend strip -->
-        <line x1="40" y1="524" x2="920" y2="524" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
-        <text x="40" y="540" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
-        <rect x="40" y="552" width="14" height="10" rx="2" fill="rgba(240,138,89,0.10)" stroke="#f08a59" stroke-width="1"/>
-        <text x="60" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">S8 core</text>
-        <rect x="124" y="552" width="14" height="10" rx="2" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
-        <text x="144" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Bridge or tool</text>
-        <rect x="236" y="552" width="14" height="10" rx="2" fill="rgba(191,192,192,0.10)" stroke="#949eb2" stroke-width="1"/>
-        <text x="256" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Controller</text>
-        <rect x="332" y="552" width="14" height="10" rx="2" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
-        <text x="352" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">External app</text>
-        <line x1="436" y1="558" x2="464" y2="558" stroke="#f08a59" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
-        <text x="472" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Controls to djay</text>
-        <line x1="560" y1="558" x2="588" y2="558" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
-        <text x="596" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Data, events</text>
-        <line x1="668" y1="558" x2="696" y2="558" stroke="#739fdf" stroke-width="1.2" marker-end="url(#arrow-link)"/>
-        <text x="704" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Reads, drives djay</text>
-        <line x1="800" y1="558" x2="828" y2="558" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
-        <text x="836" y="560" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">To controller</text>
+        <line x1="40" y1="548" x2="920" y2="548" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
+        <text x="40" y="564" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="40" y="576" width="14" height="10" rx="2" fill="rgba(240,138,89,0.10)" stroke="#f08a59" stroke-width="1"/>
+        <text x="60" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">S8 core</text>
+        <rect x="124" y="576" width="14" height="10" rx="2" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+        <text x="144" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Bridge or tool</text>
+        <rect x="236" y="576" width="14" height="10" rx="2" fill="rgba(191,192,192,0.10)" stroke="#949eb2" stroke-width="1"/>
+        <text x="256" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Controller</text>
+        <rect x="332" y="576" width="14" height="10" rx="2" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
+        <text x="352" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">External app</text>
+        <line x1="436" y1="582" x2="464" y2="582" stroke="#f08a59" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <text x="472" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Controls to djay</text>
+        <line x1="560" y1="582" x2="588" y2="582" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="596" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Data, events</text>
+        <line x1="668" y1="582" x2="696" y2="582" stroke="#739fdf" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="704" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">Reads, drives djay</text>
+        <line x1="800" y1="582" x2="828" y2="582" stroke="#bfc0c0" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <text x="836" y="584" fill="#bfc0c0" font-size="8.5" font-family="'Geist', sans-serif">To controller</text>
+        <!-- Built on -->
+        <text x="40" y="612" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">BUILT ON</text>
+        <text x="40" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">jtoronto/S4MK3-HID-MIDI-BRIDGE</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Upstream bridge</tspan></text>
+        <text x="316" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">RufusIbiza/Encdr</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Controller descriptors, decoding</tspan></text>
+        <text x="588" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">kyleawayan/djay-pro-bridge</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Deck reading, via djay-phrase-tool</tspan></text>
 
       </svg>
     </div>
