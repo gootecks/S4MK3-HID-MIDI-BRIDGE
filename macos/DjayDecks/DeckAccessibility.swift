@@ -66,7 +66,18 @@ public final class AXDeckSource: DeckAccessibility {
         }
         var results: [String: String] = [:]
         Self.collect(app, depth: 0, into: &results)
+        let children = value as? [AXUIElement] ?? []
+        if let window = Self.focusedWindow(app), !children.contains(where: { CFEqual($0, window) }) {
+            Self.collect(window, depth: 1, into: &results)
+        }
         return results
+    }
+
+    static func focusedWindow(_ app: AXUIElement) -> AXUIElement? {
+        guard let window = attribute(app, kAXFocusedWindowAttribute),
+              CFGetTypeID(window) == AXUIElementGetTypeID() else { return nil }
+        // swiftlint:disable:next force_cast
+        return (window as! AXUIElement)
     }
 
     static func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
