@@ -99,7 +99,7 @@ raw = true
 [tasks."s8:led-check"]
 description = "Attended S8 LED check: stop NIHardwareAgent, send LED output reports step by step, clear and restore (#21, #24); sends LED reports to the S8"
 usage = '''
-arg "[args]" var=true help="mixer for the 0x82 mixer plan (default the deck plan), then optional step ids"
+arg "[args]" var=#true help="mixer for the 0x82 mixer plan (default the deck plan), then optional step ids"
 '''
 run = 'bash docs/s8/led-check.sh ${usage_args:-}'
 raw = true
