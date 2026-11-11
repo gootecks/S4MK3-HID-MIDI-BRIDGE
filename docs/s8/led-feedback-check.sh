@@ -1,7 +1,9 @@
 #!/bin/bash
 # Attended check of the S8 deck LEDs driven from djay's feedback (#22, #23).
 # Plan, expected results and record: docs/s8/led-feedback-validation.md.
-#   led-feedback-check.sh [ROW]     ROW (L1-L21) is the first row to ask
+#   led-feedback-check.sh [ROW]        ROW (L1-L21) is the first row to ask
+#   led-feedback-check.sh only ROW...  ask only these rows, in plan order
+# The exit rows L22 to L24 are always asked.
 # Builds the bridge, installs a new revision of the S8 mapping, stops
 # NIHardwareAgent with SIGKILL and runs `--device s8 --midi full --s8-leds`.
 # The runner writes nothing to the S8 itself; only the bridge does, and only
@@ -16,18 +18,29 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 . docs/s8/screen-lib.sh
 
 live_rows="L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18 L19 L20 L21"
-[ "$#" -le 1 ] || {
-    echo "Usage: led-feedback-check.sh [ROW]"
+usage() {
+    echo "Usage: led-feedback-check.sh [ROW | only ROW...]"
     exit 1
 }
-from="${1:-}"
-case " $live_rows " in
-    *" ${from:-L1} "*) ;;
-    *)
-        echo "Unknown row $from. Rows: $live_rows"
-        exit 1
-        ;;
-esac
+from=""
+only=""
+if [ "${1:-}" = only ]; then
+    shift
+    [ "$#" -ge 1 ] || usage
+    only=" $* "
+else
+    [ "$#" -le 1 ] || usage
+    from="${1:-}"
+fi
+for row in ${only:-${from:-L1}}; do
+    case " $live_rows " in
+        *" $row "*) ;;
+        *)
+            echo "Unknown row $row. Rows: $live_rows"
+            exit 1
+            ;;
+    esac
+done
 
 bridge="target/debug/s4mk3-hid-midi-bridge"
 mappings="$HOME/Music/djay/MIDI Mappings"
@@ -177,7 +190,12 @@ show_row() {
 # step ID ACTION EXPECTED QUESTION: one asked row while the bridge runs.
 step() {
     [ -z "$stopped" ] || return 0
-    if [ -n "$skip" ]; then
+    if [ -n "$only" ]; then
+        case "$only" in
+            *" $1 "*) ;;
+            *) return 0 ;;
+        esac
+    elif [ -n "$skip" ]; then
         [ "$1" = "$from" ] || return 0
         skip=""
     fi
@@ -207,7 +225,7 @@ plan() {
         "Which of these are lit now, and does any change when the bridge starts or later? Describe."
     step L3 \
         "In djay load one test track on deck A and one on deck B. Do not play." \
-        "Left shows A, right shows B. PLAY off; strip blue bank dark while progress is 0; hot cue pads dark unless the track has saved cues, which light in their cue colours." \
+        "Left shows A, right shows B. PLAY off; strip blue bank dark while progress is 0; hot cue pads that are set light in the colour of the cue point in djay; an unset cue pad is dark." \
         "What changed on each side after loading? Describe, including the pads and the strip."
     step L4 \
         "Press left PLAY to play deck A, then again to pause it." \
@@ -224,7 +242,7 @@ plan() {
     step L7 \
         "Press left FLUX, then again." \
         "FLUX full while slip is on, off otherwise." \
-        "Does FLUX follow djay's slip mode? yes or no, describe if not."
+        "Is FLUX steady or blinking, and is deck A playing or paused at that moment? Answer for slip on and for slip off."
     step L8 \
         "Press the left loop encoder to start a loop on deck A, then again to end it." \
         "All four ring segments full while the loop is active, dim otherwise: blue on decks A and B, white on C and D." \
@@ -232,14 +250,14 @@ plan() {
     step L9 \
         "On the left side press HOTCUE, FREEZE, REMIX, then Shift + HOTCUE." \
         "The button of the active pad mode is full and the other three are dim. Shift + HOTCUE makes LOOP the full one." \
-        "After each press, which of HOTCUE, LOOP, FREEZE, REMIX is full? Describe."
+        "After each of the four presses, say for HOTCUE, LOOP, FREEZE and REMIX: bright, dim or off."
     step L10 \
         "On the left side select FREEZE, then Shift + HOTCUE, then REMIX, and look at the eight pads each time. Do not press a pad." \
-        "FREEZE: all pads dim blue. Shift + HOTCUE: all pads dim green. REMIX: all pads dim orange. Dim is the lit colour divided by 6." \
+        "FREEZE: all pads dim sky blue (teal). Shift + HOTCUE: all pads dim green. REMIX: all pads dim orange. Dim is the lit colour divided by 6." \
         "Pad colour and brightness in each mode? Describe, including whether the dim pads are visible."
     step L11 \
         "Select HOTCUE. On deck A set a hot cue on pad 1 and pad 2, then delete the cue of pad 2 in djay." \
-        "Set pads light in djay's cue colour (tokens 1-8 from the S4 bridge's default colours, 9 white); unset pads are dark; the deleted pad goes dark." \
+        "Set pads light in the colour of the cue point in djay (tokens 1-8 from the S4 bridge's default colours, 9 white); an unset pad is dark; the deleted pad goes dark." \
         "Which colour do pad 1 and pad 2 show against djay's cue colours, and what does pad 2 show after the delete? Describe."
     step L12 \
         "Select REMIX. Press sampler pad 1 to play its sample, then stop it. The slot needs a sample." \
@@ -247,8 +265,8 @@ plan() {
         "Does the pad light orange while the sample plays and dim afterwards? Describe, or say the slot is empty."
     step L13 \
         "Press left FX 1, 2, 3 and 4 on, then off." \
-        "Each FX LED is full while its effect is on, dim while off. The side shows the unit's target deck, chosen with the mixer FX buttons." \
-        "Does each FX LED follow its effect on and off? Describe differences."
+        "FX 1-3: full while the effect is on, dim while off. FX 4 follows fxActive: it is lit while any of FX 1-3 of that deck is on, and off when all three are off. The side shows the unit's target deck, chosen with the mixer FX buttons." \
+        "Does each FX LED follow its effect on and off, and is FX 4 lit exactly while any of FX 1-3 is on? Describe differences."
     step L14 \
         "Needs a stem track on deck A. Press left ON 1, 2, 3 and 4 to mute and unmute stems." \
         "Each ON LED is full when djay reports that stem muted, dim otherwise." \
@@ -260,22 +278,22 @@ plan() {
     step L16 \
         "Repeat on the right side with deck B: play, hold CUE, SYNC, loop, FLUX, FX 1, a pad-mode button and a hot cue pad." \
         "The right side behaves as the left with its own report 0x81, independent of the left. Only PLAY on the right is established." \
-        "Does each right-side LED behave as on the left, and does the left side stay unchanged? List any difference."
+        "Per right-side control, same as the left, yes or no: PLAY, CUE, SYNC, FLUX, each mode button, the pads, each FX button, DECK. Does the left side stay unchanged?"
     step L17 \
         "Put deck A at the very start of its track (progress 0) and look at the left touchstrip." \
         "The blue bank is dark at progress 0; one LED once progress is above 0. Open in the output check: which row of the strip the blue bank lights." \
-        "What does the left strip show, and on which row? Describe."
+        "At progress 0, how many strip LEDs are lit, out of how many, and on which row?"
     step L18 \
         "Seek deck A to about half of the track and look at the left strip." \
         "A blue bar from the physical left end, about 12 or 13 of 25 LEDs." \
-        "How long is the bar and does it start at the left end? Describe."
+        "At about half, how many strip LEDs are lit out of how many, and does the bar start at the left end?"
     step L19 \
         "Seek deck A to its last seconds, then let it play on." \
         "The bar grows to 24 or 25 LEDs near the end. Open in the output check: whether progress covers the whole track." \
-        "How long is the bar near the end and does it follow the playhead? Describe."
+        "Near the end, how many strip LEDs are lit out of how many, and does the bar grow as the playhead moves?"
     step L20 \
         "Touch the left strip at its left end without moving, slide to the middle and to the right end, then release." \
-        "No orange dot at the touch alone; one orange dot from the first movement, at the finger's position; it goes out on release. The blue bar stays. Open in the output check: the bottom row." \
+        "No orange dot at the touch alone; one orange dot from the first movement, at the finger's position, orange and not purple because the blue LED under the dot is blank; it goes out on release and the bar stays as it was. Open in the output check: the bottom row." \
         "When does the orange dot appear, does it follow the finger and go out on release, and which row is it on? Describe."
     step L21 \
         "Hold left Shift, then release it." \
@@ -295,6 +313,7 @@ log_summary() {
 
 note "LED feedback check (#22, #23). Mapping: $name. Bridge: $bridge (debug)." "$bold"
 [ -z "$from" ] || note "Starting at $from; earlier rows are skipped." "$yellow"
+[ -z "$only" ] || note "Asking only these rows:$only" "$yellow"
 snap pre
 screen_agent_stop
 

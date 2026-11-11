@@ -173,9 +173,9 @@ raw = true
 [tasks."s8:leds"]
 description = "Attended S8 LED feedback check: stop NIHardwareAgent, run --midi full --s8-leds against Djay, restore (#22, #23); writes the deck LED reports 0x80 and 0x81 to the S8"
 usage = '''
-arg "[row]" help="row to start from (default L1)"
+arg "[rows]" var=#true help="row to start from (default L1), or: only ROW... to ask only those rows"
 '''
-run = 'bash docs/s8/led-feedback-check.sh ${usage_row:-}'
+run = 'bash docs/s8/led-feedback-check.sh ${usage_rows:-}'
 raw = true
 
 [tasks."hooks:install"]
