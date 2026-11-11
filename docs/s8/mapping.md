@@ -259,6 +259,10 @@ reports `0x80` (left) and `0x81` (right). Report framing is in `led-output.md`.
 The code is in `src/s8/`: `catalog/outputs.rs`, `feedback.rs`,
 `led_state.rs`, `leds.rs` and `led_output.rs`.
 
+The attended hardware check is planned in
+[led-feedback-validation.md](led-feedback-validation.md) and run with
+`mise run s8:leds`.
+
 ### Feedback addresses
 
 Djay returns a control's state on the control's own address. These are the
