@@ -6,6 +6,11 @@ public struct DjayCuePoint: Equatable {
     public let name: String?
     public let colorHex: String?
     public let number: Int?
+
+    static let defaultColors = [
+        1: "#CC0000", 2: "#CC8800", 3: "#0000CC", 4: "#CCCC00",
+        5: "#00CC00", 6: "#CC00CC", 7: "#00CCCC", 8: "#8800CC"
+    ]
 }
 
 public struct DjayTrackMatches: Equatable {
@@ -22,7 +27,8 @@ public extension DjayLibrarySnapshot {
             let end = entry["endTime"]?.numberValue.flatMap { $0 >= 0 ? $0 : nil }
             return DjayCuePoint(
                 time: time, endTime: end, name: entry["comment"]?.stringValue,
-                colorHex: entry["color"]?.stringValue, number: entry["number"]?.intValue
+                colorHex: entry["color"]?.stringValue ?? DjayCuePoint.defaultColors[entry["number"]?.intValue ?? 1],
+                number: entry["number"]?.intValue
             )
         }.sorted { $0.time < $1.time }
     }
