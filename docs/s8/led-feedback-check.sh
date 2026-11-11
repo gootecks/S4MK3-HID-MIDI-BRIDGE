@@ -248,9 +248,9 @@ plan() {
         "All four ring segments full while the loop is active, dim otherwise: blue on decks A and B, white on C and D." \
         "What does the ring show in the loop and outside it: colour, brightness, segments? Describe."
     step L9 \
-        "On the left side press HOTCUE, FREEZE, REMIX, then Shift + HOTCUE." \
-        "The button of the active pad mode is full and the other three are dim. Shift + HOTCUE makes LOOP the full one." \
-        "After each of the four presses, say for HOTCUE, LOOP, FREEZE and REMIX: bright, dim or off."
+        "On the left side press HOTCUE, FREEZE, REMIX, then Shift + HOTCUE. Then press LOOP once." \
+        "The button of the active pad mode is full and the other three are dim: HOTCUE, FREEZE, REMIX in turn. Shift + HOTCUE makes LOOP the full one and HOTCUE dim. Plain LOOP changes no pad mode and no LED; it toggles djay's Looper view." \
+        "After each of the four presses, which of HOTCUE, LOOP, FREEZE and REMIX is bright? After the LOOP press, did djay's Looper view open or close?"
     step L10 \
         "On the left side select FREEZE, then Shift + HOTCUE, then REMIX, and look at the eight pads each time. Do not press a pad." \
         "FREEZE: all pads dim sky blue (teal). Shift + HOTCUE: all pads dim green. REMIX: all pads dim orange. Dim is the lit colour divided by 6." \
