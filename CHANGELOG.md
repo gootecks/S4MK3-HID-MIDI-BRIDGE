@@ -29,8 +29,8 @@ their detailed notes stay in `docs/release-*.md`.
   data on the S8 panels: content against djay, jumps, tempo, track and
   layout changes ([deck-data-validation.md](docs/s8/deck-data-validation.md),
   #45); the check sends screen frames to the S8. Run once on the S8: the
-  pages matched djay; a cue point set after the track was loaded gets no
-  flag, and djay's One Deck view shows deck 1 as empty.
+  pages matched djay; a cue point set after the track was loaded got no
+  flag, and in djay's One Deck view the page of deck 1 said "No track".
 - `--app-events` (Kontrol S8 only) prints the display buttons 2, 3 and 5-8
   and the screen encoders as `S8_CONTROL` lines on stdout. The `S8Host`
   macOS tool runs the bridge and uses them to switch djay Pro's sidebar tabs
@@ -197,6 +197,13 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Fixed
 
+- The deck page of a deck that djay's current view does not show says "Deck
+  n is not shown in djay" instead of "No track on deck n", keeps its track
+  and returns when djay shows the deck again. djay's One Deck view shows the
+  deck whose controls were used last, not always deck 1, and Two Decks hides
+  decks 3 and 4. `S8Preview --stream` no longer refuses to start for a
+  hidden deck. Covered by tests on labels captured from djay; not yet on
+  the S8 (#93).
 - The deck page no longer crashes the app on a negative bar index from djay's
   analysis, and bar ticks keep their phase over gaps in the beat list (#94).
 - When djay does not answer an Accessibility read, the deck page shows
