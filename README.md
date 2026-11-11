@@ -344,3 +344,4 @@ for the S4 MK3 protocol documentation and controller support this bridge builds 
 - [Standalone hardware research and board shortlist](docs/hardware-bridge-research.md)
 - [Design history](docs/design.md)
 - [Kontrol S8 support (fork notes)](docs/s8/README.md)
+- [Index of every document](INDEX.md)
