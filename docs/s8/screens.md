@@ -17,17 +17,17 @@ hardware docs, and the S4 MK3 screen code in `src/screens.rs`. Evidence for
 S8 displays is Windows (NI driver) and Android (experimental) only. No source
 shows a working macOS path.
 
-| Item | Value | Confidence |
-| ---- | ----- | ---------- |
-| Transport | Interface 6 (`FF/BD/00`), bulk OUT `0x04`, max packet 512 | Both sources agree; works on macOS (phases 2, 4) |
-| Geometry | Two 480×272 panels; screen 0 left, screen 1 right | Confirmed on macOS |
-| Header | `84 00 SS 60 00 00 00 00 00 00 00 00 01 E0 01 10` (16 bytes, `SS` = screen) | Observed payloads; works on macOS |
-| Body | Commands `OP 00 CNT_HI CNT_LO`, counts in pixel pairs, total `0xFF00` | Observed payloads; LITERAL and REPEAT work on macOS |
-| Opcodes | `00` LITERAL (+4×CNT bytes), `01` REPEAT (+4 bytes), `02` SKIP | Observed payloads; SKIP untested |
-| Footer | `03 00 00 00 40 00 SS 00` | Both agree; works on macOS |
-| Pixels | 16-bit big-endian RGB565 | Confirmed on macOS (phases 2, 4) |
-| Init | Optional feature SET_REPORT `0xF8` on interface 5, `E0 01 10 01 05 60 00 64 32 00`; byte 8 seen as `0x14`, `0x50`, `0x64` | Windows only; not needed on macOS |
-| Shutdown, max frame size, refresh rate | Unknown; a full 261,148-byte frame works | Not demonstrated |
+| Item                                   | Value                                                                                                                     | Confidence                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Transport                              | Interface 6 (`FF/BD/00`), bulk OUT `0x04`, max packet 512                                                                 | Both sources agree; works on macOS (phases 2, 4)    |
+| Geometry                               | Two 480×272 panels; screen 0 left, screen 1 right                                                                         | Confirmed on macOS                                  |
+| Header                                 | `84 00 SS 60 00 00 00 00 00 00 00 00 01 E0 01 10` (16 bytes, `SS` = screen)                                               | Observed payloads; works on macOS                   |
+| Body                                   | Commands `OP 00 CNT_HI CNT_LO`, counts in pixel pairs, total `0xFF00`                                                     | Observed payloads; LITERAL and REPEAT work on macOS |
+| Opcodes                                | `00` LITERAL (+4×CNT bytes), `01` REPEAT (+4 bytes), `02` SKIP                                                            | Observed payloads; SKIP untested                    |
+| Footer                                 | `03 00 00 00 40 00 SS 00`                                                                                                 | Both agree; works on macOS                          |
+| Pixels                                 | 16-bit big-endian RGB565                                                                                                  | Confirmed on macOS (phases 2, 4)                    |
+| Init                                   | Optional feature SET_REPORT `0xF8` on interface 5, `E0 01 10 01 05 60 00 64 32 00`; byte 8 seen as `0x14`, `0x50`, `0x64` | Windows only; not needed on macOS                   |
+| Shutdown, max frame size, refresh rate | Unknown; a full 261,148-byte frame works                                                                                  | Not demonstrated                                    |
 
 ### Reconciling Encdr and the protocol repo
 
@@ -103,10 +103,10 @@ Views: playlists, tracks related to the one on a deck, tracks played before
 or after it, and Djay's queue. The display buttons and screen encoders
 navigate them (#51); a 960×272 window prototype comes first (#50).
 
-| Source | Data | Limits |
-| ------ | ---- | ------ |
-| `MediaLibrary.db` snapshot (db, `-wal`, `-shm` together), read-only (#49) | Tracks, playlists and items, queue, history sessions and plays | YapDatabase with TSAF objects; the decoder exists in djaykit (Python) and needs a Swift port |
-| djaykit related index, exported between sets (prime-optimal/djaykit#81) | Related tracks per track: co-play transitions, harmonic, BPM and artist scores; before/after counts | Built from play history; the views must work without it |
+| Source                                                                    | Data                                                                                                | Limits                                                                                       |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `MediaLibrary.db` snapshot (db, `-wal`, `-shm` together), read-only (#49) | Tracks, playlists and items, queue, history sessions and plays                                      | YapDatabase with TSAF objects; the decoder exists in djaykit (Python) and needs a Swift port |
+| djaykit related index, exported between sets (prime-optimal/djaykit#81)   | Related tracks per track: co-play transitions, harmonic, BPM and artist scores; before/after counts | Built from play history; the views must work without it                                      |
 
 Acting on a chosen track is the open problem (#48). Djay's MIDI load and
 Add to Queue act only on Djay's selected row, and its MIDI feedback carries no
@@ -123,9 +123,9 @@ cannot show decks 3 and 4 while Djay shows its two-deck layout: Djay exposes
 only the decks of its current view
 ([deck-pages.md](deck-pages.md#limits), #93).
 
-| Source | Data | Limits |
-| ------ | ---- | ------ |
-| Accessibility, Djay's window (about 8 polls/s) | Title, artist, BPM, key, elapsed/remaining, playing | View-dependent: time can vanish with the library expanded; BPM has one decimal |
+| Source                                              | Data                                                                | Limits                                                                                                 |
+| --------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Accessibility, Djay's window (about 8 polls/s)      | Title, artist, BPM, key, elapsed/remaining, playing                 | View-dependent: time can vanish with the library expanded; BPM has one decimal                         |
 | `MediaLibrary.db` and the analysis cache, read-only | Overview waveform envelope, 3-band samples, beats, bars, cue points | About 2–11 waveform samples/s: an overview, not a zoomed scrolling waveform; key in the blob undecoded |
 
 Its layout is the starting point: a header with title, artist, BPM, key and
@@ -195,7 +195,8 @@ agent takes interface 6 back on relaunch
 Left panel only, one frame each:
 
 1. The observed `BLACK_0` payload, byte for byte (32 bytes):
-   `84 00 00 60 00 00 00 00 00 00 00 00 01 E0 01 10 01 00 FF 00 00 00 00 00 03 00 00 00 40 00 00 00`.
+   `84 00 00 60 00 00 00 00 00 00 00 00 01 E0 01 10`
+   `01 00 FF 00 00 00 00 00 03 00 00 00 40 00 00 00`.
    Expected: the left panel goes black.
 2. A solid colour built from the same frame, REPEAT pair `F8 00 F8 00`
    (32 bytes). The panel turns red if pixels are RGB565, blue if BGR565.

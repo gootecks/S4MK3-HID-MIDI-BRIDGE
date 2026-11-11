@@ -7,13 +7,13 @@ to a bitmap, a PNG or an `.s8frame` file through `S8Preview`.
 
 ## Data sources
 
-| Data | Source | Notes |
-| ---- | ------ | ----- |
-| Title, artist, BPM, key, elapsed, remaining, playing | djay window through Accessibility (`DjayDecks`, polled by `DeckMonitor`) | Needs Accessibility permission for the process. One poll walks the window once and splits the labels by deck number, so the cost does not grow with the number of decks (about 0.1 s measured with four decks). The walk covers the application's children and its focused window: with the window in another Space the children hold only the menu bar, and the focused window still answers (#100). Title, artist, key and BPM are read from English and French labels (`Deck n` and `Platine n`); the time and play labels are matched in English only. |
-| Play state | `PlayStateDebouncer` (ported, extended) | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. It is reported at once when the time label moves one second in the play direction while the button is lit. Paused is reported on the first unlit sample. |
-| Time between AX updates | `TimeInterpolator` (rewritten for #83) | djay cuts the fraction off a time label, so a label names a whole second and not a moment. The page time always stays inside the second of the label last read. A paused label rests at the middle of its second. A remaining label equal to the track length cut to a whole second rests at the track start, so elapsed is 0. While the debounced state is playing the time counts on, scaled by the pitch percentage, and waits at the end of the label's second until the label moves. A label that moves one second in the play direction marks the boundary between the two seconds. Any other label change is taken as a jump and rests at the middle of the new second. On pause the counted time stays. When playing is confirmed, the time since the first lit sample is added. |
-| Duration, cue points | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`) | The track is matched by title and artist; the track length read from the deck labels picks among entries with one title (see Limits). Used to derive elapsed when only remaining is shown. |
-| Overview waveform, 3-band samples, beats, bars | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat counting from `firstDownBeatIndex` (see Limits for gaps). |
+| Data                                                 | Source                                                                                                                                    | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title, artist, BPM, key, elapsed, remaining, playing | djay window through Accessibility (`DjayDecks`, polled by `DeckMonitor`)                                                                  | Needs Accessibility permission for the process. One poll walks the window once and splits the labels by deck number, so the cost does not grow with the number of decks (about 0.1 s measured with four decks). The walk covers the application's children and its focused window: with the window in another Space the children hold only the menu bar, and the focused window still answers (#100). Title, artist, key and BPM are read from English and French labels (`Deck n` and `Platine n`); the time and play labels are matched in English only.                                                                                                                                                                                                                               |
+| Play state                                           | `PlayStateDebouncer` (ported, extended)                                                                                                   | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. It is reported at once when the time label moves one second in the play direction while the button is lit. Paused is reported on the first unlit sample.                                                                                                                                                                                                                                                                                                                                              |
+| Time between AX updates                              | `TimeInterpolator` (rewritten for #83)                                                                                                    | djay cuts the fraction off a time label, so a label names a whole second and not a moment. The page time always stays inside the second of the label last read. A paused label rests at the middle of its second. A remaining label equal to the track length cut to a whole second rests at the track start, so elapsed is 0. While the debounced state is playing the time counts on, scaled by the pitch percentage, and waits at the end of the label's second until the label moves. A label that moves one second in the play direction marks the boundary between the two seconds. Any other label change is taken as a jump and rests at the middle of the new second. On pause the counted time stays. When playing is confirmed, the time since the first lit sample is added. |
+| Duration, cue points                                 | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`)                                                       | The track is matched by title and artist; the track length read from the deck labels picks among entries with one title (see Limits). Used to derive elapsed when only remaining is shown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Overview waveform, 3-band samples, beats, bars       | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat counting from `firstDownBeatIndex` (see Limits for gaps).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 djay's live database and cache are only read; the snapshot is a temporary copy.
 
@@ -63,6 +63,7 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   `s8-screen-png`:
 
   ![Deck page while djay is not answering](images/deck-data/04-djay-not-answering-right.png)
+
 - Bars come from `firstDownBeatIndex` and the beat list; djay's own bar
   lines were not compared. The index may be negative or beyond the list (the
   bar phase is the index modulo 4, mathematically). Where the list skips
@@ -91,6 +92,7 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   the amber fallback.
 
   ![Cues 1 to 8 with their default colours](images/deck-cue-colours-after.png)
+
 - Cue points come from `mediaItemUserData` (`cuePoints`). Unit tests cover
   synthetic data. On the S8 the flags of two tracks were compared with
   djay's cue points by eye
@@ -239,11 +241,11 @@ the bridge then sends black frames to both panels and exits. A step passes
 when the status lines are `pending`, `active`, `inactive`, the bridge exits
 with status 0 and the observer answers `y` to each question.
 
-| Step | Panels | Time | The observer does | Pass |
-| ---- | ------ | ---- | ----------------- | ---- |
-| `a-paused` | left deck 1, right deck 2 | 20 s | Nothing; both decks stay paused | Each panel shows its deck with title, time, waveform and PAUSED. Both times and playheads stand still for the 20 s. Both panels go black at the end. |
-| `b-play` | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses | While deck 1 plays the left panel says PLAYING and its time moves with djay's. On pause the time stops without stepping back. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
-| `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays and does not step back on pause. |
+| Step           | Panels                    | Time | The observer does                                                                                        | Pass                                                                                                                                                                                                                                                                                 |
+| -------------- | ------------------------- | ---- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `a-paused`     | left deck 1, right deck 2 | 20 s | Nothing; both decks stay paused                                                                          | Each panel shows its deck with title, time, waveform and PAUSED. Both times and playheads stand still for the 20 s. Both panels go black at the end.                                                                                                                                 |
+| `b-play`       | left deck 1, right deck 2 | 60 s | Plays deck 1 for about 10 s, pauses about 10 s, plays again, pauses                                      | While deck 1 plays the left panel says PLAYING and its time moves with djay's. On pause the time stops without stepping back. While it is paused the time stands still, and on resume it goes on from there without a jump by the length of the pause. The right panel stands still. |
+| `c-four-decks` | left deck 3, right deck 4 | 60 s | Switches djay to Four Decks first; plays deck 3 about 10 s and pauses, then deck 4 about 10 s and pauses | The panels show decks 3 and 4. Each time moves only while its own deck plays and does not step back on pause.                                                                                                                                                                        |
 
 Expected and not a fault (#87):
 
@@ -285,6 +287,7 @@ Accessibility permission, using `--deck 1 --no-window --png /tmp/deck`:
 
   djay's layout was not changed and no track was loaded. The record below
   covers loaded decks 2, 3 and 4.
+
 - Playing state, live time extrapolation and the 10 Hz window refresh were
   not exercised on live data (the deck was paused). The record below covers
   the playing state and the extrapolation.
@@ -297,14 +300,14 @@ second process sampled djay's play value and remaining label at 100 Hz. The
 layout showed only the remaining time. Captures:
 `captures/deck-pages-20261110/`, one `-page` and one `-djay` file per check.
 
-| Check | Revision | Setup | Observed |
-| ----- | -------- | ----- | -------- |
-| A | before the fix | Two Decks, deck 1 played, paused and resumed by the user | djay only: a playing deck's play value stays `Active`; a paused deck's value alternates every 0.5 s, in phase on all decks; the remaining label changes once a second. |
-| B | `f76b2d1` | Two Decks, both paused, 9.4 s | Deck 1 held 27.91 s and deck 2 held 0.70 s; neither was reported playing. |
-| C | `f76b2d1` | Two Decks, deck 1 played, paused and resumed by the user, 45 s | Playing was reported 1.1 to 1.5 s after play and paused within 0.7 s of pause. After about 18 s paused the time continued from the paused position. Deck 2 held 0.70 s. |
-| D | `f76b2d1` | Four Decks, all paused, 9.4 s | Failed. Polls were 0.93 s apart, decks 2, 3 and 4 were reported playing for 6 to 8 polls and their time ran ahead by 4.6 to 8.4 s. |
-| E | `9eff1fb` | Four Decks, all paused, 16 s, 107 samples per deck | All four decks held their time and none was reported playing. |
-| F | `9eff1fb` | Four Decks, the user played and paused deck 3, then deck 4, then deck 3 again, 75 s, 474 samples per deck | Decks 1 and 2 held. Deck 3 was reported playing 1.2 s and 1.3 s after play and paused 0.6 s and 0.5 s after pause; after 32 s paused it continued from 44.04 s. Deck 4 was reported playing 0.8 s after play and paused 0.6 s after pause. A poll took 0.105 s (median of 238). |
+| Check | Revision       | Setup                                                                                                     | Observed                                                                                                                                                                                                                                                                        |
+| ----- | -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A     | before the fix | Two Decks, deck 1 played, paused and resumed by the user                                                  | djay only: a playing deck's play value stays `Active`; a paused deck's value alternates every 0.5 s, in phase on all decks; the remaining label changes once a second.                                                                                                          |
+| B     | `f76b2d1`      | Two Decks, both paused, 9.4 s                                                                             | Deck 1 held 27.91 s and deck 2 held 0.70 s; neither was reported playing.                                                                                                                                                                                                       |
+| C     | `f76b2d1`      | Two Decks, deck 1 played, paused and resumed by the user, 45 s                                            | Playing was reported 1.1 to 1.5 s after play and paused within 0.7 s of pause. After about 18 s paused the time continued from the paused position. Deck 2 held 0.70 s.                                                                                                         |
+| D     | `f76b2d1`      | Four Decks, all paused, 9.4 s                                                                             | Failed. Polls were 0.93 s apart, decks 2, 3 and 4 were reported playing for 6 to 8 polls and their time ran ahead by 4.6 to 8.4 s.                                                                                                                                              |
+| E     | `9eff1fb`      | Four Decks, all paused, 16 s, 107 samples per deck                                                        | All four decks held their time and none was reported playing.                                                                                                                                                                                                                   |
+| F     | `9eff1fb`      | Four Decks, the user played and paused deck 3, then deck 4, then deck 3 again, 75 s, 474 samples per deck | Decks 1 and 2 held. Deck 3 was reported playing 1.2 s and 1.3 s after play and paused 0.6 s and 0.5 s after pause; after 32 s paused it continued from 44.04 s. Deck 4 was reported playing 0.8 s after play and paused 0.6 s after pause. A poll took 0.105 s (median of 238). |
 
 - `--deck N --no-window --png` on `9eff1fb` for decks 1 to 4, all paused:
   each page showed title, artist, BPM, key, remaining time, waveform and cue
@@ -337,27 +340,27 @@ the plan in "Attended check on the S8" above. The observer's answers are in
 `captures/deck-page-20261110T192200Z/notes.txt`; the same folder holds the
 bridge output and the stream log of each step.
 
-| Step | Bridge | Records sent | The observer reported |
-| ---- | ------ | ------------ | --------------------- |
-| `a-paused` | `pending`, `active`, `inactive`; exit status 0 | 2 | `y` to all three questions: the left panel showed deck 1 and the right panel deck 2 with title, time, waveform and PAUSED; both times and playheads stood still for the 20 s; both panels went black at the end. |
-| `b-play` | `pending`, `active`, `inactive`; exit status 0 | 117 | `y`: while deck 1 played the left panel said PLAYING and its time moved with djay's. To the question whether the paused time stood still and went on without a jump by the length of the pause: "on resume, there was a small jump in the time on the S8 display". The runner took that as a fault and stopped; the question about the right panel was not asked. |
-| `c-four-decks` | Not run in this run; see the second run below | | |
+| Step           | Bridge                                         | Records sent | The observer reported                                                                                                                                                                                                                                                                                                                                             |
+| -------------- | ---------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `a-paused`     | `pending`, `active`, `inactive`; exit status 0 | 2            | `y` to all three questions: the left panel showed deck 1 and the right panel deck 2 with title, time, waveform and PAUSED; both times and playheads stood still for the 20 s; both panels went black at the end.                                                                                                                                                  |
+| `b-play`       | `pending`, `active`, `inactive`; exit status 0 | 117          | `y`: while deck 1 played the left panel said PLAYING and its time moved with djay's. To the question whether the paused time stood still and went on without a jump by the length of the pause: "on resume, there was a small jump in the time on the S8 display". The runner took that as a fault and stopped; the question about the right panel was not asked. |
+| `c-four-decks` | Not run in this run; see the second run below  |              |                                                                                                                                                                                                                                                                                                                                                                   |
 
 After recovery the panels showed the Controller Editor labels and djay
 reacted to the left PLAY button.
 
 What the stream log of `b-play` shows was sent for deck 1 (sent, not seen):
 
-| Time in step | Event | Page elapsed |
-| ------------ | ----- | ------------ |
-| 0.0 s to 11.1 s | Paused, one record | 47.91 s |
-| 11.1 s | First PLAYING record | 48.78 s (+0.87 s) |
-| 25.0 s | Last PLAYING record | 62.39 s |
-| 25.1 s | PAUSED record | 61.91 s (-0.48 s) |
-| 25.1 s to 37.1 s | Paused for 12.0 s, no record | 61.91 s |
-| 37.1 s | First PLAYING record after resume | 62.83 s (+0.92 s) |
-| 52.8 s | Last PLAYING record | 78.75 s |
-| 52.9 s | PAUSED record | 77.91 s (-0.84 s) |
+| Time in step     | Event                             | Page elapsed      |
+| ---------------- | --------------------------------- | ----------------- |
+| 0.0 s to 11.1 s  | Paused, one record                | 47.91 s           |
+| 11.1 s           | First PLAYING record              | 48.78 s (+0.87 s) |
+| 25.0 s           | Last PLAYING record               | 62.39 s           |
+| 25.1 s           | PAUSED record                     | 61.91 s (-0.48 s) |
+| 25.1 s to 37.1 s | Paused for 12.0 s, no record      | 61.91 s           |
+| 37.1 s           | First PLAYING record after resume | 62.83 s (+0.92 s) |
+| 52.8 s           | Last PLAYING record               | 78.75 s           |
+| 52.9 s           | PAUSED record                     | 77.91 s (-0.84 s) |
 
 Deck 2 was sent once, at 0.70 s, and never again.
 
@@ -375,9 +378,9 @@ Second run on 2026-11-10 at `d27bf56` with `mise run s8:deck-page
 c-four-decks`, which skips the first two steps. Answers and logs:
 `captures/deck-page-20261110T193343Z/`.
 
-| Step | Bridge | Records sent | The observer reported |
-| ---- | ------ | ------------ | --------------------- |
-| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 91 | `y` to both questions: the left panel showed deck 3 and the right panel deck 4; each time moved only while its own deck played and stood still while it was paused. The question named one step of up to about 1 s when PLAYING appears as expected. Nothing else was reported on the panels. |
+| Step           | Bridge                                         | Records sent | The observer reported                                                                                                                                                                                                                                                                         |
+| -------------- | ---------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 91           | `y` to both questions: the left panel showed deck 3 and the right panel deck 4; each time moved only while its own deck played and stood still while it was paused. The question named one step of up to about 1 s when PLAYING appears as expected. Nothing else was reported on the panels. |
 
 After recovery the panels showed the Controller Editor labels and djay
 reacted to the left PLAY button.
@@ -396,14 +399,14 @@ poll every 0.25 s at five poll phases and read the page every 0.1 s.
 `macos/DjayDecksTests/Fixtures/`). The true position comes from the moments
 the remaining label moved in that capture.
 
-| Deck 1 in capture C | Page in the replay, over the five poll phases |
-| ------------------- | -------------------------------------------- |
-| First play (label moved at 9.48 s) | PLAYING at 9.1 to 9.3 s. The time moved forward once by 0.5 s, from the middle of the second to its end. |
-| Playing, from 0.25 s after a label move | 0 to 0.25 s behind djay, never ahead. |
-| Pauses at 21.41 s and 42.88 s | PAUSED 0.0 to 0.3 s later. No step back. |
-| Paused | Within 0.25 s of the paused position. |
-| Resumes at 40.00 s and 47.87 s | PLAYING 0.1 to 0.45 s later. The time moved forward once by 0 to 0.3 s. |
-| Whole capture | The page second equals djay's label at the last poll, and the time never steps back. |
+| Deck 1 in capture C                     | Page in the replay, over the five poll phases                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| First play (label moved at 9.48 s)      | PLAYING at 9.1 to 9.3 s. The time moved forward once by 0.5 s, from the middle of the second to its end. |
+| Playing, from 0.25 s after a label move | 0 to 0.25 s behind djay, never ahead.                                                                    |
+| Pauses at 21.41 s and 42.88 s           | PAUSED 0.0 to 0.3 s later. No step back.                                                                 |
+| Paused                                  | Within 0.25 s of the paused position.                                                                    |
+| Resumes at 40.00 s and 47.87 s          | PLAYING 0.1 to 0.45 s later. The time moved forward once by 0 to 0.3 s.                                  |
+| Whole capture                           | The page second equals djay's label at the last poll, and the time never steps back.                     |
 
 Deck 2 of capture C stood at the start of its track and showed 0.70 s before
 the fix. In the replay it shows 0 s elapsed for the whole capture.
@@ -421,10 +424,10 @@ On the S8: run once on 2026-11-10 with `mise run s8:deck-page b-play` at
 `71470ad`, the same code before it was rebased onto `main`. Answers and logs:
 `captures/deck-page-20261110T201431Z/`.
 
-| Step | Bridge | Records sent | The observer reported |
-| ---- | ------ | ------------ | --------------------- |
-| `b-play` | `pending`, `active`, `inactive`; exit status 0 | 102 | `y` to all four questions: while deck 1 played the left panel said PLAYING and its time moved with djay's; on pause the left time stopped without stepping back and stood still; on resume it did not jump by the length of the pause; the right panel stood still. |
-| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 120 | `y` to both questions: deck 3 left and deck 4 right; each time moved only while its own deck played, and on pause it stopped without stepping back and stood still. |
+| Step           | Bridge                                         | Records sent | The observer reported                                                                                                                                                                                                                                               |
+| -------------- | ---------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b-play`       | `pending`, `active`, `inactive`; exit status 0 | 102          | `y` to all four questions: while deck 1 played the left panel said PLAYING and its time moved with djay's; on pause the left time stopped without stepping back and stood still; on resume it did not jump by the length of the pause; the right panel stood still. |
+| `c-four-decks` | `pending`, `active`, `inactive`; exit status 0 | 120          | `y` to both questions: deck 3 left and deck 4 right; each time moved only while its own deck played, and on pause it stopped without stepping back and stood still.                                                                                                 |
 
 Both resume questions named one move forward of less than 1 s as known
 (#87). Nothing else was reported on the panels: "everything looked good".
@@ -433,17 +436,17 @@ reacted to the left PLAY button.
 
 What the stream logs show was sent (sent, not seen):
 
-| Deck | Event | Page elapsed |
-| ---- | ----- | ------------ |
-| 1 | First PLAYING record | 79.41 s to 79.91 s (+0.50 s) |
-| 1 | PAUSED record | 91.76 s to 91.91 s (+0.15 s) |
-| 1 | First PLAYING record after 15.9 s paused | 91.91 s to 92.76 s (+0.85 s) |
-| 1 | PAUSED record | 111.33 s to 111.66 s (+0.33 s) |
-| 2 | One record, at the start of its track | 0.00 s |
-| 3 | First PLAYING record | 80.54 s to 81.23 s (+0.69 s) |
-| 3 | PAUSED record | 99.22 s to 99.54 s (+0.32 s) |
-| 4 | First PLAYING record | 44.84 s to 45.34 s (+0.50 s) |
-| 4 | PAUSED record | 60.05 s to 60.09 s (+0.04 s) |
+| Deck | Event                                    | Page elapsed                   |
+| ---- | ---------------------------------------- | ------------------------------ |
+| 1    | First PLAYING record                     | 79.41 s to 79.91 s (+0.50 s)   |
+| 1    | PAUSED record                            | 91.76 s to 91.91 s (+0.15 s)   |
+| 1    | First PLAYING record after 15.9 s paused | 91.91 s to 92.76 s (+0.85 s)   |
+| 1    | PAUSED record                            | 111.33 s to 111.66 s (+0.33 s) |
+| 2    | One record, at the start of its track    | 0.00 s                         |
+| 3    | First PLAYING record                     | 80.54 s to 81.23 s (+0.69 s)   |
+| 3    | PAUSED record                            | 99.22 s to 99.54 s (+0.32 s)   |
+| 4    | First PLAYING record                     | 44.84 s to 45.34 s (+0.50 s)   |
+| 4    | PAUSED record                            | 60.05 s to 60.09 s (+0.04 s)   |
 
 No record stepped back. The moves when PLAYING appears, 0.50 s to 0.85 s,
 are the step of #87.

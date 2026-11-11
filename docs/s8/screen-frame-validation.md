@@ -13,16 +13,16 @@ RGB565, big-endian.** Both the observed 32-byte run-length frames and one full
 uncompressed LITERAL frame display correctly on both panels. The `0xF8`
 feature report is not needed: phase 3 did not run.
 
-| Question | Result |
-| -------- | ------ |
-| `BLACK_0` replay, byte for byte | Left panel black |
-| Screen byte | `00` left, `01` right, in header byte 2 and footer byte 6 |
-| Colour order | RGB565: `F8 00` shows red, not blue; the RGB-encoded pattern's bars match their labels |
-| Full LITERAL frame (261,148 bytes) | Displays correctly on both panels, about 16 ms per transfer |
-| Init (`0xF8` on interface 5) | Not needed |
-| After release, agent still stopped | The last frame stays on the panels |
-| After `open -g` relaunch | The agent redraws Controller Editor labels on both panels; Djay reacts to left PLAY |
-| Side effects | No LED or audio change, no re-enumeration, HID input continued |
+| Question                           | Result                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `BLACK_0` replay, byte for byte    | Left panel black                                                                       |
+| Screen byte                        | `00` left, `01` right, in header byte 2 and footer byte 6                              |
+| Colour order                       | RGB565: `F8 00` shows red, not blue; the RGB-encoded pattern's bars match their labels |
+| Full LITERAL frame (261,148 bytes) | Displays correctly on both panels, about 16 ms per transfer                            |
+| Init (`0xF8` on interface 5)       | Not needed                                                                             |
+| After release, agent still stopped | The last frame stays on the panels                                                     |
+| After `open -g` relaunch           | The agent redraws Controller Editor labels on both panels; Djay reacts to left PLAY    |
+| Side effects                       | No LED or audio change, no re-enumeration, HID input continued                         |
 
 Photos of every step were taken at the S8; they stay on the tester's phone
 and are not part of the repository.
@@ -39,12 +39,12 @@ HID and every `Kontrol S8` MIDI endpoint. Runs on 2026-10-28 with
 
 ## Phase 2: first frames
 
-| Step | Bytes | SHA-256 | Transfer | Panels |
-| ---- | ----- | ------- | -------- | ------ |
-| Black, left | `84000060000000000000000001e001100100ff00000000000300000040000000` | `4dac8e38…` | 32 of 32, OK | Left black, right unchanged |
-| `F8 00`, left | `84000060000000000000000001e001100100ff00f800f8000300000040000000` | `37e8ba5f…` | 32 of 32, OK | Left solid light orange/peach, right unchanged |
-| Black, right | `84000160000000000000000001e001100100ff00000000000300000040000100` | `a7cf0dc7…` | 32 of 32, OK | Right black, left still orange |
-| `F8 00`, right | `84000160000000000000000001e001100100ff00f800f8000300000040000100` | `222117be…` | 32 of 32, OK | Right the same orange/peach as left |
+| Step           | Bytes                                                              | SHA-256     | Transfer     | Panels                                         |
+| -------------- | ------------------------------------------------------------------ | ----------- | ------------ | ---------------------------------------------- |
+| Black, left    | `84000060000000000000000001e001100100ff00000000000300000040000000` | `4dac8e38…` | 32 of 32, OK | Left black, right unchanged                    |
+| `F8 00`, left  | `84000060000000000000000001e001100100ff00f800f8000300000040000000` | `37e8ba5f…` | 32 of 32, OK | Left solid light orange/peach, right unchanged |
+| Black, right   | `84000160000000000000000001e001100100ff00000000000300000040000100` | `a7cf0dc7…` | 32 of 32, OK | Right black, left still orange                 |
+| `F8 00`, right | `84000160000000000000000001e001100100ff00f800f8000300000040000100` | `222117be…` | 32 of 32, OK | Right the same orange/peach as left            |
 
 - The left black frame is the observed `BLACK_0` payload; the tool checks
   that its frame builder reproduces it exactly.
@@ -58,9 +58,9 @@ HID and every `Kontrol S8` MIDI endpoint. Runs on 2026-10-28 with
 
 ## Phase 4: full frame
 
-| Step | Bytes | SHA-256 | Transfer | Panels |
-| ---- | ----- | ------- | -------- | ------ |
-| Pattern, left | 261,148 | `bd568210d97edd6e93e826b5560d771c84adab3fe3ebcb8f9a342ffa42c138e4` | 261,148 of 261,148, OK, 16 ms | Left exactly as intended, right unchanged |
+| Step           | Bytes   | SHA-256                                                            | Transfer                      | Panels                                            |
+| -------------- | ------- | ------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------- |
+| Pattern, left  | 261,148 | `bd568210d97edd6e93e826b5560d771c84adab3fe3ebcb8f9a342ffa42c138e4` | 261,148 of 261,148, OK, 16 ms | Left exactly as intended, right unchanged         |
 | Pattern, right | 261,148 | `43f8d9ea9844cc5b1196fee734e64027a888f53fde19f781005df7433883148d` | 261,148 of 261,148, OK, 16 ms | Right exactly as intended, left still its pattern |
 
 The frame is the 16-byte header, one `00 00 FF 00` LITERAL command, 480×272
@@ -79,23 +79,23 @@ comparison with photos.
 Counts from the passive recorder. Each frame window holds one left PLAY press
 and release after the frame.
 
-| Window | Phase 2 HID report 1 | Phase 4 HID report 1 | MIDI on `Traktor Kontrol S8 Input` |
-| ------ | -------------------- | -------------------- | ---------------------------------- |
-| Baseline | 2 | 2 | PLAY ch 1 CC 10 on/off |
-| Agent stopped | 2 | 2 | port gone |
-| Each frame | 2 | 2 | port gone |
-| Recover | 4 | 2 | PLAY ch 1 CC 10 on/off (phase 2: twice); Djay reacted |
+| Window        | Phase 2 HID report 1 | Phase 4 HID report 1 | MIDI on `Traktor Kontrol S8 Input`                    |
+| ------------- | -------------------- | -------------------- | ----------------------------------------------------- |
+| Baseline      | 2                    | 2                    | PLAY ch 1 CC 10 on/off                                |
+| Agent stopped | 2                    | 2                    | port gone                                             |
+| Each frame    | 2                    | 2                    | port gone                                             |
+| Recover       | 4                    | 2                    | PLAY ch 1 CC 10 on/off (phase 2: twice); Djay reacted |
 
 [INFERENCE] The second PLAY in the phase 2 recovery window paused the deck
 again.
 
 ## Interface ownership
 
-| Snapshot | Interface 6 | Device registry id |
-| -------- | ----------- | ------------------ |
-| Before, agent running | NIHardwareAgent | `0x1138e6119` |
-| Agent stopped, and 1 s after each frame | no client | `0x1138e6119` |
-| Recovered + 5 s | NIHardwareAgent (new pid) | `0x1138e6119` |
+| Snapshot                                | Interface 6               | Device registry id |
+| --------------------------------------- | ------------------------- | ------------------ |
+| Before, agent running                   | NIHardwareAgent           | `0x1138e6119`      |
+| Agent stopped, and 1 s after each frame | no client                 | `0x1138e6119`      |
+| Recovered + 5 s                         | NIHardwareAgent (new pid) | `0x1138e6119`      |
 
 The S8 did not re-enumerate in either run.
 

@@ -12,17 +12,17 @@ nothing selected in the sidebar table. Only tabs and selection were touched;
 nothing was loaded, queued or played. A separate read-only probe
 (`examples/djay-sidebar-probe.swift --watch`) logged what djay showed.
 
-| Line fed | Observed in djay |
-| --- | --- |
-| `S8_CONTROL display_button left 3 down` | Queue tab selected |
-| `S8_CONTROL display_button left 3 up` | no change |
-| `S8_CONTROL display_button left 7 down` | Info tab selected, Info sub-tab, track Diwali |
-| `S8_CONTROL display_button right 3 down` | Info > Related selected |
-| `S8_CONTROL display_button right 2 down` | Info sub-tab selected again |
-| `S8_CONTROL display_button left 2 down` | Library tab selected |
-| `S8_CONTROL screen_encoder left 1 100` | sidebar row 1 (second track, Cheeni) selected, two rows from no selection |
-| `S8_CONTROL screen_encoder left 1 -50` | sidebar row 0 (Anybody) selected |
-| `S8_CONTROL screen_encoder right 2 20` | no change (under 50 counts) |
+| Line fed                                 | Observed in djay                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------- |
+| `S8_CONTROL display_button left 3 down`  | Queue tab selected                                                        |
+| `S8_CONTROL display_button left 3 up`    | no change                                                                 |
+| `S8_CONTROL display_button left 7 down`  | Info tab selected, Info sub-tab, track Diwali                             |
+| `S8_CONTROL display_button right 3 down` | Info > Related selected                                                   |
+| `S8_CONTROL display_button right 2 down` | Info sub-tab selected again                                               |
+| `S8_CONTROL display_button left 2 down`  | Library tab selected                                                      |
+| `S8_CONTROL screen_encoder left 1 100`   | sidebar row 1 (second track, Cheeni) selected, two rows from no selection |
+| `S8_CONTROL screen_encoder left 1 -50`   | sidebar row 0 (Anybody) selected                                          |
+| `S8_CONTROL screen_encoder right 2 20`   | no change (under 50 counts)                                               |
 
 Also seen: the script's own lines (`fake bridge started: --device s8 --midi
 full --until-stopped --app-events`, `fake bridge done`) were passed through to
@@ -53,25 +53,25 @@ holds the bridge's own log of the buttons and encoder touches.
 
 The "Reported" column is the user's answer, unchanged.
 
-| Row | Action | Expected | Reported |
-| --- | --- | --- | --- |
-| 1 | Left screen encoder 1, one small click, first movement after start: did the selection jump? | at most one row | "yes"; asked again after the run: "1 row" |
-| 2 | Left button 3 | Queue | "Queue" |
-| 3 | Hold and release left button 3: did the release change anything? | no | "no" |
-| 4 | Left button 5 | Match | "Match" |
-| 5 | Left button 6 | History | "History" |
-| 6 | Left button 7 | Info | "Info" |
-| 7 | Right button 3 | Info > Related | "Info > Related" |
-| 8 | Right button 2 | Info sub-tab | "Info sub-tab" |
-| 9 | Left button 2 | Library | "Library" |
-| 10 | Left button 8, right buttons 5, 6, 7, 8: any change in djay? | no | "no" |
-| 11 | Buttons 1 and 4 on both sides, agent stopped: any change in djay or on the panels? | no | "no" |
-| 12 | Left encoders 1 to 4: which moved the selection down on clockwise? | all four | "all four" |
-| 13 | Right encoders 1 to 4: which moved down on clockwise? | all four | "all four" |
-| 14 | 20 rows per full turn: too fast, too slow or right? | – | "right" |
-| 15 | Fast spin through a long list: keep up, lag or stop? | – | "it lags a little bit" |
-| 16 | Select a row with an encoder in Queue or History, then load or queue it | acts on that row | "i pushed the right Browse encoder and it loaded on Deck B as expected" |
-| 17 | Did either panel change since the agent stop? | no | "no" |
+| Row | Action                                                                                      | Expected         | Reported                                                                |
+| --- | ------------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------- |
+| 1   | Left screen encoder 1, one small click, first movement after start: did the selection jump? | at most one row  | "yes"; asked again after the run: "1 row"                               |
+| 2   | Left button 3                                                                               | Queue            | "Queue"                                                                 |
+| 3   | Hold and release left button 3: did the release change anything?                            | no               | "no"                                                                    |
+| 4   | Left button 5                                                                               | Match            | "Match"                                                                 |
+| 5   | Left button 6                                                                               | History          | "History"                                                               |
+| 6   | Left button 7                                                                               | Info             | "Info"                                                                  |
+| 7   | Right button 3                                                                              | Info > Related   | "Info > Related"                                                        |
+| 8   | Right button 2                                                                              | Info sub-tab     | "Info sub-tab"                                                          |
+| 9   | Left button 2                                                                               | Library          | "Library"                                                               |
+| 10  | Left button 8, right buttons 5, 6, 7, 8: any change in djay?                                | no               | "no"                                                                    |
+| 11  | Buttons 1 and 4 on both sides, agent stopped: any change in djay or on the panels?          | no               | "no"                                                                    |
+| 12  | Left encoders 1 to 4: which moved the selection down on clockwise?                          | all four         | "all four"                                                              |
+| 13  | Right encoders 1 to 4: which moved down on clockwise?                                       | all four         | "all four"                                                              |
+| 14  | 20 rows per full turn: too fast, too slow or right?                                         | –                | "right"                                                                 |
+| 15  | Fast spin through a long list: keep up, lag or stop?                                        | –                | "it lags a little bit"                                                  |
+| 16  | Select a row with an encoder in Queue or History, then load or queue it                     | acts on that row | "i pushed the right Browse encoder and it loaded on Deck B as expected" |
+| 17  | Did either panel change since the agent stop?                                               | no               | "no"                                                                    |
 
 After the rows:
 

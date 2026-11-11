@@ -8,12 +8,12 @@ the runner. Each step ran
 `s8-screen-feed | bridge --device s8 --midi full --s8-screens-stdin --until-stopped`
 from a release build.
 
-| Run | Capture | Steps |
-| --- | --- | --- |
-| 1 | [captures/screen-transport-20261110T162556Z](captures/screen-transport-20261110T162556Z/) | a, b, c (c not judged) |
-| 2 | [captures/screen-transport-20261110T163759Z](captures/screen-transport-20261110T163759Z/) | c to i, started with the first-step argument |
-| 3 | [captures/screen-transport-20261110T164659Z](captures/screen-transport-20261110T164659Z/) | i again |
-| 4 | [captures/screen-transport-20261110T170222Z](captures/screen-transport-20261110T170222Z/) | i with the fix |
+| Run | Capture                                                                                   | Steps                                        |
+| --- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | [captures/screen-transport-20261110T162556Z](captures/screen-transport-20261110T162556Z/) | a, b, c (c not judged)                       |
+| 2   | [captures/screen-transport-20261110T163759Z](captures/screen-transport-20261110T163759Z/) | c to i, started with the first-step argument |
+| 3   | [captures/screen-transport-20261110T164659Z](captures/screen-transport-20261110T164659Z/) | i again                                      |
+| 4   | [captures/screen-transport-20261110T170222Z](captures/screen-transport-20261110T170222Z/) | i with the fix                               |
 
 Per step the capture holds the record hashes of the dry run (`.dry`), the
 bridge output (`.txt`) and the feeder's stderr (`.feeder.txt`); `notes.txt`
@@ -24,19 +24,19 @@ holds the prompts and the user's answers.
 "Status" and "Exit" come from the bridge output. "Reported" is the user's
 answer to the runner's question, unchanged. No photos were taken.
 
-| Step | Stream | Status lines | Exit, time | Question | Reported |
-| --- | --- | --- | --- | --- | --- |
-| a-left-10 | left, 10 fps, 50 frames, hold 5 s | pending, active, inactive | 0, 10 s | left panel: moving bar, counter ends at 49 and holds 5 s, then black; right panel unchanged | "y" |
-| b-right-30 | right, 30 fps, 150 frames, hold 5 s | pending, active, inactive | 0, 10 s | right panel: steady bar, counter ends at 149 and holds 5 s, then black; left panel unchanged | "y" |
-| c-alternate-10 | both, 10 fps each, 50 frames each, hold 5 s | pending, active, inactive | 0, 10 s | both panels move, both counters end at 49 and hold, then both black; no panel shows the other's title | run 1: "run it again" (only one panel was watched); run 2: "y" |
-| d-alternate-30 | both, 30 fps each, 150 frames each, hold 5 s | pending, active, inactive | 0, 10 s | both panels steady, both counters end at 149, then both black; any tearing or flicker? | "y"; asked again after the run: "no tearing or flicker" |
-| e-over-cap | left, 60 fps, 180 frames, hold 5 s | pending, active, inactive | 0, 8 s | left panel: bar moves in visible jumps but the counter ends at 179, then black | "y" |
-| f-stall | left, 10 fps, 30 frames, hold 15 s | pending, active, inactive | 0, 18 s | left panel kept frame 29 unchanged and without flicker for the 15 s after the feeder stopped, then went black | "y" |
-| g-eof | both, 10 fps each, 30 frames each, no hold | pending, active, inactive | 0, 3 s | both panels went black within about a second of the last frame and the bridge exited by itself | "y" |
-| h-bad-record | left, 10 fps, 20 frames, then 12 bytes that are no record, hold 5 s | pending, active, `failed bad record magic [4e, 4f, 50, 45]` | 0, 7 s | left panel counted to 19, then went black at once; the bridge kept running until the 5 s hold ended | "y" |
-| i-ctrl-c, run 2 | left, 10 fps, 600 frames (60 s), Ctrl-C asked after 5 s or more | pending, active, inactive | 0, 60 s | the bar was moving; after Ctrl-C the left panel went black and the bridge exited | "y" |
-| i-ctrl-c, run 3 | the same | pending, active | 134, 12 s | not asked: the runner stopped on the status order | – |
-| i-ctrl-c, run 4 | the same, with the fix | pending, active, inactive | 0, 13 s | the same | "S8_SCREEN_STATUS inactive. the bar was moving, after ctrl-c, the left panel went black and the bridge exited. right panel still shows Controller Editor labels" |
+| Step            | Stream                                                              | Status lines                                                | Exit, time | Question                                                                                                      | Reported                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------- | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a-left-10       | left, 10 fps, 50 frames, hold 5 s                                   | pending, active, inactive                                   | 0, 10 s    | left panel: moving bar, counter ends at 49 and holds 5 s, then black; right panel unchanged                   | "y"                                                                                                                                                              |
+| b-right-30      | right, 30 fps, 150 frames, hold 5 s                                 | pending, active, inactive                                   | 0, 10 s    | right panel: steady bar, counter ends at 149 and holds 5 s, then black; left panel unchanged                  | "y"                                                                                                                                                              |
+| c-alternate-10  | both, 10 fps each, 50 frames each, hold 5 s                         | pending, active, inactive                                   | 0, 10 s    | both panels move, both counters end at 49 and hold, then both black; no panel shows the other's title         | run 1: "run it again" (only one panel was watched); run 2: "y"                                                                                                   |
+| d-alternate-30  | both, 30 fps each, 150 frames each, hold 5 s                        | pending, active, inactive                                   | 0, 10 s    | both panels steady, both counters end at 149, then both black; any tearing or flicker?                        | "y"; asked again after the run: "no tearing or flicker"                                                                                                          |
+| e-over-cap      | left, 60 fps, 180 frames, hold 5 s                                  | pending, active, inactive                                   | 0, 8 s     | left panel: bar moves in visible jumps but the counter ends at 179, then black                                | "y"                                                                                                                                                              |
+| f-stall         | left, 10 fps, 30 frames, hold 15 s                                  | pending, active, inactive                                   | 0, 18 s    | left panel kept frame 29 unchanged and without flicker for the 15 s after the feeder stopped, then went black | "y"                                                                                                                                                              |
+| g-eof           | both, 10 fps each, 30 frames each, no hold                          | pending, active, inactive                                   | 0, 3 s     | both panels went black within about a second of the last frame and the bridge exited by itself                | "y"                                                                                                                                                              |
+| h-bad-record    | left, 10 fps, 20 frames, then 12 bytes that are no record, hold 5 s | pending, active, `failed bad record magic [4e, 4f, 50, 45]` | 0, 7 s     | left panel counted to 19, then went black at once; the bridge kept running until the 5 s hold ended           | "y"                                                                                                                                                              |
+| i-ctrl-c, run 2 | left, 10 fps, 600 frames (60 s), Ctrl-C asked after 5 s or more     | pending, active, inactive                                   | 0, 60 s    | the bar was moving; after Ctrl-C the left panel went black and the bridge exited                              | "y"                                                                                                                                                              |
+| i-ctrl-c, run 3 | the same                                                            | pending, active                                             | 134, 12 s  | not asked: the runner stopped on the status order                                                             | –                                                                                                                                                                |
+| i-ctrl-c, run 4 | the same, with the fix                                              | pending, active, inactive                                   | 0, 13 s    | the same                                                                                                      | "S8_SCREEN_STATUS inactive. the bar was moving, after ctrl-c, the left panel went black and the bridge exited. right panel still shows Controller Editor labels" |
 
 After the steps, in runs 1 and 2:
 

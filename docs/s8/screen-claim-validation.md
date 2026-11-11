@@ -11,15 +11,15 @@ claim interface 6 and release it, and nothing else is disturbed: the S8 did
 not re-enumerate, HID input kept flowing, panels, LEDs and audio did not
 change, and the agent took interface 6 back on relaunch.
 
-| Part | Result |
-| ---- | ------ |
-| Claim with the agent stopped | Succeeded in 5 ms, tool exit 0 |
-| Interface 6 owner during the hold | `s8-screen-claim` only |
-| Release | Interface 6 had no client 1 s after release |
-| HID input during and after the hold | Continued |
-| Panels, LEDs, audio | No change reported |
-| Re-enumeration | None: same device registry id throughout |
-| Recovery with `open -g` | Verified: interfaces, labels, MIDI and Djay PLAY |
+| Part                                | Result                                           |
+| ----------------------------------- | ------------------------------------------------ |
+| Claim with the agent stopped        | Succeeded in 5 ms, tool exit 0                   |
+| Interface 6 owner during the hold   | `s8-screen-claim` only                           |
+| Release                             | Interface 6 had no client 1 s after release      |
+| HID input during and after the hold | Continued                                        |
+| Panels, LEDs, audio                 | No change reported                               |
+| Re-enumeration                      | None: same device registry id throughout         |
+| Recovery with `open -g`             | Verified: interfaces, labels, MIDI and Djay PLAY |
 
 ## Setup
 
@@ -41,13 +41,13 @@ stayed outside the repository.
 The tool ran in the claim window. Stop: agent killed, before the claim.
 Released: after the claim, before recovery.
 
-| Window | Presses asked | HID report 1 | MIDI on `Traktor Kontrol S8 Input` |
-| ------ | ------------- | ------------ | ---------------------------------- |
-| Baseline | PLAY, CUE A, pad 1 | 6 | PLAY ch 1 CC 10 on/off, pad 1 ch 1 CC 15 on/off |
-| Stop | PLAY, CUE A, pad 1 | 6 | port gone |
-| Claim (5 s) | PLAY, CUE A, pad 1 | 2 | port gone |
-| Released | PLAY, CUE A, pad 1 | 10 | port gone |
-| Recover | PLAY | 2 | PLAY ch 1 CC 10 on/off; Djay reacted |
+| Window      | Presses asked      | HID report 1 | MIDI on `Traktor Kontrol S8 Input`              |
+| ----------- | ------------------ | ------------ | ----------------------------------------------- |
+| Baseline    | PLAY, CUE A, pad 1 | 6            | PLAY ch 1 CC 10 on/off, pad 1 ch 1 CC 15 on/off |
+| Stop        | PLAY, CUE A, pad 1 | 6            | port gone                                       |
+| Claim (5 s) | PLAY, CUE A, pad 1 | 2            | port gone                                       |
+| Released    | PLAY, CUE A, pad 1 | 10           | port gone                                       |
+| Recover     | PLAY               | 2            | PLAY ch 1 CC 10 on/off; Djay reacted            |
 
 - The claim window holds one press and release. The hold is only 5 s and the
   window ends when the tool exits; [INFERENCE] the remaining presses landed
@@ -57,12 +57,12 @@ Released: after the claim, before recovery.
 
 ## Interface ownership
 
-| Interface | Agent stopped | Claim + 2 s | Released + 1 s | Recovered + 5 s |
-| --------- | ------------- | ----------- | -------------- | --------------- |
-| 3 MIDI | `MIDIServer` | `MIDIServer` | `MIDIServer` | `MIDIServer` |
-| 5 HID | recorder | recorder | recorder | recorder, NIHardwareAgent |
-| 6 BD | no client | `s8-screen-claim` | no client | NIHardwareAgent |
-| Device | `MIDIServer` | `MIDIServer`, `s8-screen-claim` | `MIDIServer` | `MIDIServer`, 2× NIHardwareAgent |
+| Interface | Agent stopped | Claim + 2 s                     | Released + 1 s | Recovered + 5 s                  |
+| --------- | ------------- | ------------------------------- | -------------- | -------------------------------- |
+| 3 MIDI    | `MIDIServer`  | `MIDIServer`                    | `MIDIServer`   | `MIDIServer`                     |
+| 5 HID     | recorder      | recorder                        | recorder       | recorder, NIHardwareAgent        |
+| 6 BD      | no client     | `s8-screen-claim`               | no client      | NIHardwareAgent                  |
+| Device    | `MIDIServer`  | `MIDIServer`, `s8-screen-claim` | `MIDIServer`   | `MIDIServer`, 2× NIHardwareAgent |
 
 The device registry id stayed `0x1138e6119` in every snapshot. Brave Browser
 and ChatGPT held device user clients throughout, as in phase 0.

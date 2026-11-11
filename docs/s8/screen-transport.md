@@ -45,13 +45,13 @@ S8_CONTROL screen_encoder <left|right> <1-4> <signed delta in counts>
 The app writes records to the bridge's stdin. Records are back to back with
 no padding. A record is a 12-byte header followed by the payload.
 
-| Offset | Size | Field                                              |
-| -----: | ---: | -------------------------------------------------- |
-|      0 |    4 | ASCII `S8FR` (`53 38 46 52`)                       |
-|      4 |    1 | panel: `0` left, `1` right                         |
-|      5 |    3 | zero                                               |
-|      8 |    4 | payload length, `u32` little-endian, `261120`      |
-|     12 |261120| 480 × 272 pixels, RGB565 big-endian, row-major from the top left |
+| Offset |   Size | Field                                                            |
+| -----: | -----: | ---------------------------------------------------------------- |
+|      0 |      4 | ASCII `S8FR` (`53 38 46 52`)                                     |
+|      4 |      1 | panel: `0` left, `1` right                                       |
+|      5 |      3 | zero                                                             |
+|      8 |      4 | payload length, `u32` little-endian, `261120`                    |
+|     12 | 261120 | 480 × 272 pixels, RGB565 big-endian, row-major from the top left |
 
 Pixels are two bytes each (`PIXEL_BYTES` = 480 × 272 × 2 = 261 120). The
 bridge adds the framing itself (header, the full-panel literal
@@ -93,12 +93,12 @@ S8_SCREEN_STATUS failed <reason>
 
 `<reason>` is one line (control characters are replaced by spaces).
 
-| State      | Meaning                                                        |
-| ---------- | -------------------------------------------------------------- |
-| `pending`  | Flag set, nothing claimed. Printed once at start.              |
-| `active`   | The device accepted the first frame. Printed once.             |
-| `inactive` | Exit frames sent and the interface released cleanly.           |
-| `failed`   | A claim or transfer failed, or a protocol error. Final state.  |
+| State      | Meaning                                                       |
+| ---------- | ------------------------------------------------------------- |
+| `pending`  | Flag set, nothing claimed. Printed once at start.             |
+| `active`   | The device accepted the first frame. Printed once.            |
+| `inactive` | Exit frames sent and the interface released cleanly.          |
+| `failed`   | A claim or transfer failed, or a protocol error. Final state. |
 
 Order: `pending`, then `active` once the first transfer succeeds, then
 exactly one of `inactive` or `failed`. A failure before the first frame goes

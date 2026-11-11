@@ -6,16 +6,16 @@ longer match.
 
 ## Device identity
 
-| Location                          | Assumption                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `src/main.rs:27-28`               | `S4_VENDOR_ID = 0x17cc`, `S4_PRODUCT_ID = 0x1720`                           |
-| `src/main.rs:194-195, 226`        | HID enumeration filters on the S4 constants                                 |
-| `src/main.rs:657, 700, 803`       | `registry.find(S4_VENDOR_ID, S4_PRODUCT_ID)` for full, probe and stage paths |
-| `src/full/mod.rs:1300, 1380`      | Test helpers use the same lookup                                            |
-| `src/screens.rs:159`              | Literal `0x17cc`/`0x1720`, requires exactly one device                      |
-| `src/jog_diagnostic/live.rs:184`  | Literal `0x17cc`/`0x1720`                                                   |
-| `src/midi.rs:10`                  | Minimal profile endpoint `S4 MK3 MIDI`                                      |
-| `src/full/mapping.rs:18`          | Full profile endpoint `S4 MK3 MIDI Full`                                    |
+| Location                         | Assumption                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `src/main.rs:27-28`              | `S4_VENDOR_ID = 0x17cc`, `S4_PRODUCT_ID = 0x1720`                            |
+| `src/main.rs:194-195, 226`       | HID enumeration filters on the S4 constants                                  |
+| `src/main.rs:657, 700, 803`      | `registry.find(S4_VENDOR_ID, S4_PRODUCT_ID)` for full, probe and stage paths |
+| `src/full/mod.rs:1300, 1380`     | Test helpers use the same lookup                                             |
+| `src/screens.rs:159`             | Literal `0x17cc`/`0x1720`, requires exactly one device                       |
+| `src/jog_diagnostic/live.rs:184` | Literal `0x17cc`/`0x1720`                                                    |
+| `src/midi.rs:10`                 | Minimal profile endpoint `S4 MK3 MIDI`                                       |
+| `src/full/mapping.rs:18`         | Full profile endpoint `S4 MK3 MIDI Full`                                     |
 
 ## Input layout
 

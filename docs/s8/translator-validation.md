@@ -7,24 +7,24 @@ LED report, feature request, control transfer or screen traffic.
 
 ## Status
 
-| Part | Result |
-| ---- | ------ |
-| Translator against the catalog | Unit tests, including a replay of the captured reports through the real decoder |
-| Startup with the S8 connected | Run once, unattended: MIDI source created, HID opened, no input in 3 s |
-| MIDI from physical controls | Five attended checks, 2026-11-10. The user went down the checklist and states that every row not reported as broken works; see [Results](#results) |
-| Djay reaction with the generated mapping | As above. Open: CAPTURE |
-| Touchstrip | Reported coarse after the fourth check; reported working in the fifth, including a small back-and-forth motion on the left strip, with no change to the bridge. See [Touchstrip](#touchstrip) |
-| Shift + touchstrip | Reported working for broad motion in the earlier checks; not repeated in the fifth |
-| CAPTURE | Triggers "Record Sample" with no visible result in the sampler (first check). Deferred |
-| Pad-mode notes, FX slots 1 and 2, FX buttons, dial 4, BACK, FX SELECT, TEMPO | Reported working in the second check |
-| FX dial 3 | Reported working in the third check, after a full sweep |
-| REMIX toggling the sampler | Reported working in the third check |
-| CUE VOL, CUE MIX | Reported working in Djay after the third check |
-| BOOTH | Reported visible in Djay's MIDI configuration; **audio not checked** |
-| LOOP, Shift + HOTCUE, QUANTIZE | Reported working in the fourth check |
-| SNAP, MIC 2 | Reported visible in Djay's MIDI configuration in the fourth check |
-| MAIN | Reported working in Djay with the mapping regenerated after the fourth check |
-| Behaviour with NIHardwareAgent running | **Not checked** |
+| Part                                                                         | Result                                                                                                                                                                                        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Translator against the catalog                                               | Unit tests, including a replay of the captured reports through the real decoder                                                                                                               |
+| Startup with the S8 connected                                                | Run once, unattended: MIDI source created, HID opened, no input in 3 s                                                                                                                        |
+| MIDI from physical controls                                                  | Five attended checks, 2026-11-10. The user went down the checklist and states that every row not reported as broken works; see [Results](#results)                                            |
+| Djay reaction with the generated mapping                                     | As above. Open: CAPTURE                                                                                                                                                                       |
+| Touchstrip                                                                   | Reported coarse after the fourth check; reported working in the fifth, including a small back-and-forth motion on the left strip, with no change to the bridge. See [Touchstrip](#touchstrip) |
+| Shift + touchstrip                                                           | Reported working for broad motion in the earlier checks; not repeated in the fifth                                                                                                            |
+| CAPTURE                                                                      | Triggers "Record Sample" with no visible result in the sampler (first check). Deferred                                                                                                        |
+| Pad-mode notes, FX slots 1 and 2, FX buttons, dial 4, BACK, FX SELECT, TEMPO | Reported working in the second check                                                                                                                                                          |
+| FX dial 3                                                                    | Reported working in the third check, after a full sweep                                                                                                                                       |
+| REMIX toggling the sampler                                                   | Reported working in the third check                                                                                                                                                           |
+| CUE VOL, CUE MIX                                                             | Reported working in Djay after the third check                                                                                                                                                |
+| BOOTH                                                                        | Reported visible in Djay's MIDI configuration; **audio not checked**                                                                                                                          |
+| LOOP, Shift + HOTCUE, QUANTIZE                                               | Reported working in the fourth check                                                                                                                                                          |
+| SNAP, MIC 2                                                                  | Reported visible in Djay's MIDI configuration in the fourth check                                                                                                                             |
+| MAIN                                                                         | Reported working in Djay with the mapping regenerated after the fourth check                                                                                                                  |
+| Behaviour with NIHardwareAgent running                                       | **Not checked**                                                                                                                                                                               |
 
 Each attended check ran against the layout of its time, and the layout
 changed after each in response. The rows changed after a check were reported
@@ -102,6 +102,7 @@ check with Ctrl-C, open Controller Editor and start again
 
    This writes `Kontrol S8 Bridge.djayMidiMapping`. An existing file with that
    name is not overwritten.
+
 2. Stop NIHardwareAgent. While it runs, it also turns S8 input into MIDI for
    the Controller Editor template, so Djay would receive two sets of commands.
    Restore it afterwards with
@@ -112,6 +113,7 @@ check with Ctrl-C, open Controller Editor and start again
        cargo run --locked -- --device s8 --midi full --until-stopped
 
    Expect `MIDI_FULL_READY port="Kontrol S8 MIDI Full"` and `S8_HID_OPEN`.
+
 4. In Djay, open the MIDI settings, choose `Kontrol S8 MIDI Full` and confirm
    that it uses `Kontrol S8 Bridge`.
 5. Load a track on every deck. Move one control on each side and one mixer
@@ -121,31 +123,31 @@ check with Ctrl-C, open Controller Editor and start again
 
 Record pass, fail or not run for each row, per side where it applies.
 
-| # | Action | Expected in Djay |
-| - | ------ | ---------------- |
-| 1 | PLAY, CUE, SYNC on decks A and B | Play, cue and sync on the matching deck |
-| 2 | DECK on each side, then PLAY | The side controls C or D; PLAY acts on that deck |
-| 3 | Shift + a control with a Shift row | The Shift action in [mapping.md](mapping.md) |
-| 4 | HOTCUE, then pads 1-8 | Djay shows hot cue pads; hot cues set and jump |
-| 5 | Shift + HOTCUE, then pads 1-8; LOOP twice | Djay shows bounce loop pads and loops play while held; LOOP shows and hides the Looper without changing the pads |
-| 6 | FREEZE, then pads 1-8; then HOTCUE | Slicer opens and pads play slices; HOTCUE leaves the Slicer |
-| 7 | Shift + FREEZE | Slicer loop mode toggles |
-| 8 | REMIX, then pads 1-8; REMIX again | Sampler pads play and the sampler opens; the second press closes it |
-| 9 | Hold a pad, change pad mode, release | The held pad's action ends; no stuck note |
-| 10 | Loop encoder turn and press; Shift + turn and press | Loop length changes and the loop toggles; Shift skips and reloops |
-| 11 | Browse encoder turn and press; BACK, Shift + BACK, EDIT, FX SELECT | The library scrolls and the track loads into that side's deck; BACK switches the library table, Shift + BACK goes back; preview; FX SELECT expands or collapses the library |
-| 12 | FLUX, CAPTURE | Slip toggles; a sample records |
-| 13 | Touchstrip: touch, slide, release | Scratch motion while touched; nothing after release |
-| 14 | Shift + touchstrip | Seek |
-| 15 | TEMPO encoder and button | The selected deck's tempo changes and resets |
-| 16 | Channel faders, crossfader, EQ, gain, filter on all four channels | The matching mixer control follows |
-| 17 | FILTER ON off, turn the filter knob, FILTER ON on | Filter stays neutral while off, then jumps to the knob |
-| 18 | Crossfader assign switches, three positions per channel | Channel assigned left, through or right |
-| 19 | CUE on each mixer channel; MIC | Pre-listen toggles on that channel; the microphone toggles |
-| 20 | FX buttons and dials 1-3, button and dial 4, then a mixer FX button, then the dials again | Slots 1-3 switch on and follow their dial; button 4 toggles FX, dial 4 moves all three dry/wet; the FX of the newly chosen deck follows |
-| 21 | Stem faders and ON buttons, Shift + ON | Stem volume, mute and solo |
-| 22 | QUANTIZE; SNAP, MIC 2; display buttons, screen encoders | Quantize toggles; SNAP and MIC 2 appear in Djay's MIDI configuration and do nothing; no reaction to the rest |
-| 23 | Ctrl-C | The bridge stops; the `Kontrol S8 MIDI Full` source disappears |
+| #   | Action                                                                                    | Expected in Djay                                                                                                                                                            |
+| --- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | PLAY, CUE, SYNC on decks A and B                                                          | Play, cue and sync on the matching deck                                                                                                                                     |
+| 2   | DECK on each side, then PLAY                                                              | The side controls C or D; PLAY acts on that deck                                                                                                                            |
+| 3   | Shift + a control with a Shift row                                                        | The Shift action in [mapping.md](mapping.md)                                                                                                                                |
+| 4   | HOTCUE, then pads 1-8                                                                     | Djay shows hot cue pads; hot cues set and jump                                                                                                                              |
+| 5   | Shift + HOTCUE, then pads 1-8; LOOP twice                                                 | Djay shows bounce loop pads and loops play while held; LOOP shows and hides the Looper without changing the pads                                                            |
+| 6   | FREEZE, then pads 1-8; then HOTCUE                                                        | Slicer opens and pads play slices; HOTCUE leaves the Slicer                                                                                                                 |
+| 7   | Shift + FREEZE                                                                            | Slicer loop mode toggles                                                                                                                                                    |
+| 8   | REMIX, then pads 1-8; REMIX again                                                         | Sampler pads play and the sampler opens; the second press closes it                                                                                                         |
+| 9   | Hold a pad, change pad mode, release                                                      | The held pad's action ends; no stuck note                                                                                                                                   |
+| 10  | Loop encoder turn and press; Shift + turn and press                                       | Loop length changes and the loop toggles; Shift skips and reloops                                                                                                           |
+| 11  | Browse encoder turn and press; BACK, Shift + BACK, EDIT, FX SELECT                        | The library scrolls and the track loads into that side's deck; BACK switches the library table, Shift + BACK goes back; preview; FX SELECT expands or collapses the library |
+| 12  | FLUX, CAPTURE                                                                             | Slip toggles; a sample records                                                                                                                                              |
+| 13  | Touchstrip: touch, slide, release                                                         | Scratch motion while touched; nothing after release                                                                                                                         |
+| 14  | Shift + touchstrip                                                                        | Seek                                                                                                                                                                        |
+| 15  | TEMPO encoder and button                                                                  | The selected deck's tempo changes and resets                                                                                                                                |
+| 16  | Channel faders, crossfader, EQ, gain, filter on all four channels                         | The matching mixer control follows                                                                                                                                          |
+| 17  | FILTER ON off, turn the filter knob, FILTER ON on                                         | Filter stays neutral while off, then jumps to the knob                                                                                                                      |
+| 18  | Crossfader assign switches, three positions per channel                                   | Channel assigned left, through or right                                                                                                                                     |
+| 19  | CUE on each mixer channel; MIC                                                            | Pre-listen toggles on that channel; the microphone toggles                                                                                                                  |
+| 20  | FX buttons and dials 1-3, button and dial 4, then a mixer FX button, then the dials again | Slots 1-3 switch on and follow their dial; button 4 toggles FX, dial 4 moves all three dry/wet; the FX of the newly chosen deck follows                                     |
+| 21  | Stem faders and ON buttons, Shift + ON                                                    | Stem volume, mute and solo                                                                                                                                                  |
+| 22  | QUANTIZE; SNAP, MIC 2; display buttons, screen encoders                                   | Quantize toggles; SNAP and MIC 2 appear in Djay's MIDI configuration and do nothing; no reaction to the rest                                                                |
+| 23  | Ctrl-C                                                                                    | The bridge stops; the `Kontrol S8 MIDI Full` source disappears                                                                                                              |
 
 After the check, restore NIHardwareAgent and confirm that the panels show
 Controller Editor labels and that PLAY works with the existing setup.
@@ -160,15 +162,15 @@ HOTCUE, LOOP and REMIX sent nothing, FX SELECT was unassigned, BACK was
 reported that most controls worked and commented on the rows below. Rows not
 listed were not reported individually.
 
-| # | Reported | Follow-up |
-| - | -------- | --------- |
-| 7 | Works. The Slicer view cannot be closed from the S8 | HOTCUE and LOOP now send their pad-mode note |
-| 8 | Sampler pads work. The sampler does not open. REMIX, HOTCUE, LOOP and FREEZE do not show up in Djay's MIDI configuration | Pad-mode buttons now send notes; REMIX also sends `sampler.showSampler` |
-| 11 | Works. BACK is wanted as "Switch Library Table"; the user rebound it in Djay | BACK and Shift + BACK swapped |
-| 12 | Slip toggles. CAPTURE triggers "Record Sample" with no visible result in the sampler | Deferred, low priority |
-| 15 | Not run: the bridge log has no TEMPO encoder event | |
-| 20 | Button 1 was FX Active and dial 1 moved only FX 3 dry/wet; button and dial 2 were FX 1 | Slots moved to controls 1-3; dial 4 now sends one CC for all three dry/wet actions |
-| 22 | FX SELECT did nothing, as designed then | FX SELECT now toggles the library |
+| #   | Reported                                                                                                                 | Follow-up                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| 7   | Works. The Slicer view cannot be closed from the S8                                                                      | HOTCUE and LOOP now send their pad-mode note                                       |
+| 8   | Sampler pads work. The sampler does not open. REMIX, HOTCUE, LOOP and FREEZE do not show up in Djay's MIDI configuration | Pad-mode buttons now send notes; REMIX also sends `sampler.showSampler`            |
+| 11  | Works. BACK is wanted as "Switch Library Table"; the user rebound it in Djay                                             | BACK and Shift + BACK swapped                                                      |
+| 12  | Slip toggles. CAPTURE triggers "Record Sample" with no visible result in the sampler                                     | Deferred, low priority                                                             |
+| 15  | Not run: the bridge log has no TEMPO encoder event                                                                       |                                                                                    |
+| 20  | Button 1 was FX Active and dial 1 moved only FX 3 dry/wet; button and dial 2 were FX 1                                   | Slots moved to controls 1-3; dial 4 now sends one CC for all three dry/wet actions |
+| 22  | FX SELECT did nothing, as designed then                                                                                  | FX SELECT now toggles the library                                                  |
 
 Dial 1 moved only FX 3 because the translator sent the last of the dial's
 three CC numbers instead of all three.
@@ -179,14 +181,14 @@ Run by the user with `mise run s8:midi` and the revised mapping, in which
 REMIX sent `padModeSampler` and `sampler.showSampler` and Shift + REMIX sent
 `toggleSamplerShown`. Rows not listed were not reported.
 
-| # | Reported | Follow-up |
-| - | -------- | --------- |
-| 6 | Works: HOTCUE and LOOP leave the Slicer. The user still sees nothing in Djay's MIDI configuration when the pad-mode buttons are pressed | Not explained |
-| 8 | The sampler does not open. The bridge log has REMIX presses but none with Shift held, so `toggleSamplerShown` was not exercised | REMIX now sends `toggleSamplerShown` itself; `showSampler` and the Shift row are removed |
-| 11 | Works | |
-| 15 | Works | |
-| 20 | Buttons 1-3 and dials 1 and 2 work. Dial 3 does nothing. Dial 4 moves all three dry/wet. Button 4 toggles FX; accepted as is | Dial 3: see below |
-| 22 | FX SELECT works | |
+| #   | Reported                                                                                                                                | Follow-up                                                                                |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 6   | Works: HOTCUE and LOOP leave the Slicer. The user still sees nothing in Djay's MIDI configuration when the pad-mode buttons are pressed | Not explained                                                                            |
+| 8   | The sampler does not open. The bridge log has REMIX presses but none with Shift held, so `toggleSamplerShown` was not exercised         | REMIX now sends `toggleSamplerShown` itself; `showSampler` and the Shift row are removed |
+| 11  | Works                                                                                                                                   |                                                                                          |
+| 15  | Works                                                                                                                                   |                                                                                          |
+| 20  | Buttons 1-3 and dials 1 and 2 work. Dial 3 does nothing. Dial 4 moves all three dry/wet. Button 4 toggles FX; accepted as is            | Dial 3: see below                                                                        |
+| 22  | FX SELECT works                                                                                                                         |                                                                                          |
 
 The bridge read FX dial 3 throughout (337 reports, positions 0.50 to 0.96) and
 the mapping row for it matches dials 1 and 2. The dial never went below its
@@ -205,10 +207,10 @@ lost with the build cache, so the dial 3 figures above cannot be rechecked.
 Run by the user with the mapping regenerated after the second check. Rows
 not listed were not reported.
 
-| # | Reported | Follow-up |
-| - | -------- | --------- |
-| 8 | REMIX opens and closes the sampler | |
-| 20 | Dial 3 works after a sweep through its full range | Consistent with pickup; no change |
+| #   | Reported                                          | Follow-up                         |
+| --- | ------------------------------------------------- | --------------------------------- |
+| 8   | REMIX opens and closes the sampler                |                                   |
+| 20  | Dial 3 works after a sweep through its full range | Consistent with pickup; no change |
 
 The user then turned CUE VOL, CUE MIX and BOOTH in that order under
 `--device s8 --raw`. Report 2 changed at `[65..66]`, `[63..64]` and
@@ -232,10 +234,10 @@ the third check. The bridge log is
 `captures/translator-20261110T111803Z/bridge.log`. Rows not listed were not
 reported.
 
-| # | Reported | Follow-up |
-| - | -------- | --------- |
-| 5 | Shift + HOTCUE works. LOOP works, but its first press brought up Djay's "Crossfader assignment changed" dialog | The log shows that press in the first buttons report, together with the four crossfader assign positions, all middle. No change |
-| 22 | QUANTIZE works. SNAP and MIC 2 show up in Djay's MIDI configuration | |
+| #   | Reported                                                                                                       | Follow-up                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 5   | Shift + HOTCUE works. LOOP works, but its first press brought up Djay's "Crossfader assignment changed" dialog | The log shows that press in the first buttons report, together with the four crossfader assign positions, all middle. No change |
+| 22  | QUANTIZE works. SNAP and MIC 2 show up in Djay's MIDI configuration                                            |                                                                                                                                 |
 
 The user then turned MAIN under `--device s8 --raw`
 (`captures/2026-11-10-main-knob/`). Report 2 `[59..60]` swept 13 to 4082.
@@ -251,10 +253,10 @@ everything quickly, and that, to the best of their knowledge, every row not
 reported as broken works. On that statement all rows of the checklist are
 recorded as checked and working in Djay, with these exceptions:
 
-| # | State |
-| - | ----- |
-| 12 | CAPTURE: "Record Sample" triggers with no visible result. Deferred, unchanged since the first check |
-| 13, 14 | Touchstrip: works, but only for broad scrubbing. See below |
+| #      | State                                                                                               |
+| ------ | --------------------------------------------------------------------------------------------------- |
+| 12     | CAPTURE: "Record Sample" triggers with no visible result. Deferred, unchanged since the first check |
+| 13, 14 | Touchstrip: works, but only for broad scrubbing. See below                                          |
 
 The rows were tried quickly and not logged one by one, so this is a general
 statement by the user, not a per-row record. It does not cover the items
@@ -270,12 +272,12 @@ did not reproduce this, and its cause is not established.
 
 The generated mapping uses values close to Evan's mapping for this control:
 
-| Mapping | Action | Type | Flipped | Sensitivity | Acceleration |
-| ------- | ------ | ---- | ------- | ----------- | ------------ |
-| Evan 1.1, decks 1-4 | `scratchingMove` | `rotary-absolute` | yes | 16-20 | 9-14 |
-| Bridge | `scratchingMove` | `rotary-absolute` | yes | 18 | 11 |
-| Evan 1.1, second layer | `jogSeekMove` | `rotary-absolute` | no | 7.1-7.7 | 0 |
-| Bridge, Shift | `jogSeekMove` | `rotary-absolute` | no | 7.4 | 0 |
+| Mapping                | Action           | Type              | Flipped | Sensitivity | Acceleration |
+| ---------------------- | ---------------- | ----------------- | ------- | ----------- | ------------ |
+| Evan 1.1, decks 1-4    | `scratchingMove` | `rotary-absolute` | yes     | 16-20       | 9-14         |
+| Bridge                 | `scratchingMove` | `rotary-absolute` | yes     | 18          | 11           |
+| Evan 1.1, second layer | `jogSeekMove`    | `rotary-absolute` | no      | 7.1-7.7     | 0            |
+| Bridge, Shift          | `jogSeekMove`    | `rotary-absolute` | no      | 7.4         | 0            |
 
 An earlier version of this record explained the report by the 7-bit value
 the bridge sends, `(position - 1) >> 3`: one step is 8 units of the strip,
@@ -345,11 +347,11 @@ instructions asked, and ended at 13:06 UTC with NIHardwareAgent restored by
 the script. The bridge logs of the three starts that followed are in
 `captures/`:
 
-| Log | What it shows |
-| --- | ------------- |
-| `translator-20261110T131032Z` | HID opened. The first input is Shift, then BACK, 46 s after start; one second later the bridge ends with a HID read error |
+| Log                           | What it shows                                                                                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `translator-20261110T131032Z` | HID opened. The first input is Shift, then BACK, 46 s after start; one second later the bridge ends with a HID read error           |
 | `translator-20261110T131159Z` | HID opened, no input in 39 s, ended with Ctrl-C. The running Controller Editor process was started during this run, at 13:12:23 UTC |
-| `translator-20261110T131306Z` | HID opened, 747 input events in a minute |
+| `translator-20261110T131306Z` | HID opened, 747 input events in a minute                                                                                            |
 
 The cause is not established. The logs do not show whether the S8 was
 already dark before the script stopped the agent, or what SHIFT + BACK did

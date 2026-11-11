@@ -29,11 +29,11 @@ of this page needs approval.
      --bridge target/release/s4mk3-hid-midi-bridge --screens
    ```
 
-| Flag | Effect |
-| --- | --- |
-| `--screens` | Draw the panels. Without it S8Host behaves as in #51 and sends nothing to the S8. |
-| `--deck N` | Right panel shows deck N (1 to 4) instead of the selection ([deck-pages.md](deck-pages.md)). Needs `--screens`. |
-| `--poll SECONDS` | How often the sidebar is read without a control event. Default 1, minimum 0.1. |
+| Flag               | Effect                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `--screens`        | Draw the panels. Without it S8Host behaves as in #51 and sends nothing to the S8.                                       |
+| `--deck N`         | Right panel shows deck N (1 to 4) instead of the selection ([deck-pages.md](deck-pages.md)). Needs `--screens`.         |
+| `--poll SECONDS`   | How often the sidebar is read without a control event. Default 1, minimum 0.1.                                          |
 | `--log-deck-polls` | One stderr line per deck read with the time since the previous read started and how long the read took. Needs `--deck`. |
 
 With `--screens` S8Host starts the bridge with
@@ -45,23 +45,23 @@ The bridge's `S8_SCREEN_STATUS` lines are passed through to stdout.
 
 The pictures are the expected output for ten recorded states. Each state is
 one snapshot under `fixtures/panel-views/`, made from the sidebar snapshots
-#48 captured from djay (`fixtures/sidebar/`) with the selected row set by
-hand. They show the 13-track test library. The deck snapshot
+that issue #48 captured from djay (`fixtures/sidebar/`) with the selected row
+set by hand. They show the 13-track test library. The deck snapshot
 (`fixtures/panel-views/decks/10-deck.json`) is synthetic: its waveform, beats
 and cues are generated, not read from djay.
 
-| State | Left panel | Right panel |
-| --- | --- | --- |
-| `01-library`: Library tab, no sidebar row selected | ![01 left](images/panel-views/01-library-left.png) | ![01 right](images/panel-views/01-library-right.png) |
-| `02-library-selected`: third track selected | ![02 left](images/panel-views/02-library-selected-left.png) | ![02 right](images/panel-views/02-library-selected-right.png) |
-| `03-library-scrolled`: last track selected, list scrolled to keep it visible | ![03 left](images/panel-views/03-library-scrolled-left.png) | ![03 right](images/panel-views/03-library-scrolled-right.png) |
-| `04-queue`: Queue tab, empty queue | ![04 left](images/panel-views/04-queue-left.png) | ![04 right](images/panel-views/04-queue-right.png) |
-| `05-match`: Match tab; the right panel is unchanged, so no record is sent for it | ![05 left](images/panel-views/05-match-left.png) | ![05 right](images/panel-views/05-match-right.png) |
-| `06-history`: History tab, session track selected | ![06 left](images/panel-views/06-history-left.png) | ![06 right](images/panel-views/06-history-right.png) |
-| `07-info`: Info tab; right buttons 2 and 3 are labelled Info and Related | ![07 left](images/panel-views/07-info-left.png) | ![07 right](images/panel-views/07-info-right.png) |
-| `08-related`: Info > Related | ![08 left](images/panel-views/08-related-left.png) | ![08 right](images/panel-views/08-related-right.png) |
-| `09-sidebar-closed`: djay's sidebar is hidden | ![09 left](images/panel-views/09-sidebar-closed-left.png) | ![09 right](images/panel-views/09-sidebar-closed-right.png) |
-| `10-deck`: `--deck 1`, deck page on the right | ![10 left](images/panel-views/10-deck-left.png) | ![10 right](images/panel-views/10-deck-right.png) |
+| State                                                                            | Left panel                                                  | Right panel                                                   |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------- |
+| `01-library`: Library tab, no sidebar row selected                               | ![01 left](images/panel-views/01-library-left.png)          | ![01 right](images/panel-views/01-library-right.png)          |
+| `02-library-selected`: third track selected                                      | ![02 left](images/panel-views/02-library-selected-left.png) | ![02 right](images/panel-views/02-library-selected-right.png) |
+| `03-library-scrolled`: last track selected, list scrolled to keep it visible     | ![03 left](images/panel-views/03-library-scrolled-left.png) | ![03 right](images/panel-views/03-library-scrolled-right.png) |
+| `04-queue`: Queue tab, empty queue                                               | ![04 left](images/panel-views/04-queue-left.png)            | ![04 right](images/panel-views/04-queue-right.png)            |
+| `05-match`: Match tab; the right panel is unchanged, so no record is sent for it | ![05 left](images/panel-views/05-match-left.png)            | ![05 right](images/panel-views/05-match-right.png)            |
+| `06-history`: History tab, session track selected                                | ![06 left](images/panel-views/06-history-left.png)          | ![06 right](images/panel-views/06-history-right.png)          |
+| `07-info`: Info tab; right buttons 2 and 3 are labelled Info and Related         | ![07 left](images/panel-views/07-info-left.png)             | ![07 right](images/panel-views/07-info-right.png)             |
+| `08-related`: Info > Related                                                     | ![08 left](images/panel-views/08-related-left.png)          | ![08 right](images/panel-views/08-related-right.png)          |
+| `09-sidebar-closed`: djay's sidebar is hidden                                    | ![09 left](images/panel-views/09-sidebar-closed-left.png)   | ![09 right](images/panel-views/09-sidebar-closed-right.png)   |
+| `10-deck`: `--deck 1`, deck page on the right                                    | ![10 left](images/panel-views/10-deck-left.png)             | ![10 right](images/panel-views/10-deck-right.png)             |
 
 Layout, button slots and the frame format are described in
 [`macos/S8Views/README.md`](../../macos/S8Views/README.md).
@@ -185,33 +185,33 @@ runner notes the deck reads since the previous row: how many, the longest
 gap between two reads, how many gaps were over 0.45 s (the limit the deck
 time interpolation of #84 allows for) and the longest read.
 
-| Row | Action | Expected |
-| --- | --- | --- |
-| 1 | Start (`--screens`) | Panels as `01-library` |
-| 2 | Left encoder 1 until a track is selected, then two rows on | Highlight and right panel follow each row, as `02-library-selected` |
-| 3 | Keep turning past the last visible row | List scrolls, highlight stays visible, as `03-library-scrolled` |
-| 4 | Read "n of m" | Position of the row among the sidebar's tracks |
-| 5 | Left button 3 | Queue, as `04-queue` or the current queue |
-| 6 | Left button 5 | Match, as `05-match` |
-| 7 | Left button 6 | History, as `06-history` with the current sessions |
-| 8 | Left button 7 | Info, right buttons 2 and 3 labelled, as `07-info` |
-| 9 | Right button 3, then right button 2 | Related as `08-related`, then Info |
-| 10 | Left button 2 | Library |
-| 11 | Select another sidebar row with the mouse | Panels follow within about 1 s |
-| 12 | Hide djay's sidebar, then show it | "Open the djay sidebar" as `09-sidebar-closed`, then the list |
-| 13 | Encoder turn to panel change | Reported: instant, short lag or seconds |
-| 14 | Spin an encoder fast through a long list | Panels end on the row djay selected |
-| 15 | Left PLAY | djay reacts while the screens run |
-| 16 | Whole run | No flicker, tearing, wrong colours or frozen panel |
-| 17 | Runner sends SIGINT to S8Host | Both panels black, exit status 0 |
-| 18 | Start (`--screens --deck 1`) | Right: deck 1 page, layout as `10-deck`; left: library list |
-| 19 | PLAY on deck 1, again, then once more | PLAYING with moving time and playhead, then PAUSED; left playing for rows 20 and 21 |
-| 20 | Left screen encoder through at least twenty rows | Left panel follows, deck page keeps moving |
-| 21 | Left buttons 3, 6 and 2 | Queue, History, Library on the left; deck page keeps moving |
-| 22 | Runner closes S8Host's stdin | Both panels black, exit status 0 |
-| 23 | Agent relaunched | Controller Editor labels on the panels |
-| 24 | Left PLAY | djay reacts through the Controller Editor setup |
-| 25 | Display button 1 or 4 | NI action works again |
+| Row | Action                                                     | Expected                                                                            |
+| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1   | Start (`--screens`)                                        | Panels as `01-library`                                                              |
+| 2   | Left encoder 1 until a track is selected, then two rows on | Highlight and right panel follow each row, as `02-library-selected`                 |
+| 3   | Keep turning past the last visible row                     | List scrolls, highlight stays visible, as `03-library-scrolled`                     |
+| 4   | Read "n of m"                                              | Position of the row among the sidebar's tracks                                      |
+| 5   | Left button 3                                              | Queue, as `04-queue` or the current queue                                           |
+| 6   | Left button 5                                              | Match, as `05-match`                                                                |
+| 7   | Left button 6                                              | History, as `06-history` with the current sessions                                  |
+| 8   | Left button 7                                              | Info, right buttons 2 and 3 labelled, as `07-info`                                  |
+| 9   | Right button 3, then right button 2                        | Related as `08-related`, then Info                                                  |
+| 10  | Left button 2                                              | Library                                                                             |
+| 11  | Select another sidebar row with the mouse                  | Panels follow within about 1 s                                                      |
+| 12  | Hide djay's sidebar, then show it                          | "Open the djay sidebar" as `09-sidebar-closed`, then the list                       |
+| 13  | Encoder turn to panel change                               | Reported: instant, short lag or seconds                                             |
+| 14  | Spin an encoder fast through a long list                   | Panels end on the row djay selected                                                 |
+| 15  | Left PLAY                                                  | djay reacts while the screens run                                                   |
+| 16  | Whole run                                                  | No flicker, tearing, wrong colours or frozen panel                                  |
+| 17  | Runner sends SIGINT to S8Host                              | Both panels black, exit status 0                                                    |
+| 18  | Start (`--screens --deck 1`)                               | Right: deck 1 page, layout as `10-deck`; left: library list                         |
+| 19  | PLAY on deck 1, again, then once more                      | PLAYING with moving time and playhead, then PAUSED; left playing for rows 20 and 21 |
+| 20  | Left screen encoder through at least twenty rows           | Left panel follows, deck page keeps moving                                          |
+| 21  | Left buttons 3, 6 and 2                                    | Queue, History, Library on the left; deck page keeps moving                         |
+| 22  | Runner closes S8Host's stdin                               | Both panels black, exit status 0                                                    |
+| 23  | Agent relaunched                                           | Controller Editor labels on the panels                                              |
+| 24  | Left PLAY                                                  | djay reacts through the Controller Editor setup                                     |
+| 25  | Display button 1 or 4                                      | NI action works again                                                               |
 
 The record goes to `captures/panel-views-<UTC>/` (`notes.txt` with the
 answers, `library.log` and `deck.log` with S8Host's and the bridge's output,
@@ -239,10 +239,10 @@ Measured without the S8 on 2026-11-10 (#89): S8Host
 script in place of the bridge, so nothing was sent to the S8 and no control
 event reached djay.
 
-| Stand-in for the bridge | Time | Deck reads | Mean gap | Gaps over 0.45 s | Longest read | Stop after SIGINT |
-| --- | --- | --- | --- | --- | --- | --- |
-| Reads and discards stdin | 20 s | 81 | 0.253 s | 1 (0.561 s) | 0.561 s | 0.04 s |
-| Never reads stdin, so the first record blocks | 12 s | 52 | 0.255 s | 1 (0.516 s) | 0.516 s | 5.35 s |
+| Stand-in for the bridge                       | Time | Deck reads | Mean gap | Gaps over 0.45 s | Longest read | Stop after SIGINT |
+| --------------------------------------------- | ---- | ---------- | -------- | ---------------- | ------------ | ----------------- |
+| Reads and discards stdin                      | 20 s | 81         | 0.253 s  | 1 (0.561 s)      | 0.561 s      | 0.04 s            |
+| Never reads stdin, so the first record blocks | 12 s | 52         | 0.255 s  | 1 (0.516 s)      | 0.516 s      | 5.35 s            |
 
 In both runs the one long gap follows the first deck read, which was the
 long one. With the write blocked S8Host finished the deck read in progress
