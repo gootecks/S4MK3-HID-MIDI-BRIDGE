@@ -3,6 +3,8 @@
 mod lookup;
 
 #[cfg(test)]
+mod led_tests;
+#[cfg(test)]
 mod mixer_tests;
 #[cfg(test)]
 mod replay_tests;
@@ -155,11 +157,15 @@ impl Translator {
         self.strip_position[side]
     }
 
-    /// True while the side's CUE button is held.
+    /// True while the side's unshifted CUE note is held on the deck it shows.
     pub fn cue_held(&self, side: usize) -> bool {
+        let Some(row) = find(DECK, "cue", Kind::Note, false) else {
+            return false;
+        };
+        let channel = row.channel(self.decks[side]);
         self.held
             .iter()
-            .any(|held| lookup::side(held.name) == Some((side, "cue")))
+            .any(|held| held.channel == channel && held.number == row.number)
     }
 
     /// Settles what a whole report decided. Call it after the report's events.

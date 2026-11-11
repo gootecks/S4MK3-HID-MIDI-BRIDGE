@@ -6,6 +6,9 @@ use super::led_palette::{cue_colour, dimmed};
 use super::leds::{self, Dual, Level, MAX_VALUE, Rgb, Side, SideLeds, Strip};
 use super::translator::Translator;
 
+#[cfg(test)]
+mod feedback_tests;
+
 const CUE_NOTE: u8 = 1;
 const SYNC_NOTE: u8 = 2;
 const FLUX_NOTE: u8 = 4;

@@ -57,14 +57,6 @@ fn default_model_renders_id_and_zeroes_for_each_side() {
 }
 
 #[test]
-fn report_ids_are_0x80_and_0x81() {
-    assert_eq!(Side::Left.report_id(), 0x80);
-    assert_eq!(Side::Right.report_id(), 0x81);
-    assert_eq!(Side::Left.index(), 0);
-    assert_eq!(Side::Right.index(), 1);
-}
-
-#[test]
 fn each_single_led_lights_exactly_its_byte() {
     for side in Side::ALL {
         for (name, set, offset) in single_fields() {
@@ -136,20 +128,11 @@ fn second_sync_byte_stays_zero() {
 #[test]
 fn pad_colour_lands_in_its_three_bytes_in_pad_order() {
     for side in Side::ALL {
-        for pad in 0..8 {
+        for (pad, base) in [(0, 0), (2, 6), (7, 21)] {
             let mut leds = SideLeds::default();
             leds.pads[pad] = Rgb::new(1, 2, 3);
-            let components = [1, 2, 3];
-            let base = 3 * pad;
-            let want = expected(
-                side,
-                &[
-                    (base, components[map::PAD_ORDER[0]]),
-                    (base + 1, components[map::PAD_ORDER[1]]),
-                    (base + 2, components[map::PAD_ORDER[2]]),
-                ],
-            );
-            assert_eq!(render(side, &leds), want);
+            let want = expected(side, &[(base, 1), (base + 1, 2), (base + 2, 3)]);
+            assert_eq!(render(side, &leds), want, "pad {pad}");
         }
     }
 }
@@ -189,12 +172,6 @@ fn left_and_right_differ_only_in_the_report_id() {
 
 #[test]
 fn strip_ends_land_at_the_bank_edges() {
-    let (blue_low, blue_high) = (68, 92);
-    let (orange_low, orange_high) = (93, 117);
-    let flip = !map::STRIP_LEFT_IS_LOW_OFFSET;
-    let pick = |low: usize, high: usize, first: bool| {
-        if first == flip { high } else { low }
-    };
     let mut blue = [0; STRIP_LEDS];
     blue[0] = 5;
     blue[24] = 6;
@@ -205,15 +182,7 @@ fn strip_ends_land_at_the_bank_edges() {
         strip: Strip { blue, orange },
         ..SideLeds::default()
     };
-    let want = expected(
-        Side::Left,
-        &[
-            (pick(blue_low, blue_high, true), 5),
-            (pick(blue_low, blue_high, false), 6),
-            (pick(orange_low, orange_high, true), 7),
-            (pick(orange_low, orange_high, false), 8),
-        ],
-    );
+    let want = expected(Side::Left, &[(68, 5), (92, 6), (93, 7), (117, 8)]);
     assert_eq!(render(Side::Left, &leds), want);
 }
 

@@ -14,9 +14,9 @@ use tracing::{info, warn};
 
 use super::app_events;
 use super::feedback::FeedbackState;
-use super::led_output::LedOutput;
+use super::led_output::{LedOutput, ReportSink};
 use super::led_state::{Local, present};
-use super::leds::Side;
+use super::leds::{Side, SideLeds};
 use super::output;
 use super::translator::Translator;
 use crate::full::feedback::FeedbackInput;
@@ -80,9 +80,9 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
     let mut leds = feedback_input.map(|input| Leds {
         input,
         state: FeedbackState::default(),
-        output: LedOutput::new(hid),
+        output: Some(LedOutput::new(hid)),
     });
-    let read_timeout = announce_open(leds.is_some());
+    let mut read_timeout = announce_open(leds.is_some());
     let mut translator = Translator::new();
     let mut counts = ProbeCounts::default();
     let mut screen_encoders = ScreenEncoders::default();
@@ -98,8 +98,12 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             Err(crossbeam_channel::TryRecvError::Empty) => {}
             Err(crossbeam_channel::TryRecvError::Disconnected) => bail!("stop channel closed"),
         }
-        if let Some(leds) = leds.as_mut() {
-            leds.update(&translator, started.elapsed())?;
+        if let Some(active) = leds.as_mut() {
+            active.update(&translator, started.elapsed());
+            if !active.active() {
+                read_timeout = READ_TIMEOUT_MS;
+                leds = None;
+            }
         }
         let length = hid
             .read_timeout(&mut buffer, read_timeout)
@@ -153,8 +157,11 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             break;
         }
     }
-    if let Some(mut leds) = leds {
-        leds.output.finish()?;
+    if let Some(mut leds) = leds
+        && let Some(output) = leds.output.as_mut()
+        && let Err(error) = output.finish()
+    {
+        warn!(%error, "S8_LEDS_CLEAR_FAILED");
     }
     report_probe_counts(args, &S8, &counts)
 }
@@ -170,26 +177,113 @@ fn emit_line(line: &str) -> bool {
     }
 }
 
-/// The Djay feedback path and LED writer, present only with `--s8-leds`.
+/// The Djay feedback path and LED writer, present only with `--s8-leds`. The
+/// writer is dropped for the rest of the run after its first failure.
 struct Leds<'a> {
     input: FeedbackInput,
     state: FeedbackState,
-    output: LedOutput<'a, HidDevice>,
+    output: Option<LedOutput<'a, HidDevice>>,
 }
 
 impl Leds<'_> {
-    fn update(&mut self, translator: &Translator, now: Duration) -> anyhow::Result<()> {
+    /// False once the LED path has been disabled.
+    const fn active(&self) -> bool {
+        self.output.is_some()
+    }
+
+    fn update(&mut self, translator: &Translator, now: Duration) {
         let Self {
             input,
             state,
             output,
         } = self;
-        input.drain_messages(|message| {
+        if let Err(error) = input.drain_messages(|message| {
             state.apply(message, now);
-        })?;
+        }) {
+            disable(output, &error);
+            return;
+        }
         let leds =
             Side::ALL.map(|side| present(side, state, &Local::from_translator(translator, side)));
-        output.tick(&leds, now)?;
-        Ok(())
+        tick_or_disable(output, &leds, now);
+    }
+}
+
+/// Writes the changed reports. On an error the LEDs are cleared as far as
+/// the device allows and the writer is dropped; MIDI translation goes on.
+fn tick_or_disable<S: ReportSink>(
+    output: &mut Option<LedOutput<'_, S>>,
+    leds: &[SideLeds; 2],
+    now: Duration,
+) {
+    let Some(writer) = output.as_mut() else {
+        return;
+    };
+    if let Err(error) = writer.tick(leds, now) {
+        disable(output, &error);
+    }
+}
+
+fn disable<S: ReportSink>(output: &mut Option<LedOutput<'_, S>>, error: &anyhow::Error) {
+    warn!("S8_LEDS_DISABLED: {error:#}; the LEDs stay off for the rest of the run");
+    if let Some(mut writer) = output.take()
+        && let Err(clear) = writer.finish()
+    {
+        warn!(error = %clear, "S8_LEDS_CLEAR_FAILED");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::{Cell, RefCell};
+
+    use anyhow::Result;
+
+    use super::*;
+    use crate::s8::leds::Level;
+
+    #[derive(Default)]
+    struct Sink {
+        writes: RefCell<Vec<u8>>,
+        failing: Cell<bool>,
+    }
+
+    impl ReportSink for Sink {
+        fn write_report(&self, report: &[u8]) -> Result<usize> {
+            self.writes.borrow_mut().push(report[0]);
+            if self.failing.get() {
+                anyhow::bail!("device gone");
+            }
+            Ok(report.len())
+        }
+    }
+
+    fn lit(level: Level) -> [SideLeds; 2] {
+        let mut leds = [SideLeds::default(); 2];
+        leds[0].play = level;
+        leds
+    }
+
+    #[test]
+    fn a_write_error_disables_the_led_path_and_no_more_writes_follow() {
+        let sink = Sink::default();
+        let mut output = Some(LedOutput::new(&sink));
+        tick_or_disable(&mut output, &lit(Level::On), Duration::ZERO);
+        assert!(output.is_some());
+        let before = sink.writes.borrow().len();
+
+        sink.failing.set(true);
+        tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(50));
+        assert!(output.is_none());
+        let after = sink.writes.borrow().len();
+        assert!(
+            after > before,
+            "the failed write and the clear are attempted"
+        );
+
+        sink.failing.set(false);
+        tick_or_disable(&mut output, &lit(Level::On), Duration::from_millis(100));
+        tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(200));
+        assert_eq!(sink.writes.borrow().len(), after);
     }
 }
