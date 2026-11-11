@@ -3,6 +3,11 @@
 mod app_events;
 pub mod bridge;
 pub mod catalog;
+mod feedback;
+mod led_output;
+mod led_palette;
+mod led_state;
+pub mod leds;
 mod mapping;
 pub mod output;
 pub mod screens;

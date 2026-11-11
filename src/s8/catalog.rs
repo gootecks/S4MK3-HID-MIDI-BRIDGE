@@ -5,6 +5,10 @@
 
 use crate::full::catalog::ControlNote;
 
+mod outputs;
+
+pub use outputs::*;
+
 /// Zero-based MIDI channels, as the plist stores them.
 pub const MIXER_CHANNEL: u8 = 4;
 pub const DECK_SELECT_CHANNEL: u8 = 5;

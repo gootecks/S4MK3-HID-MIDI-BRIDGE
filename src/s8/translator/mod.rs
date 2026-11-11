@@ -3,6 +3,8 @@
 mod lookup;
 
 #[cfg(test)]
+mod led_tests;
+#[cfg(test)]
 mod mixer_tests;
 #[cfg(test)]
 mod replay_tests;
@@ -93,6 +95,7 @@ pub struct Translator {
     assign_sent: [Option<Position>; 4],
     assign_changed: bool,
     strips: [Strip; 2],
+    strip_position: [Option<u8>; 2],
 }
 
 impl Default for Translator {
@@ -116,6 +119,7 @@ impl Translator {
             assign_sent: [None; 4],
             assign_changed: false,
             strips: [Strip::default(), Strip::default()],
+            strip_position: [None; 2],
         }
     }
 
@@ -128,6 +132,40 @@ impl Translator {
             Event::Slider { name, value, .. } => self.slider(name, value, resting, out),
             _ => {}
         }
+    }
+
+    /// The deck (1-4) a side currently controls.
+    pub const fn deck(&self, side: usize) -> u8 {
+        self.decks[side]
+    }
+
+    pub const fn shift_held(&self, side: usize) -> bool {
+        self.shift[side]
+    }
+
+    pub const fn pad_mode(&self, side: usize) -> PadMode {
+        self.pad_mode[side]
+    }
+
+    /// The deck (1-4) the side's FX unit currently targets.
+    pub const fn fx_target(&self, side: usize) -> u8 {
+        self.fx_target[side]
+    }
+
+    /// The 7-bit position of a finger on the side's strip, while touched and moving.
+    pub const fn strip_position(&self, side: usize) -> Option<u8> {
+        self.strip_position[side]
+    }
+
+    /// True while the side's unshifted CUE note is held on the deck it shows.
+    pub fn cue_held(&self, side: usize) -> bool {
+        let Some(row) = find(DECK, "cue", Kind::Note, false) else {
+            return false;
+        };
+        let channel = row.channel(self.decks[side]);
+        self.held
+            .iter()
+            .any(|held| held.channel == channel && held.number == row.number)
     }
 
     /// Settles what a whole report decided. Call it after the report's events.
@@ -238,6 +276,7 @@ impl Translator {
             return;
         };
         if !touched {
+            self.strip_position[side] = None;
             if let Some(owner) = self.strips[side].release() {
                 let shifted = owner.layer == Layer::Shift;
                 if let Some(row) = find(DECK, STRIP_TOUCH, Kind::Note, shifted) {
@@ -245,6 +284,7 @@ impl Translator {
                 }
             }
         } else if !resting {
+            self.strip_position[side] = None;
             let shifted = self.shift[side];
             self.strips[side].touch(Owner {
                 deck: self.decks[side],
@@ -289,6 +329,7 @@ impl Translator {
         let Some((owner, value)) = self.strips[side].motion(strip::position(position)) else {
             return;
         };
+        self.strip_position[side] = Some(value);
         let shifted = owner.layer == Layer::Shift;
         if let Some(row) = find(DECK, STRIP, Kind::RotaryAbsolute, shifted) {
             out.push(controller(row.channel(owner.deck), row.number, value));

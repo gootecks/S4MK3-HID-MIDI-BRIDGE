@@ -13,6 +13,8 @@ use s4mk3_hid_midi_bridge::device::S8;
 
 use super::catalog::{self, Entry, Kind};
 
+mod feedback_config;
+
 /// The control that owns each address, and the actions already bound to it.
 type Addresses = BTreeMap<(u8, u8, u8), (&'static str, Vec<String>)>;
 
@@ -45,10 +47,13 @@ fn generate() -> Result<Value> {
     root.insert(String::from("schemeVersion"), Value::Integer(1.into()));
     root.insert(String::from("version"), Value::Integer(0.into()));
     root.insert(String::from("controls"), Value::Array(controls));
-    root.insert(String::from("outputs"), Value::Array(Vec::new()));
+    root.insert(
+        String::from("outputs"),
+        Value::Array(root_outputs(&addresses)?),
+    );
     root.insert(
         String::from("userInfo"),
-        Value::Dictionary(Dictionary::new()),
+        Value::Dictionary(feedback_config::user_info()),
     );
     Ok(Value::Dictionary(root))
 }
@@ -116,8 +121,64 @@ fn push_control(controls: &mut Vec<Value>, addresses: &mut Addresses, entry: &En
             Value::Integer(i64::from(acceleration).into()),
         );
     }
+    if catalog::has_embedded_output(&binding) {
+        control.insert(
+            String::from("output"),
+            Value::Dictionary(embedded_output(binding.number)),
+        );
+    }
     controls.push(Value::Dictionary(control));
     Ok(())
+}
+
+/// Djay returns feedback for a control on the control's own address. Cue
+/// colour tokens ride in the velocity, so their dictionary stays empty.
+fn embedded_output(number: u8) -> Dictionary {
+    let mut output = Dictionary::new();
+    if !catalog::CUE_COLOUR_NOTES.contains(&number) {
+        output.insert(String::from("midiMinValue"), Value::Integer(0.into()));
+        output.insert(String::from("midiMaxValue"), Value::Integer(127.into()));
+    }
+    output
+}
+
+/// Feedback with no control of its own, on the dedicated feedback channel.
+fn root_outputs(addresses: &Addresses) -> Result<Vec<Value>> {
+    let mut outputs = Vec::new();
+    for root in catalog::ROOT_OUTPUTS {
+        for deck in catalog::DECKS {
+            let (channel, message_type, number) = root.address(deck);
+            let key_path = root.key_path(deck);
+            ensure!(
+                !addresses.contains_key(&(channel, message_type, number)),
+                "feedback address of {key_path} is an input: channel {channel}, type {message_type}, data {number}"
+            );
+            let mut output = Dictionary::new();
+            output.insert(String::from("keyPath"), Value::String(key_path));
+            output.insert(
+                String::from("midiChannel"),
+                Value::Integer(i64::from(channel).into()),
+            );
+            output.insert(
+                String::from("midiData"),
+                Value::Integer(i64::from(number).into()),
+            );
+            output.insert(
+                String::from("midiMessageType"),
+                Value::Integer(i64::from(message_type).into()),
+            );
+            output.insert(String::from("midiMinValue"), Value::Integer(0.into()));
+            output.insert(String::from("midiMaxValue"), Value::Integer(127.into()));
+            if root.continuous() {
+                output.insert(
+                    String::from("controlType"),
+                    Value::String(String::from("control")),
+                );
+            }
+            outputs.push(Value::Dictionary(output));
+        }
+    }
+    Ok(outputs)
 }
 
 #[cfg(test)]
@@ -329,16 +390,94 @@ mod tests {
     }
 
     #[test]
-    fn root_names_the_s8_endpoint_and_has_no_outputs() -> Result<()> {
+    fn root_names_the_s8_endpoint() -> Result<()> {
         let root = reparsed()?;
         assert_eq!(
             root.get("endpointName").and_then(Value::as_string),
             Some("Kontrol S8 MIDI Full")
         );
+        Ok(())
+    }
+
+    fn outputs_of(root: &Dictionary) -> Result<Vec<&Dictionary>> {
+        root.get("outputs")
+            .and_then(Value::as_array)
+            .context("outputs is an array")?
+            .iter()
+            .map(|output| output.as_dictionary().context("output is a dictionary"))
+            .collect()
+    }
+
+    #[test]
+    fn root_outputs_are_unique_and_clear_of_every_input_address() -> Result<()> {
+        let root = reparsed()?;
+        let inputs = by_address(&controls_of(&root)?)?;
+        let outputs = outputs_of(&root)?;
         assert_eq!(
-            root.get("outputs").and_then(Value::as_array).map(Vec::len),
-            Some(0)
+            outputs.len(),
+            catalog::ROOT_OUTPUTS.len() * catalog::DECKS.len()
         );
+        let mut seen = BTreeSet::new();
+        for output in &outputs {
+            let address = (
+                uint(output, "midiChannel")?,
+                uint(output, "midiMessageType")?,
+                uint(output, "midiData")?,
+            );
+            assert!(seen.insert(address), "duplicate output {address:?}");
+            assert!(!inputs.contains_key(&address), "{address:?} is an input");
+            assert_eq!(address.0, catalog::FEEDBACK_CHANNEL);
+            assert_eq!(uint(output, "midiMinValue")?, 0);
+            assert_eq!(uint(output, "midiMaxValue")?, 127);
+        }
+        for root_output in catalog::ROOT_OUTPUTS {
+            for deck in catalog::DECKS {
+                let address = root_output.address(deck);
+                let key_path = root_output.key_path(deck);
+                assert!(seen.contains(&address));
+                assert!(
+                    outputs
+                        .iter()
+                        .any(|output| key_path_of(output) == Some(key_path.as_str())
+                            && uint(output, "midiData").ok() == Some(address.2))
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn embedded_outputs_sit_on_exactly_the_evidenced_base_rows() -> Result<()> {
+        let root = reparsed()?;
+        let controls = controls_of(&root)?;
+        let mut embedded = 0;
+        for entry in catalog::entries() {
+            let key_path = entry.key_path();
+            let channel = entry.channel();
+            let control = controls
+                .iter()
+                .find(|control| {
+                    key_path_of(control) == Some(key_path.as_str())
+                        && uint(control, "midiChannel").ok() == Some(channel)
+                        && uint(control, "midiData").ok() == Some(entry.binding.number)
+                })
+                .with_context(|| format!("{key_path} generated"))?;
+            let output = control.get("output").and_then(Value::as_dictionary);
+            if catalog::has_embedded_output(&entry.binding) {
+                embedded += 1;
+                let output = output.with_context(|| format!("{key_path} has an output"))?;
+                if catalog::CUE_COLOUR_NOTES.contains(&entry.binding.number) {
+                    assert!(output.is_empty(), "{key_path} carries a colour token");
+                } else {
+                    assert_eq!(uint(output, "midiMinValue")?, 0);
+                    assert_eq!(uint(output, "midiMaxValue")?, 127);
+                }
+                assert!(channel < 4 && entry.binding.kind == Kind::Note);
+            } else {
+                assert!(output.is_none(), "{key_path} has no evidenced output");
+            }
+        }
+        assert!(embedded > 0);
         Ok(())
     }
 

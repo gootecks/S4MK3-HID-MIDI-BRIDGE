@@ -305,8 +305,19 @@ This section is fork-only. Keep it out of upstream pull requests.
 - `src/s8/translator/`: S8 input events to the catalog's MIDI messages.
 - `src/s8/strip.rs`: touchstrip position and ownership of one touch.
 - `src/s8/bridge.rs`: the `--device s8 --midi full` loop. It sends nothing
-  to the S8 except with `--s8-screens-stdin`, which shows frame records
-  from stdin on the panels (`docs/s8/screen-transport.md`).
+  to the S8 except with `--s8-leds` (deck LED reports) or
+  `--s8-screens-stdin`, which shows frame records from stdin on the panels
+  (`docs/s8/screen-transport.md`).
+- `src/s8/catalog/outputs.rs`: the feedback addresses Djay returns; the
+  mapping generator and `src/s8/feedback.rs` both read them.
+- `src/s8/feedback.rs`: decodes Djay feedback into per-deck state.
+- `src/s8/led_state.rs`: Djay feedback plus translator state to the LEDs of
+  one side. `src/s8/led_palette.rs` turns cue colour tokens into RGB.
+- `src/s8/leds.rs`, `src/s8/leds/`: the model and the deck reports `0x80`
+  and `0x81`; `map.rs` holds the byte offsets, `strip.rs` the strip banks.
+- `src/s8/led_output.rs`: writes changed reports, paced, and clears on exit.
+  A write error in the bridge turns the LEDs off for the run and logs
+  `S8_LEDS_DISABLED`; MIDI translation goes on.
 - `tests/s8_input.rs`: replays captured reports through the decoder.
 - `docs/s8/mappings/`: frozen copies of mappings checked on the S8.
 - `macos/Package.swift` builds the S8 screen tools, all the fork's own:

@@ -93,6 +93,10 @@ struct Args {
     /// `S8_CONTROL` lines on stdout for the companion app.
     #[arg(long, requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
     app_events: bool,
+
+    /// Kontrol S8 only: write the deck LED reports 0x80 and 0x81 from Djay feedback.
+    #[arg(long = "s8-leds", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
+    s8_leds: bool,
 }
 
 #[derive(Debug, clap::Args)]
@@ -235,6 +239,10 @@ fn open_and_run(
     ensure!(
         !args.app_events || profile.device == Device::S8,
         "--app-events applies to the Kontrol S8 only"
+    );
+    ensure!(
+        !args.s8_leds || profile.device == Device::S8,
+        "--s8-leds applies to the Kontrol S8 only"
     );
     let descriptor = match profile.descriptor.full {
         Some(full) if matches!(args.midi, Some(MidiProfile::Full)) => full(&device.descriptor)?,

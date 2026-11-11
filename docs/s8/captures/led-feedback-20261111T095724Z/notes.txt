@@ -1,0 +1,6 @@
+LED feedback check (#22, #23). Mapping: Kontrol S8 Bridge r7. Bridge: target/debug/s4mk3-hid-midi-bridge (debug).
+Agent running: press left PLAY once, then Enter.: 
+Agent stopped: press left PLAY once, then Enter.: 
+Bridge running, pid 70958.
+Bridge exit status 0.
+Restoring NIHardwareAgent.

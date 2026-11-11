@@ -12,6 +12,16 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- `--s8-leds` (Kontrol S8 only, with `--midi full`) lets the S8 deck buttons,
+  pads and touchstrips show Djay state: PLAY, CUE, SYNC, FLUX, the loop ring,
+  the FX and stem buttons, hot cue pads in the cue point's colour, sampler
+  pad colours, track progress as a blue bar on the touchstrip and the finger
+  as an orange dot under it. The generated mapping now carries the feedback
+  addresses, the pad colours and the progress type, so install mapping
+  revision r8 or later
+  ([mapping.md](docs/s8/mapping.md#led-feedback), #22, #23). Checked on the
+  S8 in two runs; open: which mode button is full in some pad modes, and LEDs
+  that stay dim after the stop (#125).
 - Architecture overview in the README: the two controllers, the one Rust
   bridge binary with its two device profiles, the Swift S8 tools and djay Pro
   in one diagram, with links to the repositories the bridge builds on (#122).
