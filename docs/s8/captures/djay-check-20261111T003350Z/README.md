@@ -1,7 +1,8 @@
 # Deck page against djay: cue points, analysis, One Deck view
 
-Taken on 2026-11-10 (UTC 2026-11-11 00:33) at `453798d` (`fix/93-one-deck-view`,
-which holds #92, #95, #94 and #93), with djay Pro in English in Two Decks,
+Taken on 2026-11-10 (UTC 2026-11-11 00:33) at `3038a84` of PR #99 (the same
+tree as `453798d` before its rebase; it holds #92, #95, #94 and #93), with
+djay Pro in English in Two Decks,
 "Duro" on deck 1 and "Cheeni" on deck 2, both paused. Nothing was sent to the
 S8 and NIHardwareAgent kept running.
 

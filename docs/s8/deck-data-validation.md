@@ -293,7 +293,8 @@ The observer's remarks on the record, 2026-11-10, and what followed:
 
 ## Checked against djay, 2026-11-10
 
-After the fixes for #92, #95, #94 and #93, at `3a51949` plus the notes, with
+After the fixes for #92, #95, #94 and #93, at `667c9dc` of PR #99 plus the
+notes (`3a51949` before its rebase), with
 `S8Preview --stream left=1,right=2` writing its records to a file. Nothing
 was sent to the S8. Logs, pictures and the observer's answers:
 [captures/djay-check-20261111T003350Z/](captures/djay-check-20261111T003350Z/README.md).
