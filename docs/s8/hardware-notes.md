@@ -93,21 +93,37 @@ unit.
 
 ## LED output (interface 5, OUT `0x03`)
 
-| Group                           | Location                                                              | Level                                                    |
-| ------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------- |
-| Pads, RGB                       | `0x80`/`0x81` offsets 0–23                                            | Hardware-tested (Encdr)                                  |
-| Deck single buttons             | `0x80`/`0x81` offsets 24–67                                           | Hardware-tested (Encdr)                                  |
-| Touchstrip blue / orange        | `0x80`/`0x81` offsets 68–92 / 93–117                                  | Hardware-tested (Encdr), 119-byte reports                |
-| Mixer FX assign, snap, quantize | `0x82` offsets 44–53                                                  | Descriptor; conflicts with `0x81` claims                 |
-| Mixer CUE / FILTER / THRU       | EP0 SET_REPORT `0xF4`, 33-byte payload, commands `0x26`/`0x25`/`0x24` | Unconfirmed                                              |
-| Whole mixer bank                | `0xF3` handshake `[0xF3, 0x01]`                                       | Hardware-tested (Encdr): lights the bank as a group only |
-| VU meters                       | Candidate `0x82` ranges                                               | Unconfirmed, not in descriptor                           |
-| Deck selectors                  | Offsets 118–121                                                       | Unconfirmed, not in descriptor                           |
+The observed report descriptor
+([report table](captures/hid-descriptor-20261111/README.md#reports)) declares
+three output reports, each value 0..127: `0x80` and `0x81` with 118 payload
+bytes and `0x82` with 73. On the wire they are 119, 119 and 74 bytes,
+report ID first. Byte maps, values, feature reports and open questions are in
+[led-output.md](led-output.md).
 
-Framing conflict: the descriptor uses 118/118/73-byte buffers per prefix.
-Several Encdr docs describe one 309- or 310-byte buffer. The touchstrip test
-only worked with 119-byte `[prefix] + [118]` reports.
+| Group                        | Location                    | Level                   |
+| ---------------------------- | --------------------------- | ----------------------- |
+| Pads, RGB                    | `0x80`/`0x81` 0–23          | Hardware-tested (Encdr) |
+| Deck single buttons          | `0x80`/`0x81` 24–67         | Hardware-tested (Encdr) |
+| Touchstrip blue, orange      | `0x80`/`0x81` 68–92, 93–117 | Hardware-tested (Encdr) |
+| Mixer FX assign, SNAP, QUANT | `0x82` 44–53                | Descriptor; conflicts   |
+| Mixer CUE/FILTER/THRU        | `0xF4` feature, 32 bytes    | Unconfirmed             |
+| Mixer bank                   | `0xF3` `[0xF3, 0x01]`       | Hardware-tested (Encdr) |
+| VU meters                    | `0x82` 0–43 (candidate)     | Unconfirmed             |
+| Deck selectors               | `0x80`/`0x81` 53, 54        | Descriptor              |
+
+Framing is settled by the descriptor: 118/118/73 bytes per report ID. The
+309- or 310-byte buffer in several Encdr docs is the three payloads added
+together, not one report. The touchstrip test worked with 119-byte
+`[prefix] + [118]` reports.
+
+`0xF4` is sent with EP0 SET_REPORT and its 33 bytes are the ID plus 32 payload
+bytes. The descriptor declares `0xF3` as a feature report of 2 payload bytes,
+while Encdr documents `[0xF3, 0x01]` as an interrupt-OUT write.
+
+Offsets 118–121 are not report offsets. The deck buttons are at offsets 53 and
+54, and no source gives a byte for the mixer deck-assign LEDs.
 `mixer_led_results.json` and `probe_0x82.json` in `../Encdr` are empty.
+Nothing has been written to this S8 yet.
 
 ## Screens (interface 6)
 
