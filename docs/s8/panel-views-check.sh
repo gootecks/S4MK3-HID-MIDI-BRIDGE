@@ -30,7 +30,10 @@ restore() {
 
 screen_preflight
 pgrep -f 'djay.app/Contents/MacOS/' > /dev/null ||
-    { echo "Open djay Pro with its library sidebar showing."; exit 1; }
+    {
+        echo "Open djay Pro with its library sidebar showing."
+        exit 1
+    }
 pgrep -f 'Controller Editor.app/Contents/MacOS/Controller Editor' > /dev/null ||
     echo "Warning: Controller Editor is not running. Started like this, the S8 was once dark and unusable; see docs/s8/translator-validation.md."
 

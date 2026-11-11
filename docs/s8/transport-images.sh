@@ -38,7 +38,7 @@ fi
 checked=0
 for step in "${steps[@]}"; do
     name="${step%%|*}"
-    # shellcheck disable=SC2086
+    # shellcheck disable=SC2086,SC2046
     out=$("$tool" ${step#*|} --dry-run --png "$dir" --name "$name" $([ "$mode" = check ] && echo --png-check) 2> /dev/null)
     line=$(echo "$out" | grep -E '^(wrote|checked) [0-9]+ pictures')
     echo "$name: $line"
@@ -47,11 +47,20 @@ done
 
 files=$(find "$dir" -name '*.png' | wc -l | tr -d ' ')
 echo "pictures made or checked: $checked, files: $files"
-[ "$checked" -eq "$files" ] || { echo "FAIL: $files files but $checked pictures from the tool"; exit 1; }
+[ "$checked" -eq "$files" ] || {
+    echo "FAIL: $files files but $checked pictures from the tool"
+    exit 1
+}
 for file in "$dir"/*.png; do
-    grep -qF "(images/transport/$(basename "$file"))" "$doc" || { echo "FAIL: $doc does not embed $file"; exit 1; }
+    grep -qF "(images/transport/$(basename "$file"))" "$doc" || {
+        echo "FAIL: $doc does not embed $file"
+        exit 1
+    }
 done
 grep -oE '\(images/transport/[^)]+\)' "$doc" | tr -d '()' | while read -r path; do
-    [ -f "docs/s8/$path" ] || { echo "FAIL: $doc embeds $path, which does not exist"; exit 1; }
+    [ -f "docs/s8/$path" ] || {
+        echo "FAIL: $doc embeds $path, which does not exist"
+        exit 1
+    }
 done
 echo "PASS"

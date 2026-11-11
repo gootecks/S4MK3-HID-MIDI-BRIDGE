@@ -35,11 +35,20 @@ fi
 snapshots=$(find "$fixtures" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')
 files=$(find "$dir" -name '*.png' | wc -l | tr -d ' ')
 echo "snapshots: $snapshots, pictures: $files"
-[ "$files" -eq $((snapshots * 2)) ] || { echo "FAIL: $files pictures for $snapshots snapshots"; exit 1; }
+[ "$files" -eq $((snapshots * 2)) ] || {
+    echo "FAIL: $files pictures for $snapshots snapshots"
+    exit 1
+}
 for file in "$dir"/*.png; do
-    grep -qF "(images/panel-views/$(basename "$file"))" "$doc" || { echo "FAIL: $doc does not embed $file"; exit 1; }
+    grep -qF "(images/panel-views/$(basename "$file"))" "$doc" || {
+        echo "FAIL: $doc does not embed $file"
+        exit 1
+    }
 done
 grep -oE '\(images/panel-views/[^)]+\)' "$doc" | tr -d '()' | while read -r path; do
-    [ -f "docs/s8/$path" ] || { echo "FAIL: $doc embeds $path, which does not exist"; exit 1; }
+    [ -f "docs/s8/$path" ] || {
+        echo "FAIL: $doc embeds $path, which does not exist"
+        exit 1
+    }
 done
 echo "PASS"
