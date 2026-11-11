@@ -186,7 +186,7 @@ This section is fork-only. Keep it out of upstream pull requests.
   <https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE> (remote `upstream`).
   Encdr research fork: `../Encdr` (gootecks/Encdr; upstream RufusIbiza/Encdr).
 - Goal: add Traktor Kontrol S8 (`0x17CC:0x1370`) support without changing
-  S4 MK3 behaviour. Start with `docs/s8/README.md`,
+  S4 MK3 behaviour. `INDEX.md` lists every document. Start with `docs/s8/README.md`,
   `docs/s8/hardware-notes.md` and `docs/s8/s4-coupling-audit.md`. The
   screens epic (#25) is closed; what is left of it is low priority and
   collected in #105.
@@ -262,14 +262,14 @@ This section is fork-only. Keep it out of upstream pull requests.
   Do not write "(#51)" into a summary or an H1. Leave `title` out: the H1
   is the title. mdsmith pads a right-aligned table
   column differently from oxfmt, so keep table columns left-aligned. The
-  index in `docs/s8/README.md` is generated from the front matter by
+  index in the root `INDEX.md` is generated from the front matter by
   `<?catalog?>`, READMEs next to the code included, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table
   of contents and `mdsmith fix` regenerates it. A commit that touches a note
   or `.mdsmith.yml` lints every fork-owned note, not only the staged ones: a
   new or renamed note changes the index and the links in other notes. It
   stages the notes its fixer changed. A commit that only deletes notes is
-  checked and not fixed: run `mdsmith fix .` and stage `docs/s8/README.md`
+  checked and not fixed: run `mdsmith fix .` and stage `INDEX.md`
   first.
   Pushing runs the same check on the committed tree, which also covers
   merges, rebases and `--no-verify` commits. Untracked and unstaged notes
@@ -345,7 +345,7 @@ Read before changing S8 behaviour: `docs/s8/mapping.md`,
 ### S8 notes
 
 One line per reference note and procedure. Open a note when the task needs
-it. `docs/s8/README.md` also lists the validation records and captures.
+it. The root `INDEX.md` lists every document, validation records included.
 `mdsmith fix` writes this list from each note's `summary`; do not edit it.
 
 <?catalog
