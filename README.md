@@ -36,8 +36,12 @@ version of the menu-bar app runs it.
   screens switch Djay's sidebar tabs and move its selection when the bridge
   runs under the `S8Host` tool. See
   [display buttons and screen encoders](docs/s8/display-buttons.md).
-- **Missing:** LED feedback and the screens. The bridge sends nothing to the
-  S8, so its LEDs and displays do not follow Djay.
+- **Screens:** under `S8Host --screens` the left screen shows the list of
+  Djay's open sidebar tab, and the right screen the selected track or, with
+  `--deck N`, one deck: title, artist, BPM, key, time, waveform and cue
+  points. See [views on the S8 panels](docs/s8/panel-views.md) for how to
+  run it and its limits.
+- **Missing:** LED feedback. The S8's LEDs do not follow Djay.
 
 To use it you need this repository, [mise](https://mise.jdx.dev) for the
 pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.
