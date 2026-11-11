@@ -100,9 +100,15 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   play state. From the write of a change to the page: up to 5 s until the
   files are checked, the reload (about 0.4 s measured for a 34.5 MB
   database), then up to 5 s until the next look, so about 10 s at most.
-  Not measured: when djay writes a new cue point or a finished analysis to
-  disk (an attended check is needed). A change djay keeps only in memory
-  cannot appear on the page.
+  Seen against djay once
+  ([captures](captures/djay-check-20261111T003350Z/README.md)): a removed
+  and a moved cue point reached the page 4.4 s and about 6 s after djay
+  wrote its library, and the analysis of a track djay analysed by itself
+  after the load 4.6 s after its file was written.
+  Not measured: how long after the action in djay the write to disk comes
+  (the observer gave no times for the cue points; the analysis was reported
+  as "1-2 seconds" and its file was written 0.7 s after the track was on
+  the page). A change djay keeps only in memory cannot appear on the page.
 - djay shows whole seconds, so the page knows the position exactly only at
   the moment a label moves. In the tests, with a poll every 0.25 s: a
   playing deck is 0 to 0.25 s behind djay once a poll has seen its label
@@ -117,15 +123,19 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
 - djay exposes only the decks its current view shows
   ([captures](captures/one-deck-view-20261111T000921Z/README.md), #93). Two
   Decks exposes decks 1 and 2, Four Decks all four. One Deck exposes one
-  deck: in the captures it was the deck whose deck controls were used last
-  (a cue jump on deck 2 gave deck 2, a jump to the start point of deck 1
-  gave deck 1). Loading a track or opening the Deck menu did not change it,
-  and a track dragged in while in One Deck went to the deck shown. A deck
+  deck, and which one is not settled: in the captures a scripted cue click
+  on deck 2 was followed by deck 2 and a scripted press on a deck 1 control
+  by deck 1, while in the check against djay deck 1 was shown after cue
+  points set by mouse and a track load on deck 2
+  ([captures](captures/djay-check-20261111T003350Z/README.md)). Loading a
+  track or opening the Deck menu did not change it in the captures, and a
+  track dragged in while in One Deck went to the deck shown. A deck
   that is not shown keeps its track in djay. Its page says "Deck n is not
   shown in djay" and keeps the track, library entry and last reading, as for
   "djay is not answering" above; the page returns with the first read that
   has the deck again, without a new library lookup. The time of a hidden
-  deck is not known while it is hidden, also when it plays. Not looked at:
+  deck is not known while it is hidden, also when it plays. Seen against
+  djay once, with deck 2 hidden and paused; not on the S8. Not looked at:
   the shown deck changing while One Deck stays open, One Deck right after
   djay starts, and the labels of a shown deck without a track (the "No
   track" case is covered by fake labels only).

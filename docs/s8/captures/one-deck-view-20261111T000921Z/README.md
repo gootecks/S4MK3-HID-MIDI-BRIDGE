@@ -35,10 +35,13 @@ then `./axdump`); it only reads.
   switch to Two Decks (`05`, `10`).
 - Two Decks view exposes decks 1 and 2 only. Decks 3 and 4 keep their tracks
   while hidden (`01`, `03`, `05`).
-- The deck One Deck view shows is the deck whose controls were used last. A
-  cue click on deck 2 made it deck 2 (`12`); a press on a deck 1 control made
-  it deck 1 again (`14`). Loading a track on deck 2 did not change it (`08`),
-  and neither did the deck's menu in the menu bar (`06`).
+- Which deck One Deck view shows is not settled. In these dumps a scripted
+  cue click on deck 2 was followed by deck 2 (`12`) and a scripted press on
+  a deck 1 control by deck 1 again (`14`); loading a track on deck 2 did not
+  change it (`08`), and neither did the deck's menu in the menu bar (`06`).
+  In a later check the observer set cue points on deck 2 with the mouse and
+  loaded a track there, and One Deck view showed deck 1
+  (`../djay-check-20261111T003350Z/README.md`).
 - A track loaded while One Deck view is open goes to the deck shown (`09`,
   `10`).
 - In One Deck view the deck has no tempo-change label (`0.0%, Deck N`) and no
