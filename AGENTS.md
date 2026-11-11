@@ -252,9 +252,10 @@ This section is fork-only. Keep it out of upstream pull requests.
 - Docs and script style: oxfmt formats and mdsmith lints every fork-owned
   Markdown file (GitHub convention, `.mdsmith.yml`). `CHANGELOG.md` is
   formatted only. Under `docs/s8/` lines are up to 95 characters, paragraphs
-  and table cells are checked for readability, and every note needs front
-  matter with `summary` and `type`; the root `README.md` and READMEs next to
-  the code are exempt from those. The
+  are checked for readability, and every note needs front matter with
+  `summary` and `type`; the root `README.md` and READMEs next to the code
+  are exempt from those three. mdsmith pads a right-aligned table column
+  differently from oxfmt, so keep table columns left-aligned. The
   index in `docs/s8/README.md` is generated from the front matter by
   `<?catalog?>`, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table

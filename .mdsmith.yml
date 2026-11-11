@@ -93,8 +93,8 @@ ignore:
   - "src/screens/DESIGN.md"
   - "src/screens/text/README.md"
   # END upstream files
-# The notes under docs/s8 also keep to a line length, readable paragraphs and table
-# cells, and front matter. READMEs next to the code and the root README.md do not.
+# The notes under docs/s8 also keep to a line length, readable paragraphs and front
+# matter. READMEs next to the code and the root README.md do not.
 overrides:
   - glob: ["docs/s8/**/*.md"]
     rules:
@@ -105,22 +105,20 @@ overrides:
         fields: [summary, type]
       paragraph-readability: true
       paragraph-structure: true
-      table-readability: true
 rules:
   # oxfmt always leaves a blank line after front matter; MDS004 rejects it.
   first-line-heading: false
   line-length: false
   paragraph-readability: false
   paragraph-structure: false
-  table-readability: false
   code-block-style:
     style: consistent
   proper-names:
     names: [GitHub, macOS, Xcode, AppKit, SwiftUI, Traktor, Rust, Swift]
   list-indent: true
-  # oxfmt formats tables; mdsmith pads right-aligned columns differently.
-  table-format: false
+  table-format: true
   no-duplicate-headings: true
+  table-readability: true
   max-file-length:
     max: 500
   token-budget: true
