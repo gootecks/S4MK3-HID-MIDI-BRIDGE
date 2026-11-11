@@ -12,10 +12,12 @@ in [led-output.md](led-output.md) and [led-output-mixer.md](led-output-mixer.md)
 ## Status
 
 Run on 2026-11-11 by the user, at the S8. The deck plan is in
-`captures/led-check-20261111T090918Z/`, run on branch commit `59c2bf3`. The
+`captures/led-check-20261111T090918Z/`, run on branch commit `8e17946`. The
 mixer plan is in `captures/led-check-mixer-20261111T092527Z/`, run on
-`5c42d0f`, which differs from `59c2bf3` only in the runner's terminal
-styling. NIHardwareAgent was stopped for each run and restored at its end:
+`e855b5e`, which differs from `8e17946` only in the runner's terminal
+styling. Before the rebase onto #119, which changed no code, these commits
+were `59c2bf3` and `5c42d0f`.
+NIHardwareAgent was stopped for each run and restored at its end:
 both final answers to "Are the panel labels and LEDs back?" are `yes`.
 The optional steps M16-54 to M16-71 were not run.
 
