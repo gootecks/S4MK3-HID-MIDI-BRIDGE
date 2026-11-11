@@ -81,6 +81,16 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   assumed mid and treble and are unverified. The page draws the amplitude
   envelope tinted by the bands.
 - The key stored in the analysis blob is not decoded; the AX key is used.
+- A cue point's colour is the `color` djay stores. djay stores none for many
+  cues (about half of those numbered 2 to 8 in one real library), so the
+  page takes the default for the cue's number (a cue with no number is
+  cue 1): 1 red `#CC0000`, 2 orange `#CC8800`, 3 blue `#0000CC`, 4 yellow
+  `#CCCC00`, 5 green `#00CC00`, 6 magenta `#CC00CC`, 7 teal `#00CCCC`,
+  8 purple `#8800CC`. In that library each is the stored colour of all but a
+  few of the cues of its number that have one. A cue numbered above 8 keeps
+  the amber fallback.
+
+  ![Cues 1 to 8 with their default colours](images/deck-cue-colours-after.png)
 - Cue points come from `mediaItemUserData` (`cuePoints`). Unit tests cover
   synthetic data. On the S8 the flags of two tracks were compared with
   djay's cue points by eye

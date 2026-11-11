@@ -35,4 +35,32 @@ final class CuePointTests: XCTestCase {
         XCTAssertEqual(DjayLibrarySnapshot.makeCuePoints(user), [])
         XCTAssertEqual(DjayLibrarySnapshot.makeCuePoints(nil), [])
     }
+
+    private func realCue(_ time: Double, number: DjayValue, color: String? = nil) -> DjayValue {
+        var fields: [String: DjayValue] = ["time": .double(time), "endTime": .double(-1), "number": number]
+        if let color {
+            fields["color"] = .string(color)
+        }
+        return .object(className: "ADCCuePoint", fields: fields)
+    }
+
+    func testCuesWithoutStoredColourTakeTheDefaultForTheirNumber() {
+        let numbers: [DjayValue] = [.null] + (2 ... 8).map { .int(Int64($0)) }
+        let user = DjayValue.object(className: nil, fields: [
+            "cuePoints": .list(numbers.enumerated().map { realCue(Double($0.offset) * 10, number: $0.element) })
+        ])
+        let cues = DjayLibrarySnapshot.makeCuePoints(user)
+        XCTAssertEqual(
+            cues.map(\.colorHex),
+            ["#CC0000", "#CC8800", "#0000CC", "#CCCC00", "#00CC00", "#CC00CC", "#00CCCC", "#8800CC"]
+        )
+    }
+
+    func testStoredColourBeatsTheNumberDefault() {
+        let user = DjayValue.object(className: nil, fields: [
+            "cuePoints": .list([realCue(51.4, number: .int(7), color: "#CC0088"), realCue(60, number: .int(9))])
+        ])
+        let cues = DjayLibrarySnapshot.makeCuePoints(user)
+        XCTAssertEqual(cues.map(\.colorHex), ["#CC0088", nil])
+    }
 }
