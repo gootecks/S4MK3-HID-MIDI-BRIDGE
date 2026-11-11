@@ -251,13 +251,15 @@ This section is fork-only. Keep it out of upstream pull requests.
   accepted violations (`mise run lint:swift:baseline`).
 - Docs and script style: oxfmt formats and mdsmith lints every fork-owned
   Markdown file (GitHub convention, `.mdsmith.yml`). `CHANGELOG.md` is
-  formatted only. Under `docs/s8/` lines are up to 95 characters, paragraphs
-  are checked for readability, and every note needs front matter with
-  `summary` and `type`; the root `README.md` and READMEs next to the code
-  are exempt from those three. mdsmith pads a right-aligned table column
-  differently from oxfmt, so keep table columns left-aligned. The
+  formatted only. Everywhere lines are up to 95 characters and paragraphs
+  are checked for readability. Every file in a folder needs front matter
+  with `summary` and `type`; the root `README.md` has none, because GitHub
+  would show it as a table on the front page. A README next to the code
+  uses `type: readme`; a `title` field would clash with the H1
+  (MDS051). mdsmith pads a right-aligned table
+  column differently from oxfmt, so keep table columns left-aligned. The
   index in `docs/s8/README.md` is generated from the front matter by
-  `<?catalog?>`, and notes over
+  `<?catalog?>`, READMEs next to the code included, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table
   of contents and `mdsmith fix` regenerates it. A commit that touches a note
   or `.mdsmith.yml` lints every fork-owned note, not only the staged ones: a

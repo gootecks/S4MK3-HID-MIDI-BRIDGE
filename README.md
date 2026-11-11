@@ -14,10 +14,10 @@ Djay sends audio directly to the S4. No development tools are needed.
 of every Traktor feature. Read the control differences and known limitations
 below before using it for a set.
 
-**[User guide: setup, everyday workflows and mapping choices](docs/user-guide.md)**
-is the maintained starting point for the current full-controller build.
-It explains browsing/preview, loops and jumps, FX pickup, pads, jog feel and
-screens without requiring MIDI or development knowledge.
+**[User guide](docs/user-guide.md)** is the maintained starting point for the
+current full-controller build. It covers setup, everyday workflows and mapping
+choices. It explains browsing/preview, loops and jumps, FX pickup, pads, jog
+feel and screens without requiring MIDI or development knowledge.
 
 ## Kontrol S8 with Djay
 
@@ -174,14 +174,16 @@ or with **Enable S4 screens** in the menu bar. HOTCUE and SAMPLES show JUMP,
 active LOOP size, KEY and tempo RANGE; STEMS/MUTE shows the reactive mute/solo
 legend. Install the mapping from the same app under a new filename, preserving
 custom mappings; older mappings lack numeric screen feedback.
-The [screen-driver controls](docs/screen-driver-handover.md) can temporarily
-stop NIHardwareAgent with confirmation and restore it afterward. Manual recovery
-remains available even with screen support off.
+
+The [screen-driver controls](docs/screen-driver-handover.md) can stop
+NIHardwareAgent for a while, after you confirm, and restore it afterward.
+You can still recover manually with screen support off.
+
 Powered playback rotation and haptic cues aren't supported.
-JOG/TT select software wheel behavior, not powered platter rotation. The app
-does provide motor-assisted wheel tension in the full-controller profile,
-as described below. Jog-ring animation
-remains decorative, not track-position or physical-platter-position tracking.
+JOG/TT select a software wheel behavior, not powered platter rotation.
+The full-controller profile does add motor-assisted wheel tension, described
+below. The jog-ring animation is decorative. It does not track the song
+position or the physical platter.
 
 ### Startup positions and FX pickup
 
@@ -191,8 +193,10 @@ tempo are not applied by this startup synchronization.
 
 Shared FX knobs keep Djay's values until you move through their pickup positions.
 A mismatched knob blinks its FX button; dry/wet uses the strip's main ON button.
+
 With screens enabled, `FX SYNC` identifies the affected deck, left/right strip,
 knobs 1-3 and `W` for dry/wet. A `?` means feedback is unavailable.
+
 These changes are not in the published beta.3 download. See
 [setup and operation](docs/controls-state-sync.md).
 
@@ -265,10 +269,11 @@ Use **Save and restart** to apply changes. No mapping export is needed for
 backspin options, and upgrading preserves explicit saved choices. See the
 [Backspin guide](docs/user-guide.md#backspin-detection) for tuning and details.
 
-![Jog settings showing Hardware tension, Backspin detection, scratch speed increase and motor assist controls, plus scratch and pitch-bend mapping settings](docs/images/jog-settings.png)
+![Jog settings with Backspin, scratch speed and motor assist controls](docs/images/jog-settings.png)
 
-Jog settings with the Backspin controls, 5.6% speed increase and motor assistance
-enabled at 100%, alongside neutral tension and calibrated scratch/pitch-bend defaults.
+Jog settings with the Backspin controls. The speed increase is 5.6%.
+Motor assistance is enabled at 100%.
+Tension is neutral, and the scratch and pitch-bend defaults are calibrated.
 
 The menu-bar icon turns green while the bridge is running. In source builds,
 it turns red if requested screens are blocked or fail while the bridge keeps

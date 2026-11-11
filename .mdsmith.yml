@@ -93,24 +93,24 @@ ignore:
   - "src/screens/DESIGN.md"
   - "src/screens/text/README.md"
   # END upstream files
-# The notes under docs/s8 also keep to a line length, readable paragraphs and front
-# matter. READMEs next to the code and the root README.md do not.
+# Every rule applies to every fork-owned file, with one exception: GitHub shows front
+# matter as a table above a README, and the root README.md is the project's front page.
+# A pattern without a slash matches the file name in every folder, so front matter is
+# required by a pattern that only files in a folder match.
 overrides:
-  - glob: ["docs/s8/**/*.md"]
+  - glob: ["*/**/*.md"]
     rules:
-      line-length:
-        max: 95
-        stern: true
       required-frontmatter:
         fields: [summary, type]
-      paragraph-readability: true
-      paragraph-structure: true
 rules:
   # oxfmt always leaves a blank line after front matter; MDS004 rejects it.
   first-line-heading: false
-  line-length: false
-  paragraph-readability: false
-  paragraph-structure: false
+  line-length:
+    max: 95
+    stern: true
+  required-frontmatter: false
+  paragraph-readability: true
+  paragraph-structure: true
   code-block-style:
     style: consistent
   proper-names:

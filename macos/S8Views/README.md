@@ -1,3 +1,8 @@
+---
+summary: "Renders djay Pro's right-hand sidebar onto the two Kontrol S8 panels and encodes the result as S8 screen frames."
+type: readme
+---
+
 # S8Views
 
 Renders djay Pro's right-hand sidebar onto the two Kontrol S8 panels
@@ -43,10 +48,10 @@ tracks stand in for the main table), the right panel always shows it, and the
 Library tab's highlight follows it. Other tabs keep their rows unselected.
 Selecting sidebar rows (Queue, History, Related) through AX is open for #51.
 
-Live (`LivePanels`, used by `S8Host --screens`) does not step a selection of
-its own: the highlight and the right panel are the row djay reports as
-selected in the sidebar table, on every tab, and nothing is shown once djay
-drops it ([`docs/s8/panel-views.md`](../../docs/s8/panel-views.md#selection)).
+Live (`LivePanels`, used by `S8Host --screens`) does not step a selection of its own.
+The highlight and the right panel are the row djay reports as selected in the sidebar
+table, on every tab. Nothing is shown once djay drops it
+([`docs/s8/panel-views.md`](../../docs/s8/panel-views.md#selection)).
 
 ## Display-button mapping
 

@@ -1,3 +1,8 @@
+---
+summary: "Reads djay Pro's decks for the S8 deck page: Accessibility state per deck plus per-track analysis from djay's metadata cache."
+type: readme
+---
+
 # DjayDecks
 
 Reads djay Pro's decks for the S8 deck page (#45): Accessibility state per
