@@ -51,7 +51,9 @@ their detailed notes stay in `docs/release-*.md`.
   packaging checks. Rust is pinned in `mise.toml` instead of
   `rust-toolchain.toml`.
 - hk hooks running formatting, Clippy, plist and shell checks, plus
-  conventional-commit messages; hooks never rewrite files.
+  conventional-commit messages. Commits apply and stage the formatters'
+  fixes; mdsmith findings no fixer can repair go to the `repo-mdsmith-fixer`
+  omp agent.
 - SwiftLint with a baseline for existing upstream code, and SwiftFormat for
   Swift files added by the fork.
 - Communiqué release-note and changelog tasks for this fork, with the LLM
