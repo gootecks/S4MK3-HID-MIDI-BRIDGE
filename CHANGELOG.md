@@ -12,6 +12,13 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- `--s8-leds` (Kontrol S8 only, with `--midi full`) lets the S8 deck buttons,
+  pads and touchstrips show Djay state: PLAY, CUE, SYNC, FLUX, the loop ring,
+  the FX and stem buttons, hot cue and sampler pad colours, track progress
+  and the finger on the strip. The generated mapping now carries the
+  feedback addresses, so install a new revision
+  ([mapping.md](docs/s8/mapping.md#led-feedback), #22, #23); not yet on the
+  S8.
 - `S8Host --screens` shows djay Pro's sidebar on both Kontrol S8 panels and
   keeps it current: the list of the open tab on the left, the selected
   track on the right, or one deck with `--deck N`
