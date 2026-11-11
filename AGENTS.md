@@ -238,13 +238,14 @@ This section is fork-only. Keep it out of upstream pull requests.
   `hk fix` applies the formatting. Every note there needs front matter with
   `summary` and `type`; the index in `docs/s8/README.md` is generated from it
   by `<?catalog?>`, and notes over 200 lines carry a `<?toc?>`. Run
-  `mdsmith fix <file>` after adding a note or a heading. `mise run
-  hooks:install` also registers mdsmith's merge driver for `docs/s8/**/*.md`
-  (`.gitattributes`) and its pre-merge-commit hook, which regenerate those
-  sections during merges. shfmt formats `docs/s8/*.sh`
-  (`docs/s8/.editorconfig`); shellcheck checks every script. oxfmt is the
-  native binary from the oxc GitHub release, so no npm download is needed.
-  Upstream Markdown and scripts keep upstream style.
+  `mdsmith fix .` after adding a note or a heading; `.mdsmith.yml` limits it
+  to `docs/s8/`. `mise run hooks:install` also registers mdsmith's merge
+  driver for `docs/s8/**/*.md` (`.gitattributes`), so generated sections no
+  longer conflict. After a merge or rebase they can still be stale: run
+  `mdsmith fix .` again (`mise run check` reports it). shfmt formats
+  `docs/s8/*.sh` (`docs/s8/.editorconfig`); shellcheck checks every script.
+  oxfmt is the native binary from the oxc GitHub release, so no npm download
+  is needed. Upstream Markdown and scripts keep upstream style.
 
 ### S8 code and commands
 
