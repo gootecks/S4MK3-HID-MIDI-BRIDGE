@@ -1,11 +1,16 @@
+---
+summary: "Frozen copies of Djay mappings that were checked on the S8, with install steps."
+type: reference
+---
+
 # Working Kontrol S8 mappings
 
 Frozen copies of Djay mappings that were checked on the S8. They keep a
 known-working layout available when the catalog and the generator change.
 They are not regenerated, and no test compares them with the generator.
 
-| File | Source | Checked |
-| ---- | ------ | ------- |
+| File                                              | Source                                                                                                                                                                                   | Checked                                                                                                                                                    |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Kontrol S8 Bridge r6 2026-11-10.djayMidiMapping` | Byte-identical to the `--device s8 --generate-mapping` output at commit `56b4a0c`. 517 controls, endpoint `Kontrol S8 MIDI Full`. Installed during the checks as `Kontrol S8 Bridge r6`. | Attended checks of 2026-11-10 ([translator-validation.md](../translator-validation.md)). Open: the touchstrip's fine motion, CAPTURE and the booth output. |
 
 A copy matches the bridge built from its source commit. A later bridge can

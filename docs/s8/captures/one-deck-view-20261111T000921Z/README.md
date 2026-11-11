@@ -1,3 +1,8 @@
+---
+summary: "Read-only Accessibility dumps of djay's One Deck view, taken on 2026-11-10 (#93)."
+type: capture
+---
+
 # One Deck view: what djay exposes through Accessibility
 
 Read-only dumps of djay Pro's Accessibility tree, taken on 2026-11-10 for
@@ -10,22 +15,22 @@ value and identifier. Library tables and the menu bar are left out.
 `axdump.swift` is the tool that wrote them (`swiftc axdump.swift -o axdump`,
 then `./axdump`); it only reads.
 
-| File | View | Step before the dump | Decks in the labels | Titles |
-|---|---|---|---|---|
-| `01-two-decks` | Two Decks | Start. Tracks on decks 1 to 4 | 1, 2 | 1 Anybody, 2 Scut 2 |
-| `02-one-deck-from-two-decks` | One Deck | View switched | 1 | 1 Anybody |
-| `03-four-decks` | Four Decks | View switched | 1, 2, 3, 4 | 1 Anybody, 2 Scut 2, 3 É o Bonde, 4 Scut 2 |
-| `04-one-deck-from-four-decks` | One Deck | View switched | 1 | 1 Anybody |
-| `05-two-decks-again` | Two Decks | View switched | 1, 2 | 1 Anybody, 2 Scut 2 |
-| `06-one-deck-after-deck-2-menu-action` | One Deck | **Deck 2 > Quantize** switched off and on again from the menu bar, then view switched | 1 | 1 Anybody |
-| `07-two-decks-new-track-on-deck-2` | Two Decks | User loaded a new track on deck 2 | 1, 2 | 1 Anybody, 2 Cheeni |
-| `08-one-deck-after-load-on-deck-2` | One Deck | View switched | 1 | 1 Anybody |
-| `09-one-deck-after-drag-load` | One Deck | User dragged a track onto the deck shown | 1 | 1 Duro |
-| `10-two-decks-after-one-deck-load` | Two Decks | View switched | 1, 2 | 1 Duro, 2 Cheeni |
-| `11-two-decks-after-cue-click-deck-2` | Two Decks | User clicked a cue point on deck 2, deck paused | 1, 2 | 1 Duro, 2 Cheeni |
-| `12-one-deck-after-cue-click-deck-2` | One Deck | View switched | **2** | 2 Cheeni |
-| `13-two-decks-after-axpress-jump-to-start-deck-1` | Two Decks | Script pressed **Jump to start point, Deck 1** (deck 1 paused at 0:00) | 1, 2 | 1 Duro, 2 Cheeni |
-| `14-one-deck-after-axpress-on-deck-1` | One Deck | View switched | **1** | 1 Duro |
+| File                                              | View       | Step before the dump                                                                  | Decks in the labels | Titles                                     |
+| ------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------ |
+| `01-two-decks`                                    | Two Decks  | Start. Tracks on decks 1 to 4                                                         | 1, 2                | 1 Anybody, 2 Scut 2                        |
+| `02-one-deck-from-two-decks`                      | One Deck   | View switched                                                                         | 1                   | 1 Anybody                                  |
+| `03-four-decks`                                   | Four Decks | View switched                                                                         | 1, 2, 3, 4          | 1 Anybody, 2 Scut 2, 3 É o Bonde, 4 Scut 2 |
+| `04-one-deck-from-four-decks`                     | One Deck   | View switched                                                                         | 1                   | 1 Anybody                                  |
+| `05-two-decks-again`                              | Two Decks  | View switched                                                                         | 1, 2                | 1 Anybody, 2 Scut 2                        |
+| `06-one-deck-after-deck-2-menu-action`            | One Deck   | **Deck 2 > Quantize** switched off and on again from the menu bar, then view switched | 1                   | 1 Anybody                                  |
+| `07-two-decks-new-track-on-deck-2`                | Two Decks  | User loaded a new track on deck 2                                                     | 1, 2                | 1 Anybody, 2 Cheeni                        |
+| `08-one-deck-after-load-on-deck-2`                | One Deck   | View switched                                                                         | 1                   | 1 Anybody                                  |
+| `09-one-deck-after-drag-load`                     | One Deck   | User dragged a track onto the deck shown                                              | 1                   | 1 Duro                                     |
+| `10-two-decks-after-one-deck-load`                | Two Decks  | View switched                                                                         | 1, 2                | 1 Duro, 2 Cheeni                           |
+| `11-two-decks-after-cue-click-deck-2`             | Two Decks  | User clicked a cue point on deck 2, deck paused                                       | 1, 2                | 1 Duro, 2 Cheeni                           |
+| `12-one-deck-after-cue-click-deck-2`              | One Deck   | View switched                                                                         | **2**               | 2 Cheeni                                   |
+| `13-two-decks-after-axpress-jump-to-start-deck-1` | Two Decks  | Script pressed **Jump to start point, Deck 1** (deck 1 paused at 0:00)                | 1, 2                | 1 Duro, 2 Cheeni                           |
+| `14-one-deck-after-axpress-on-deck-1`             | One Deck   | View switched                                                                         | **1**               | 1 Duro                                     |
 
 ## What the dumps show
 

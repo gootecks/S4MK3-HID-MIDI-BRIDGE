@@ -10,10 +10,14 @@ exe="$bundle/Contents/MacOS/NIHardwareAgent"
 run="target/s8-captures/screen-claim-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$run"
 
-now_ms() { echo $(( $(date +%s) * 1000 )); }
+now_ms() { echo $(($(date +%s) * 1000)); }
 mark() { echo "$1 $(now_ms)" >> "$run/events.txt"; }
 note() { printf '%s\n' "$1" | tee -a "$run/notes.txt"; }
-ask() { local answer; read -r -p "$1 " answer; printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"; }
+ask() {
+    local answer
+    read -r -p "$1 " answer
+    printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"
+}
 snap() {
     {
         echo "### $1 $(date -u +%H:%M:%SZ)"
@@ -24,15 +28,28 @@ snap() {
 }
 agent_pid() { pgrep -f "$exe" || true; }
 
-[ -t 0 ] || { echo "Run this from an interactive terminal."; exit 1; }
+[ -t 0 ] || {
+    echo "Run this from an interactive terminal."
+    exit 1
+}
 [ "$(ioreg -r -c IOUSBHostDevice -n 'Traktor Kontrol S8' | grep -c '^+-o Traktor Kontrol S8@')" -eq 1 ] ||
-    { echo "Connect exactly one Kontrol S8."; exit 1; }
+    {
+        echo "Connect exactly one Kontrol S8."
+        exit 1
+    }
 if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
-    echo "Quit Traktor, Maschine and Komplete Kontrol first."; exit 1
+    echo "Quit Traktor, Maschine and Komplete Kontrol first."
+    exit 1
 fi
 pid=$(agent_pid)
-[ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || { echo "Expected one NIHardwareAgent, found: ${pid:-none}"; exit 1; }
-[ "$(ps -o command= -p "$pid")" = "$exe" ] || { echo "NIHardwareAgent identity mismatch."; exit 1; }
+[ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || {
+    echo "Expected one NIHardwareAgent, found: ${pid:-none}"
+    exit 1
+}
+[ "$(ps -o command= -p "$pid")" = "$exe" ] || {
+    echo "NIHardwareAgent identity mismatch."
+    exit 1
+}
 
 cargo build --locked --quiet --example s8-passive-recorder --example s8-screen-claim
 target/debug/examples/s8-passive-recorder --out "$run/recorder.jsonl" --seconds 900 &

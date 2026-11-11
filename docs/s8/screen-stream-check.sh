@@ -16,7 +16,10 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 # shellcheck source=docs/s8/screen-lib.sh
 . docs/s8/screen-lib.sh
 
-[ "$#" -eq 0 ] || { echo "Usage: $0"; exit 1; }
+[ "$#" -eq 0 ] || {
+    echo "Usage: $0"
+    exit 1
+}
 screen_init screen-stream
 screen_preflight
 screen_build release
@@ -31,7 +34,10 @@ status=0
 # confirm NAME: prompt, return 1 and record on "stop".
 confirm() {
     ask "Next: $1. Enter to send, or 'stop'."
-    [ "$answer" != stop ] || { stopped="before $1"; return 1; }
+    [ "$answer" != stop ] || {
+        stopped="before $1"
+        return 1
+    }
     mark "$1"
 }
 
@@ -56,16 +62,28 @@ run_tool() {
     note "$name exit status $status"
     sleep 1
     snap "$name+1s"
-    if [ "$status" -ne 0 ]; then stopped="$name failed"; return 1; fi
+    if [ "$status" -ne 0 ]; then
+        stopped="$name failed"
+        return 1
+    fi
 }
 
 # observe NAME: highest clean rate, 0 stops the run. Sets $rate.
 observe() {
     ask "$1: highest rate (10, 20, 30 or 60) that showed a steady moving bar and counter without tearing, flicker or stale areas; 0 if none; or 'stop'."
-    [ "$answer" != stop ] || { stopped="after $1"; return 1; }
-    [[ "$answer" =~ ^(0|10|20|30|60)$ ]] || { stopped="$1: unreadable answer '$answer'"; return 1; }
+    [ "$answer" != stop ] || {
+        stopped="after $1"
+        return 1
+    }
+    [[ "$answer" =~ ^(0|10|20|30|60)$ ]] || {
+        stopped="$1: unreadable answer '$answer'"
+        return 1
+    }
     rate=$answer
-    [ "$rate" -gt 0 ] || { stopped="$1: no clean rate"; return 1; }
+    [ "$rate" -gt 0 ] || {
+        stopped="$1: no clean rate"
+        return 1
+    }
 }
 
 play_check() {
@@ -75,35 +93,51 @@ play_check() {
 steps() {
     local rate_left rate_right rate_alt soak
     run_tool a-left a-left stream --rates 10,20,30,60 --seconds 5 --panels left --screen left || return 0
-    observe a-left || return 0; rate_left=$rate
+    observe a-left || return 0
+    rate_left=$rate
     run_tool a-right a-right stream --rates 10,20,30,60 --seconds 5 --panels right --screen right || return 0
-    observe a-right || return 0; rate_right=$rate
+    observe a-right || return 0
+    rate_right=$rate
     play_check
 
     run_tool b-alternate b-alternate stream --rates 10,20,30,60 --seconds 5 --panels alternate || return 0
-    observe b-alternate || return 0; rate_alt=$rate
+    observe b-alternate || return 0
+    rate_alt=$rate
 
     run_tool c-burst c-burst burst --frames 120 --screen left || return 0
     ask "c-burst: any tearing or stale areas on the left panel afterwards? Describe, or 'stop'."
-    [ "$answer" != stop ] || { stopped="after c-burst"; return 0; }
+    [ "$answer" != stop ] || {
+        stopped="after c-burst"
+        return 0
+    }
 
-    soak=$(( rate_left < rate_right ? rate_left : rate_right ))
-    soak=$(( soak < rate_alt ? soak : rate_alt ))
-    soak=$(( soak < 30 ? soak : 30 ))
+    soak=$((rate_left < rate_right ? rate_left : rate_right))
+    soak=$((soak < rate_alt ? soak : rate_alt))
+    soak=$((soak < 30 ? soak : 30))
     note "Soak rate: $soak frames/s per panel (min of a-left $rate_left, a-right $rate_right, b $rate_alt, capped at 30)."
     run_tool d-soak d-soak stream --rates "$soak" --seconds 60 --panels alternate || return 0
     ask "d-soak: steady for the whole 60 s? y/n, or describe"
-    case "$answer" in y|Y|yes) ;; *) stopped="d-soak not steady"; return 0 ;; esac
+    case "$answer" in y | Y | yes) ;; *)
+        stopped="d-soak not steady"
+        return 0
+        ;;
+    esac
     play_check
 
     run_tool e-bg-skip e-bg f800 --screen left || return 0
     run_tool e-skip e-skip partial skip --screen left || return 0
     ask "e-skip: top half, bottom half? Photo. Describe, or 'stop'."
-    [ "$answer" != stop ] || { stopped="after e-skip"; return 0; }
+    [ "$answer" != stop ] || {
+        stopped="after e-skip"
+        return 0
+    }
     run_tool e-bg-rect e-bg f800 --screen left || return 0
     run_tool e-rect e-rect partial rect --screen left || return 0
     ask "e-rect: where did the pattern land? Photo. Describe, or 'stop'."
-    [ "$answer" != stop ] || { stopped="after e-rect"; return 0; }
+    [ "$answer" != stop ] || {
+        stopped="after e-rect"
+        return 0
+    }
 
     run_tool f-end f-end stream --rates 30 --seconds 5 --panels alternate || return 0
     sleep 3

@@ -1,3 +1,8 @@
+---
+summary: "The app-to-bridge channel for screen frames and status (#44): record layout, status lines and worker policy."
+type: reference
+---
+
 # S8 screen transport channel
 
 How the macOS app and the bridge exchange S8 screen frames and control
@@ -7,6 +12,24 @@ against this file.
 Status: the code and its fake-transport tests are written; **nothing here
 has been run against a device**. The last section lists what only hardware
 can confirm.
+
+<?toc?>
+
+- [Flags](#flags)
+- [Control events](#control-events)
+- [Frame records](#frame-records)
+  - [What the bridge sends to the device](#what-the-bridge-sends-to-the-device)
+  - [Stream rules](#stream-rules)
+- [Status lines](#status-lines)
+- [Worker behaviour](#worker-behaviour)
+- [Validation state](#validation-state)
+- [Attended check](#attended-check)
+  - [Preconditions](#preconditions)
+  - [What the pictures show](#what-the-pictures-show)
+  - [Steps](#steps)
+  - [Recovery and what to record](#recovery-and-what-to-record)
+
+<?/toc?>
 
 ## Flags
 
@@ -23,9 +46,9 @@ flags `--screens` and `--screen-control-stdin`.
 Every line starts at column 0 and ends with `\n`. Bridge log output may
 share stdout; a reader MUST ignore lines with other prefixes.
 
-## Control events (`--app-events`)
+## Control events
 
-Added by #51; this section is its specification.
+Flag `--app-events`, added by #51; this section is its specification.
 
 ```text
 S8_CONTROL display_button <left|right> <2|3|5|6|7|8> <down|up>
@@ -40,18 +63,19 @@ S8_CONTROL screen_encoder <left|right> <1-4> <signed delta in counts>
 - The first report of each report ID after start records resting state only
   and emits nothing.
 
-## Frame records (`--s8-screens-stdin`)
+## Frame records
 
-The app writes records to the bridge's stdin. Records are back to back with
-no padding. A record is a 12-byte header followed by the payload.
+Flag `--s8-screens-stdin`. The app writes records to the bridge's stdin.
+Records are back to back with no padding. A record is a 12-byte header
+followed by the payload.
 
-| Offset | Size | Field                                              |
-| -----: | ---: | -------------------------------------------------- |
-|      0 |    4 | ASCII `S8FR` (`53 38 46 52`)                       |
-|      4 |    1 | panel: `0` left, `1` right                         |
-|      5 |    3 | zero                                               |
-|      8 |    4 | payload length, `u32` little-endian, `261120`      |
-|     12 |261120| 480 × 272 pixels, RGB565 big-endian, row-major from the top left |
+| Offset | Size   | Field                                                            |
+| ------ | ------ | ---------------------------------------------------------------- |
+| 0      | 4      | ASCII `S8FR` (`53 38 46 52`)                                     |
+| 4      | 1      | panel: `0` left, `1` right                                       |
+| 5      | 3      | zero                                                             |
+| 8      | 4      | payload length, `u32` little-endian, `261120`                    |
+| 12     | 261120 | 480 × 272 pixels, RGB565 big-endian, row-major from the top left |
 
 Pixels are two bytes each (`PIXEL_BYTES` = 480 × 272 × 2 = 261 120). The
 bridge adds the framing itself (header, the full-panel literal
@@ -60,9 +84,9 @@ is one complete panel image: the channel has no partial updates.
 
 ### What the bridge sends to the device
 
-For each accepted record the bridge sends one USB bulk transfer of
-`FRAME_BYTES` = 261 148 bytes to interface 6, endpoint `0x04`, built by
-`screen::full`: frame header, command `00 00 FF 00`, the pixels, footer.
+For each accepted record the bridge sends one USB bulk transfer. It is
+`FRAME_BYTES` = 261 148 bytes to interface 6, endpoint `0x04`. It is built
+by `screen::full`: frame header, command `00 00 FF 00`, the pixels, footer.
 Full-panel literal frames are hardware-validated
 ([screen-frame-validation.md](screen-frame-validation.md)).
 
@@ -93,12 +117,12 @@ S8_SCREEN_STATUS failed <reason>
 
 `<reason>` is one line (control characters are replaced by spaces).
 
-| State      | Meaning                                                        |
-| ---------- | -------------------------------------------------------------- |
-| `pending`  | Flag set, nothing claimed. Printed once at start.              |
-| `active`   | The device accepted the first frame. Printed once.             |
-| `inactive` | Exit frames sent and the interface released cleanly.           |
-| `failed`   | A claim or transfer failed, or a protocol error. Final state.  |
+| State      | Meaning                                                       |
+| ---------- | ------------------------------------------------------------- |
+| `pending`  | Flag set, nothing claimed. Printed once at start.             |
+| `active`   | The device accepted the first frame. Printed once.            |
+| `inactive` | Exit frames sent and the interface released cleanly.          |
+| `failed`   | A claim or transfer failed, or a protocol error. Final state. |
 
 Order: `pending`, then `active` once the first transfer succeeds, then
 exactly one of `inactive` or `failed`. A failure before the first frame goes
@@ -115,10 +139,15 @@ Log lines to a closed stdout are dropped.
 
 ## Worker behaviour
 
-Placement: `src/device/s8/screen/{wire,worker,usb}.rs` in the library next
-to the frame encoder, so the stdin parser and the worker are testable
-without the binary; `src/s8/screens.rs` in the binary holds the stdout
-status lines, the stdin thread and the flag check.
+Placement:
+
+- `src/device/s8/screen/{wire,worker,usb}.rs` are in the library next to
+  the frame encoder. The stdin parser and the worker are testable without
+  the binary.
+- `src/s8/screens.rs` in the binary holds the stdout status lines, the
+  stdin thread and the flag check.
+
+Behaviour:
 
 - **Claim once.** Interface 6 is claimed when the first frame is due and
   held until stop. Nothing is claimed while the app sends nothing.
@@ -233,12 +262,18 @@ skips the rest and goes to recovery.
 ### What the pictures show
 
 The feeder sends the stamped test pattern of phase 5 (`pattern::canvas` and
-`pattern::stamp`): a grey border, white corner markers (large at the top
-left), the title `LEFT S8 SCREEN` or `RIGHT S8 SCREEN`, colour bars red, green,
-blue and white, the line `480 X 272 LITERAL`, and under it a strip with a
-16-bit binary counter (white = 1, dark grey = 0, most significant bit left)
-and a yellow bar. Frame `n` of a panel (counting from 0 per panel) shows
-counter `n`, and the bar's left edge at pixel `16 + (12·n mod 424)`.
+`pattern::stamp`). It has:
+
+- a grey border
+- white corner markers (large at the top left)
+- the title `LEFT S8 SCREEN` or `RIGHT S8 SCREEN`
+- colour bars red, green, blue and white
+- the line `480 X 272 LITERAL`
+- under it, a strip with a 16-bit binary counter (white = 1, dark grey =
+  0, most significant bit left) and a yellow bar
+
+Frame `n` of a panel (counting from 0 per panel) shows counter `n`, and the
+bar's left edge at pixel `16 + (12·n mod 424)`.
 
 The pictures are the content of the panel decoded from the frames the bridge
 would send for the feeder's records: `S8FR` record → bridge frame bytes →
@@ -254,10 +289,12 @@ stop both panels that received a frame show black:
 Rates are records per second per panel; `alternate` interleaves left and
 right, so the stream carries twice that. "Hold" is how long the runner keeps
 the bridge's stdin open after the last record. Every step ends with stdin
-closing, so every step shows the exit frames last. The bridge runs with
-`--until-stopped` in every step: a bounded run (`--seconds`) exits with status
-1 when no S8 control was touched during it, which these steps never ask for,
-so the end of each step is stdin closing or Ctrl-C.
+closing, so every step shows the exit frames last.
+
+The bridge runs with `--until-stopped` in every step. A bounded run
+(`--seconds`) exits with status 1 when no S8 control was touched during it.
+These steps never ask for that, so the end of each step is stdin closing or
+Ctrl-C.
 
 1. **`a-left-10`: one panel, slow.** Left panel, 10 fps, 50 frames (5 s),
    hold 5 s. Status: `pending`, `active`, `inactive`. See: the left bar
@@ -280,9 +317,9 @@ so the end of each step is stdin closing or Ctrl-C.
    ![Right, frame 0](images/transport/b-right-30-right-0.png)
    ![Right, frame 149, the last frame](images/transport/b-right-30-right-149.png)
 
-   At the cap a newer frame can replace one that has not been sent yet, so
-   the counter may skip numbers on the real panel; only the last frame is
-   certain, hence no picture of a middle frame.
+   At the cap a newer frame can replace one that has not been sent yet.
+   The counter may therefore skip numbers on the real panel. Only the last
+   frame is certain, hence no picture of a middle frame.
 
 3. **`c-alternate-10`: both panels.** Alternating, 10 fps per panel, 50
    frames per panel (5 s, 100 records), hold 5 s. See: both panels counting
@@ -358,34 +395,43 @@ so the end of each step is stdin closing or Ctrl-C.
    ![Left, frame 19, last good frame](images/transport/h-bad-record-left-19.png)
 
 9. **`i-ctrl-c`: Ctrl-C of the bridge.** Left panel, 10 fps, 600 frames
-   (60 s), bridge with `--until-stopped`. The runner tells you
-   when to start; press Ctrl-C once after 5 s or more, while the bar moves.
+   (60 s), bridge with `--until-stopped`. The runner tells you when to
+   start; press Ctrl-C once after 5 s or more, while the bar moves.
+
    See: the left panel goes black and the bridge exits. Pass: `pending`,
-   `active`, `inactive`, and exit status 0 (Ctrl-C ends the loop like EOF,
+   `active`, `inactive`, and exit status 0. Ctrl-C ends the loop like EOF,
    after which the exit frames are sent; an `--until-stopped` run never
-   fails on the control count). The frame at which Ctrl-C lands is not
-   fixed, so the only picture is the start. Fault: a panel that keeps its
-   last frame, a bridge that needs a second Ctrl-C, a non-zero exit status,
-   or `failed`.
+   fails on the control count.
+
+   The frame at which Ctrl-C lands is not fixed, so the only picture is the
+   start. Fault: a panel that keeps its last frame, a bridge that needs a
+   second Ctrl-C, a non-zero exit status, or `failed`.
 
    ![Left, frame 0](images/transport/i-ctrl-c-left-0.png)
 
 ### Recovery and what to record
 
-After the last step, or after the first failure or `stop`, the runner waits 3
-s and asks what the panels show with the agent still stopped (photo). It then
-relaunches NIHardwareAgent with `open -g`, waits 5 s and asks whether the
-Controller Editor labels are back, then for a left PLAY press and whether
-Djay reacted. If the labels do not return, relaunch Controller Editor and the
-agent by hand as in `docs/s8/agent-stop-validation.md`; the runner does the
-relaunch on every exit path, including Ctrl-C of the runner itself and
-`kill`.
+After the last step, or after the first failure or `stop`, the runner waits
+3 s. It asks what the panels show with the agent still stopped (photo). It
+then relaunches NIHardwareAgent with `open -g` and waits 5 s. It asks
+whether the Controller Editor labels are back, then for a left PLAY press
+and whether Djay reacted.
 
-Record per step: the status lines, the bridge exit status and elapsed time
-(all in the capture folder), photos of the panels during and after, and
-anything the observer saw (tearing, flicker, stale areas, a frozen counter).
-Write the results to `docs/s8/screen-transport-validation.md` after the run,
-not into this plan. A passing run confirms, for the first time on hardware,
-the items under "Not validated on hardware" except the claim failure with the
-agent running and the 500 ms timeout: neither is exercised, because the
-agent is stopped and the device never stalls.
+If the labels do not return, relaunch Controller Editor and the agent by
+hand as in `docs/s8/agent-stop-validation.md`. The runner does the relaunch
+on every exit path, including Ctrl-C of the runner itself and `kill`.
+
+Record per step:
+
+- the status lines, the bridge exit status and elapsed time (all in the
+  capture folder)
+- photos of the panels during and after
+- anything the observer saw (tearing, flicker, stale areas, a frozen
+  counter)
+
+Write the results to `docs/s8/screen-transport-validation.md` after the
+run, not into this plan. A passing run confirms the items under "Not
+validated on hardware" for the first time on hardware. Two items stay
+unconfirmed: the claim failure with the agent running and the 500 ms
+timeout. Neither is exercised, because the agent is stopped and the device
+never stalls.

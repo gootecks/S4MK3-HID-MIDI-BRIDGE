@@ -22,9 +22,16 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 . docs/s8/screen-lib.sh
 
 step_names="a-left-10 b-right-30 c-alternate-10 d-alternate-30 e-over-cap f-stall g-eof h-bad-record i-ctrl-c"
-[ "$#" -le 1 ] || { echo "Usage: $0 [first-step]"; exit 1; }
+[ "$#" -le 1 ] || {
+    echo "Usage: $0 [first-step]"
+    exit 1
+}
 from="${1:-}"
-case " $step_names " in *" ${from:-a-left-10} "*) ;; *) echo "Unknown step '$from'. Steps: $step_names"; exit 1 ;; esac
+case " $step_names " in *" ${from:-a-left-10} "*) ;; *)
+    echo "Unknown step '$from'. Steps: $step_names"
+    exit 1
+    ;;
+esac
 pictures_dir=docs/s8/images/transport
 bridge=target/release/s4mk3-hid-midi-bridge
 feeder=target/release/examples/s8-screen-feed
@@ -57,13 +64,19 @@ skip=""
 # skipped NAME: true while NAME is before the first step to run.
 skipped() {
     [ -n "$from" ] || return 1
-    [ "$1" != "$from" ] || { from=""; return 1; }
+    [ "$1" != "$from" ] || {
+        from=""
+        return 1
+    }
 }
 
 # confirm NAME: prompt, return 1 and record on "stop".
 confirm() {
     ask "Next: $1. Enter to start, or 'stop'."
-    [ "$answer" != stop ] || { stopped="before $1"; return 1; }
+    [ "$answer" != stop ] || {
+        stopped="before $1"
+        return 1
+    }
     mark "$1"
 }
 
@@ -87,7 +100,10 @@ pictures() {
 # exit), $statuses and $elapsed.
 run_step() {
     local name="$1" hold="$2" expect="$3" garbage="$4"
-    if skipped "$name"; then skip="$name"; return 0; fi
+    if skipped "$name"; then
+        skip="$name"
+        return 0
+    fi
     skip=""
     shift 4
     "$feeder" "$@" --dry-run > "$run/$name.dry"
@@ -104,21 +120,31 @@ run_step() {
     } | "$bridge" --device s8 --midi full --s8-screens-stdin --until-stopped 2>&1 | tee -i "$run/$name.txt"
     status=${PIPESTATUS[1]}
     set -e
-    elapsed=$(( $(date +%s) - begin ))
+    elapsed=$(($(date +%s) - begin))
     note "$name: bridge exit status $status after $elapsed s"
     statuses=$(sed -n 's/^S8_SCREEN_STATUS //p' "$run/$name.txt" | tr '\n' ',' | sed 's/,$//')
     note "$name: status lines: $statuses"
     snap "$name+1s"
     # shellcheck disable=SC2053
-    if [[ "$statuses" != $expect ]]; then stopped="$name: status order '$statuses', expected '$expect'"; return 1; fi
-    if [ "$status" -ne 0 ]; then stopped="$name: bridge exit status $status"; return 1; fi
+    if [[ "$statuses" != $expect ]]; then
+        stopped="$name: status order '$statuses', expected '$expect'"
+        return 1
+    fi
+    if [ "$status" -ne 0 ]; then
+        stopped="$name: bridge exit status $status"
+        return 1
+    fi
 }
 
 # verdict NAME QUESTION: y continues; anything else stops the run.
 verdict() {
     [ "$skip" != "$1" ] || return 0
     ask "$1: $2 (y, n or describe; 'stop' ends the run)"
-    case "$answer" in y | Y | yes) ;; *) stopped="$1: observer answered '$answer'"; return 1 ;; esac
+    case "$answer" in y | Y | yes) ;; *)
+        stopped="$1: observer answered '$answer'"
+        return 1
+        ;;
+    esac
 }
 
 steps() {
@@ -141,7 +167,10 @@ steps() {
     verdict f-stall "left panel kept frame 29 unchanged and without flicker for the 15 s after the feeder stopped, then went black" || return 0
 
     run_step g-eof 0 'pending,active,inactive' 0 --panels alternate --rate 10 --frames 30 || return 0
-    [ "$elapsed" -le 15 ] || { stopped="g-eof: bridge needed $elapsed s to stop after stdin closed"; return 0; }
+    [ "$elapsed" -le 15 ] || {
+        stopped="g-eof: bridge needed $elapsed s to stop after stdin closed"
+        return 0
+    }
     verdict g-eof "both panels went black within about a second of the last frame and the bridge exited by itself" || return 0
 
     run_step h-bad-record 5 'pending,active,failed *' 1 --panels left --rate 10 --frames 20 || return 0

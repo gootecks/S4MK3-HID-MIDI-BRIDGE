@@ -1,0 +1,3 @@
+# BEGIN mdsmith merge-driver
+docs/s8/**/*.md merge=mdsmith
+# END mdsmith merge-driver

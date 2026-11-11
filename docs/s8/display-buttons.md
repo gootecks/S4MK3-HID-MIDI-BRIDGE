@@ -1,3 +1,8 @@
+---
+summary: "Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51)."
+type: reference
+---
+
 # Display buttons and screen encoders (#51)
 
 The eight buttons and four encoders beside each S8 screen drive djay Pro's
@@ -32,22 +37,22 @@ S8.
 Left screen, sidebar tab (the tab is pressed on button down; button up is
 ignored):
 
-| Button | Tab |
-| --- | --- |
-| 2 | Library |
-| 3 | Queue |
-| 5 | Match |
-| 6 | History |
-| 7 | Info |
-| 8 | none |
+| Button | Tab     |
+| ------ | ------- |
+| 2      | Library |
+| 3      | Queue   |
+| 5      | Match   |
+| 6      | History |
+| 7      | Info    |
+| 8      | none    |
 
 Right screen, Info sub-tabs (only while the Info tab is showing them):
 
 | Button | Sub-tab |
-| --- | --- |
-| 2 | Info |
-| 3 | Related |
-| 5-8 | none |
+| ------ | ------- |
+| 2      | Info    |
+| 3      | Related |
+| 5-8    | none    |
 
 The assignment is `ButtonSlots.tabIndex(forSlot:)` from `S8Views`, the same
 one the screen renderer uses for its labels.

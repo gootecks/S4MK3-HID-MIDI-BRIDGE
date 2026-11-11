@@ -1,3 +1,8 @@
+---
+summary: "The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14)."
+type: reference
+---
+
 # S8 default Djay mapping
 
 The bridge generates `Kontrol S8 Bridge.djayMidiMapping` for the virtual MIDI
@@ -9,6 +14,24 @@ Djay uses. A second layout based on Evan's mapping is tracked in
 gootecks/S4MK3-HID-MIDI-BRIDGE issue #65. The mapping has no LED or screen
 feedback yet (its `outputs` array is empty). Nothing here is hardware-verified
 until the attended check.
+
+<?toc?>
+
+- [Channels and message types](#channels-and-message-types)
+- [Deck controls](#deck-controls)
+  - [Notes](#notes)
+  - [CCs](#ccs)
+- [Pads](#pads)
+- [FX units](#fx-units)
+- [Mixer (channel 5)](#mixer-channel-5)
+  - [Mixer CCs](#mixer-ccs)
+  - [Mixer notes](#mixer-notes)
+- [Crossfader assign (channel 5, notes)](#crossfader-assign-channel-5-notes)
+- [Deck select (channel 6, notes)](#deck-select-channel-6-notes)
+- [Hardware-local controls](#hardware-local-controls)
+- [Unassigned controls](#unassigned-controls)
+
+<?/toc?>
 
 ## Channels and message types
 
@@ -41,30 +64,36 @@ same numbers.
 
 ### Notes
 
-| Control              | No. | Base                                          | Shift                      |
-| -------------------- | --- | --------------------------------------------- | -------------------------- |
-| PLAY                 | 0   | `playPause`                                   |                            |
-| CUE                  | 1   | `cuePositionOrJumpConsideringPlayState1`      | `gotoZero`                 |
-| SYNC                 | 2   | `bpmSync`                                     |                            |
-| FLUX                 | 4   | `deckSlipToggle`                              | `reverseHold`              |
-| Loop encoder press   | 6   | `autoLoopOnOff`                               | `reloop`                   |
-| Touchstrip touch     | 7   | `scratchingMode`                              | `jogSeekMode`              |
-| BACK                 | 9   | `musicLibrary.toggleLibrarySource`            | `libraryBack`              |
-| Browse encoder press | 12  | `musicLibrary.load{deck}`                     | `toggleLibraryVisible`     |
-| EDIT                 | 13  | `musicLibrary.togglePreview`                  |                            |
-| FX SELECT            | 14  | `musicLibrary.toggleLibraryVisible`           |                            |
-| CAPTURE              | 22  | `recordSample`                                |                            |
-| HOTCUE               | 25  | `padModeHotCue`                               | `padModeBounceLoop`        |
-| LOOP                 | 26  | `looper.toggleLooperShown`                    |                            |
-| FREEZE               | 27  | `padModeSlicer`                               | `slicerLoopModeToggle`     |
-| REMIX                | 28  | `padModeSampler` and `sampler.toggleSamplerShown` |                        |
-| Stem ON 1-4          | 56-59 | `unmixerFourTrackChannel{1-4}Muted`         | `...Channel{1-4}Solo`      |
+| Control              | No.   | Base                                              | Shift                  |
+| -------------------- | ----- | ------------------------------------------------- | ---------------------- |
+| PLAY                 | 0     | `playPause`                                       |                        |
+| CUE                  | 1     | `cuePositionOrJumpConsideringPlayState1`          | `gotoZero`             |
+| SYNC                 | 2     | `bpmSync`                                         |                        |
+| FLUX                 | 4     | `deckSlipToggle`                                  | `reverseHold`          |
+| Loop encoder press   | 6     | `autoLoopOnOff`                                   | `reloop`               |
+| Touchstrip touch     | 7     | `scratchingMode`                                  | `jogSeekMode`          |
+| BACK                 | 9     | `musicLibrary.toggleLibrarySource`                | `libraryBack`          |
+| Browse encoder press | 12    | `musicLibrary.load{deck}`                         | `toggleLibraryVisible` |
+| EDIT                 | 13    | `musicLibrary.togglePreview`                      |                        |
+| FX SELECT            | 14    | `musicLibrary.toggleLibraryVisible`               |                        |
+| CAPTURE              | 22    | `recordSample`                                    |                        |
+| HOTCUE               | 25    | `padModeHotCue`                                   | `padModeBounceLoop`    |
+| LOOP                 | 26    | `looper.toggleLooperShown`                        |                        |
+| FREEZE               | 27    | `padModeSlicer`                                   | `slicerLoopModeToggle` |
+| REMIX                | 28    | `padModeSampler` and `sampler.toggleSamplerShown` |                        |
+| Stem ON 1-4          | 56-59 | `unmixerFourTrackChannel{1-4}Muted`               | `...Channel{1-4}Solo`  |
 
-Unqualified names are `turntable{deck}.` actions. `libraryBack`,
-`toggleLibrarySource`, `load{deck}`, `toggleLibraryVisible` and `togglePreview`
-are `musicLibrary.` actions; `load{deck}` loads into the sending deck. Djay
-names `toggleLibrarySource` "Switch Library Table", `libraryBack` "Switch
-Back" and `toggleLibraryVisible` "Toggle Library Expanded".
+Unqualified names are `turntable{deck}.` actions. These are
+`musicLibrary.` actions:
+
+- `libraryBack`
+- `toggleLibrarySource`
+- `load{deck}`, which loads into the sending deck
+- `toggleLibraryVisible`
+- `togglePreview`
+
+Djay names `toggleLibrarySource` "Switch Library Table", `libraryBack`
+"Switch Back" and `toggleLibraryVisible` "Toggle Library Expanded".
 
 REMIX therefore toggles Djay's sampler view each time it is pressed
 (`toggleSamplerShown`, "Toggle Sampler"). `sampler.showSampler`, which has no
@@ -76,12 +105,12 @@ layer. The Looper's own pad triggers are not mapped.
 
 ### CCs
 
-| Control        | No.   | Type            | Base                                  | Shift         |
-| -------------- | ----- | --------------- | ------------------------------------- | ------------- |
-| Loop encoder   | 1     | relative        | `autoLoopDurationRotary`              | `skipRotary`  |
-| Browse encoder | 3     | relative        | `musicLibrary.libraryRotary` (flipped) | `musicLibrary.sectionRotary` (flipped) |
-| Touchstrip     | 5     | rotary-absolute | `scratchingMove` (flipped)            | `jogSeekMove` |
-| Stem fader 1-4 | 48-51 | absolute, pickup | `unmixerFourTrackChannel{1-4}Volume` |               |
+| Control        | No.   | Type             | Base                                   | Shift                                  |
+| -------------- | ----- | ---------------- | -------------------------------------- | -------------------------------------- |
+| Loop encoder   | 1     | relative         | `autoLoopDurationRotary`               | `skipRotary`                           |
+| Browse encoder | 3     | relative         | `musicLibrary.libraryRotary` (flipped) | `musicLibrary.sectionRotary` (flipped) |
+| Touchstrip     | 5     | rotary-absolute  | `scratchingMove` (flipped)             | `jogSeekMove`                          |
+| Stem fader 1-4 | 48-51 | absolute, pickup | `unmixerFourTrackChannel{1-4}Volume`   |                                        |
 
 The touchstrip sends its position, 1-1024, as the 7-bit value
 `(position - 1) >> 3`, once per change, and its touch note while a finger is
@@ -102,12 +131,12 @@ switches the bridge's pad layer for its side and sends its pad-mode note
 Djay's pad view follows. Pad numbers 1-8 map to the note numbers shown. All
 pad rows are notes on the deck channel.
 
-| Mode    | Pads 1-8 | Base action                                              | Shift action     |
-| ------- | -------- | -------------------------------------------------------- | ---------------- |
-| HOTCUE  | 40-47    | `cueOrJumpIfAlreadySet1-8` (hot cues)                    | `clearCuePoint1-8` |
-| Shift + HOTCUE | 64-71 | `bounceLoop...BeatInterval`, 1/32 beat (pad 1) to 4 beats (pad 8), held | none |
-| FREEZE  | 72-79    | `slicer8Slice1-8` (Slicer)                               | none             |
-| REMIX   | 48-55    | `sampler.turntable{bank}.player1-8.playingConsideringHoldSetting` (sampler) | `...paused` |
+| Mode           | Pads 1-8 | Base action                                                                 | Shift action       |
+| -------------- | -------- | --------------------------------------------------------------------------- | ------------------ |
+| HOTCUE         | 40-47    | `cueOrJumpIfAlreadySet1-8` (hot cues)                                       | `clearCuePoint1-8` |
+| Shift + HOTCUE | 64-71    | `bounceLoop...BeatInterval`, 1/32 beat (pad 1) to 4 beats (pad 8), held     | none               |
+| FREEZE         | 72-79    | `slicer8Slice1-8` (Slicer)                                                  | none               |
+| REMIX          | 48-55    | `sampler.turntable{bank}.player1-8.playingConsideringHoldSetting` (sampler) | `...paused`        |
 
 Shift+FREEZE (note 27 on the Shift channel) toggles slicer loop mode. Decks A
 and C use sampler bank 1; decks B and D use bank 2.
@@ -120,51 +149,51 @@ target the same deck. Buttons and dials 1-3 are Djay's three effect slots;
 button 4 switches the deck's FX on or off and dial 4 is dry/wet for all three
 slots.
 
-| Control            | Left unit | Right unit | Base                | Shift                |
-| ------------------ | --------- | ---------- | ------------------- | -------------------- |
-| FX 1 (notes)       | 32        | 36         | `fx1Enabled`        | `fx1SelectNext`      |
-| FX 2 (notes)       | 33        | 37         | `fx2Enabled`        | `fx2SelectNext`      |
-| FX 3 (notes)       | 34        | 38         | `fx3Enabled`        | `fx3SelectNext`      |
-| FX 4 (notes)       | 35        | 39         | `fxActive`          |                      |
-| Dial 1 (CC)        | 32        | 40         | `fx1ParameterValue` |                      |
-| Dial 2 (CC)        | 33        | 41         | `fx2ParameterValue` |                      |
-| Dial 3 (CC)        | 34        | 42         | `fx3ParameterValue` |                      |
-| Dial 4 (CC)        | 35        | 43         | `fx1WetDryValue`, `fx2WetDryValue`, `fx3WetDryValue` | |
+| Control      | Left unit | Right unit | Base                                                 | Shift           |
+| ------------ | --------- | ---------- | ---------------------------------------------------- | --------------- |
+| FX 1 (notes) | 32        | 36         | `fx1Enabled`                                         | `fx1SelectNext` |
+| FX 2 (notes) | 33        | 37         | `fx2Enabled`                                         | `fx2SelectNext` |
+| FX 3 (notes) | 34        | 38         | `fx3Enabled`                                         | `fx3SelectNext` |
+| FX 4 (notes) | 35        | 39         | `fxActive`                                           |                 |
+| Dial 1 (CC)  | 32        | 40         | `fx1ParameterValue`                                  |                 |
+| Dial 2 (CC)  | 33        | 41         | `fx2ParameterValue`                                  |                 |
+| Dial 3 (CC)  | 34        | 42         | `fx3ParameterValue`                                  |                 |
+| Dial 4 (CC)  | 35        | 43         | `fx1WetDryValue`, `fx2WetDryValue`, `fx3WetDryValue` |                 |
 
 Dial 4 sends one CC that the mapping binds to all three dry/wet actions. All
 dials use pickup.
 
 ## Mixer (channel 5)
 
-### CCs
+### Mixer CCs
 
-| Control               | No.   | Action                      |
-| --------------------- | ----- | --------------------------- |
-| GAIN A-D              | 0-3   | `turntable{1-4}.gain`       |
-| EQ HI A-D             | 4-7   | `turntable{1-4}.highEQ`     |
-| EQ MID A-D            | 8-11  | `turntable{1-4}.midEQ`      |
-| EQ LOW A-D            | 12-15 | `turntable{1-4}.lowEQ`      |
-| Channel fader A-D     | 16-19 | `mixer.lineVolume{1-4}`     |
-| Crossfader            | 20    | `mixer.crossfade`           |
-| FILTER A-D            | 21-24 | `turntable{1-4}.filter`     |
-| Tempo encoder         | 26    | `turntableSelected.speed` (relative) |
-| CUE VOL               | 25    | `mixer.monitorLevel`        |
-| CUE MIX               | 27    | `mixer.monitorMix`          |
-| BOOTH                 | 28    | `mixer.boothLevel`          |
-| MAIN                  | 29    | `mixer.masterLevel`         |
+| Control           | No.   | Action                               |
+| ----------------- | ----- | ------------------------------------ |
+| GAIN A-D          | 0-3   | `turntable{1-4}.gain`                |
+| EQ HI A-D         | 4-7   | `turntable{1-4}.highEQ`              |
+| EQ MID A-D        | 8-11  | `turntable{1-4}.midEQ`               |
+| EQ LOW A-D        | 12-15 | `turntable{1-4}.lowEQ`               |
+| Channel fader A-D | 16-19 | `mixer.lineVolume{1-4}`              |
+| Crossfader        | 20    | `mixer.crossfade`                    |
+| FILTER A-D        | 21-24 | `turntable{1-4}.filter`              |
+| Tempo encoder     | 26    | `turntableSelected.speed` (relative) |
+| CUE VOL           | 25    | `mixer.monitorLevel`                 |
+| CUE MIX           | 27    | `mixer.monitorMix`                   |
+| BOOTH             | 28    | `mixer.boothLevel`                   |
+| MAIN              | 29    | `mixer.masterLevel`                  |
 
 Mixer CCs do not use pickup.
 
-### Notes
+### Mixer notes
 
-| Control        | No.   | Action                               |
-| -------------- | ----- | ------------------------------------ |
-| CUE (PFL) A-D  | 0-3   | `mixer.monitorActive{1-4}`           |
-| MIC            | 4     | `microphone.active`                  |
-| MIC 2          | 5     | none; assign it in Djay              |
-| SNAP           | 6     | none; assign it in Djay              |
-| QUANTIZE       | 7     | `application.quantizeToggle`         |
-| TEMPO button   | 26    | `turntableSelected.resetSpeed`       |
+| Control       | No. | Action                         |
+| ------------- | --- | ------------------------------ |
+| CUE (PFL) A-D | 0-3 | `mixer.monitorActive{1-4}`     |
+| MIC           | 4   | `microphone.active`            |
+| MIC 2         | 5   | none; assign it in Djay        |
+| SNAP          | 6   | none; assign it in Djay        |
+| QUANTIZE      | 7   | `application.quantizeToggle`   |
+| TEMPO button  | 26  | `turntableSelected.resetSpeed` |
 
 MIC 2 and SNAP send their notes so that Djay's MIDI configuration can learn
 them; the generated mapping has no entry for either. Djay names
@@ -184,13 +213,13 @@ One note per channel and switch position, sent when the switch moves.
 Actions are `mixer.crossfadeAssignment{1-4}Left`, `...Through` and `...Right`.
 
 Observed in the third attended check: with any assign switch away from the
-middle, moving the crossfader made Djay show a warning icon in its mixer and
-the dialog "Crossfader assignment changed", which offers to keep the
-assignment or restore the default for all decks. With all four switches in
+middle, moving the crossfader made Djay show a warning icon in its mixer. It
+also showed the dialog "Crossfader assignment changed", which offers to keep
+the assignment or restore the default for all decks. With all four switches in
 the middle neither appears. In the fourth check the same dialog appeared on
-the first button press after the bridge started, the report in which the
-bridge sends the four switch positions (all middle at the time). The cause is
-not established.
+the first button press after the bridge started. That is the report in which
+the bridge sends the four switch positions (all middle at the time). The cause
+is not established.
 
 ![Warning icon in Djay's mixer](images/crossfader-assign-warning.png)
 
@@ -200,8 +229,8 @@ not established.
 
 Sent by a DECK button for the deck its side switches to.
 
-| Deck | No. | Action                          |
-| ---- | --- | ------------------------------- |
+| Deck | No. | Action                           |
+| ---- | --- | -------------------------------- |
 | A    | 0   | `application.turntable1Selected` |
 | B    | 1   | `application.turntable2Selected` |
 | C    | 2   | `application.turntable3Selected` |
@@ -212,21 +241,21 @@ Sent by a DECK button for the deck its side switches to.
 The bridge handles these itself. SHIFT and the mixer buttons listed here send
 nothing to Djay; DECK and the pad-mode buttons also send the note described.
 
-| Control                       | Function                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| SHIFT                         | selects the Shift layer of its side                                       |
-| DECK                          | switches its side between decks A/C or B/D, then sends the deck-select note |
-| HOTCUE, FREEZE, REMIX         | select the pad layer of their side, then send their pad-mode note; Shift + HOTCUE selects the bounce-loop pads |
-| `mixer_fx_X_1`, `mixer_fx_X_2` | select mixer channel X as the target of the left or right FX unit        |
-| `mixer_filter_on_X`           | gates the FILTER knob of mixer channel X                                  |
+| Control                        | Function                                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| SHIFT                          | selects the Shift layer of its side                                                                            |
+| DECK                           | switches its side between decks A/C or B/D, then sends the deck-select note                                    |
+| HOTCUE, FREEZE, REMIX          | select the pad layer of their side, then send their pad-mode note; Shift + HOTCUE selects the bounce-loop pads |
+| `mixer_fx_X_1`, `mixer_fx_X_2` | select mixer channel X as the target of the left or right FX unit                                              |
+| `mixer_filter_on_X`            | gates the FILTER knob of mixer channel X                                                                       |
 
 ## Unassigned controls
 
-| Control                                                                        | Reason                                         |
-| ------------------------------------------------------------------------------ | ---------------------------------------------- |
-| SNAP, MIC 2 (`mixer_snap`, `mixer_mic_2`)                                      | send mixer notes 6 and 5 with no Djay action   |
-| `deck_assign_X`                                                                | Djay decks are fixed to their mixer channels   |
-| `screen_left_2`, `screen_left_3`, `screen_right_1..4`, `screen_encoder_1..4`   | reserved for the app's screen pages            |
-| `screen_left_1`, `screen_left_4`                                               | Native Instruments functions                   |
-| `*_touch` except `touchstrip_touch`                                            | touch caps are not sent to Djay                |
-| `*_latch`                                                                      | toggle states the S8 keeps itself              |
+| Control                                                                      | Reason                                       |
+| ---------------------------------------------------------------------------- | -------------------------------------------- |
+| SNAP, MIC 2 (`mixer_snap`, `mixer_mic_2`)                                    | send mixer notes 6 and 5 with no Djay action |
+| `deck_assign_X`                                                              | Djay decks are fixed to their mixer channels |
+| `screen_left_2`, `screen_left_3`, `screen_right_1..4`, `screen_encoder_1..4` | reserved for the app's screen pages          |
+| `screen_left_1`, `screen_left_4`                                             | Native Instruments functions                 |
+| `*_touch` except `touchstrip_touch`                                          | touch caps are not sent to Djay              |
+| `*_latch`                                                                    | toggle states the S8 keeps itself            |

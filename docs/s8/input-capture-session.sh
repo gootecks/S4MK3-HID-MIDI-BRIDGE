@@ -16,15 +16,28 @@ mkdir -p "$run"
 agent_pid() { pgrep -f "$exe" || true; }
 stamp() { echo "$1" >&3; }
 
-[ -t 0 ] || { echo "Run this from an interactive terminal."; exit 1; }
+[ -t 0 ] || {
+    echo "Run this from an interactive terminal."
+    exit 1
+}
 [ "$(ioreg -r -c IOUSBHostDevice -n 'Traktor Kontrol S8' | grep -c '^+-o Traktor Kontrol S8@')" -eq 1 ] ||
-    { echo "Connect exactly one Kontrol S8."; exit 1; }
+    {
+        echo "Connect exactly one Kontrol S8."
+        exit 1
+    }
 if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
-    echo "Quit Traktor, Maschine and Komplete Kontrol first."; exit 1
+    echo "Quit Traktor, Maschine and Komplete Kontrol first."
+    exit 1
 fi
 pid=$(agent_pid)
-[ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || { echo "Expected one NIHardwareAgent, found: ${pid:-none}"; exit 1; }
-[ "$(ps -o command= -p "$pid")" = "$exe" ] || { echo "NIHardwareAgent identity mismatch."; exit 1; }
+[ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || {
+    echo "Expected one NIHardwareAgent, found: ${pid:-none}"
+    exit 1
+}
+[ "$(ps -o command= -p "$pid")" = "$exe" ] || {
+    echo "NIHardwareAgent identity mismatch."
+    exit 1
+}
 
 awk -F'|' '$2 ~ /^ *[0-9]+ *$/ {
     for (i = 2; i <= 6; i++) gsub(/^ +| +$|`/, "", $i)
@@ -32,7 +45,10 @@ awk -F'|' '$2 ~ /^ *[0-9]+ *$/ {
 }' docs/s8/capture-checklist.md > "$run/rows.tsv"
 total=$(wc -l < "$run/rows.tsv" | tr -d ' ')
 { [ "$from" -ge 1 ] && [ "$from" -le "$total" ]; } 2> /dev/null ||
-    { echo "Start row must be between 1 and $total."; exit 1; }
+    {
+        echo "Start row must be between 1 and $total."
+        exit 1
+    }
 
 cargo build --locked --quiet --release --example s8-input-diff
 mkfifo "$run/labels"
@@ -50,7 +66,10 @@ finish() {
 }
 trap finish EXIT
 sleep 1
-kill -0 "$recorder" 2> /dev/null || { echo "The recorder did not start."; exit 1; }
+kill -0 "$recorder" 2> /dev/null || {
+    echo "The recorder did not start."
+    exit 1
+}
 
 echo "Stopping NIHardwareAgent. Djay gets no S8 MIDI until it is restored."
 kill -9 "$pid"

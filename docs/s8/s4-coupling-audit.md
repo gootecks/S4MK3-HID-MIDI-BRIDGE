@@ -1,3 +1,8 @@
+---
+summary: "S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam."
+type: reference
+---
+
 # S4 MK3 coupling audit
 
 Where the bridge assumes an S4 MK3, as of upstream `ee12026`
@@ -6,16 +11,16 @@ longer match.
 
 ## Device identity
 
-| Location                          | Assumption                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `src/main.rs:27-28`               | `S4_VENDOR_ID = 0x17cc`, `S4_PRODUCT_ID = 0x1720`                           |
-| `src/main.rs:194-195, 226`        | HID enumeration filters on the S4 constants                                 |
-| `src/main.rs:657, 700, 803`       | `registry.find(S4_VENDOR_ID, S4_PRODUCT_ID)` for full, probe and stage paths |
-| `src/full/mod.rs:1300, 1380`      | Test helpers use the same lookup                                            |
-| `src/screens.rs:159`              | Literal `0x17cc`/`0x1720`, requires exactly one device                      |
-| `src/jog_diagnostic/live.rs:184`  | Literal `0x17cc`/`0x1720`                                                   |
-| `src/midi.rs:10`                  | Minimal profile endpoint `S4 MK3 MIDI`                                      |
-| `src/full/mapping.rs:18`          | Full profile endpoint `S4 MK3 MIDI Full`                                    |
+| Location                         | Assumption                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `src/main.rs:27-28`              | `S4_VENDOR_ID = 0x17cc`, `S4_PRODUCT_ID = 0x1720`                            |
+| `src/main.rs:194-195, 226`       | HID enumeration filters on the S4 constants                                  |
+| `src/main.rs:657, 700, 803`      | `registry.find(S4_VENDOR_ID, S4_PRODUCT_ID)` for full, probe and stage paths |
+| `src/full/mod.rs:1300, 1380`     | Test helpers use the same lookup                                             |
+| `src/screens.rs:159`             | Literal `0x17cc`/`0x1720`, requires exactly one device                       |
+| `src/jog_diagnostic/live.rs:184` | Literal `0x17cc`/`0x1720`                                                    |
+| `src/midi.rs:10`                 | Minimal profile endpoint `S4 MK3 MIDI`                                       |
+| `src/full/mapping.rs:18`         | Full profile endpoint `S4 MK3 MIDI Full`                                     |
 
 ## Input layout
 
@@ -59,11 +64,17 @@ longer match.
 
 ## Large files
 
-Over the 500-line guideline: `src/full/mod.rs` (3060),
-`macos/S4BridgeApp.swift` (1306), `src/full/mapping.rs` (1210),
-`src/full/leds.rs` (946), `src/main.rs` (855), `src/full/feedback.rs` (766),
-`src/full/catalog.rs` (598). These are upstream files; add S8 code in new
-modules rather than growing them.
+These files are over the 500-line guideline:
+
+- `src/full/mod.rs` (3060)
+- `macos/S4BridgeApp.swift` (1306)
+- `src/full/mapping.rs` (1210)
+- `src/full/leds.rs` (946)
+- `src/main.rs` (855)
+- `src/full/feedback.rs` (766)
+- `src/full/catalog.rs` (598)
+
+These are upstream files; add S8 code in new modules rather than growing them.
 
 ## Device-profile seam (#5)
 

@@ -1,5 +1,5 @@
-amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Builtins.pkl"
+amends "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Builtins.pkl"
 
 // Never pass build output, local captures, or secrets to checks.
 exclude = List(
@@ -41,6 +41,54 @@ steps {
                 argv = List("bash", "-n", "{{files}}")
             }
             effect = "read"
+        }
+    }
+    ["shellcheck"] = Builtins.shellcheck
+    // Fork-owned scripts only; upstream scripts keep upstream style. Style: docs/s8/.editorconfig.
+    ["shfmt"] = (Builtins.shfmt) {
+        match_any = null
+        glob = "docs/s8/*.sh"
+    }
+    // Fork-owned Markdown only. oxfmt formats; mdsmith lints (.mdsmith.yml).
+    // The pinned oxfmt 0.76 has no --stdin-filepath, which the builtin's check_diff needs.
+    ["oxfmt"] = (Builtins.oxfmt) {
+        glob = "docs/s8/**/*.md"
+        check_diff = null
+    }
+    ["mdsmith"] {
+        glob = "docs/s8/**/*.md"
+        batch = true
+        depends = "oxfmt"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "check", "--no-color", "{{files}}")
+            }
+            effect = "read"
+        }
+        // mdsmith fix, then the repo-mdsmith-fixer agent on what it cannot fix.
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("docs/s8/mdsmith-fix.sh", "{{files}}")
+            }
+            effect = "write"
+        }
+    }
+    // Any staged note can make the index in docs/s8/README.md stale, so check it too.
+    ["mdsmith_index"] {
+        glob = "docs/s8/**/*.md"
+        depends = "mdsmith"
+        stage = "docs/s8/README.md"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "check", "--no-color", "docs/s8/README.md")
+            }
+            effect = "read"
+        }
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "fix", "--no-color", "docs/s8/README.md")
+            }
+            effect = "write"
         }
     }
     // Upstream violations are grandfathered by the baseline; new violations fail.
@@ -98,7 +146,8 @@ steps {
     ["check_merge_conflict"] = Builtins.check_merge_conflict
 }
 
-// Checks and Git hooks never rewrite or stage files. Fixing is opt-in.
+// Checks never rewrite files. Commits and `hk fix` apply fixes; pre-commit stages
+// them and keeps unstaged edits aside (hk stashes under refs/hk/stash, per worktree).
 hooks {
     ["check"] {
         fix = false
@@ -106,9 +155,9 @@ hooks {
         stash = "none"
     }
     ["pre-commit"] {
-        fix = false
-        stage = false
-        stash = "none"
+        fix = true
+        stage = true
+        stash = "git"
     }
     ["fix"] {
         fix = true

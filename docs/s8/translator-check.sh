@@ -14,17 +14,33 @@ run="docs/s8/captures/translator-$(date -u +%Y%m%dT%H%M%SZ)"
 
 agent_pid() { pgrep -f "$exe" || true; }
 
-[ -t 0 ] || { echo "Run this from an interactive terminal."; exit 1; }
+[ -t 0 ] || {
+    echo "Run this from an interactive terminal."
+    exit 1
+}
 [ "$(ioreg -r -c IOUSBHostDevice -n 'Traktor Kontrol S8' | grep -c '^+-o Traktor Kontrol S8@')" -eq 1 ] ||
-    { echo "Connect exactly one Kontrol S8."; exit 1; }
+    {
+        echo "Connect exactly one Kontrol S8."
+        exit 1
+    }
 if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
-    echo "Quit Traktor, Maschine and Komplete Kontrol first."; exit 1
+    echo "Quit Traktor, Maschine and Komplete Kontrol first."
+    exit 1
 fi
-[ -d "$mappings" ] || { echo "Djay mapping folder missing: $mappings"; exit 1; }
+[ -d "$mappings" ] || {
+    echo "Djay mapping folder missing: $mappings"
+    exit 1
+}
 pid=$(agent_pid)
 if [ -n "$pid" ]; then
-    [ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || { echo "Expected one NIHardwareAgent, found: $pid"; exit 1; }
-    [ "$(ps -o command= -p "$pid")" = "$exe" ] || { echo "NIHardwareAgent identity mismatch."; exit 1; }
+    [ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || {
+        echo "Expected one NIHardwareAgent, found: $pid"
+        exit 1
+    }
+    [ "$(ps -o command= -p "$pid")" = "$exe" ] || {
+        echo "NIHardwareAgent identity mismatch."
+        exit 1
+    }
 fi
 pgrep -f 'Controller Editor.app/Contents/MacOS/Controller Editor' > /dev/null ||
     echo "Warning: Controller Editor is not running. Started like this, the S8 was once dark and unusable; see docs/s8/translator-validation.md."

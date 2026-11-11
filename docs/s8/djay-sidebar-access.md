@@ -1,3 +1,8 @@
+---
+summary: "Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48)."
+type: reference
+---
+
 # djay Pro sidebar through Accessibility
 
 Research for #48 (part of #25). Can the bridge read djay Pro's right-hand
@@ -7,23 +12,46 @@ readable as plain static text. No S8 output was involved. All results are from
 djay Pro on this Mac (arm64, one 2560×1440 display) with an empty deck pair,
 the Skrillex SOMA test library (13 songs in `Music`) and the sidebar open.
 
+<?toc?>
+
+- [Summary](#summary)
+- [Reaching the window](#reaching-the-window)
+- [AX paths](#ax-paths)
+  - [Tabs](#tabs)
+  - [Info sub-tabs](#info-sub-tabs)
+  - [Content per tab](#content-per-tab)
+  - [Rows](#rows)
+  - [Sidebar toggle and menus](#sidebar-toggle-and-menus)
+- [Locating elements](#locating-elements)
+- [Using the probe](#using-the-probe)
+- [Row selection](#row-selection)
+  - [Sidebar selection by AXSelectedRows (#51)](#sidebar-selection-by-axselectedrows-51)
+- [Reliability and latency](#reliability-and-latency)
+- [Failure cases](#failure-cases)
+- [Not exercised](#not-exercised)
+- [Side effects and residue](#side-effects-and-residue)
+- [Prior art](#prior-art)
+- [Recommendation](#recommendation)
+
+<?/toc?>
+
 Probe: [`examples/djay-sidebar-probe.swift`](../../examples/djay-sidebar-probe.swift).
 Fixtures for the #50 renderer: [`fixtures/sidebar/`](fixtures/sidebar/), one real
 snapshot per tab.
 
 ## Summary
 
-| Question | Answer |
-| --- | --- |
-| Reachable through AX? | Yes, via `AXFocusedWindow` only. `AXWindows` is empty and `AXMainWindow` is nil. |
-| Works while djay is full screen, in the background, on another Space? | Yes, all three were true during every test. |
-| Sidebar open/closed | Detectable: closed removes the tab buttons and the content area from the tree. The toggle button and the View menu item both flip it. |
-| Switch tabs | `AXPress` on the tab button. 140 presses over 20 cycles, 0 failures. |
-| Info > Related | `AXPress` on the Related button inside the Info content. Works. |
-| Read rows | Yes: title, artist, BPM, key, time, date headers, the "Show More" button, per-row `AXSelected`. |
-| Which tab is active | **Not exposed** by the buttons. Infer it from the content area's title. |
-| Latency | Tab press to new content: median 120 ms, p95 126 ms, max 212 ms. Snapshot read: median 18 ms, p95 36 ms. |
-| Does selecting a sidebar row retarget load/queue? | A **click** does: djay treats a clicked sidebar row like a library row (user-confirmed). Setting `AXSelected` through AX does **not**. See [Row selection](#row-selection). |
+| Question                                                              | Answer                                                                                                                                                                      |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reachable through AX?                                                 | Yes, via `AXFocusedWindow` only. `AXWindows` is empty and `AXMainWindow` is nil.                                                                                            |
+| Works while djay is full screen, in the background, on another Space? | Yes, all three were true during every test.                                                                                                                                 |
+| Sidebar open/closed                                                   | Detectable: closed removes the tab buttons and the content area from the tree. The toggle button and the View menu item both flip it.                                       |
+| Switch tabs                                                           | `AXPress` on the tab button. 140 presses over 20 cycles, 0 failures.                                                                                                        |
+| Info > Related                                                        | `AXPress` on the Related button inside the Info content. Works.                                                                                                             |
+| Read rows                                                             | Yes: title, artist, BPM, key, time, date headers, the "Show More" button, per-row `AXSelected`.                                                                             |
+| Which tab is active                                                   | **Not exposed** by the buttons. Infer it from the content area's title.                                                                                                     |
+| Latency                                                               | Tab press to new content: median 120 ms, p95 126 ms, max 212 ms. Snapshot read: median 18 ms, p95 36 ms.                                                                    |
+| Does selecting a sidebar row retarget load/queue?                     | A **click** does: djay treats a clicked sidebar row like a library row (user-confirmed). Setting `AXSelected` through AX does **not**. See [Row selection](#row-selection). |
 
 ## Reaching the window
 
@@ -75,13 +103,13 @@ AXApplication "djay Pro"
 Left to right, as the issue described them (note the third icon is **Match**
 and the clock icon is called **Session** in AX; its tooltip says History):
 
-| Position | Icon | `AXDescription` | `AXHelp` | Probe id | Content `AXTitle` |
-| --- | --- | --- | --- | --- | --- |
-| 1 | track | `Library` | `Library` | `library` | `Playlist` |
-| 2 | list | `Queue` | `Queue` | `queue` | `Queue` |
-| 3 | third | `Match` | `Match` | `match` | `Match` |
-| 4 | clock | `Session` | `History` | `session` | `History` |
-| 5 | i | `Info` | `Info` | `info` | empty (first static text is `Info`) |
+| Position | Icon  | `AXDescription` | `AXHelp`  | Probe id  | Content `AXTitle`                   |
+| -------- | ----- | --------------- | --------- | --------- | ----------------------------------- |
+| 1        | track | `Library`       | `Library` | `library` | `Playlist`                          |
+| 2        | list  | `Queue`         | `Queue`   | `queue`   | `Queue`                             |
+| 3        | third | `Match`         | `Match`   | `match`   | `Match`                             |
+| 4        | clock | `Session`       | `History` | `session` | `History`                           |
+| 5        | i     | `Info`          | `Info`    | `info`    | empty (first static text is `Info`) |
 
 Each is an `AXButton`, role description `button`, enabled, actions
 `[AXPress]`, empty `AXTitle` and `AXValue`. There is **no** `AXValue`,
@@ -105,43 +133,46 @@ expose no selection state. The probe infers it from the content: an
 All content is children of the one sidebar `AXScrollArea` (a few Match items
 are siblings of it, not children).
 
-| Tab | Children |
-| --- | --- |
-| Library | `AXButton` description `Source`, title `Music`; `AXTable` "Playlist" |
-| Queue | static texts `Queue`, `0 Songs` (becomes `1 Song  •  3m`); `AXTable` "Queue" with a `Drop songs here` placeholder row |
-| Match | static text `Match`; `AXPopUpButton` "Active Deck"; `AXPopUpButton` description `Source`; static `Drop song here to match`; empty `AXTable`; **siblings** `AXImage` "icon empty match" and static `Match finds songs that go well with what is currently playing.` |
-| Session | static `History`; `AXMenuButton` help `New Session`; `AXTable` "History" |
-| Info | static `Info`; `AXPopUpButton` "Selected"; `AXMenuButton`; two `AXImage` (artwork); statics for title, `150 BPM`, key, time; the two sub-tab buttons; then `AXOutline` "Info" or `AXTable` (Related) |
+| Tab     | Children                                                                                                                                                                                             |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library | `AXButton` description `Source`, title `Music`; `AXTable` "Playlist"                                                                                                                                 |
+| Queue   | static texts `Queue`, `0 Songs` (becomes `1 Song  •  3m`); `AXTable` "Queue" with a `Drop songs here` placeholder row                                                                                |
+| Match   | static text `Match`; `AXPopUpButton` "Active Deck"; `AXPopUpButton` description `Source`; static `Drop song here to match`; empty `AXTable`; siblings listed below                                   |
+| Session | static `History`; `AXMenuButton` help `New Session`; `AXTable` "History"                                                                                                                             |
+| Info    | static `Info`; `AXPopUpButton` "Selected"; `AXMenuButton`; two `AXImage` (artwork); statics for title, `150 BPM`, key, time; the two sub-tab buttons; then `AXOutline` "Info" or `AXTable` (Related) |
+
+The Match siblings are `AXImage` "icon empty match" and the static text `Match
+finds songs that go well with what is currently playing.`
 
 ### Rows
 
 Track rows (Library, Queue, Session; the Related table uses the same
 layout) are `AXRow`/`AXTableRow`, 300×47, with one `AXCell` holding:
 
-| Child | Role | Example | Notes |
-| --- | --- | --- | --- |
-| `icon origin local` | `AXImage` | | source badge |
-| `default artwork song`, plain image | `AXImage` | | artwork, no pixel data |
-| title | `AXStaticText` `_NS:76` | `Anybody` | top line, left |
-| artist | `AXStaticText` `_NS:152` | `Skrillex, ISOxo` | second line, left |
-| BPM | `AXStaticText` `_NS:217` | `150 BPM` | top line, right; suffix to strip |
-| key | `AXStaticText` `_NS:213` | `7A` | second line, right |
-| time | `AXStaticText` `_NS:210` | `02:43` | second line, far right |
+| Child                               | Role                     | Example           | Notes                            |
+| ----------------------------------- | ------------------------ | ----------------- | -------------------------------- |
+| `icon origin local`                 | `AXImage`                |                   | source badge                     |
+| `default artwork song`, plain image | `AXImage`                |                   | artwork, no pixel data           |
+| title                               | `AXStaticText` `_NS:76`  | `Anybody`         | top line, left                   |
+| artist                              | `AXStaticText` `_NS:152` | `Skrillex, ISOxo` | second line, left                |
+| BPM                                 | `AXStaticText` `_NS:217` | `150 BPM`         | top line, right; suffix to strip |
+| key                                 | `AXStaticText` `_NS:213` | `7A`              | second line, right               |
+| time                                | `AXStaticText` `_NS:210` | `02:43`           | second line, far right           |
 
 Static texts carry their text in `AXValue`; `AXTitle` and `AXDescription` are
 empty. Fields are told apart by position and pattern (left half = title, then
-artist; ` BPM` suffix; `m:ss` pattern; the remainder is the key), not by
+artist; a `BPM` suffix after a space; `m:ss` pattern; the remainder is the key), not by
 identifier, so a missing BPM does not shift the others. Missing fields do not
 appear as empty elements in this library.
 
 Other row types:
 
-| Kind | AX shape | Example |
-| --- | --- | --- |
-| date header (Session) | row, 29 px high, one static text | `10/28/26, 12:40 AM` (the space before `AM` is U+202F) |
-| action (Session) | row with one `AXButton` titled `Show More`, actions `[AXPress]` | `Show More` |
-| empty state | row with an `AXImage` "icon drop placeholder" and one static text | `Drop songs here`, `Drop song here to link songs` |
-| Info field | `AXRow`/`AXOutlineRow` > `AXCell` > label static + value | `TITLE` + `AXTextField` `Anybody` |
+| Kind                  | AX shape                                                          | Example                                                |
+| --------------------- | ----------------------------------------------------------------- | ------------------------------------------------------ |
+| date header (Session) | row, 29 px high, one static text                                  | `10/28/26, 12:40 AM` (the space before `AM` is U+202F) |
+| action (Session)      | row with one `AXButton` titled `Show More`, actions `[AXPress]`   | `Show More`                                            |
+| empty state           | row with an `AXImage` "icon drop placeholder" and one static text | `Drop songs here`, `Drop song here to link songs`      |
+| Info field            | `AXRow`/`AXOutlineRow` > `AXCell` > label static + value          | `TITLE` + `AXTextField` `Anybody`                      |
 
 Selection is `AXSelected` on the `AXRow` (`1` or `0`). `AXCell`s inherit it.
 
@@ -155,9 +186,9 @@ RELEASED, ALBUM TRACK #, BIT RATE, SAMPLE RATE. Values are `AXTextField`,
 
 Sidebar button, bottom right of the window:
 
-| State | `AXDescription` | `AXHelp` |
-| --- | --- | --- |
-| open | `Hide library inspector` | `Show sidebar` |
+| State  | `AXDescription`          | `AXHelp`       |
+| ------ | ------------------------ | -------------- |
+| open   | `Hide library inspector` | `Show sidebar` |
 | closed | `Show library inspector` | `Show sidebar` |
 
 When closed, the tab buttons and the content area are gone from the tree
@@ -168,25 +199,26 @@ and sub-tab.
 Menu route, an alternative press path (menu items answer `AXPress` and do not
 need djay frontmost):
 
-| Menu | Item | Shortcut | Notes |
-| --- | --- | --- | --- |
-| View | `Show Library Sidebar` | K | `AXMenuItemMarkChar` is `✓` when open, so this is a state read that needs no tree walk |
-| View | `Expand Library` | ⌘↩ (as listed) | checked in the test state |
-| View | `Split Library` | B | |
-| View | `Show Library Automix` | | |
-| Library | `Search`, `Locate Track`, `Analyze`, `Automix`, `Preview Track` | F, L, A, §… | |
-| Library | `Add Selection to Queue` | ↩ | acts on the main library selection |
-| Library | `Remove Selection from Queue` | ⌫ | acts on the selected Queue row |
-| Library | `Refresh Library` | R | |
-| Deck 1 / Deck 2 | `Load Previous Track`, `Load Next Track`, `Load Scratch Tools`, `Load Double` | | no "load selected track" item |
+| Menu            | Item                                                                          | Shortcut       | Notes                                                                                  |
+| --------------- | ----------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
+| View            | `Show Library Sidebar`                                                        | K              | `AXMenuItemMarkChar` is `✓` when open, so this is a state read that needs no tree walk |
+| View            | `Expand Library`                                                              | ⌘↩ (as listed) | checked in the test state                                                              |
+| View            | `Split Library`                                                               | B              |                                                                                        |
+| View            | `Show Library Automix`                                                        |                |                                                                                        |
+| Library         | `Search`, `Locate Track`, `Analyze`, `Automix`, `Preview Track`               | F, L, A, §…    |                                                                                        |
+| Library         | `Add Selection to Queue`                                                      | ↩              | acts on the main library selection                                                     |
+| Library         | `Remove Selection from Queue`                                                 | ⌫              | acts on the selected Queue row                                                         |
+| Library         | `Refresh Library`                                                             | R              |                                                                                        |
+| Deck 1 / Deck 2 | `Load Previous Track`, `Load Next Track`, `Load Scratch Tools`, `Load Double` |                | no "load selected track" item                                                          |
 
 There is **no menu item for the sidebar tabs**, so tab switching needs
 `AXPress` on the buttons.
 
 ## Locating elements
 
-`findSidebar` in the probe walks `AXSplitGroup`/`AXGroup` containers (depth 4) looking for a parent that has at least
-three `AXButton`s with a non-empty description, 40–100 px wide, 25–60 px high,
+`findSidebar` in the probe walks `AXSplitGroup`/`AXGroup` containers (depth 4)
+looking for a parent that has at least three `AXButton`s with a non-empty
+description, 40–100 px wide, 25–60 px high,
 on one `y`, plus an `AXScrollArea` below them. That finds the tab strip and
 its content area without identifiers or the tab count. Median 8 ms (p95 13 ms)
 including the AX calls.
@@ -226,13 +258,13 @@ Mapping notes where djay's UI does not fit the schema:
 
 Experiments (library, Anybody selected in the main table to start):
 
-| Step | Result |
-| --- | --- |
-| `AXUIElementSetAttributeValue(sidebarRow, "AXSelected", true)` on sidebar row 1 | returns success; that sidebar row shows selected |
-| main table right after | unchanged (still Anybody); Info "Selected" still showed Anybody |
-| `AXSelectedRows` set on the main table | returns success; main selection moves |
-| `Library > Add Selection to Queue` with sidebar row 1 (Cheeni) selected and main row 2 (Diwali) selected | Diwali was queued (the Queue showed `1 Song`, Diwali) |
-| select the Queue row through the sidebar, then `Library > Remove Selection from Queue` | the Queue returned to empty |
+| Step                                                                                                     | Result                                                          |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `AXUIElementSetAttributeValue(sidebarRow, "AXSelected", true)` on sidebar row 1                          | returns success; that sidebar row shows selected                |
+| main table right after                                                                                   | unchanged (still Anybody); Info "Selected" still showed Anybody |
+| `AXSelectedRows` set on the main table                                                                   | returns success; main selection moves                           |
+| `Library > Add Selection to Queue` with sidebar row 1 (Cheeni) selected and main row 2 (Diwali) selected | Diwali was queued (the Queue showed `1 Song`, Diwali)           |
+| select the Queue row through the sidebar, then `Library > Remove Selection from Queue`                   | the Queue returned to empty                                     |
 
 Setting `AXSelected` on a sidebar row changes its highlight but does not
 retarget `Add Selection to Queue`. A real click does: djay treats a clicked
@@ -245,11 +277,11 @@ and does retarget. Sidebar rows expose no actions (no `AXPress`).
 
 Tried on the running djay, no track loaded, queued or played:
 
-| Attempt | Result |
-| --- | --- |
+| Attempt                                                                                     | Result                                                                                                                            |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `AXSelectedRows` set to `[row]` on the sidebar `AXTable` (child of the sidebar scroll area) | success; the sidebar row highlights and the Info panel's track becomes that row's track; the main table selection does not change |
-| `AXSelected` set on a row re-read just before | same effect; on a row reference kept across a UI change it fails (`-25202`) |
-| `AXSelectedRows` on the main table set to the row it already selects | no change in the Info panel |
+| `AXSelected` set on a row re-read just before                                               | same effect; on a row reference kept across a UI change it fails (`-25202`)                                                       |
+| `AXSelectedRows` on the main table set to the row it already selects                        | no change in the Info panel                                                                                                       |
 
 `DjaySidebar.moveSelection(by:)` uses `AXSelectedRows` on the sidebar table
 with freshly read rows, so a stale reference is never used. Whether this
@@ -265,12 +297,12 @@ MIDI load itself was not exercised (see [Not exercised](#not-exercised)).
 tab and wait until the content title changes, read a snapshot, then press
 Related and Info on the Info tab. djay stayed in the background.
 
-| Measure | n | min | median | p95 | max |
-| --- | --- | --- | --- | --- | --- |
-| tab press to new content | 100 | 21 ms | 120 ms | 126 ms | 212 ms |
-| sub-tab press to new content | 40 | n/a | 131 ms | 137 ms | 187 ms |
-| full snapshot read | 100 | n/a | 18 ms | 36 ms | 92 ms |
-| locate sidebar | 100 | n/a | 8 ms | 13 ms | n/a |
+| Measure                      | n   | min   | median | p95    | max    |
+| ---------------------------- | --- | ----- | ------ | ------ | ------ |
+| tab press to new content     | 100 | 21 ms | 120 ms | 126 ms | 212 ms |
+| sub-tab press to new content | 40  | n/a   | 131 ms | 137 ms | 187 ms |
+| full snapshot read           | 100 | n/a   | 18 ms  | 36 ms  | 92 ms  |
+| locate sidebar               | 100 | n/a   | 8 ms   | 13 ms  | n/a    |
 
 140 presses, 0 failures, 0 timeouts (3 s messaging timeout). A first run showed 30
 "failures" that were probe bugs: it re-pressed stale sub-tab elements after
@@ -283,20 +315,20 @@ read is a tree walk, which is why rows should be capped (`--limit`).
 
 ## Failure cases
 
-| Case | Observed |
-| --- | --- |
-| djay not running | probe exits 2 |
-| Accessibility not granted | `AXIsProcessTrusted()` false; probe exits 2 |
-| `count of windows` via System Events | 0, because `AXWindows` is empty; use AX directly |
-| full screen | no effect; this is the state djay was in |
-| window on another Space | no effect on reads or presses (`onscreen: false`) |
-| djay in background | no effect |
-| sidebar closed | tabs and content disappear; snapshot says `sidebarOpen: false`; `--open` restores the old tab |
-| active tab unknown | cannot be read from the buttons; infer from content title, so an unrecognised content title returns no selected tab |
-| stale element after a press | a second press with a kept reference fails (`AXPress` error); re-find |
-| Related | empty here (`Drop song here to link songs`); linking needs drag and drop, so populated Related rows were not captured |
-| long lists | only 13 songs available, so row virtualisation is untested; `Show More` in History is a button, not auto-loaded rows |
-| deck playing | not tested (see below) |
+| Case                                 | Observed                                                                                                              |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| djay not running                     | probe exits 2                                                                                                         |
+| Accessibility not granted            | `AXIsProcessTrusted()` false; probe exits 2                                                                           |
+| `count of windows` via System Events | 0, because `AXWindows` is empty; use AX directly                                                                      |
+| full screen                          | no effect; this is the state djay was in                                                                              |
+| window on another Space              | no effect on reads or presses (`onscreen: false`)                                                                     |
+| djay in background                   | no effect                                                                                                             |
+| sidebar closed                       | tabs and content disappear; snapshot says `sidebarOpen: false`; `--open` restores the old tab                         |
+| active tab unknown                   | cannot be read from the buttons; infer from content title, so an unrecognised content title returns no selected tab   |
+| stale element after a press          | a second press with a kept reference fails (`AXPress` error); re-find                                                 |
+| Related                              | empty here (`Drop song here to link songs`); linking needs drag and drop, so populated Related rows were not captured |
+| long lists                           | only 13 songs available, so row virtualisation is untested; `Show More` in History is a button, not auto-loaded rows  |
+| deck playing                         | not tested (see below)                                                                                                |
 
 ## Not exercised
 
@@ -357,6 +389,6 @@ For #51 (display buttons): use `AXPress` on the tab buttons.
   & Security > Accessibility). It is a separate grant from the Terminal one
   used for this research.
 
-Library data beyond what the visible sidebar shows (full history, unplayed
-tracks) still comes from the read-only `MediaLibrary.db` snapshot path, not
-AX.
+Library data beyond the visible sidebar still comes from the read-only
+`MediaLibrary.db` snapshot path, not AX. This covers the full history and
+unplayed tracks.

@@ -211,10 +211,10 @@ This section is fork-only. Keep it out of upstream pull requests.
   comment once the user agrees. Close a milestone once it has no open
   issues.
 - Upstream friendliness: follow `docs/s8/upstream-workflow.md`. Never mix
-  fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`,
-  `hk.pkl`, `communique.toml`, `fnox.toml`, this section) with feature
-  changes in one commit. Do not reformat or rename upstream code or docs
-  without need.
+  fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`,
+  `.mdsmith.yml`, `.gitattributes`, `communique.toml`, `fnox.toml`, this
+  section) with feature changes in one commit. Do not reformat or rename
+  upstream code or docs without need.
 - Record user-visible changes under `Unreleased` in `CHANGELOG.md` in a
   separate commit from upstream-candidate feature commits.
 - S8 hardware: reading interface 5 HID input in shared mode is allowed for
@@ -224,6 +224,10 @@ This section is fork-only. Keep it out of upstream pull requests.
 - Tooling: `mise tasks` lists named tasks. `mise run check` runs the hk gates
   read-only; `mise run ci` adds the full test suites. Install hooks with
   `mise run hooks:install`. Release notes: `mise run release:notes`.
+- Commits apply fixes: the pre-commit hook runs each step's fixer (cargo fmt,
+  SwiftFormat, shfmt, oxfmt, mdsmith) and stages what it changed. Unstaged
+  edits are set aside under `refs/hk/stash` while it runs and come back
+  afterwards, uncommitted. A finding no fixer can repair blocks the commit.
 - Toolchains: `mise.toml` pins Rust (replacing upstream's
   `rust-toolchain.toml`), SwiftLint and SwiftFormat. Swift itself comes from
   Xcode, not mise: the swift.org toolchain mise installs is separate from the
@@ -233,6 +237,28 @@ This section is fork-only. Keep it out of upstream pull requests.
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
   not reformat upstream Swift. Regenerate the baseline only for deliberately
   accepted violations (`mise run lint:swift:baseline`).
+- Docs and script style: oxfmt formats and mdsmith lints Markdown under
+  `docs/s8/` (GitHub convention, lines up to 95 characters, `.mdsmith.yml`).
+  Every note there needs front matter with `summary` and `type`; the index in
+  `docs/s8/README.md` is generated from it by `<?catalog?>`, and notes over
+  200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table
+  of contents and `mdsmith fix` regenerates it. Committing any note also
+  regenerates and stages the index (`mdsmith_index` in `hk.pkl`).
+  `mise run hooks:install` also registers mdsmith's merge driver for
+  `docs/s8/**/*.md` (`.gitattributes`), so generated sections no longer
+  conflict. After a merge or rebase they can still be stale: run
+  `mdsmith fix .` again (`mise run check` reports it). shfmt formats
+  `docs/s8/*.sh` (`docs/s8/.editorconfig`); shellcheck checks every script.
+  oxfmt is the native binary from the oxc GitHub release, so no npm download
+  is needed. Upstream Markdown and scripts keep upstream style.
+- What `mdsmith fix` cannot repair (missing `summary`, long lines, link text,
+  broken links) goes to the `repo-mdsmith-fixer` omp agent
+  (`~/.omp/agent/agents/repo-mdsmith-fixer.md`, Sonnet) through
+  `docs/s8/mdsmith-fix.sh`, the mdsmith step's fixer. It edits only the
+  committed notes, and its edits are staged into the commit; hk prints its
+  report. Review them with `git show`. Without omp or the agent file, or with
+  `MDSMITH_AGENT=0`, the commit stays blocked until the findings are fixed by
+  hand. `mise run check` never runs the agent.
 
 ### S8 code and commands
 

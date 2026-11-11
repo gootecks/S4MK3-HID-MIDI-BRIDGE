@@ -2,10 +2,14 @@
 age = "1.3.1"
 communique = "1.5.0"
 fnox = "1.43.0"
-hk = "2.4.0"
+"github:jeduden/mdsmith" = "0.55.0"
+hk = { version = "2.12.0", workflow = "release.yml" }
+"github:oxc-project/oxc" = { version = "0.76.0", version_prefix = "oxfmt_v", rename_exe = "oxfmt" }
 op = "2.32.1"
 pkl = "0.32.1"
 rust = { version = "1.99.1", profile = "default", components = ["rust-src"] }
+shellcheck = "0.11.0"
+shfmt = "3.14.1"
 swiftformat = { version = "0.64.4", no_app = "true", rename_exe = "swiftformat" }
 swiftlint = "0.65.1"
 
@@ -167,8 +171,8 @@ run = "bash docs/s8/translator-check.sh"
 raw = true
 
 [tasks."hooks:install"]
-description = "Install hk Git hooks"
-run = "hk install"
+description = "Install hk Git hooks and the mdsmith merge driver"
+run = ["hk install", "mdsmith merge-driver install 'docs/s8/**/*.md'"]
 
 [tasks."secrets:check"]
 description = "Validate configured secrets"

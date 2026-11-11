@@ -1,3 +1,8 @@
+---
+summary: "Phase 0: what changes when NIHardwareAgent stops, and the attended check (agent-stop-check.sh)."
+type: validation
+---
+
 # S8 screen phase 0: NIHardwareAgent stop
 
 Validation record for #32 ([screens.md](screens.md), phase 0). Nothing was
@@ -18,14 +23,14 @@ S8 still sends HID reports, but no MIDI arrives on any port and Djay does not
 react. The hybrid setup does not work: with the agent stopped, the bridge has
 to translate every S8 control itself, as it does for the S4.
 
-| Part | Result |
-| ---- | ------ |
-| Interface ownership after SIGKILL | Verified, runs 1 and 2 |
-| MIDI with the agent stopped | **None**, run 2 |
-| HID input with the agent stopped | Continues, run 2 |
+| Part                                  | Result                                                   |
+| ------------------------------------- | -------------------------------------------------------- |
+| Interface ownership after SIGKILL     | Verified, runs 1 and 2                                   |
+| MIDI with the agent stopped           | **None**, run 2                                          |
+| HID input with the agent stopped      | Continues, run 2                                         |
 | Panel contents with the agent stopped | Last Controller Editor labels stay on both panels, run 2 |
-| Relaunch within 30 s | None, runs 1 and 2 |
-| Recovery with `open -g` | Verified: interfaces, MIDI, labels and Djay PLAY, run 2 |
+| Relaunch within 30 s                  | None, runs 1 and 2                                       |
+| Recovery with `open -g`               | Verified: interfaces, MIDI, labels and Djay PLAY, run 2  |
 
 ## Setup
 
@@ -49,11 +54,11 @@ input. Run 2 (07:39Z) was the attended `mise run s8:agent-stop` check.
 Counts per window. Baseline: agent running. Stop: from SIGKILL until
 recovery, about 5 minutes. Recover: after `open -g`.
 
-| Window | Presses | HID report 1 | MIDI on `Traktor Kontrol S8 Input` | MIDI on `Traktor Kontrol S8` | Djay |
-| ------ | ------- | ------------ | ---------------------------------- | ---------------------------- | ---- |
-| Baseline | PLAY, CUE A, pad 1 | 8 | PLAY ch 1 CC 10 (2× on/off), pad 1 ch 1 CC 15 (on/off) | 0 | — |
-| Stop | PLAY, CUE A, pad 1 | 8 | port gone | 0 | No reaction to PLAY |
-| Recover | PLAY | 2 | PLAY ch 1 CC 10 (on/off) | 0 | — |
+| Window   | Presses            | HID report 1 | MIDI on `Traktor Kontrol S8 Input`                     | MIDI on `Traktor Kontrol S8` | Djay                |
+| -------- | ------------------ | ------------ | ------------------------------------------------------ | ---------------------------- | ------------------- |
+| Baseline | PLAY, CUE A, pad 1 | 8            | PLAY ch 1 CC 10 (2× on/off), pad 1 ch 1 CC 15 (on/off) | 0                            | —                   |
+| Stop     | PLAY, CUE A, pad 1 | 8            | port gone                                              | 0                            | No reaction to PLAY |
+| Recover  | PLAY               | 2            | PLAY ch 1 CC 10 (on/off)                               | 0                            | —                   |
 
 - The device port `Traktor Kontrol S8` (USB interface 3) carried no MIDI in
   any window, even with the agent running.
@@ -69,12 +74,12 @@ device; this was not tested.
 
 ## Interface ownership (runs 1 and 2)
 
-| Interface | Agent running | Agent stopped | After recovery (5 s) |
-| --------- | ------------- | ------------- | -------------------- |
-| 3 MIDI | `MIDIServer` | `MIDIServer` | `MIDIServer` |
-| 5 HID | Apple HID driver; `IOHIDLibUserClient` for NIHardwareAgent and the recorder | recorder only | NIHardwareAgent again |
-| 6 BD | NIHardwareAgent user client | **no client** | NIHardwareAgent user client |
-| Device | `MIDIServer` and two NIHardwareAgent device user clients | `MIDIServer` only | as before the stop |
+| Interface | Agent running                                                               | Agent stopped     | After recovery (5 s)        |
+| --------- | --------------------------------------------------------------------------- | ----------------- | --------------------------- |
+| 3 MIDI    | `MIDIServer`                                                                | `MIDIServer`      | `MIDIServer`                |
+| 5 HID     | Apple HID driver; `IOHIDLibUserClient` for NIHardwareAgent and the recorder | recorder only     | NIHardwareAgent again       |
+| 6 BD      | NIHardwareAgent user client                                                 | **no client**     | NIHardwareAgent user client |
+| Device    | `MIDIServer` and two NIHardwareAgent device user clients                    | `MIDIServer` only | as before the stop          |
 
 - The S8 did not re-enumerate, and the recorder's HID connection stayed open.
 - NIHardwareAgent's interface 5 client is shared, not a seizure: the
@@ -84,11 +89,11 @@ device; this was not tested.
 
 ## MIDI endpoints
 
-| Endpoint | Kind | Agent stopped |
-| -------- | ---- | ------------- |
-| `Traktor Kontrol S8` source and destination | Device (USB interface 3) | Stays; silent |
-| `Traktor Kontrol S8 Input` source | NIHardwareAgent virtual port; carries the control MIDI | Removed; back 0.4 s after relaunch |
-| `Traktor Kontrol S8 Output` destination | NIHardwareAgent virtual port | Removed; back 0.4 s after relaunch |
+| Endpoint                                    | Kind                                                   | Agent stopped                      |
+| ------------------------------------------- | ------------------------------------------------------ | ---------------------------------- |
+| `Traktor Kontrol S8` source and destination | Device (USB interface 3)                               | Stays; silent                      |
+| `Traktor Kontrol S8 Input` source           | NIHardwareAgent virtual port; carries the control MIDI | Removed; back 0.4 s after relaunch |
+| `Traktor Kontrol S8 Output` destination     | NIHardwareAgent virtual port                           | Removed; back 0.4 s after relaunch |
 
 ## Relaunch and recovery
 
@@ -120,10 +125,10 @@ From an interactive terminal with someone at the S8:
        mise run s8:agent-stop
 
 The script (`docs/s8/agent-stop-check.sh`) checks for one S8 and one
-verified NIHardwareAgent and starts the recorder. It prompts for presses
-before and after a SIGKILL of the agent, asks for the panel contents, waits at
-least 30 seconds, restores the agent and prints per-window counts of HID
-reports and MIDI per port to `target/s8-captures/`.
+verified NIHardwareAgent, then starts the recorder. It prompts for presses
+before and after a SIGKILL of the agent and asks for the panel contents. It
+waits at least 30 seconds and restores the agent. Then it prints per-window
+counts of HID reports and MIDI per port to `target/s8-captures/`.
 
 ## Not covered
 

@@ -15,10 +15,13 @@ bundle="/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent
 exe="$bundle/Contents/MacOS/NIHardwareAgent"
 answer=""
 
-now_ms() { echo $(( $(date +%s) * 1000 )); }
+now_ms() { echo $(($(date +%s) * 1000)); }
 mark() { echo "$1 $(now_ms)" >> "$run/events.txt"; }
 note() { printf '%s\n' "$1" | tee -a "$run/notes.txt"; }
-ask() { read -r -p "$1 " answer; printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"; }
+ask() {
+    read -r -p "$1 " answer
+    printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"
+}
 agent_pid() { pgrep -f "$exe" || true; }
 snap() {
     {
@@ -35,21 +38,35 @@ screen_init() {
 }
 
 screen_preflight() {
-    [ -t 0 ] || { echo "Run this from an interactive terminal."; exit 1; }
+    [ -t 0 ] || {
+        echo "Run this from an interactive terminal."
+        exit 1
+    }
     [ "$(ioreg -r -c IOUSBHostDevice -n 'Traktor Kontrol S8' | grep -c '^+-o Traktor Kontrol S8@')" -eq 1 ] ||
-        { echo "Connect exactly one Kontrol S8."; exit 1; }
+        {
+            echo "Connect exactly one Kontrol S8."
+            exit 1
+        }
     if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
-        echo "Quit Traktor, Maschine and Komplete Kontrol first."; exit 1
+        echo "Quit Traktor, Maschine and Komplete Kontrol first."
+        exit 1
     fi
     pid=$(agent_pid)
-    [ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || { echo "Expected one NIHardwareAgent, found: ${pid:-none}"; exit 1; }
-    [ "$(ps -o command= -p "$pid")" = "$exe" ] || { echo "NIHardwareAgent identity mismatch."; exit 1; }
+    [ "$(echo "$pid" | wc -w | tr -d ' ')" -eq 1 ] || {
+        echo "Expected one NIHardwareAgent, found: ${pid:-none}"
+        exit 1
+    }
+    [ "$(ps -o command= -p "$pid")" = "$exe" ] || {
+        echo "NIHardwareAgent identity mismatch."
+        exit 1
+    }
 }
 
 screen_build() {
     local flag=()
     [ "$1" != release ] || flag=(--release)
     cargo build --locked --quiet "${flag[@]+"${flag[@]}"}" --example s8-passive-recorder --example s8-screen-frame
+    # shellcheck disable=SC2034 # read by the runner that sources this file
     tool="target/$1/examples/s8-screen-frame"
     recorder_bin="target/$1/examples/s8-passive-recorder"
 }
@@ -116,6 +133,7 @@ start_host() {
     log="$run/$name.log"
     fifo="$(mktemp -u "${TMPDIR:-/tmp}/s8host-stdin.XXXXXX")"
     mkfifo "$fifo"
+    # shellcheck disable=SC2154 # $host and $bridge come from the sourcing runner
     "$host" --bridge "$bridge" --screens "$@" < "$fifo" \
         > >(perl -MTime::HiRes=time -ne 'BEGIN { $| = 1 } printf "%.3f %s", time, $_' > "$log") 2>&1 &
     host_pid=$!

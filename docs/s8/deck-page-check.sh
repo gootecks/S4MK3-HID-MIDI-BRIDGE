@@ -18,9 +18,16 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 . docs/s8/screen-lib.sh
 
 step_names="a-paused b-play c-four-decks"
-[ "$#" -le 1 ] || { echo "Usage: $0 [first-step]"; exit 1; }
+[ "$#" -le 1 ] || {
+    echo "Usage: $0 [first-step]"
+    exit 1
+}
 from="${1:-}"
-case " $step_names " in *" ${from:-a-paused} "*) ;; *) echo "Unknown step '$from'. Steps: $step_names"; exit 1 ;; esac
+case " $step_names " in *" ${from:-a-paused} "*) ;; *)
+    echo "Unknown step '$from'. Steps: $step_names"
+    exit 1
+    ;;
+esac
 bridge=target/release/s4mk3-hid-midi-bridge
 stream=macos/.build/release/S8Preview
 
@@ -28,7 +35,10 @@ screen_init deck-page
 screen_preflight
 cargo build --locked --quiet --release --bin s4mk3-hid-midi-bridge
 swift build --package-path macos -c release --product S8Preview > "$run/swift-build.txt" 2>&1 ||
-    { cat "$run/swift-build.txt"; exit 1; }
+    {
+        cat "$run/swift-build.txt"
+        exit 1
+    }
 
 # Refuse before anything is stopped or sent when djay cannot be read.
 if ! "$stream" --stream left=1 --seconds 1 > /dev/null 2> "$run/precheck.txt"; then
@@ -61,7 +71,10 @@ skip=""
 
 skipped() {
     [ -n "$from" ] || return 1
-    [ "$1" != "$from" ] || { from=""; return 1; }
+    [ "$1" != "$from" ] || {
+        from=""
+        return 1
+    }
 }
 
 # run_step NAME SECONDS TARGETS SETUP
@@ -69,11 +82,17 @@ skipped() {
 #   SETUP    what the observer prepares in djay before the step starts
 run_step() {
     local name="$1" seconds="$2" targets="$3" setup="$4" status statuses
-    if skipped "$name"; then skip="$name"; return 0; fi
+    if skipped "$name"; then
+        skip="$name"
+        return 0
+    fi
     skip=""
     note "$name: $setup"
     ask "Next: $name, $seconds s, panels $targets. Enter to start, or 'stop'."
-    [ "$answer" != stop ] || { stopped="before $name"; return 1; }
+    [ "$answer" != stop ] || {
+        stopped="before $name"
+        return 1
+    }
     mark "$name"
     set +e
     "$stream" --stream "$targets" --seconds "$seconds" 2> "$run/$name.stream.txt" |
@@ -84,15 +103,25 @@ run_step() {
     statuses=$(sed -n 's/^S8_SCREEN_STATUS //p' "$run/$name.txt" | tr '\n' ',' | sed 's/,$//')
     note "$name: status lines: $statuses"
     snap "$name+1s"
-    if [ "$statuses" != pending,active,inactive ]; then stopped="$name: status order '$statuses'"; return 1; fi
-    if [ "$status" -ne 0 ]; then stopped="$name: bridge exit status $status"; return 1; fi
+    if [ "$statuses" != pending,active,inactive ]; then
+        stopped="$name: status order '$statuses'"
+        return 1
+    fi
+    if [ "$status" -ne 0 ]; then
+        stopped="$name: bridge exit status $status"
+        return 1
+    fi
 }
 
 # verdict NAME QUESTION: y continues; anything else stops the run.
 verdict() {
     [ "$skip" != "$1" ] || return 0
     ask "$1: $2 (y, n or describe; 'stop' ends the run)"
-    case "$answer" in y | Y | yes) ;; *) stopped="$1: observer answered '$answer'"; return 1 ;; esac
+    case "$answer" in y | Y | yes) ;; *)
+        stopped="$1: observer answered '$answer'"
+        return 1
+        ;;
+    esac
 }
 
 steps() {
