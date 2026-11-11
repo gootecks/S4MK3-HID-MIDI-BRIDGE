@@ -108,7 +108,7 @@ stop_bridge() {
         tries=$((tries + 1))
     done
     if kill -0 "$bridge_pid" 2> /dev/null; then
-        note "Bridge still running 10 s after SIGINT; sending SIGKILL. The LEDs were not cleared."
+        note "Bridge still running 10 s after SIGINT; sending SIGKILL. The LEDs were not cleared." "$red"
         kill -9 "$bridge_pid" 2> /dev/null || true
     fi
     wait "$bridge_pid" || status=$?
@@ -120,7 +120,7 @@ restore() {
     stop_bridge
     [ -z "$tmp" ] || rm -rf "$tmp"
     if [ -z "$(agent_pid)" ]; then
-        note "Restoring NIHardwareAgent."
+        note "Restoring NIHardwareAgent." "$yellow"
         open -g "$bundle"
     fi
 }
@@ -132,18 +132,46 @@ trap : INT
 check_bridge() {
     if ! kill -0 "$bridge_pid" 2> /dev/null; then
         stopped="bridge exited"
-        note "The bridge is no longer running; see $run/bridge.log."
+        note "The bridge is no longer running; see $run/bridge.log." "$red"
         return 1
     fi
     if grep -q -e S8_LEDS_DISABLED -e S8_LEDS_CLEAR_FAILED "$run/bridge.log"; then
         stopped="LED path disabled"
-        note "The bridge logged S8_LEDS_DISABLED or S8_LEDS_CLEAR_FAILED; see $run/bridge.log."
+        note "The bridge logged S8_LEDS_DISABLED or S8_LEDS_CLEAR_FAILED; see $run/bridge.log." "$red"
         return 1
     fi
 }
 
+rule() {
+    printf '\n%s%s%s\n' "$cyan" "------------------------------------------------------------------------" "$reset"
+}
+
+# para STYLE TEXT: one sentence or clause per bullet, wrapped at 72 columns.
+# A point the output check left open is printed dim.
+para() {
+    local nl=$'\n' text sentence part lead style
+    text="${2//. /.$nl}"
+    text="${text//; /$nl}"
+    while IFS= read -r sentence; do
+        style="$1"
+        case "$sentence" in
+            "Open in the output check"*) style="$dim" ;;
+        esac
+        lead="  - "
+        while IFS= read -r part; do
+            printf '%s%s%s%s\n' "$lead" "$style" "$part" "$reset"
+            lead="    "
+        done < <(printf '%s\n' "$sentence" | fold -s -w 72)
+    done <<< "$text"
+}
+
 show_row() {
-    printf '\n%s\n  Do:     %s\n  Expect: %s\n' "$1" "$2" "$3"
+    rule
+    printf '%s== %s of L24%s\n' "$cyan" "$1" "$reset"
+    printf '\n%sDO%s\n' "$green" "$reset"
+    para "$bold" "$2"
+    printf '\n%sEXPECT%s\n' "$yellow" "$reset"
+    para "" "$3"
 }
 
 # step ID ACTION EXPECTED QUESTION: one asked row while the bridge runs.
@@ -158,7 +186,7 @@ step() {
     ask "$1 $4"
     if [ "$answer" = stop ]; then
         stopped="$1"
-        note "Stopped at $1."
+        note "Stopped at $1." "$yellow"
     fi
 }
 
@@ -261,16 +289,17 @@ log_summary() {
     disabled=$(grep -c S8_LEDS_DISABLED "$run/bridge.log" || true)
     failed=$(grep -c S8_LEDS_CLEAR_FAILED "$run/bridge.log" || true)
     note "Bridge log: S8_LEDS_ENABLED $enabled, S8_LEDS_DISABLED $disabled, S8_LEDS_CLEAR_FAILED $failed."
+    note "Bridge counts: $(grep -o 'input_events=.*' "$run/bridge.log" || true)"
     note "Bridge processes left: $(pgrep -f '(^|/)s4mk3-hid-midi-bridge( |$)' | tr '\n' ' ')"
 }
 
-note "LED feedback check (#22, #23). Mapping: $name. Bridge: $bridge (debug)."
-[ -z "$from" ] || note "Starting at $from; earlier rows are skipped."
+note "LED feedback check (#22, #23). Mapping: $name. Bridge: $bridge (debug)." "$bold"
+[ -z "$from" ] || note "Starting at $from; earlier rows are skipped." "$yellow"
 snap pre
 screen_agent_stop
 
 mark start
-"$bridge" --device s8 --midi full --s8-leds --until-stopped > >(tee -i "$run/bridge.log") 2>&1 &
+"$bridge" --device s8 --midi full --s8-leds --until-stopped > "$run/bridge.log" 2>&1 &
 bridge_pid=$!
 ready=""
 for _ in $(seq 1 50); do
@@ -283,20 +312,20 @@ for _ in $(seq 1 50); do
     sleep 0.2
 done
 [ -n "$ready" ] || {
-    note "The bridge did not log MIDI_FULL_READY and S8_LEDS_ENABLED; see $run/bridge.log."
+    note "The bridge did not log MIDI_FULL_READY and S8_LEDS_ENABLED; see $run/bridge.log." "$red"
+    printf '%s%s%s\n' "$dim" "$(tail -n 5 "$run/bridge.log")" "$reset"
     exit 1
 }
-note "Bridge running, pid $bridge_pid."
-cat << EOF
-
-In djay: MIDI settings, device "Kontrol S8 MIDI Full", mapping "$name".
-Answer each row with what you see; "stop" skips to the exit rows. Ctrl-C ends
-the check: the bridge clears the LEDs and NIHardwareAgent is restored.
-EOF
+note "Bridge running, pid $bridge_pid. Its log is $run/bridge.log." "$dim"
+rule
+printf '%sIN DJAY%s\n' "$green" "$reset"
+para "$bold" "Open the MIDI settings; choose device \"Kontrol S8 MIDI Full\"; choose mapping \"$name\"."
+printf '\n%sHOW TO ANSWER%s\n' "$yellow" "$reset"
+para "" "Type what you see and press Enter. \"stop\" skips to the exit rows. Ctrl-C ends the check: the bridge clears the LEDs and NIHardwareAgent is restored."
 ask "Mapping selected? Press Enter."
 mark rows
 plan
-[ -z "$stopped" ] || note "Stopped: $stopped."
+[ -z "$stopped" ] || note "Stopped: $stopped." "$red"
 
 mark stop-bridge
 stop_bridge
@@ -322,5 +351,5 @@ after L24 \
     "Did djay react to left PLAY, and does the display button work again? Describe."
 mark end
 trap - EXIT INT TERM HUP
-note "Recorded in $run"
+note "Recorded in $run" "$green"
 [ -z "$stopped" ]
