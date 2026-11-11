@@ -27,7 +27,7 @@ fn single_fields() -> [(&'static str, Setter, usize); 9] {
         ("edit", |l| l.edit = Level::On, 39),
         ("flux", |l| l.flux = Level::On, 52),
         ("shift", |l| l.shift = Level::On, 55),
-        ("sync", |l| l.sync = Level::On, map::SYNC),
+        ("sync", |l| l.sync = Level::On, 56),
         ("cue", |l| l.cue = Level::On, 58),
         ("play", |l| l.play = Level::On, 59),
     ]
@@ -116,13 +116,18 @@ fn array_buttons_light_exactly_their_bytes() {
 }
 
 #[test]
-fn second_sync_byte_stays_zero() {
-    let leds = SideLeds {
-        sync: Level::On,
-        ..SideLeds::default()
-    };
-    let report = render(Side::Left, &leds);
-    assert_eq!(report[map::SYNC_SECOND + 1], 0);
+fn sync_on_lights_green_and_leaves_red_dark() {
+    for side in Side::ALL {
+        for (level, green) in [(Level::On, 0x7f), (Level::Dim, map::DIM)] {
+            let leds = SideLeds {
+                sync: level,
+                ..SideLeds::default()
+            };
+            let report = render(side, &leds);
+            assert_eq!(report[56 + 1], green);
+            assert_eq!(report[57 + 1], 0);
+        }
+    }
 }
 
 #[test]

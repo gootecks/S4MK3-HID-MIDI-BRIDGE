@@ -166,7 +166,7 @@ pub fn render(side: Side, leds: &SideLeds) -> [u8; DECK_REPORT_LEN] {
     report.level(map::FLUX, leds.flux);
     report.dual(map::DECK, leds.deck);
     report.level(map::SHIFT, leds.shift);
-    report.level(map::SYNC, leds.sync);
+    report.level(map::SYNC_GREEN, leds.sync);
     report.level(map::CUE, leds.cue);
     report.level(map::PLAY, leds.play);
     for (index, segment) in leds.loop_ring.iter().enumerate() {

@@ -1,4 +1,5 @@
-//! Deck payload byte offsets (report ID excluded) and value encoding. Unconfirmed on hardware: `PAD_ORDER`, `DIM`, `STRIP_LEFT_IS_LOW_OFFSET`, `SYNC`/`SYNC_SECOND`, `DISPLAY`.
+//! Deck payload byte offsets (report ID excluded) and value encoding. Checked on the S8 by the probe run of 2026-11-11: pad byte order, strip direction, SYNC colours, ON level, group positions.
+//! Still unconfirmed: `DIM`, the order inside each button group, the colour of each byte in 44-51 and 53-54.
 
 pub const ON: u8 = 0x7f;
 pub const DIM: u8 = 0x14;
@@ -22,9 +23,7 @@ pub const REMIX: usize = 50;
 pub const FLUX: usize = 52;
 pub const DECK: usize = 53;
 pub const SHIFT: usize = 55;
-#[cfg(test)]
-pub const SYNC_SECOND: usize = 56;
-pub const SYNC: usize = 57;
+pub const SYNC_GREEN: usize = 56;
 pub const CUE: usize = 58;
 pub const PLAY: usize = 59;
 pub const RING_WHITE: usize = 60;
