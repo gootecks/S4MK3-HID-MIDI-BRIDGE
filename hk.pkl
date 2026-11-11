@@ -50,8 +50,10 @@ steps {
         glob = "docs/s8/*.sh"
     }
     // Fork-owned Markdown only. oxfmt formats; mdsmith lints (.mdsmith.yml).
+    // The pinned oxfmt 0.76 has no --stdin-filepath, which the builtin's check_diff needs.
     ["oxfmt"] = (Builtins.oxfmt) {
         glob = "docs/s8/**/*.md"
+        check_diff = null
     }
     ["mdsmith"] {
         glob = "docs/s8/**/*.md"
@@ -63,9 +65,10 @@ steps {
             }
             effect = "read"
         }
+        // mdsmith fix, then the repo-mdsmith-fixer agent on what it cannot fix.
         fix = new CommandSpec {
             command = new Command {
-                argv = List("mdsmith", "fix", "--no-color", "{{files}}")
+                argv = List("docs/s8/mdsmith-fix.sh", "{{files}}")
             }
             effect = "write"
         }
@@ -74,6 +77,7 @@ steps {
     ["mdsmith_index"] {
         glob = "docs/s8/**/*.md"
         depends = "mdsmith"
+        stage = "docs/s8/README.md"
         check = new CommandSpec {
             command = new Command {
                 argv = List("mdsmith", "check", "--no-color", "docs/s8/README.md")
@@ -142,7 +146,8 @@ steps {
     ["check_merge_conflict"] = Builtins.check_merge_conflict
 }
 
-// Checks and Git hooks never rewrite or stage files. Fixing is opt-in.
+// Checks never rewrite files. Commits and `hk fix` apply fixes; pre-commit stages
+// them and keeps unstaged edits aside (hk stashes under refs/hk/stash, per worktree).
 hooks {
     ["check"] {
         fix = false
@@ -150,9 +155,9 @@ hooks {
         stash = "none"
     }
     ["pre-commit"] {
-        fix = false
-        stage = false
-        stash = "none"
+        fix = true
+        stage = true
+        stash = "git"
     }
     ["fix"] {
         fix = true
