@@ -86,14 +86,22 @@ note "Plan $plan, steps: ${ids[*]}. Djay open, no track playing, Controller Edit
 screen_agent_stop
 
 stopped=""
+count=0
 for id in "${ids[@]}"; do
-    note "== $id"
-    note "Expect: $(step_field "$id" expect)"
+    count=$((count + 1))
+    printf '\n%s%s%s\n' "$cyan" "------------------------------------------------------------" "$reset"
+    note "== $id ($count of ${#ids[@]})" "$cyan"
+    note "Expect: $(step_field "$id" expect)" "$yellow"
     mark "$id"
     status=0
     "$tool" --step "$id" "${probe_args[@]}" > "$run/$id.txt" 2>&1 || status=$?
-    note "$id exit status $status:"
-    tee -a "$run/notes.txt" < "$run/$id.txt"
+    if [ "$status" -eq 0 ]; then
+        note "$id exit status $status:" "$dim"
+    else
+        note "$id exit status $status:" "$red"
+    fi
+    cat "$run/$id.txt" >> "$run/notes.txt"
+    printf '%s%s%s\n' "$dim" "$(cat "$run/$id.txt")" "$reset"
     [ "$status" -eq 0 ] || {
         stopped="$id failed"
         break
@@ -103,7 +111,7 @@ for id in "${ids[@]}"; do
         break
     }
 done
-[ -z "$stopped" ] || note "Stopped: $stopped."
+[ -z "$stopped" ] || note "Stopped: $stopped." "$red"
 
 led_clear
 mark recover
@@ -115,4 +123,4 @@ mark end
 kill -INT "$recorder" 2> /dev/null || true
 wait "$recorder" || true
 trap - EXIT
-note "Recorded in $run"
+note "Recorded in $run" "$green"
