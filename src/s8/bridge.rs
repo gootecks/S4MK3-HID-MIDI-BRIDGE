@@ -99,7 +99,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             Err(crossbeam_channel::TryRecvError::Disconnected) => bail!("stop channel closed"),
         }
         if let Some(active) = leds.as_mut() {
-            active.update(&translator, started.elapsed());
+            active.update(&translator, started.elapsed(), &mut counts);
             if !active.active() {
                 read_timeout = READ_TIMEOUT_MS;
                 leds = None;
@@ -191,36 +191,51 @@ impl Leds<'_> {
         self.output.is_some()
     }
 
-    fn update(&mut self, translator: &Translator, now: Duration) {
+    /// Adds the feedback messages applied and the reports written to `counts`.
+    fn update(&mut self, translator: &Translator, now: Duration, counts: &mut ProbeCounts) {
         let Self {
             input,
             state,
             output,
         } = self;
-        if let Err(error) = input.drain_messages(|message| {
+        let received = match input.drain_messages(|message| {
             state.apply(message, now);
         }) {
-            disable(output, &error);
-            return;
-        }
+            Ok(received) => received,
+            Err(error) => {
+                disable(output, &error);
+                return;
+            }
+        };
         let leds =
             Side::ALL.map(|side| present(side, state, &Local::from_translator(translator, side)));
-        tick_or_disable(output, &leds, now);
+        let written = tick_or_disable(output, &leds, now);
+        counts.feedback_messages = counts.feedback_messages.saturating_add(count(received));
+        counts.led_writes = counts.led_writes.saturating_add(count(written));
     }
 }
 
-/// Writes the changed reports. On an error the LEDs are cleared as far as
-/// the device allows and the writer is dropped; MIDI translation goes on.
+fn count(messages: usize) -> u64 {
+    u64::try_from(messages).unwrap_or(u64::MAX)
+}
+
+/// Writes the changed reports and returns how many. On an error the LEDs are
+/// cleared as far as the device allows and the writer is dropped; MIDI
+/// translation goes on.
 fn tick_or_disable<S: ReportSink>(
     output: &mut Option<LedOutput<'_, S>>,
     leds: &[SideLeds; 2],
     now: Duration,
-) {
+) -> usize {
     let Some(writer) = output.as_mut() else {
-        return;
+        return 0;
     };
-    if let Err(error) = writer.tick(leds, now) {
-        disable(output, &error);
+    match writer.tick(leds, now) {
+        Ok(written) => written,
+        Err(error) => {
+            disable(output, &error);
+            0
+        }
     }
 }
 
@@ -268,12 +283,14 @@ mod tests {
     fn a_write_error_disables_the_led_path_and_no_more_writes_follow() {
         let sink = Sink::default();
         let mut output = Some(LedOutput::new(&sink));
-        tick_or_disable(&mut output, &lit(Level::On), Duration::ZERO);
+        let written = tick_or_disable(&mut output, &lit(Level::On), Duration::ZERO);
         assert!(output.is_some());
         let before = sink.writes.borrow().len();
+        assert_eq!(written, before);
 
         sink.failing.set(true);
-        tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(50));
+        let written = tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(50));
+        assert_eq!(written, 0);
         assert!(output.is_none());
         let after = sink.writes.borrow().len();
         assert!(
@@ -282,7 +299,8 @@ mod tests {
         );
 
         sink.failing.set(false);
-        tick_or_disable(&mut output, &lit(Level::On), Duration::from_millis(100));
+        let written = tick_or_disable(&mut output, &lit(Level::On), Duration::from_millis(100));
+        assert_eq!(written, 0);
         tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(200));
         assert_eq!(sink.writes.borrow().len(), after);
     }
