@@ -60,12 +60,19 @@ public struct DeckTracker {
         playing = false
     }
 
+    public mutating func ingestPause(_ message: String) {
+        notice = message
+        playing = false
+        interpolator = TimeInterpolator()
+        debouncer = PlayStateDebouncer()
+    }
+
     private var knownDuration: Double? {
         entry?.duration ?? entry?.analysis?.duration
     }
 
     public func snapshot(now: Date = Date()) -> DeckSnapshot {
-        guard let reading, reading.hasTrack else {
+        guard notice == nil, let reading, reading.hasTrack else {
             return DeckSnapshot(deck: deck, capturedAt: Self.stamp(now), notice: notice)
         }
         let analysis = entry?.analysis.map { analysis in

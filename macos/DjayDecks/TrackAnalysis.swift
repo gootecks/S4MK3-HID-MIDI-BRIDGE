@@ -15,9 +15,40 @@ public struct TrackAnalysis: Equatable {
     public static let beatsPerBar = 4
 
     public var bars: [Double] {
-        guard let first = firstDownBeatIndex else { return [] }
-        let start = first % Self.beatsPerBar
-        return stride(from: start, to: beats.count, by: Self.beatsPerBar).map { beats[$0] }
+        guard let first = firstDownBeatIndex, !beats.isEmpty else { return [] }
+        let positions = beatPositions
+        let anchor: Int = if first >= 0, first < beats.count {
+            positions[first]
+        } else if first < 0 {
+            first
+        } else {
+            positions[beats.count - 1] &+ (first - (beats.count - 1))
+        }
+        let phase = Self.modulo(anchor)
+        return zip(beats, positions).filter { Self.modulo($1) == phase }.map(\.0)
+    }
+
+    static func modulo(_ value: Int) -> Int {
+        ((value % beatsPerBar) + beatsPerBar) % beatsPerBar
+    }
+
+    var beatPositions: [Int] {
+        var positions = [Int](repeating: 0, count: beats.count)
+        for index in beats.indices.dropFirst() {
+            positions[index] = positions[index - 1] + beatsSpanned(by: index - 1)
+        }
+        return positions
+    }
+
+    private func beatsSpanned(by interval: Int) -> Int {
+        let window = max(0, interval - 4) ... min(beats.count - 2, interval + 4)
+        let gaps = window.map { beats[$0 + 1] - beats[$0] }
+        let gap = beats[interval + 1] - beats[interval]
+        let reference = gaps.sorted()[gaps.count / 2]
+        let ratio = gap / reference
+        guard reference.isFinite, reference > 0, ratio.isFinite, ratio >= 1.5, ratio < 1000 else { return 1 }
+        let count = ratio.rounded()
+        return abs(ratio - count) <= 0.25 ? Int(count) : 1
     }
 
     public static func load(url: URL) throws -> TrackAnalysis {

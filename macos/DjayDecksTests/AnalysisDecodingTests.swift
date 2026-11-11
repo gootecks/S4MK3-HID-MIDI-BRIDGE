@@ -63,6 +63,42 @@ final class AnalysisDecodingTests: XCTestCase {
         XCTAssertTrue(analysis.bars.isEmpty)
     }
 
+    private func analysis(beats: [Double], firstDownBeat: Int?) -> TrackAnalysis {
+        TrackAnalysis(
+            name: nil, artist: nil, duration: nil, bpm: nil, amplitude: [], amplitudeRate: 0, bands: [],
+            bandRate: 0, beats: beats, firstDownBeatIndex: firstDownBeat
+        )
+    }
+
+    private func steady(_ count: Int, from start: Double = 0, interval: Double = 0.5) -> [Double] {
+        (0 ..< count).map { start + Double($0) * interval }
+    }
+
+    func testNegativeDownbeatIndexKeepsBarPhase() {
+        XCTAssertEqual(analysis(beats: steady(9), firstDownBeat: -1).bars, [1.5, 3.5])
+        XCTAssertEqual(analysis(beats: steady(9), firstDownBeat: Int.min).bars.count, 3)
+    }
+
+    func testDownbeatIndexBeyondTheListKeepsBarPhase() {
+        XCTAssertEqual(analysis(beats: steady(9), firstDownBeat: 10).bars, [1, 3])
+        XCTAssertEqual(analysis(beats: steady(9), firstDownBeat: Int.max).bars, [1.5, 3.5])
+    }
+
+    func testBarsKeepPhaseAcrossAGapInTheBeatList() {
+        let beats = steady(8) + steady(8, from: 7)
+        XCTAssertEqual(analysis(beats: beats, firstDownBeat: 0).bars, [0, 2, 8, 10])
+    }
+
+    func testGapNotNearAWholeNumberOfBeatsCountsAsOneBeat() {
+        let beats = steady(4) + steady(8, from: 2.8)
+        XCTAssertEqual(analysis(beats: beats, firstDownBeat: 0).bars, [0, 2.8, 4.8])
+    }
+
+    func testTempoChangeWithoutGapDoesNotInsertBeats() {
+        let beats = steady(8) + steady(8, from: 3.875, interval: 0.375)
+        XCTAssertEqual(analysis(beats: beats, firstDownBeat: 0).bars, [0, 2, 3.875, 5.375])
+    }
+
     func testStoreFindsFileInShardDirectory() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let shard = root.appendingPathComponent("ab")

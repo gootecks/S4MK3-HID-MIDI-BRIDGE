@@ -28,6 +28,8 @@ public final class DeckMonitor {
         let readings: [Int: DeckReading]
         do {
             readings = try reader.readings()
+        } catch DeckAccessError.notAnswering {
+            return pause("djay is not answering")
         } catch DeckAccessError.permissionDenied {
             return fail("Accessibility permission needed")
         } catch {
@@ -55,6 +57,14 @@ public final class DeckMonitor {
         withLock {
             for deck in decks {
                 trackers[deck]?.ingestFailure(message)
+            }
+        }
+    }
+
+    private func pause(_ message: String) {
+        withLock {
+            for deck in decks {
+                trackers[deck]?.ingestPause(message)
             }
         }
     }

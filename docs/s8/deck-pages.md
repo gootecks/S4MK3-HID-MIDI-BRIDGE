@@ -13,7 +13,7 @@ to a bitmap, a PNG or an `.s8frame` file through `S8Preview`.
 | Play state | `PlayStateDebouncer` (ported, extended) | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. It is reported at once when the time label moves one second in the play direction while the button is lit. Paused is reported on the first unlit sample. |
 | Time between AX updates | `TimeInterpolator` (rewritten for #83) | djay cuts the fraction off a time label, so a label names a whole second and not a moment. The page time always stays inside the second of the label last read. A paused label rests at the middle of its second. A remaining label equal to the track length cut to a whole second rests at the track start, so elapsed is 0. While the debounced state is playing the time counts on, scaled by the pitch percentage, and waits at the end of the label's second until the label moves. A label that moves one second in the play direction marks the boundary between the two seconds. Any other label change is taken as a jump and rests at the middle of the new second. On pause the counted time stays. When playing is confirmed, the time since the first lit sample is added. |
 | Duration, cue points | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`) | The track is matched by title and artist. Used to derive elapsed when only remaining is shown. |
-| Overview waveform, 3-band samples, beats, bars | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat starting at `firstDownBeatIndex % 4`. |
+| Overview waveform, 3-band samples, beats, bars | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat counting from `firstDownBeatIndex` (see Limits for gaps). |
 
 djay's live database and cache are only read; the snapshot is a temporary copy.
 
@@ -43,6 +43,30 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
 - Accessibility is view-dependent: with djay's library expanded or in other
   layouts the time labels can be missing. A remaining-only layout derives
   elapsed from the library duration.
+- djay can fail to answer an Accessibility read while it is busy. When the
+  system reports "cannot complete" and the process holds permission, the
+  page shows "djay is not answering" instead of the track (the notice page,
+  as for the other notices: centred text, same position as "No track on deck
+  n"). The deck keeps its track, library entry (analysis, cues) and last
+  reading, so no new library lookup is needed. The time does not count on
+  while waiting, and the play-state debouncer and time interpolator start
+  fresh with the next answer, so the play state is confirmed again from new
+  samples. The notice goes away with the first good read. A missing
+  permission, or "cannot complete" without permission, still shows
+  "Accessibility permission needed", and a missing djay shows "djay is not
+  running"; both reset the deck. Each read waits at most 3 s (the sidebar
+  reader uses the same limit). Read from code; not seen in djay.
+- Bars come from `firstDownBeatIndex` and the beat list; djay's own bar
+  lines were not compared. The index may be negative or beyond the list (the
+  bar phase is the index modulo 4, mathematically). Where the list skips
+  beats, the skipped beats are counted so bars keep their phase: the gap is
+  divided by the median of the 9 beat intervals around it (a local window,
+  so a tempo change inside a track does not distort the count) and rounded.
+  Only a gap of at least 1.5 intervals within 0.25 interval of a whole number
+  counts as skipped beats; any other irregular spacing (a restarted grid) is
+  counted as one beat. The one real analysis file in the tests (478 beats,
+  spacing 0.417–0.437 s at 140 BPM) has no gaps, so its bars are unchanged;
+  gap handling is covered by synthetic lists only.
 - The cached waveform is about 2–11 samples per second (the sampled tracks:
   5.1–5.6 colour samples/s and about 20–22 amplitude samples/s). It is an
   overview of the whole track, not a zoomed scrolling waveform.
