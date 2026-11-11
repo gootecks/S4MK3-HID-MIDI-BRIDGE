@@ -187,16 +187,22 @@ This section is fork-only. Keep it out of upstream pull requests.
   Encdr research fork: `../Encdr` (gootecks/Encdr; upstream RufusIbiza/Encdr).
 - Goal: add Traktor Kontrol S8 (`0x17CC:0x1370`) support without changing
   S4 MK3 behaviour. Start with `docs/s8/README.md`,
-  `docs/s8/hardware-notes.md` and `docs/s8/s4-coupling-audit.md`.
+  `docs/s8/hardware-notes.md` and `docs/s8/s4-coupling-audit.md`. The
+  screens epic (#25) is closed; what is left of it is low priority and
+  collected in #105.
 - Project board: **Kontrol S8 Bridge**, gootecks project #4
   (<https://github.com/users/gootecks/projects/4>). Use the `gootecks` gh
-  account for issues and the board.
+  account for issues and the board. A `GH_TOKEN` or `GITHUB_TOKEN` in the
+  environment overrides it: unset both, take the token from
+  `gh auth token --user gootecks`, and pass
+  `-R gootecks/S4MK3-HID-MIDI-BRIDGE` to every command.
 - Labels: `feat`, `fix`, `chore`, `docs`, `research`, `epic`,
   `priority:high|medium|low`, `device:s8`, `device:s4mk3`, `upstream:bridge`,
   `upstream:encdr`, `fork-only`, `hardware-write`.
 - Workflow: issue, then a `type/N-description` branch from `main`,
-  conventional commits, PR into the fork with `Closes #N`. Never commit on
-  `main` directly.
+  conventional commits, PR into the fork with `Closes #N`, or `Refs #N`
+  while a check from *Verification* below is still to be recorded. Never
+  commit on `main` directly.
 - After a merge: check that the issue closed and move its card to Done.
   Give each follow-up issue a card. Update status rows in
   `docs/s8/README.md` that still name the issue as open. GitHub closes
@@ -237,22 +243,68 @@ This section is fork-only. Keep it out of upstream pull requests.
 - `src/s8/mapping.rs`: generated `Kontrol S8 Bridge.djayMidiMapping`.
 - `src/s8/translator/`: S8 input events to the catalog's MIDI messages.
 - `src/s8/strip.rs`: touchstrip position and ownership of one touch.
-- `src/s8/bridge.rs`: the `--device s8 --midi full` loop. It writes nothing
-  to the S8.
+- `src/s8/bridge.rs`: the `--device s8 --midi full` loop. It sends nothing
+  to the S8 except with `--s8-screens-stdin`, which shows frame records
+  from stdin on the panels (`docs/s8/screen-transport.md`).
 - `tests/s8_input.rs`: replays captured reports through the decoder.
 - `docs/s8/mappings/`: frozen copies of mappings checked on the S8.
+- `macos/Package.swift` builds the S8 screen tools, all the fork's own:
+  - `S8Host`: runs the bridge, applies display buttons and screen encoders
+    to djay's sidebar and, with `--screens`, sends the panel pages.
+  - `S8Preview`: renders pages to pictures and, with `--stream`, streams
+    deck pages without `S8Host`.
+  - `S8Views`: page layout, renderer and the frame record format.
+    `S8Session`: which page each panel shows. `S8Control`: control events
+    from the bridge.
+  - `DjayDecks`: the decks read through Accessibility, with track analysis.
+    `DjayLibrary`: a read-only copy of djay's library. `DjaySidebar`: djay's
+    sidebar read and driven through Accessibility.
 
 Read before changing S8 behaviour: `docs/s8/mapping.md`,
 `docs/s8/input-capture.md`, `docs/s8/translator-validation.md` and
-`docs/s8/hardware-notes.md`.
+`docs/s8/hardware-notes.md`. For the screens: `docs/s8/panel-views.md`,
+`docs/s8/deck-pages.md` and `docs/s8/deck-data-validation.md`.
 
 - `mise run s8:raw [seconds]`: read-only log of every control change.
 - `mise run s8:midi`: stops NIHardwareAgent, runs the bridge until Ctrl-C,
   restores the agent. The log goes to `docs/s8/captures/translator-<UTC>/`.
+- `mise run s8:panel-views`, `s8:deck-data`, `s8:deck-page`: attended checks
+  of the panels. Each stops NIHardwareAgent, sends screen frames to the S8,
+  asks its rows and restores the agent. `mise tasks` lists the older
+  screen checks.
+- `mise run s8:panel-views-images [check]`: the expected panel pictures from
+  recorded snapshots; sends nothing.
 - `cargo run --locked -- --device s8 --generate-mapping <dir>`: writes the
   mapping; it does not overwrite an existing file.
 - `cargo test --locked translator`: translator tests. Run the full suite with
   no bridge process running.
+- `swift test --package-path macos`: the Swift tests, the screen tools
+  included.
+
+### Verification
+
+Check a change at the first tier that can show it wrong. Name in the PR the
+tiers that ran and what stayed unchecked.
+
+1. Tests, before the PR: decoding, parsing, translation and rendering.
+2. Scripted check against the running djay, without the S8, before the PR
+   is marked ready: anything read from djay or drawn on a panel page. Drive
+   djay with `osascript` or Accessibility, render the page with `S8Preview`
+   and put the picture next to a capture of djay's window. Keep the
+   pictures under `docs/s8/captures/<name>/` and embed them in the PR.
+3. Attended run on the S8, before the issue closes: what is sent to the S8,
+   physical controls, panel timing, exit and recovery. The PR may merge
+   before the run. Until the run is recorded it says `Refs #N`, and its
+   changelog entry says "not yet on the S8". A PR that changes the bytes
+   sent to the S8 gets its run before the merge.
+
+- Attended runs are done in batches. Collect the rows that merged PRs still
+  need and ask the user for one session. Ask only for the rows the changes
+  need, not for a full plan (row subsets: #108).
+- This Mac is not used to DJ, and its djay library is a test library. A
+  scripted check may load tracks, set and delete cue points, switch the
+  deck layout and change the library.
+- A scripted check against djay does not make a row checked on the S8.
 
 ### Approvals
 
@@ -262,6 +314,8 @@ actions.
 No go-ahead needed:
 
 - Creating issues, issue comments, board moves and branches from `main`.
+- Driving djay on this Mac for a scripted check, including changes to its
+  state and library, and capturing its window.
 - On a `type/N-description` branch: committing, pushing, and opening or
   updating its PR. After a rebase, pushing that branch with
   `--force-with-lease`.
@@ -272,6 +326,7 @@ No go-ahead needed:
 Get the user's go-ahead first, then do it:
 
 - Merging a PR.
+- Closing an issue by hand, an epic or a milestone.
 - Sending anything to the S8 (see *S8 hardware* above).
 - Stopping NIHardwareAgent, which `mise run s8:midi` does. Djay then gets no
   MIDI from the Controller Editor setup until the agent is restored.
