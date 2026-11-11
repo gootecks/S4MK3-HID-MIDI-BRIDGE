@@ -1,3 +1,8 @@
+---
+summary: "Recovered logs of the agent-stopped input capture of 2026-11-09 (#10)."
+type: capture
+---
+
 # S8 input capture, 2026-11-09 (recovered copy)
 
 Fork-only evidence for [input-capture.md](../../input-capture.md). The original

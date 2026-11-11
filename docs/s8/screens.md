@@ -1,3 +1,8 @@
+---
+summary: "Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan."
+type: reference
+---
+
 # S8 screens
 
 Research and first-frame test plan for #26, with results. Phases 2 and 4
@@ -8,14 +13,42 @@ sent frames to the S8 from this bridge's tools
 
 Sidebar mirroring: [djay-sidebar-access.md](djay-sidebar-access.md) (#48).
 
+<?toc?>
+
+- [What we know](#what-we-know)
+  - [Reconciling Encdr and the protocol repo](#reconciling-encdr-and-the-protocol-repo)
+  - [Differences from the S4 MK3 path](#differences-from-the-s4-mk3-path)
+  - [macOS ownership](#macos-ownership)
+- [Page content and rendering](#page-content-and-rendering)
+  - [Library views first](#library-views-first)
+  - [Deck and waveform pages later](#deck-and-waveform-pages-later)
+- [First-frame test plan](#first-frame-test-plan)
+  - [Common rules](#common-rules)
+  - [Recovery](#recovery)
+  - [Phase 0: agent stop (no S8 output)](#phase-0-agent-stop-no-s8-output)
+  - [Phase 1: claim only](#phase-1-claim-only)
+  - [Phase 2: first frames](#phase-2-first-frames)
+  - [Phase 3: only if phase 2 shows nothing](#phase-3-only-if-phase-2-shows-nothing)
+  - [Phase 4: full frame](#phase-4-full-frame)
+  - [Phase 5: repeated frames, held claim and partial updates](#phase-5-repeated-frames-held-claim-and-partial-updates)
+  - [What to record](#what-to-record)
+- [Frame rate limit and ways past it](#frame-rate-limit-and-ways-past-it)
+- [Still open after this plan](#still-open-after-this-plan)
+
+<?/toc?>
+
 ## What we know
 
-Sources: [kontrol-s8-protocol](https://github.com/gusgustavodj/kontrol-s8-protocol)
-(`docs/overview.md` §10, `data/display-payloads.json`,
-`data/DISPLAY_INITIALIZATION.csv`; CC BY 4.0), Encdr's S8 descriptor and
-hardware docs, and the S4 MK3 screen code in `src/screens.rs`. Evidence for
-S8 displays is Windows (NI driver) and Android (experimental) only. No source
-shows a working macOS path.
+Sources:
+
+- [kontrol-s8-protocol](https://github.com/gusgustavodj/kontrol-s8-protocol)
+  (`docs/overview.md` §10, `data/display-payloads.json`,
+  `data/DISPLAY_INITIALIZATION.csv`; CC BY 4.0)
+- Encdr's S8 descriptor and hardware docs
+- the S4 MK3 screen code in `src/screens.rs`
+
+Evidence for S8 displays is Windows (NI driver) and Android (experimental)
+only. No source shows a working macOS path.
 
 | Item                                   | Value                                                                                                                     | Confidence                                          |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
@@ -180,13 +213,13 @@ Claim interface 6 with `nusb` (the same way `UsbScreens::open` claims the S4
 interface), hold for 5 seconds, release. No transfers. Observe that HID
 still flows; MIDI is already gone while the agent is stopped.
 
-`examples/s8-screen-claim.rs` does exactly this and nothing else: it refuses
-to run while NIHardwareAgent is running, opens the one connected S8, claims
+`examples/s8-screen-claim.rs` does this and nothing else. It refuses to run
+while NIHardwareAgent is running. It opens the one connected S8, claims
 interface 6, holds it for 5 seconds and releases it. `mise run
 s8:screen-claim` runs it during an attended agent stop with the passive
 recorder.
 
-Result: the claim succeeds and disturbs nothing; HID keeps flowing and the
+Result: the claim succeeds and disturbs nothing. HID keeps flowing, and the
 agent takes interface 6 back on relaunch
 ([screen-claim-validation.md](screen-claim-validation.md)).
 
@@ -204,10 +237,10 @@ Left panel only, one frame each:
 3. The same two frames on the right panel (screen byte and footer byte
    `01`).
 
-`examples/s8-screen-frame/` builds and sends one frame per run (`black`,
-`f800` or `pattern`, `--screen left|right`) and refuses to run while
-NIHardwareAgent is running. `mise run s8:screen-frame first` runs the four
-steps during an attended agent stop with the passive recorder.
+`examples/s8-screen-frame/` builds and sends one frame per run. The modes are
+`black`, `f800` and `pattern`, with `--screen left|right`. It refuses to run
+while NIHardwareAgent is running. `mise run s8:screen-frame first` runs the
+four steps during an attended agent stop with the passive recorder.
 
 Result: all four frames display as expected, and `F8 00` shows red, so the
 pixels are RGB565 ([screen-frame-validation.md](screen-frame-validation.md)).
@@ -278,11 +311,11 @@ runs or unless exactly one S8 is connected; `--dump` writes every mode's frames
 or their hashes without a device.
 
 `examples/s8-screen-frame/` has `stream`, `burst` and `partial skip|rect`
-besides the single frames. `mise run s8:screen-stream` runs the six steps during
-an attended agent stop and writes raw logs to
+besides the single frames. `mise run s8:screen-stream` runs the six steps
+during an attended agent stop. It writes raw logs to
 `docs/s8/captures/screen-stream-<UTC>/`. What each step should show,
 decoded from the frames the tool sends, is in
-[screen-stream-expected.md](screen-stream-expected.md); the runner lists the
+[screen-stream-expected.md](screen-stream-expected.md). The runner lists the
 pictures before each prompt.
 
 Result: no transfer failed. A full frame takes about 16.6 ms, so the S8
@@ -295,12 +328,22 @@ correctly ([screen-stream-validation.md](screen-stream-validation.md)).
 
 ### What to record
 
-For each step: the exact bytes or a hash for full frames, transfer status,
-panel photo, whether MIDI and HID still flowed, and what happened on recovery.
-For phase 5, per step and panel: frames sent, achieved rate, transfer time
-minimum, median, 95th percentile and maximum, errors, what the observer saw
-(tearing, flicker, stale areas), MIDI and HID flow from the passive recorder,
-and the panel state after exit and after recovery.
+For each step:
+
+- the exact bytes or a hash for full frames;
+- transfer status;
+- panel photo;
+- whether MIDI and HID still flowed;
+- what happened on recovery.
+
+For phase 5, per step and panel:
+
+- frames sent, achieved rate, and transfer time (minimum, median, 95th
+  percentile and maximum);
+- errors;
+- what the observer saw (tearing, flicker, stale areas);
+- MIDI and HID flow from the passive recorder;
+- the panel state after exit and after recovery.
 
 Record in a validation file under `docs/s8/`, not in this plan.
 

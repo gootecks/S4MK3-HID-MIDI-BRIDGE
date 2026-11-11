@@ -1,3 +1,8 @@
+---
+summary: "Survey of kontrol-s8-protocol, Encdr and Mixxx, with licensing notes."
+type: reference
+---
+
 # S8 research sources
 
 Survey of outside S8 work, as of October 2026, and how this fork uses it.

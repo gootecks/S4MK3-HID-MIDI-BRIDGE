@@ -1,3 +1,8 @@
+---
+summary: "Phase 0: what changes when NIHardwareAgent stops, and the attended check (agent-stop-check.sh)."
+type: validation
+---
+
 # S8 screen phase 0: NIHardwareAgent stop
 
 Validation record for #32 ([screens.md](screens.md), phase 0). Nothing was
@@ -120,10 +125,10 @@ From an interactive terminal with someone at the S8:
        mise run s8:agent-stop
 
 The script (`docs/s8/agent-stop-check.sh`) checks for one S8 and one
-verified NIHardwareAgent and starts the recorder. It prompts for presses
-before and after a SIGKILL of the agent, asks for the panel contents, waits at
-least 30 seconds, restores the agent and prints per-window counts of HID
-reports and MIDI per port to `target/s8-captures/`.
+verified NIHardwareAgent, then starts the recorder. It prompts for presses
+before and after a SIGKILL of the agent and asks for the panel contents. It
+waits at least 30 seconds and restores the agent. Then it prints per-window
+counts of HID reports and MIDI per port to `target/s8-captures/`.
 
 ## Not covered
 

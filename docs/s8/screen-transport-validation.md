@@ -1,3 +1,8 @@
+---
+summary: "The attended check of the screen transport on the S8 (#44)."
+type: validation
+---
+
 # S8 screen transport: attended check (#44)
 
 The check of `--s8-screens-stdin` on the S8, as planned in
@@ -15,9 +20,12 @@ from a release build.
 | 3   | [captures/screen-transport-20261110T164659Z](captures/screen-transport-20261110T164659Z/) | i again                                      |
 | 4   | [captures/screen-transport-20261110T170222Z](captures/screen-transport-20261110T170222Z/) | i with the fix                               |
 
-Per step the capture holds the record hashes of the dry run (`.dry`), the
-bridge output (`.txt`) and the feeder's stderr (`.feeder.txt`); `notes.txt`
-holds the prompts and the user's answers.
+Per step the capture holds these files:
+
+- `.dry` holds the record hashes of the dry run.
+- `.txt` holds the bridge output.
+- `.feeder.txt` holds the feeder's stderr.
+- `notes.txt` holds the prompts and the user's answers.
 
 ## Results
 

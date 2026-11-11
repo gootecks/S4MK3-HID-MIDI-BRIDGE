@@ -1,3 +1,8 @@
+---
+summary: "Remotes, branches, commit separation and the upstream pull-request procedure."
+type: procedure
+---
+
 # Upstream workflow
 
 Two upstream projects matter: the bridge
@@ -43,12 +48,12 @@ preparing an Encdr PR.
 
 Classify each change before writing it. Issue labels record the class.
 
-| Class            | Label             | Examples                                                                                                                                                                                                                          |
-| ---------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fork-only        | `fork-only`       | `docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`, `communique.toml`, `fnox.toml`, `.mdsmith.yml`, `.swiftlint.yml`, `.swiftlint-baseline.json`, `.swiftformat`, removal of `rust-toolchain.toml`, fork sections of README/AGENTS |
-| Bridge candidate | `upstream:bridge` | Device-profile seam, bug fixes, S4-neutral refactors                                                                                                                                                                              |
-| Encdr candidate  | `upstream:encdr`  | S8 descriptor corrections, LED/screen protocol fixes                                                                                                                                                                              |
-| S8 feature       | `device:s8`       | S8 catalog, mapping, app integration                                                                                                                                                                                              |
+| Class            | Label             | Examples                                                                                                                                                                                                                                            |
+| ---------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fork-only        | `fork-only`       | `docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`, `communique.toml`, `fnox.toml`, `.mdsmith.yml`, `.gitattributes`, `.swiftlint.yml`, `.swiftlint-baseline.json`, `.swiftformat`, removal of `rust-toolchain.toml`, fork sections of README/AGENTS |
+| Bridge candidate | `upstream:bridge` | Device-profile seam, bug fixes, S4-neutral refactors                                                                                                                                                                                                |
+| Encdr candidate  | `upstream:encdr`  | S8 descriptor corrections, LED/screen protocol fixes                                                                                                                                                                                                |
+| S8 feature       | `device:s8`       | S8 catalog, mapping, app integration                                                                                                                                                                                                                |
 
 Rules:
 

@@ -1,3 +1,8 @@
+---
+summary: "S8 USB identity, interfaces, input and output evidence, and open questions."
+type: reference
+---
+
 # Kontrol S8 hardware notes
 
 Evidence levels used below:
@@ -39,15 +44,24 @@ Source: `../Encdr/encdr/descriptors/ni_kontrol_s8.json` (loaded by
 `encdr/src/device/loader.rs`; the `_full` and `_standalone` variants are not
 loaded and look abandoned). Level: **descriptor**.
 
-| Packet    | Size | Contents                                                                                                                                                                                  |
-| --------- | ---: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `buttons` |   41 | Deck and mixer buttons (bit masks, bytes 4–25), pads (digital, not velocity), tempo encoder (byte 3, wrap16), touchstrip positions (bytes 28–29 left, 34–35 right, 10-bit) and touch bits |
-| `sliders` |  109 | Screen encoders (bytes 1–16, wrap16_wide), channel faders (17–42, 12-bit, max 4078), FX dials (43–58), mixer gain/EQ/filter (69–108)                                                      |
+| Packet    | Size | Contents                                         |
+| --------- | ---- | ------------------------------------------------ |
+| `buttons` | 41   | Buttons, pads, tempo encoder, touchstrips, touch |
+| `sliders` | 109  | Screen encoders, faders, FX dials, mixer knobs   |
 
-Resolved by the macOS capture ([input-capture.md](input-capture.md)): report
-IDs 1 (41 bytes) and 2 (109 bytes) arrive in MIDI mode, the
-kontrol-s8-protocol offsets match for every button tested, and shared-mode
-reads coexist with NIHardwareAgent and Controller Editor.
+Byte layout from the descriptor:
+
+- `buttons`: deck and mixer buttons (bit masks, bytes 4–25), pads (digital,
+  not velocity), tempo encoder (byte 3, wrap16), touchstrip positions (bytes
+  28–29 left, 34–35 right, 10-bit) and touch bits.
+- `sliders`: screen encoders (bytes 1–16, wrap16_wide), channel faders
+  (17–42, 12-bit, max 4078), FX dials (43–58) and mixer gain/EQ/filter
+  (69–108).
+
+The macOS capture ([input-capture.md](input-capture.md)) resolved three
+points. Report IDs 1 (41 bytes) and 2 (109 bytes) arrive in MIDI mode. The
+kontrol-s8-protocol offsets match for every button tested. Shared-mode reads
+coexist with NIHardwareAgent and Controller Editor.
 
 With the agent running, CoreMIDI shows two S8 sources. `Traktor Kontrol S8`
 is the S8's own USB MIDI port and carries no control data.
@@ -69,8 +83,8 @@ this descriptor in several places:
   swapped in the descriptor.
 - Fader and knob full scale runs 4074–4095 depending on the control.
 
-The bridge applies these corrections in `src/device/s8.rs` and decodes the S8
-read-only with `--device s8 --raw` (#12); `tests/s8_input.rs` replays the
+The bridge applies these corrections in `src/device/s8.rs`. It decodes the S8
+read-only with `--device s8 --raw` (#12). `tests/s8_input.rs` replays the
 captured reports through that decoder.
 
 Still open: the right deck fader 1 touch bit, which never reported on this
@@ -89,9 +103,9 @@ unit.
 | VU meters                       | Candidate `0x82` ranges                                               | Unconfirmed, not in descriptor                           |
 | Deck selectors                  | Offsets 118–121                                                       | Unconfirmed, not in descriptor                           |
 
-Framing conflict: the descriptor uses 118/118/73-byte buffers per prefix,
-several Encdr docs describe one 309- or 310-byte buffer, and the touchstrip
-test only worked with 119-byte `[prefix] + [118]` reports.
+Framing conflict: the descriptor uses 118/118/73-byte buffers per prefix.
+Several Encdr docs describe one 309- or 310-byte buffer. The touchstrip test
+only worked with 119-byte `[prefix] + [118]` reports.
 `mixer_led_results.json` and `probe_0x82.json` in `../Encdr` are empty.
 
 ## Screens (interface 6)
@@ -123,10 +137,14 @@ LEDs from the S4 path do not apply. The touchstrips replace the jog wheels
 ## Encdr pin
 
 The bridge pins `gootecks/Encdr` branch `pin/5d7a689-deviceid-default`
-(`8986302`): RufusIbiza/Encdr `5d7a689` (2026-10-04) plus a cherry-pick of
-upstream `675c70c`, which derives `Default` for `DeviceId`. The S8 descriptor
-corrections need that derive (#12). Nothing else differs from `5d7a689`, which
-already contains `ni_kontrol_s8.json`.
+(`8986302`).
+
+- Base: RufusIbiza/Encdr `5d7a689` (2026-10-04).
+- Addition: a cherry-pick of upstream `675c70c`, which derives `Default` for
+  `DeviceId`.
+- The S8 descriptor corrections need that derive (#12).
+- Nothing else differs from `5d7a689`, which already contains
+  `ni_kontrol_s8.json`.
 
 Decision (#11): keep this pin. Upstream v0.9.0 (`a541465`, 52 commits after
 `5d7a689`) was evaluated on 2026-11-10 and adds nothing the S8 path uses:

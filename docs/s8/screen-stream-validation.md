@@ -1,9 +1,30 @@
+---
+summary: "Phase 5: repeated frames with a held claim, the transfer ceiling, partial updates and the exit state (screen-stream-check.sh, shared helpers in screen-lib.sh)."
+type: validation
+---
+
 # S8 screen phase 5: repeated frames, held claim and partial updates
 
 Validation record for #43 ([screens.md](screens.md), phase 5). Every frame was
 one bulk OUT transfer on interface 6, endpoint `0x04`, with a 500 ms timeout
 and no retries, sent by `examples/s8-screen-frame/`. Streaming steps claimed
 interface 6 once and held it for the step. Nothing was sent on interface 5.
+
+<?toc?>
+
+- [Answer](#answer)
+- [Setup](#setup)
+- [Steps a to d: repeated full frames](#steps-a-to-d-repeated-full-frames)
+- [Step e: partial updates](#step-e-partial-updates)
+- [Step f: exit state](#step-f-exit-state)
+- [Release and recovery](#release-and-recovery)
+- [Input and MIDI per window](#input-and-midi-per-window)
+- [Interface ownership](#interface-ownership)
+- [What this changes](#what-this-changes)
+- [Not covered](#not-covered)
+- [Rerunning](#rerunning)
+
+<?/toc?>
 
 The "Panels" columns hold what the tester typed at the S8. The expected
 pictures are in [screen-stream-expected.md](screen-stream-expected.md).
@@ -43,12 +64,17 @@ ran on interface 5 HID and every `Kontrol S8` MIDI endpoint.
 | 1   | 15:22–15:25 | a-left only; the tester answered `stop`, unsure which rate to name | `captures/screen-stream-20261110T152202Z/` |
 | 2   | 15:30–15:38 | all steps, a to f                                                  | `captures/screen-stream-20261110T153024Z/` |
 
-The numbers below are from run 2 unless stated. In the capture folders,
-`<step>.txt` is the tool's output, `<step>.dump` lists each frame's hash (or
-holds the frame's bytes for single frames), `notes.txt` holds the prompts and
-the tester's answers, `snapshots.txt` the `ioreg` state after each step, and
-`recorder.jsonl` the HID and MIDI events. The two `f-clean` frames are stored
-as `.dump.gz`.
+The numbers below are from run 2 unless stated. The capture folders hold
+these files:
+
+- `<step>.txt` is the tool's output.
+- `<step>.dump` lists each frame's hash (or holds the frame's bytes for
+  single frames).
+- `notes.txt` holds the prompts and the tester's answers.
+- `snapshots.txt` holds the `ioreg` state after each step.
+- `recorder.jsonl` holds the HID and MIDI events.
+
+The two `f-clean` frames are stored as `.dump.gz`.
 
 ## Steps a to d: repeated full frames
 
@@ -221,9 +247,10 @@ From an interactive terminal with someone at the S8:
 
        mise run s8:screen-stream
 
-The script checks for one S8 and one verified NIHardwareAgent, starts the
-recorder, stops the agent with SIGKILL, lists the expected pictures and asks
-before each step, then relaunches the agent with `open -g`. Answering `stop`
-at any prompt skips to recovery. The four stages of steps a and b always run
-in the order 10, 20, 30, 60 frames per second and the terminal names each as
-it starts; the prompt wants the highest stage that looked clean.
+The script checks for one S8 and one verified NIHardwareAgent, then starts
+the recorder. It stops the agent with SIGKILL, lists the expected pictures
+and asks before each step, then relaunches the agent with `open -g`.
+Answering `stop` at any prompt skips to recovery. The four stages of steps a
+and b always run in the order 10, 20, 30, 60 frames per second and the
+terminal names each as it starts. The prompt wants the highest stage that
+looked clean.

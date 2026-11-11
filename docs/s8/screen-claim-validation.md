@@ -1,3 +1,8 @@
+---
+summary: "Phase 1: claiming interface 6 without transfers (screen-claim-check.sh)."
+type: validation
+---
+
 # S8 screen phase 1: claim interface 6
 
 Validation record for #33 ([screens.md](screens.md), phase 1). The claim tool
@@ -7,9 +12,9 @@ transfer, configuration change, reset or alternate setting.
 ## Answer
 
 **The claim works.** With NIHardwareAgent stopped, the bridge's process can
-claim interface 6 and release it, and nothing else is disturbed: the S8 did
-not re-enumerate, HID input kept flowing, panels, LEDs and audio did not
-change, and the agent took interface 6 back on relaunch.
+claim interface 6 and release it. Nothing else is disturbed. The S8 did not
+re-enumerate and HID input kept flowing. Panels, LEDs and audio did not
+change. The agent took interface 6 back on relaunch.
 
 | Part                                | Result                                           |
 | ----------------------------------- | ------------------------------------------------ |
@@ -82,7 +87,8 @@ From an interactive terminal with someone at the S8:
 
        mise run s8:screen-claim
 
-The script checks for one S8 and one verified NIHardwareAgent, starts the
-recorder, asks for presses before and after a SIGKILL of the agent, runs the
-claim tool with an `ioreg` snapshot during the hold, restores the agent and
-prints per-window counts to `target/s8-captures/`.
+The script checks for one S8 and one verified NIHardwareAgent, then starts
+the recorder. It asks for presses before and after a SIGKILL of the agent.
+It runs the claim tool with an `ioreg` snapshot during the hold and
+restores the agent. Then it prints per-window counts to
+`target/s8-captures/`.

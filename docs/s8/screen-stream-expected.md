@@ -1,3 +1,8 @@
+---
+summary: "Pictures of what each phase 5 step should show, decoded from the frames the tool sends (mise run s8:phase5-images)."
+type: validation
+---
+
 # Phase 5: expected panel pictures
 
 What each panel should show at every step of `mise run s8:screen-stream`
@@ -5,9 +10,22 @@ What each panel should show at every step of `mise run s8:screen-stream`
 against its pictures first, then at the S8. The runner prints the files to compare with before
 each prompt.
 
-Every picture is decoded from the bytes the tool would send (header, LITERAL, REPEAT, SKIP,
-footer applied to a per-panel framebuffer), at 480x272, so it proves the frames and is not a
-second drawing of the pattern. They are regenerated with `mise run s8:phase5-images` and
+<?toc?>
+
+- [Step a: held ladder, left panel then right panel](#step-a-held-ladder-left-panel-then-right-panel)
+- [Step a, right panel](#step-a-right-panel)
+- [Step b: alternating panels](#step-b-alternating-panels)
+- [Step c: burst of 120 frames, left panel](#step-c-burst-of-120-frames-left-panel)
+- [Step d: soak, 60 s alternating](#step-d-soak-60-s-alternating)
+- [Step e: partial updates, left panel](#step-e-partial-updates-left-panel)
+- [Step f: exit state](#step-f-exit-state)
+
+<?/toc?>
+
+Every picture is decoded from the bytes the tool would send. The header,
+LITERAL, REPEAT, SKIP and footer are applied to a per-panel framebuffer at
+480x272. So the pictures prove the frames and are not a second drawing of
+the pattern. They are regenerated with `mise run s8:phase5-images` and
 compared with `mise run s8:phase5-images check`; both send nothing.
 
 How to read the test pattern: the title names the panel; the four colour blocks are fixed. The
@@ -20,9 +38,9 @@ What pictures cannot show: motion smoothness, the achieved rate, timing, tearing
 stale areas. They show the content of single frames. Between samples only the counter and the
 bar change.
 
-Sampling: the first frame and the last frame of each rate stage of a ladder (a: 5 pictures per
-panel; b: 5 per panel, both panels); for a single stage (c, d) five frames spread from the
-first to the last.
+Sampling: take the first and last frame of each rate stage of a ladder (a: 5
+pictures per panel; b: 5 per panel, both panels). For a single stage (c, d)
+take five frames spread from the first to the last.
 
 ## Step a: held ladder, left panel then right panel
 

@@ -1,3 +1,8 @@
+---
+summary: "The stand-in test and the attended run of the display buttons on the S8 (#51)."
+type: validation
+---
+
 # Display buttons and screen encoders: validation (#51)
 
 Three kinds of evidence, kept apart: a stand-in test without the S8, the
@@ -24,21 +29,23 @@ nothing was loaded, queued or played. A separate read-only probe
 | `S8_CONTROL screen_encoder left 1 -50`   | sidebar row 0 (Anybody) selected                                          |
 | `S8_CONTROL screen_encoder right 2 20`   | no change (under 50 counts)                                               |
 
-Also seen: the script's own lines (`fake bridge started: --device s8 --midi
-full --until-stopped --app-events`, `fake bridge done`) were passed through to
-S8Host's stdout and not parsed. With stdin closed, S8Host ended the child
-(exit status 15, no child left); on SIGTERM the child was gone 1.5 s later; a
-missing bridge path gives a message and exit 4.
+Also seen: the script's own lines were passed through to S8Host's stdout and
+not parsed. They were `fake bridge started: --device s8 --midi full
+--until-stopped --app-events` and `fake bridge done`. With stdin closed,
+S8Host ended the child (exit status 15, no child left). On SIGTERM the child
+was gone 1.5 s later. A missing bridge path gives a message and exit 4.
 
 After the Info panel showed the selected row's track instead of the main
-table's (Anybody instead of Diwali), a second stand-in line
-`S8_CONTROL screen_encoder left 1 150` selected Diwali again; djay was left
+table's (Anybody instead of Diwali), a second stand-in line selected Diwali
+again. The line was `S8_CONTROL screen_encoder left 1 150`. djay was left
 on Library with Info showing Diwali.
 
-Automated: `cargo test --locked app_events` (button and encoder mapping, buttons
-1 and 4, resting reports, wrap), `swift test` for `S8ControlTests`
-(parser, accumulator, router) and `DjaySidebarTests` (element trees built in
-code, not recorded from djay).
+Automated:
+
+- `cargo test --locked app_events`: button and encoder mapping, buttons 1
+  and 4, resting reports, wrap.
+- `swift test`: `S8ControlTests` (parser, accumulator, router) and
+  `DjaySidebarTests` (element trees built in code, not recorded from djay).
 
 ## Observed on the S8: attended run, 2026-11-10
 

@@ -1,3 +1,8 @@
+---
+summary: "Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures (#48)."
+type: reference
+---
+
 # djay Pro sidebar through Accessibility
 
 Research for #48 (part of #25). Can the bridge read djay Pro's right-hand
@@ -6,6 +11,29 @@ Accessibility (AX) tree, every tab and sub-tab answers `AXPress`, and rows are
 readable as plain static text. No S8 output was involved. All results are from
 djay Pro on this Mac (arm64, one 2560×1440 display) with an empty deck pair,
 the Skrillex SOMA test library (13 songs in `Music`) and the sidebar open.
+
+<?toc?>
+
+- [Summary](#summary)
+- [Reaching the window](#reaching-the-window)
+- [AX paths](#ax-paths)
+  - [Tabs](#tabs)
+  - [Info sub-tabs](#info-sub-tabs)
+  - [Content per tab](#content-per-tab)
+  - [Rows](#rows)
+  - [Sidebar toggle and menus](#sidebar-toggle-and-menus)
+- [Locating elements](#locating-elements)
+- [Using the probe](#using-the-probe)
+- [Row selection](#row-selection)
+  - [Sidebar selection by AXSelectedRows (#51)](#sidebar-selection-by-axselectedrows-51)
+- [Reliability and latency](#reliability-and-latency)
+- [Failure cases](#failure-cases)
+- [Not exercised](#not-exercised)
+- [Side effects and residue](#side-effects-and-residue)
+- [Prior art](#prior-art)
+- [Recommendation](#recommendation)
+
+<?/toc?>
 
 Probe: [`examples/djay-sidebar-probe.swift`](../../examples/djay-sidebar-probe.swift).
 Fixtures for the #50 renderer: [`fixtures/sidebar/`](fixtures/sidebar/), one real
@@ -105,13 +133,16 @@ expose no selection state. The probe infers it from the content: an
 All content is children of the one sidebar `AXScrollArea` (a few Match items
 are siblings of it, not children).
 
-| Tab     | Children                                                                                                                                                                                                                                                           |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Library | `AXButton` description `Source`, title `Music`; `AXTable` "Playlist"                                                                                                                                                                                               |
-| Queue   | static texts `Queue`, `0 Songs` (becomes `1 Song  •  3m`); `AXTable` "Queue" with a `Drop songs here` placeholder row                                                                                                                                              |
-| Match   | static text `Match`; `AXPopUpButton` "Active Deck"; `AXPopUpButton` description `Source`; static `Drop song here to match`; empty `AXTable`; **siblings** `AXImage` "icon empty match" and static `Match finds songs that go well with what is currently playing.` |
-| Session | static `History`; `AXMenuButton` help `New Session`; `AXTable` "History"                                                                                                                                                                                           |
-| Info    | static `Info`; `AXPopUpButton` "Selected"; `AXMenuButton`; two `AXImage` (artwork); statics for title, `150 BPM`, key, time; the two sub-tab buttons; then `AXOutline` "Info" or `AXTable` (Related)                                                               |
+| Tab     | Children                                                                                                                                                                                             |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library | `AXButton` description `Source`, title `Music`; `AXTable` "Playlist"                                                                                                                                 |
+| Queue   | static texts `Queue`, `0 Songs` (becomes `1 Song  •  3m`); `AXTable` "Queue" with a `Drop songs here` placeholder row                                                                                |
+| Match   | static text `Match`; `AXPopUpButton` "Active Deck"; `AXPopUpButton` description `Source`; static `Drop song here to match`; empty `AXTable`; siblings listed below                                   |
+| Session | static `History`; `AXMenuButton` help `New Session`; `AXTable` "History"                                                                                                                             |
+| Info    | static `Info`; `AXPopUpButton` "Selected"; `AXMenuButton`; two `AXImage` (artwork); statics for title, `150 BPM`, key, time; the two sub-tab buttons; then `AXOutline` "Info" or `AXTable` (Related) |
+
+The Match siblings are `AXImage` "icon empty match" and the static text `Match
+finds songs that go well with what is currently playing.`
 
 ### Rows
 
@@ -130,7 +161,7 @@ layout) are `AXRow`/`AXTableRow`, 300×47, with one `AXCell` holding:
 
 Static texts carry their text in `AXValue`; `AXTitle` and `AXDescription` are
 empty. Fields are told apart by position and pattern (left half = title, then
-artist; ` BPM` suffix; `m:ss` pattern; the remainder is the key), not by
+artist; a `BPM` suffix after a space; `m:ss` pattern; the remainder is the key), not by
 identifier, so a missing BPM does not shift the others. Missing fields do not
 appear as empty elements in this library.
 
@@ -358,6 +389,6 @@ For #51 (display buttons): use `AXPress` on the tab buttons.
   & Security > Accessibility). It is a separate grant from the Terminal one
   used for this research.
 
-Library data beyond what the visible sidebar shows (full history, unplayed
-tracks) still comes from the read-only `MediaLibrary.db` snapshot path, not
-AX.
+Library data beyond the visible sidebar still comes from the read-only
+`MediaLibrary.db` snapshot path, not AX. This covers the full history and
+unplayed tracks.

@@ -1,9 +1,35 @@
+---
+summary: "What the input-to-MIDI translator tests cover, their limits, and the attended checks of 2026-11-10 (#15)."
+type: validation
+---
+
 # S8 input-to-MIDI translator validation
 
 Validation record for #15. `--device s8 --midi full` reads S8 HID input on
 interface 5 and publishes the catalog's MIDI ([mapping.md](mapping.md)) on the
 virtual source `Kontrol S8 MIDI Full`. The bridge sends nothing to the S8: no
 LED report, feature request, control transfer or screen traffic.
+
+<?toc?>
+
+- [Status](#status)
+- [What the unit tests cover](#what-the-unit-tests-cover)
+- [Known limits](#known-limits)
+- [Attended check](#attended-check)
+  - [Setup](#setup)
+  - [Steps](#steps)
+- [Results](#results)
+  - [First attended check, 2026-11-10](#first-attended-check-2026-11-10)
+  - [Second attended check, 2026-11-10](#second-attended-check-2026-11-10)
+  - [Third attended check, 2026-11-10](#third-attended-check-2026-11-10)
+  - [Fourth attended check, 2026-11-10](#fourth-attended-check-2026-11-10)
+  - [User statement after the fourth check, 2026-11-10](#user-statement-after-the-fourth-check-2026-11-10)
+  - [Touchstrip](#touchstrip)
+    - [Comparison with NIHardwareAgent, 2026-11-10](#comparison-with-nihardwareagent-2026-11-10)
+    - [Fifth attended check, 2026-11-10](#fifth-attended-check-2026-11-10)
+  - [S8 dark at start](#s8-dark-at-start)
+
+<?/toc?>
 
 ## Status
 
@@ -103,9 +129,9 @@ check with Ctrl-C, open Controller Editor and start again
    This writes `Kontrol S8 Bridge.djayMidiMapping`. An existing file with that
    name is not overwritten.
 
-2. Stop NIHardwareAgent. While it runs, it also turns S8 input into MIDI for
-   the Controller Editor template, so Djay would receive two sets of commands.
-   Restore it afterwards with
+2. Stop NIHardwareAgent. While it runs, it also turns S8 input into MIDI.
+   That MIDI is for the Controller Editor template. Djay would then receive
+   two sets of commands. Restore the agent afterwards with
    `open -g "/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app"`
    ([agent-stop-validation.md](agent-stop-validation.md)).
 3. Start the bridge:
@@ -149,8 +175,8 @@ Record pass, fail or not run for each row, per side where it applies.
 | 22  | QUANTIZE; SNAP, MIC 2; display buttons, screen encoders                                   | Quantize toggles; SNAP and MIC 2 appear in Djay's MIDI configuration and do nothing; no reaction to the rest                                                                |
 | 23  | Ctrl-C                                                                                    | The bridge stops; the `Kontrol S8 MIDI Full` source disappears                                                                                                              |
 
-After the check, restore NIHardwareAgent and confirm that the panels show
-Controller Editor labels and that PLAY works with the existing setup.
+After the check, restore NIHardwareAgent. Confirm that the panels show
+Controller Editor labels. Confirm that PLAY works with the existing setup.
 
 ## Results
 
@@ -214,18 +240,19 @@ not listed were not reported.
 
 The user then turned CUE VOL, CUE MIX and BOOTH in that order under
 `--device s8 --raw`. Report 2 changed at `[65..66]`, `[63..64]` and
-`[61..62]` in turn, each sweeping 11-22 to 4082-4091, and no other field
+`[61..62]` in turn, each sweeping 11-22 to 4082-4091. No other field
 moved. The assignment of fields to knobs rests on that order. The log is
-`captures/2026-11-10-centre-knobs/`. The three knobs are now decoded and
-mapped to `mixer.monitorLevel`, `mixer.monitorMix` and `mixer.boothLevel`.
-The user then reported that CUE VOL and CUE MIX work in Djay and that BOOTH
-shows up in Djay's MIDI configuration; the booth output was not listened to.
-Whether the S8 also applies the knobs to its own outputs is not checked.
+`captures/2026-11-10-centre-knobs/`.
+
+The three knobs are now decoded and mapped to `mixer.monitorLevel`,
+`mixer.monitorMix` and `mixer.boothLevel`. The user then reported that CUE
+VOL and CUE MIX work in Djay. BOOTH shows up in Djay's MIDI configuration.
+The booth output was not listened to. Whether the S8 also applies the knobs
+to its own outputs is not checked.
 
 In the same check the user reported that moving the crossfader with any
 crossfader assign switch away from the middle brings up Djay's "Crossfader
-assignment changed" dialog, and that it does not with all four in the
-middle.
+assignment changed" dialog. It does not with all four in the middle.
 
 ### Fourth attended check, 2026-11-10
 
@@ -249,9 +276,9 @@ the S8 also applies the knob to its own main output is not checked.
 ### User statement after the fourth check, 2026-11-10
 
 The user stated that in the checks they went down the list and tried
-everything quickly, and that, to the best of their knowledge, every row not
-reported as broken works. On that statement all rows of the checklist are
-recorded as checked and working in Djay, with these exceptions:
+everything quickly. To the best of their knowledge, every row not reported
+as broken works. On that statement all rows of the checklist are recorded
+as checked and working in Djay, with these exceptions:
 
 | #      | State                                                                                               |
 | ------ | --------------------------------------------------------------------------------------------------- |
@@ -315,12 +342,12 @@ encoding is not needed to match the usual setup, and none was built.
 #### Fifth attended check, 2026-11-10
 
 Run by the user with `mise run s8:midi` and Controller Editor quit. Two
-mappings were installed: r6, and `Kontrol S8 Bridge r7`, a copy of r6 with
-the `scratchingMove` sensitivity and acceleration of Evan's mapping on each
-deck (20 / 9, 18 / 10, 16 / 14, 19 / 11) and no other change. The user
-selected r7 first and reported that the in-place jiggle worked and felt like
-Evan's mapping, then selected r6 and reported that it felt the same: "both
-of them work fine now".
+mappings were installed: r6, and `Kontrol S8 Bridge r7`. r7 is a copy of r6
+with the `scratchingMove` sensitivity and acceleration of Evan's mapping on
+each deck (20 / 9, 18 / 10, 16 / 14, 19 / 11) and no other change. The user
+selected r7 first. They reported that the in-place jiggle worked and felt
+like Evan's mapping. They then selected r6 and reported that it felt the
+same: "both of them work fine now".
 
 The bridge log is `captures/translator-20261110T125820Z/bridge.log.gz`. It
 has 15 touches of the left strip and no DECK or Shift press, so the motion
@@ -343,7 +370,7 @@ mode with SHIFT + BACK. That did not work. The user pressed Ctrl-C, opened
 Controller Editor again, and then it worked.
 
 The fifth check had been run with Controller Editor quit, as its
-instructions asked, and ended at 13:06 UTC with NIHardwareAgent restored by
+instructions asked. It ended at 13:06 UTC with NIHardwareAgent restored by
 the script. The bridge logs of the three starts that followed are in
 `captures/`:
 

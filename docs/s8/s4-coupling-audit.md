@@ -1,3 +1,8 @@
+---
+summary: "S4 MK3 assumptions in the bridge with file anchors, and the device-profile seam."
+type: reference
+---
+
 # S4 MK3 coupling audit
 
 Where the bridge assumes an S4 MK3, as of upstream `ee12026`
@@ -59,11 +64,17 @@ longer match.
 
 ## Large files
 
-Over the 500-line guideline: `src/full/mod.rs` (3060),
-`macos/S4BridgeApp.swift` (1306), `src/full/mapping.rs` (1210),
-`src/full/leds.rs` (946), `src/main.rs` (855), `src/full/feedback.rs` (766),
-`src/full/catalog.rs` (598). These are upstream files; add S8 code in new
-modules rather than growing them.
+These files are over the 500-line guideline:
+
+- `src/full/mod.rs` (3060)
+- `macos/S4BridgeApp.swift` (1306)
+- `src/full/mapping.rs` (1210)
+- `src/full/leds.rs` (946)
+- `src/main.rs` (855)
+- `src/full/feedback.rs` (766)
+- `src/full/catalog.rs` (598)
+
+These are upstream files; add S8 code in new modules rather than growing them.
 
 ## Device-profile seam (#5)
 

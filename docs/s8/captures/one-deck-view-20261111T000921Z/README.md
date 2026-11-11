@@ -1,3 +1,8 @@
+---
+summary: "Read-only Accessibility dumps of djay's One Deck view, taken on 2026-11-10 (#93)."
+type: capture
+---
+
 # One Deck view: what djay exposes through Accessibility
 
 Read-only dumps of djay Pro's Accessibility tree, taken on 2026-11-10 for

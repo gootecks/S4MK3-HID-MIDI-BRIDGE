@@ -1,10 +1,29 @@
+---
+summary: "The library and deck views on the panels (S8Host --screens, #27): run, expected pictures, state at stop, limits and check plan."
+type: reference
+---
+
 # Views on the S8 panels (#27)
 
 `S8Host --screens` shows djay Pro's right-hand sidebar on the two S8 panels
-and keeps it current: the left panel is the list of the open tab, the right
+and keeps it current. The left panel is the list of the open tab. The right
 panel is the selected track or, with `--deck N`, the page of one deck. The
 display buttons and screen encoders move through it
 ([display-buttons.md](display-buttons.md)).
+
+<?toc?>
+
+- [Run](#run)
+- [What the panels show](#what-the-panels-show)
+  - [Selection](#selection)
+- [Updates](#updates)
+- [Stop and panel state](#stop-and-panel-state)
+- [Limits](#limits)
+- [Expected pictures](#expected-pictures)
+- [Attended check](#attended-check)
+- [Validation state](#validation-state)
+
+<?/toc?>
 
 This is a source-build feature of the fork. Checked once on the S8, on
 2026-11-10: [panel-views-validation.md](panel-views-validation.md) holds the
@@ -37,9 +56,10 @@ of this page needs approval.
 | `--log-deck-polls` | One stderr line per deck read with the time since the previous read started and how long the read took. Needs `--deck`. |
 
 With `--screens` S8Host starts the bridge with
-`--device s8 --midi full --until-stopped --app-events --s8-screens-stdin` and
-writes frame records to its stdin ([screen-transport.md](screen-transport.md)).
-The bridge's `S8_SCREEN_STATUS` lines are passed through to stdout.
+`--device s8 --midi full --until-stopped --app-events --s8-screens-stdin`.
+It writes frame records to the bridge's stdin
+([screen-transport.md](screen-transport.md)). The bridge's
+`S8_SCREEN_STATUS` lines are passed through to stdout.
 
 ## What the panels show
 
@@ -164,15 +184,15 @@ Run once, on 2026-11-10:
 explicit approval because it stops NIHardwareAgent and sends screen frames
 to the S8.
 
-`mise run s8:panel-views` (`panel-views-check.sh`), at the S8 with djay Pro
-and Controller Editor open, a track loaded on deck 1 and the sidebar on
-Library with no sidebar row selected.
+`mise run s8:panel-views` (`panel-views-check.sh`) runs at the S8. It needs
+djay Pro and Controller Editor open, a track loaded on deck 1, and the
+sidebar on Library with no sidebar row selected.
 
-What is sent: full-panel literal frames (261,148 bytes) to interface 6, at
-most 30 per second per panel, through the transport checked on the S8 in #44
-([screen-transport-validation.md](screen-transport-validation.md)), and the
-black exit frames. Nothing else is written: no LED reports, no feature
-reports, no control transfers, nothing on interface 4.
+What is sent: full-panel literal frames (261,148 bytes) to interface 6. At
+most 30 per second per panel go out, through the transport checked on the
+S8 in #44 ([screen-transport-validation.md](screen-transport-validation.md)).
+The black exit frames are sent too. Nothing else is written: no LED
+reports, no feature reports, no control transfers, nothing on interface 4.
 
 The runner stops the agent with SIGKILL, runs S8Host twice, asks one
 question per row and relaunches the agent on every exit path. Answering
@@ -181,9 +201,13 @@ that stays frozen or garbled, an S8 that goes dark, controls that stop
 reaching djay.
 
 The second run uses `--log-deck-polls`. After each of rows 18 to 21 the
-runner notes the deck reads since the previous row: how many, the longest
-gap between two reads, how many gaps were over 0.45 s (the limit the deck
-time interpolation of #84 allows for) and the longest read.
+runner notes these figures for the deck reads since the previous row:
+
+- how many reads
+- the longest gap between two reads
+- how many gaps were over 0.45 s, the limit the deck time interpolation of
+  #84 allows for
+- the longest read
 
 | Row | Action                                                     | Expected                                                                            |
 | --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -213,31 +237,40 @@ time interpolation of #84 allows for) and the longest read.
 | 24  | Left PLAY                                                  | djay reacts through the Controller Editor setup                                     |
 | 25  | Display button 1 or 4                                      | NI action works again                                                               |
 
-The record goes to `captures/panel-views-<UTC>/` (`notes.txt` with the
-answers, `library.log` and `deck.log` with S8Host's and the bridge's output,
-gzipped before a commit) and the results into
+The record goes to `captures/panel-views-<UTC>/`. It holds:
+
+- `notes.txt` with the answers
+- `library.log` and `deck.log` with S8Host's and the bridge's output
+
+The logs are gzipped before a commit. The results go into
 [panel-views-validation.md](panel-views-validation.md).
 
 ## Validation state
 
 Covered by tests (`swift test --package-path macos --filter S8ViewsTests`):
-the record layout, scroll kept per list and reset on a tab switch, the
-selection following djay's selected row, and that only changed panels
-produce records.
+
+- the record layout
+- scroll kept per list and reset on a tab switch
+- the selection following djay's selected row
+- only changed panels produce records
 
 Covered by tests (`--filter S8SessionTests`, #89), with stand-ins for djay
-and the bridge: deck reads continue while a sidebar reading is blocked and
-while a write is blocked; 30 sidebar states published during a blocked
-write produce the first state and then only the newest; a stop returns
-while a write is blocked and no record or sidebar reading follows it; the
-sidebar is read once after the last waiting control event.
+and the bridge:
+
+- deck reads continue while a sidebar reading is blocked
+- deck reads continue while a write is blocked
+- 30 sidebar states published during a blocked write produce the first
+  state and then only the newest
+- a stop returns while a write is blocked, and no record or sidebar
+  reading follows it
+- the sidebar is read once after the last waiting control event
 
 Checked without the S8: the replay and decode above, for the ten states.
 
-Measured without the S8 on 2026-11-10 (#89): S8Host
-`--screens --deck 1 --log-deck-polls` against the running djay Pro, with a
-script in place of the bridge, so nothing was sent to the S8 and no control
-event reached djay.
+Measured without the S8 on 2026-11-10 (#89). The command was S8Host
+`--screens --deck 1 --log-deck-polls` against the running djay Pro. A
+script stood in for the bridge, so nothing was sent to the S8 and no
+control event reached djay.
 
 | Stand-in for the bridge                       | Time | Deck reads | Mean gap | Gaps over 0.45 s | Longest read | Stop after SIGINT |
 | --------------------------------------------- | ---- | ---------- | -------- | ---------------- | ------------ | ----------------- |
@@ -250,11 +283,21 @@ at the signal, started no further one and exited when the stand-in got
 SIGINT after 5 s.
 
 Checked on the S8 once, with djay (2026-11-10,
-[panel-views-validation.md](panel-views-validation.md)): the 25 rows above,
-including the live sidebar reading under `--screens`, the deck read gaps
-during scrolling and tab switching, and the panel state after a stop.
+[panel-views-validation.md](panel-views-validation.md)). This covered:
 
-Not checked on the S8: a bridge that stops reading or is killed, djay
-quitting, the S8 unplugged, lists near the 300-row limit, `--poll` under
-1 s, and decks 3 and 4. `--deck 2` was run once on the S8 in
+- the 25 rows above
+- the live sidebar reading under `--screens`
+- the deck read gaps during scrolling and tab switching
+- the panel state after a stop
+
+Not checked on the S8:
+
+- a bridge that stops reading or is killed
+- djay quitting
+- the S8 unplugged
+- lists near the 300-row limit
+- `--poll` under 1 s
+- decks 3 and 4
+
+`--deck 2` was run once on the S8 in
 [deck-data-validation.md](deck-data-validation.md).

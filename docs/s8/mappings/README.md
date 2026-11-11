@@ -1,3 +1,8 @@
+---
+summary: "Frozen copies of Djay mappings that were checked on the S8, with install steps."
+type: reference
+---
+
 # Working Kontrol S8 mappings
 
 Frozen copies of Djay mappings that were checked on the S8. They keep a

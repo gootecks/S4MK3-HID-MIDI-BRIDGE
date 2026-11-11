@@ -1,3 +1,8 @@
+---
+summary: "Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host, #51)."
+type: reference
+---
+
 # Display buttons and screen encoders (#51)
 
 The eight buttons and four encoders beside each S8 screen drive djay Pro's

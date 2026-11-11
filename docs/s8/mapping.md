@@ -1,3 +1,8 @@
+---
+summary: "The default Djay layout generated from the S8 catalog: addresses, pad modes, local and unassigned controls (#14)."
+type: reference
+---
+
 # S8 default Djay mapping
 
 The bridge generates `Kontrol S8 Bridge.djayMidiMapping` for the virtual MIDI
@@ -9,6 +14,24 @@ Djay uses. A second layout based on Evan's mapping is tracked in
 gootecks/S4MK3-HID-MIDI-BRIDGE issue #65. The mapping has no LED or screen
 feedback yet (its `outputs` array is empty). Nothing here is hardware-verified
 until the attended check.
+
+<?toc?>
+
+- [Channels and message types](#channels-and-message-types)
+- [Deck controls](#deck-controls)
+  - [Notes](#notes)
+  - [CCs](#ccs)
+- [Pads](#pads)
+- [FX units](#fx-units)
+- [Mixer (channel 5)](#mixer-channel-5)
+  - [Mixer CCs](#mixer-ccs)
+  - [Mixer notes](#mixer-notes)
+- [Crossfader assign (channel 5, notes)](#crossfader-assign-channel-5-notes)
+- [Deck select (channel 6, notes)](#deck-select-channel-6-notes)
+- [Hardware-local controls](#hardware-local-controls)
+- [Unassigned controls](#unassigned-controls)
+
+<?/toc?>
 
 ## Channels and message types
 
@@ -60,11 +83,17 @@ same numbers.
 | REMIX                | 28    | `padModeSampler` and `sampler.toggleSamplerShown` |                        |
 | Stem ON 1-4          | 56-59 | `unmixerFourTrackChannel{1-4}Muted`               | `...Channel{1-4}Solo`  |
 
-Unqualified names are `turntable{deck}.` actions. `libraryBack`,
-`toggleLibrarySource`, `load{deck}`, `toggleLibraryVisible` and `togglePreview`
-are `musicLibrary.` actions; `load{deck}` loads into the sending deck. Djay
-names `toggleLibrarySource` "Switch Library Table", `libraryBack` "Switch
-Back" and `toggleLibraryVisible` "Toggle Library Expanded".
+Unqualified names are `turntable{deck}.` actions. These are
+`musicLibrary.` actions:
+
+- `libraryBack`
+- `toggleLibrarySource`
+- `load{deck}`, which loads into the sending deck
+- `toggleLibraryVisible`
+- `togglePreview`
+
+Djay names `toggleLibrarySource` "Switch Library Table", `libraryBack`
+"Switch Back" and `toggleLibraryVisible` "Toggle Library Expanded".
 
 REMIX therefore toggles Djay's sampler view each time it is pressed
 (`toggleSamplerShown`, "Toggle Sampler"). `sampler.showSampler`, which has no
@@ -136,7 +165,7 @@ dials use pickup.
 
 ## Mixer (channel 5)
 
-### CCs
+### Mixer CCs
 
 | Control           | No.   | Action                               |
 | ----------------- | ----- | ------------------------------------ |
@@ -155,7 +184,7 @@ dials use pickup.
 
 Mixer CCs do not use pickup.
 
-### Notes
+### Mixer notes
 
 | Control       | No. | Action                         |
 | ------------- | --- | ------------------------------ |
@@ -184,13 +213,13 @@ One note per channel and switch position, sent when the switch moves.
 Actions are `mixer.crossfadeAssignment{1-4}Left`, `...Through` and `...Right`.
 
 Observed in the third attended check: with any assign switch away from the
-middle, moving the crossfader made Djay show a warning icon in its mixer and
-the dialog "Crossfader assignment changed", which offers to keep the
-assignment or restore the default for all decks. With all four switches in
+middle, moving the crossfader made Djay show a warning icon in its mixer. It
+also showed the dialog "Crossfader assignment changed", which offers to keep
+the assignment or restore the default for all decks. With all four switches in
 the middle neither appears. In the fourth check the same dialog appeared on
-the first button press after the bridge started, the report in which the
-bridge sends the four switch positions (all middle at the time). The cause is
-not established.
+the first button press after the bridge started. That is the report in which
+the bridge sends the four switch positions (all middle at the time). The cause
+is not established.
 
 ![Warning icon in Djay's mixer](images/crossfader-assign-warning.png)
 

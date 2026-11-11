@@ -1,3 +1,8 @@
+---
+summary: "Phases 2 to 4: first frames, colour order and a full uncompressed frame (screen-frame-check.sh)."
+type: validation
+---
+
 # S8 screen phases 2–4: first frames and full frame
 
 Validation record for #34 and #35 ([screens.md](screens.md), phases 2–4).
@@ -65,11 +70,11 @@ HID and every `Kontrol S8` MIDI endpoint. Runs on 2026-10-28 with
 
 The frame is the 16-byte header, one `00 00 FF 00` LITERAL command, 480×272
 RGB565 big-endian pixels and the 8-byte footer. The pattern has a dark
-background, the panel title, red, green, blue and white bars with labels,
-`480 X 272 LITERAL`, a 1-pixel grey border on all four edges, a 16-pixel
-white marker top left and 8-pixel white markers in the other corners. The
-tester confirmed every element on both panels: the full raster is visible,
-with no cropping, offset or mirroring.
+background and the panel title. It has red, green, blue and white bars with
+labels, `480 X 272 LITERAL`, a 1-pixel grey border on all four edges, a
+16-pixel white marker top left and 8-pixel white markers in the other
+corners. The tester confirmed every element on both panels: the full raster
+is visible, with no cropping, offset or mirroring.
 
 `s8-screen-frame pattern --preview FILE.ppm` writes the intended image for
 comparison with photos.
@@ -115,9 +120,10 @@ From an interactive terminal with someone at the S8:
        mise run s8:screen-frame first
        mise run s8:screen-frame pattern rgb
 
-The script checks for one S8 and one verified NIHardwareAgent, starts the
-recorder, stops the agent with SIGKILL, prints each frame's size and hash,
-sends it after Enter, asks what the panels show and for a PLAY press, then
-relaunches the agent with `open -g`. Answering `stop` at any prompt skips to
-recovery. Per-window counts go to `docs/s8/captures/screen-<phase>-<UTC>/`
-(earlier runs wrote to `target/s8-captures/`).
+The script checks for one S8 and one verified NIHardwareAgent, then starts
+the recorder. It stops the agent with SIGKILL and prints each frame's size
+and hash. It sends each frame after Enter, asks what the panels show and
+for a PLAY press, then relaunches the agent with `open -g`. Answering
+`stop` at any prompt skips to recovery. Per-window counts go to
+`docs/s8/captures/screen-<phase>-<UTC>/` (earlier runs wrote to
+`target/s8-captures/`).
