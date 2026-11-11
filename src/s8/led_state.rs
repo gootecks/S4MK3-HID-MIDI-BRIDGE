@@ -117,13 +117,19 @@ fn slot_level(index: usize, deck: usize, feedback: &FeedbackState) -> Level {
         .map_or(Level::Off, |number| level(feedback.note_on(deck, number)))
 }
 
+/// Both banks light the same physical row, so the bar skips the LED under the finger dot.
 fn strip(deck: usize, local: &Local, feedback: &FeedbackState) -> Strip {
     let mut strip = Strip::default();
-    if let Some(position) = local.strip_touch {
-        strip.orange = leds::dot(position, MAX_VALUE);
-    }
     if let Some(progress) = feedback.progress(deck) {
         strip.blue = leds::bar(progress, MAX_VALUE);
+    }
+    if let Some(position) = local.strip_touch {
+        strip.orange = leds::dot(position, MAX_VALUE);
+        for (blue, orange) in strip.blue.iter_mut().zip(strip.orange) {
+            if orange != 0 {
+                *blue = 0;
+            }
+        }
     }
     strip
 }
@@ -427,9 +433,37 @@ mod tests {
         };
         let strip = present(Side::Left, &state, &touched).strip;
         assert_eq!(strip.orange, leds::dot(0, MAX_VALUE));
-        assert_eq!(strip.blue, leds::bar(127, MAX_VALUE));
+        let mut bar = leds::bar(127, MAX_VALUE);
+        bar[0] = 0;
+        assert_eq!(strip.blue, bar);
         let other_deck = present(Side::Left, &state, &local(1)).strip;
         assert_eq!(other_deck, Strip::default());
+        Ok(())
+    }
+
+    #[test]
+    fn the_progress_bar_skips_the_led_under_the_finger_and_returns_on_release() -> Result<(), String>
+    {
+        let mut state = FeedbackState::default();
+        feed(&mut state, 0xb6, root_number(RootFamily::Progress, 1)?, 127);
+        let bar = leds::bar(127, MAX_VALUE);
+        for position in [0, 64, 127] {
+            let held = Local {
+                strip_touch: Some(position),
+                ..local(0)
+            };
+            let strip = present(Side::Left, &state, &held).strip;
+            let dot = leds::dot(position, MAX_VALUE);
+            for index in 0..strip.blue.len() {
+                assert_eq!(
+                    (strip.blue[index] != 0, strip.orange[index] != 0),
+                    (bar[index] != 0 && dot[index] == 0, dot[index] != 0),
+                    "position {position}, led {index}"
+                );
+            }
+        }
+        let released = present(Side::Left, &state, &local(0)).strip;
+        assert_eq!((released.blue, released.orange), (bar, [0; 25]));
         Ok(())
     }
 
