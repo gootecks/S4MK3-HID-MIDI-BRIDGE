@@ -28,6 +28,8 @@ public final class DeckMonitor {
         let readings: [Int: DeckReading]
         do {
             readings = try reader.readings()
+        } catch DeckAccessError.notAnswering {
+            return pause("djay is not answering")
         } catch DeckAccessError.permissionDenied {
             return fail("Accessibility permission needed")
         } catch {
@@ -40,7 +42,7 @@ public final class DeckMonitor {
             let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
             let due = withLock { lastLook[deck].map { now.timeIntervalSince($0) >= lookInterval } ?? true }
             if reading.hasTrack, let title = reading.title, changed || due {
-                entry = catalog.entry(title: title, artist: reading.artist)
+                entry = catalog.entry(title: title, artist: reading.artist, length: TrackLengthHint(reading))
                 withLock { lastLook[deck] = now }
             }
             withLock { trackers[deck]?.ingest(reading, entry: entry, now: now) }
@@ -55,6 +57,14 @@ public final class DeckMonitor {
         withLock {
             for deck in decks {
                 trackers[deck]?.ingestFailure(message)
+            }
+        }
+    }
+
+    private func pause(_ message: String) {
+        withLock {
+            for deck in decks {
+                trackers[deck]?.ingestPause(message)
             }
         }
     }

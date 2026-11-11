@@ -16,7 +16,7 @@ public struct CatalogEntry {
 }
 
 public protocol TrackCatalog {
-    func entry(title: String, artist: String?) -> CatalogEntry?
+    func entry(title: String, artist: String?, length: TrackLengthHint?) -> CatalogEntry?
 }
 
 public struct AnalysisStore {
@@ -97,11 +97,11 @@ public final class LibraryCatalog: TrackCatalog {
         self.didReload = didReload
     }
 
-    public func entry(title: String, artist: String?) -> CatalogEntry? {
+    public func entry(title: String, artist: String?, length: TrackLengthHint?) -> CatalogEntry? {
         let current = currentSnapshot()
-        let matches = current?.tracks(title: title, artist: artist) ?? []
-        guard let current, !matches.isEmpty else { return nil }
-        var track = matches[0]
+        guard let current, let matches = candidates(in: current, title: title, artist: artist, length: length),
+              let first = matches.first else { return nil }
+        var track = first
         var analysis: TrackAnalysis?
         var found = false
         for match in matches where !found {
@@ -116,6 +116,29 @@ public final class LibraryCatalog: TrackCatalog {
             trackID: track.id, duration: track.duration, cues: current.cuePoints(trackID: track.id),
             analysis: analysis
         )
+    }
+
+    private func candidates(
+        in snapshot: DjayLibrarySnapshot, title: String, artist: String?, length: TrackLengthHint?
+    ) -> [DjayTrack]? {
+        let matches = snapshot.tracks(title: title, artist: artist)
+        var tracks = matches.tracks
+        if let length {
+            let fitting = tracks.filter { $0.duration.map(length.admits) ?? true }
+            if !fitting.isEmpty {
+                tracks = fitting
+            } else if !matches.artistMatched {
+                return nil
+            }
+        }
+        if !matches.artistMatched {
+            let durations = tracks.compactMap(\.duration)
+            let spread = (durations.max() ?? 0) - (durations.min() ?? 0)
+            if spread > TrackLengthHint.tolerance {
+                return nil
+            }
+        }
+        return tracks.isEmpty ? nil : tracks
     }
 
     private func cachedAnalysis(_ id: String) -> TrackAnalysis? {

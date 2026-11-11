@@ -86,7 +86,7 @@ final class LibraryCatalogTests: XCTestCase {
     }
 
     private func lookup() -> CatalogEntry? {
-        catalog.entry(title: "Soma", artist: "Skrillex")
+        catalog.entry(title: "Soma", artist: "Skrillex", length: nil)
     }
 
     private func changeDatabase() throws {

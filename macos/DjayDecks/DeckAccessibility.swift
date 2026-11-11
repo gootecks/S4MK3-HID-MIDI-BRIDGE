@@ -4,6 +4,7 @@ import Cocoa
 public enum DeckAccessError: Error, Equatable {
     case notRunning
     case permissionDenied
+    case notAnswering
 }
 
 public protocol DeckAccessibility {
@@ -29,6 +30,7 @@ public struct DeckReader {
 
 public final class AXDeckSource: DeckAccessibility {
     public static let maximumDepth = 6
+    static let messagingTimeout: Float = 3
     private var cachedApp: (pid: pid_t, element: AXUIElement)?
 
     public init() {}
@@ -47,6 +49,7 @@ public final class AXDeckSource: DeckAccessibility {
             return cachedApp.element
         }
         let element = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
         cachedApp = (pid, element)
         return element
     }
@@ -55,6 +58,9 @@ public final class AXDeckSource: DeckAccessibility {
         let app = try application()
         var value: AnyObject?
         let status = AXUIElementCopyAttributeValue(app, kAXChildrenAttribute as CFString, &value)
+        if status == .cannotComplete, Self.isTrusted() {
+            throw DeckAccessError.notAnswering
+        }
         if status == .apiDisabled || status == .cannotComplete {
             throw DeckAccessError.permissionDenied
         }

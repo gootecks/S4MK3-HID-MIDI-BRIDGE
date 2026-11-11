@@ -6,7 +6,7 @@ import XCTest
 private struct FakeCatalog: TrackCatalog {
     let entries: [String: CatalogEntry]
 
-    func entry(title: String, artist _: String?) -> CatalogEntry? {
+    func entry(title: String, artist _: String?, length _: TrackLengthHint?) -> CatalogEntry? {
         entries[title]
     }
 }
@@ -15,7 +15,7 @@ private final class MutableCatalog: TrackCatalog {
     var current: CatalogEntry?
     private(set) var lookups = 0
 
-    func entry(title _: String, artist _: String?) -> CatalogEntry? {
+    func entry(title _: String, artist _: String?, length _: TrackLengthHint?) -> CatalogEntry? {
         lookups += 1
         return current
     }
@@ -255,5 +255,43 @@ final class DeckTrackerTests: XCTestCase {
         source.failure = DeckAccessError.notRunning
         monitor.poll(now: start)
         XCTAssertEqual(monitor.snapshot(deck: 1, now: start).notice, "djay is not running")
+    }
+
+    func testUnansweredDjayKeepsTrackAndResumesWithoutNewLookup() throws {
+        let source = loadedSource()
+        let catalog = MutableCatalog()
+        catalog.current = try entry()
+        let monitor = DeckMonitor(source: source, catalog: catalog, decks: [1], lookInterval: 5)
+        monitor.poll(now: start)
+        source.failure = DeckAccessError.notAnswering
+        monitor.poll(now: start.addingTimeInterval(1))
+        let paused = monitor.snapshot(deck: 1, now: start.addingTimeInterval(1))
+        XCTAssertEqual(paused.notice, "djay is not answering")
+        XCTAssertFalse(paused.hasTrack)
+        source.failure = nil
+        source.values["Elapsed time, Deck 1"] = "00:32"
+        source.values["Remaining time, Deck 1"] = "-02:53"
+        monitor.poll(now: start.addingTimeInterval(2))
+        let resumed = monitor.snapshot(deck: 1, now: start.addingTimeInterval(2))
+        XCTAssertNil(resumed.notice)
+        XCTAssertEqual(resumed.title, "Soma")
+        XCTAssertNotNil(resumed.analysis)
+        XCTAssertEqual(resumed.elapsed ?? 0, 32.5, accuracy: 0.001)
+        XCTAssertFalse(resumed.playing)
+        XCTAssertEqual(catalog.lookups, 1)
+    }
+
+    func testPermissionFailureStillResetsTheDeck() throws {
+        let source = FakeSource()
+        source.values = ["Title, Deck 1": "Soma", "Remaining time, Deck 1": "-02:55"]
+        let catalog = MutableCatalog()
+        catalog.current = try entry()
+        let monitor = DeckMonitor(source: source, catalog: catalog, decks: [1])
+        monitor.poll(now: start)
+        source.failure = DeckAccessError.permissionDenied
+        monitor.poll(now: start)
+        source.failure = nil
+        monitor.poll(now: start)
+        XCTAssertEqual(catalog.lookups, 2)
     }
 }
