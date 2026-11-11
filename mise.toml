@@ -179,6 +179,10 @@ run = [
   "mdsmith pre-merge-commit install",
 ]
 
+[tasks."upstream:files"]
+description = "Fetch upstream and rewrite the list of upstream's files the hooks skip"
+run = ["git fetch upstream main", "docs/s8/upstream-files.sh"]
+
 [tasks."secrets:check"]
 description = "Validate configured secrets"
 run = "fnox -c fnox.toml check"

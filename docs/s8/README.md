@@ -150,7 +150,7 @@ How to keep contributions acceptable upstream: [upstream-workflow.md](upstream-w
 ## Documents
 
 Each note's front matter holds its `summary` and `type`; `mdsmith fix` regenerates
-these lists from it.
+these lists from it. The last list holds the READMEs kept next to the code.
 
 ### Reference
 
@@ -237,6 +237,26 @@ footer: "\n"
 - [captures/2026-11-09-input-capture/README.md](captures/2026-11-09-input-capture/README.md): Recovered logs of the agent-stopped input capture of 2026-11-09 (#10).
 - [captures/djay-check-20261111T003350Z/README.md](captures/djay-check-20261111T003350Z/README.md): Deck page against djay on 2026-11-10: cue points, analysis and the One Deck view.
 - [captures/one-deck-view-20261111T000921Z/README.md](captures/one-deck-view-20261111T000921Z/README.md): Read-only Accessibility dumps of djay's One Deck view, taken on 2026-11-10 (#93).
+
+<?/catalog?>
+
+### READMEs next to the code
+
+<?catalog
+glob:
+  - "../../**/*.md"
+  - "!../../docs/s8/**"
+where: 'type: "readme"'
+sort: path
+header: "\n"
+row: "- [`{filename}`]({filename}): {summary}"
+footer: "\n"
+?>
+
+- [`../../macos/DjayDecks/README.md`](../../macos/DjayDecks/README.md): Reads djay Pro's decks for the S8 deck page: Accessibility state per deck plus per-track analysis from djay's metadata cache.
+- [`../../macos/DjayLibrary/README.md`](../../macos/DjayLibrary/README.md): Read-only model of djay Pro's media library for the S8 screens.
+- [`../../macos/S8Host/README.md`](../../macos/S8Host/README.md): Runs the Rust bridge as a child process and drives djay's sidebar from the Kontrol S8 display buttons and screen encoders.
+- [`../../macos/S8Views/README.md`](../../macos/S8Views/README.md): Renders djay Pro's right-hand sidebar onto the two Kontrol S8 panels and encodes the result as S8 screen frames.
 
 <?/catalog?>
 

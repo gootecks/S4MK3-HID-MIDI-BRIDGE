@@ -1,26 +1,122 @@
 convention: github
 files:
-  - "docs/s8/**/*.md"
-ignore:
   - "**/*.md"
-  - "!docs/s8/**/*.md"
+# Every Markdown file that is not upstream's is linted. The block below is written by
+# docs/s8/upstream-files.sh. CHANGELOG.md is formatted by oxfmt only; plans/ is local
+# and excluded in .git/info/exclude, which mdsmith does not read.
+ignore:
+  - "CHANGELOG.md"
+  - "plans/**"
+  # BEGIN upstream files
+  - "docs/absolute-position-scratch-experiment.md"
+  - "docs/app-screen-integration-validation.md"
+  - "docs/backspin-assist-validation.md"
+  - "docs/backspin-detection-validation.md"
+  - "docs/beta-release-validation.md"
+  - "docs/bridge-function-reference.md"
+  - "docs/configurable-controls.md"
+  - "docs/connectivity-test.md"
+  - "docs/controls-state-sync-validation.md"
+  - "docs/controls-state-sync.md"
+  - "docs/design.md"
+  - "docs/dj-laptop-set-validation.md"
+  - "docs/djay-action-reference.md"
+  - "docs/dvs-midi-validation.md"
+  - "docs/encoder-capture.md"
+  - "docs/encoder-layout-validation.md"
+  - "docs/ext-input-validation.md"
+  - "docs/external-input-routing-test.md"
+  - "docs/external-input-software-comparison.md"
+  - "docs/first-load-scratch-and-app-cpu-validation.md"
+  - "docs/full-midi-test.md"
+  - "docs/fx-knob-browsing-validation.md"
+  - "docs/hardware-bridge-research.md"
+  - "docs/hidden-settings-cpu-validation.md"
+  - "docs/idle-ui-performance-validation.md"
+  - "docs/images/README.md"
+  - "docs/issues.md"
+  - "docs/jog-fader-braking-protocol.md"
+  - "docs/jog-settings-cleanup-validation.md"
+  - "docs/jog-settings-validation.md"
+  - "docs/jog-tension-diagnostic.md"
+  - "docs/jog-tension-integration.md"
+  - "docs/jog-wheel-investigation.md"
+  - "docs/key-feedback-order-validation.md"
+  - "docs/led-feedback.md"
+  - "docs/led-fx-state-fixes-validation.md"
+  - "docs/led-mapping-plan.md"
+  - "docs/live-diagnostics-cpu-validation.md"
+  - "docs/macos-app-qa.md"
+  - "docs/mapping-audit.md"
+  - "docs/midi-test.md"
+  - "docs/mockups/jog-settings-proposal.md"
+  - "docs/motorized-playback-integration-validation.md"
+  - "docs/neural-mix-eq-check.md"
+  - "docs/platter-diagnostic-validation.md"
+  - "docs/platter-diagnostic.md"
+  - "docs/release-0.1.1-beta.2.md"
+  - "docs/release-0.1.1-beta.3.md"
+  - "docs/release-0.2.0-beta.1-validation.md"
+  - "docs/release-0.2.0-beta.1.md"
+  - "docs/release-0.2.0-beta.2-validation.md"
+  - "docs/release-0.2.0-beta.2.md"
+  - "docs/release-0.2.1-beta.1-validation.md"
+  - "docs/release-0.2.1-beta.1.md"
+  - "docs/release-0.3.0-beta.1-validation.md"
+  - "docs/release-0.3.0-beta.1.md"
+  - "docs/screen-driver-handover-validation.md"
+  - "docs/screen-driver-handover.md"
+  - "docs/screen-feedback-investigation.md"
+  - "docs/screen-prototype-validation.md"
+  - "docs/screens.md"
+  - "docs/shift-sync-validation.md"
+  - "docs/tension-timeout-recovery.md"
+  - "docs/traktor-djay-comparison.md"
+  - "docs/traktor-ring-capture.md"
+  - "docs/tt-assistance-admission-validation.md"
+  - "docs/tt-backspin-validation.md"
+  - "docs/tt-braking-diagnostics-validation.md"
+  - "docs/tt-normal-ring-recovery-validation.md"
+  - "docs/tt-response-curves-validation.md"
+  - "docs/tt-response-stability-validation.md"
+  - "docs/tt-ring-upper-validation.md"
+  - "docs/tt-rpm-baseline.md"
+  - "docs/tt-rpm-diagnostic-validation.md"
+  - "docs/tt-shift-seek-validation.md"
+  - "docs/tt-speed-scratch-diagnostic.md"
+  - "docs/tt-speed-scratch-validation.md"
+  - "docs/tt-touch-stop-validation.md"
+  - "docs/user-guide.md"
+  - "macos/DESIGN.md"
+  - "macos/README.md"
+  - "src/screens/DESIGN.md"
+  - "src/screens/text/README.md"
+  # END upstream files
+# Every rule applies to every fork-owned file, with one exception: GitHub shows front
+# matter as a table above a README, and the root README.md is the project's front page.
+# A pattern without a slash matches the file name in every folder, so front matter is
+# required by a pattern that only files in a folder match.
+overrides:
+  - glob: ["*/**/*.md"]
+    rules:
+      required-frontmatter:
+        fields: [summary, type]
 rules:
   # oxfmt always leaves a blank line after front matter; MDS004 rejects it.
   first-line-heading: false
   line-length:
     max: 95
     stern: true
+  required-frontmatter: false
+  paragraph-readability: true
+  paragraph-structure: true
   code-block-style:
     style: consistent
-  required-frontmatter:
-    fields: [summary, type]
   proper-names:
     names: [GitHub, macOS, Xcode, AppKit, SwiftUI, Traktor, Rust, Swift]
   list-indent: true
   table-format: true
   no-duplicate-headings: true
-  paragraph-readability: true
-  paragraph-structure: true
   table-readability: true
   max-file-length:
     max: 500
