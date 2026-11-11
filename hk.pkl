@@ -70,6 +70,23 @@ steps {
             effect = "write"
         }
     }
+    // Any staged note can make the index in docs/s8/README.md stale, so check it too.
+    ["mdsmith_index"] {
+        glob = "docs/s8/**/*.md"
+        depends = "mdsmith"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "check", "--no-color", "docs/s8/README.md")
+            }
+            effect = "read"
+        }
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "fix", "--no-color", "docs/s8/README.md")
+            }
+            effect = "write"
+        }
+    }
     // Upstream violations are grandfathered by the baseline; new violations fail.
     ["swiftlint"] {
         glob = "macos/**/*.swift"

@@ -237,11 +237,14 @@ This section is fork-only. Keep it out of upstream pull requests.
   `docs/s8/` (GitHub convention, lines up to 95 characters, `.mdsmith.yml`);
   `hk fix` applies the formatting. Every note there needs front matter with
   `summary` and `type`; the index in `docs/s8/README.md` is generated from it
-  by `<?catalog?>`, and notes over 200 lines carry a `<?toc?>`. Run
-  `mdsmith fix .` after adding a note or a heading; `.mdsmith.yml` limits it
-  to `docs/s8/`. `mise run hooks:install` also registers mdsmith's merge
-  driver for `docs/s8/**/*.md` (`.gitattributes`), so generated sections no
-  longer conflict. After a merge or rebase they can still be stale: run
+  by `<?catalog?>`, and notes over 200 lines carry a `<?toc?>`. `mdsmith
+  check` reports a stale index or table of contents and `mdsmith fix`
+  regenerates it. Committing any note also checks the index
+  (`mdsmith_index` in `hk.pkl`); after adding a note or a heading, run
+  `hk fix` or `mdsmith fix .` (`.mdsmith.yml` limits it to `docs/s8/`).
+  `mise run hooks:install` also registers mdsmith's merge driver for
+  `docs/s8/**/*.md` (`.gitattributes`), so generated sections no longer
+  conflict. After a merge or rebase they can still be stale: run
   `mdsmith fix .` again (`mise run check` reports it). shfmt formats
   `docs/s8/*.sh` (`docs/s8/.editorconfig`); shellcheck checks every script.
   oxfmt is the native binary from the oxc GitHub release, so no npm download
