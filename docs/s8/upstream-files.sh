@@ -4,9 +4,12 @@
 # matching ignore block in .mdsmith.yml. With --check it writes nothing and fails
 # when either is out of date.
 #
+# The root README.md is the fork's front page and is left off the list, so it is
+# gated like the fork's own files.
+#
 # mdsmith matches an ignore pattern without a slash against the file name in every
-# folder, so upstream's root README.md would also ignore the fork's READMEs. The
-# block therefore re-includes each fork-owned file that shares such a name.
+# folder. Should a root file on the list share its name with a fork-owned file, the
+# block re-includes that file.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -16,6 +19,7 @@ list=docs/s8/upstream-files.txt
 config=.mdsmith.yml
 begin='  # BEGIN upstream files'
 end='  # END upstream files'
+adopted='README.md'
 
 if ! git rev-parse --quiet --verify "$ref^{commit}" > /dev/null; then
     echo "upstream-files: no $ref here; add the upstream remote and fetch it" >&2
@@ -28,7 +32,8 @@ block=$(mktemp)
 new_config=$(mktemp)
 trap 'rm -f "$new_list" "$block" "$new_config"' EXIT
 
-git ls-tree -r --name-only "$ref" | grep -E '\.(md|swift|sh)$' | LC_ALL=C sort > "$new_list"
+git ls-tree -r --name-only "$ref" | grep -E '\.(md|swift|sh)$' | grep -vxF "$adopted" |
+    LC_ALL=C sort > "$new_list"
 
 git ls-files -- '*.md' | LC_ALL=C sort | awk -v list="$new_list" '
     BEGIN {

@@ -238,12 +238,12 @@ This section is fork-only. Keep it out of upstream pull requests.
   same Markdown paths in a generated `ignore:` block. A Markdown file created
   anywhere is therefore formatted and linted without being added to a glob.
   Do not edit the list or that block by hand. After merging from upstream run
-  `mise run upstream:files`; the hooks fail while either is out of date. A
-  commit that adds a note rewrites and stages the block itself, because it
-  also names every fork-owned `README.md`: mdsmith matches upstream's root
-  `README.md` pattern in every folder. A commit that only deletes notes is
-  blocked until `mise run upstream:files` has run and `.mdsmith.yml` is
-  staged. Swift and shell steps do not use the list yet.
+  `mise run upstream:files`; the hooks fail while either is out of date. The
+  root `README.md` is the fork's front page: the script leaves it off the
+  list, so it is gated like the fork's own files. mdsmith matches an ignore
+  pattern without a slash against the file name in every folder, so never
+  ignore a root `README.md` there; it would ignore every README. Swift and
+  shell steps do not use the list yet.
 - Swift style: SwiftLint grandfathers upstream violations in
   `.swiftlint-baseline.json`; new violations fail. SwiftFormat checks only
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
@@ -252,8 +252,9 @@ This section is fork-only. Keep it out of upstream pull requests.
 - Docs and script style: oxfmt formats and mdsmith lints every fork-owned
   Markdown file (GitHub convention, `.mdsmith.yml`). `CHANGELOG.md` is
   formatted only. Under `docs/s8/` lines are up to 95 characters, paragraphs
-  are checked for readability, and every note needs front matter with
-  `summary` and `type`; READMEs elsewhere are exempt from those three. The
+  and table cells are checked for readability, and every note needs front
+  matter with `summary` and `type`; the root `README.md` and READMEs next to
+  the code are exempt from those. The
   index in `docs/s8/README.md` is generated from the front matter by
   `<?catalog?>`, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table

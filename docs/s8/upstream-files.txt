@@ -1,5 +1,4 @@
 AGENTS.md
-README.md
 docs/absolute-position-scratch-experiment.md
 docs/app-screen-integration-validation.md
 docs/backspin-assist-validation.md

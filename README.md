@@ -127,7 +127,7 @@ to stop control translation, or **Quit S4 MK3 Bridge** to quit.
 
 ![Bridge settings with profile, Start/Stop, and mapping installation controls](docs/images/bridge-settings.png)
 
-_Bridge controls and mapping installation._
+Bridge controls and mapping installation.
 
 ## Controls and differences from Traktor
 
@@ -144,25 +144,25 @@ These are intentional custom mappings. Djay's loop, Neural Mix, and effect
 models differ from Traktor's, so the same labels don't always mean the same
 thing.
 
-| Control                            | Behavior in this bridge                                                                                                                                                                                                               |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **LOOP turn / press**              | Select loop size / toggle the loop. Loop size is independent of MOVE's jump length, unlike Traktor's shared length.                                                                                                                   |
-| **MOVE turn**                      | Jump by the selected jump length, or move the active loop by that length. Each deck keeps its own loop and jump sizes.                                                                                                                |
-| **MOVE press**                     | Toggle jump-size selection. Turn MOVE to change the size immediately; press again to exit. The selected deck's selector pulses while selecting. The mode survives deck switches, has no timeout, and clears when the bridge restarts. |
-| **Shift+MOVE turn**                | Jump one beat per step in either direction, even during size selection. Current source builds restore the last confirmed jump length afterward; install the matching mapping. |
-| **Shift+LOOP turn / press**        | Move the loop region / reloop the stored loop range. Manual loop in/out isn't mapped. These replace Traktor's shifted key/quantize functions.                                                                                         |
-| **REV**                            | Reverse only while held. Release ends reverse. It doesn't automatically enable Slip as Traktor enables Flux; use FLUX to control Slip independently.                                                                                  |
-| **Sync / Shift+Sync**              | Normal Sync is deck-specific. Shift+Sync on either side cycles Djay's tempo-fader range **globally for all decks**, rather than locking one deck's tempo fader as in Traktor. Djay determines the ranges and their order.             |
-| **Channel FX1 / FX2**              | Choose the deck controlled by the left / right FX strip. These are per-deck control targets, not Traktor's shared FX buses or audio-routing assignments.                                                                              |
-| **FX strips**                      | Control three manual effects on the target deck. Current-source app + mapping: Shift + parameter knob browses previous/next effects; release Shift for parameter pickup. Shift + effect button retains next-effect selection. See the bank-enable limitation below. |
-| **Channel ON and mixer FX**        | ON selects the Instant FX target. ON is white for normal EQ, cyan for Neural Mix EQ, and brighter on the target deck. An active Instant FX overrides that deck's ON with its effect-button color. |
-| **Filter, then channel ON**        | Filter flashes cyan awaiting a deck; the next ON toggles only that deck's Neural Mix EQ without changing the Instant FX target. Filter again cancels. Idle Filter is dim cyan; it no longer resets a filter. |
-| **STEMS / MUTE**                   | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                      |
-| **REC**                            | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                         |
-| **Shift+CUE**                      | Jump to the beginning of the song, not the saved start cue. Normal CUE is unchanged. |
-| **Playlist / Star buttons**        | Playlist marks/unmarks selected songs. In current source builds, Star switches the library table (Note 11 / B-1); published beta.3 focuses the Queue. |
-| **Preview**                        | Hold to preview; turn BROWSER while holding to scrub, then release to stop. Without Preview or Shift, BROWSER browses tracks. If preview gets out of sync with the hold, close it with the mouse. |
-| **Shift+BROWSER turn**              | In current source builds, select the next/previous library source. Holding Preview still scrubs instead, including with Shift held. |
+| Control                     | Behavior in this bridge                                                                                                                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **LOOP turn / press**       | Select loop size / toggle the loop. Loop size is independent of MOVE's jump length, unlike Traktor's shared length.                                                                                                                                                 |
+| **MOVE turn**               | Jump by the selected jump length, or move the active loop by that length. Each deck keeps its own loop and jump sizes.                                                                                                                                              |
+| **MOVE press**              | Toggle jump-size selection. Turn MOVE to change the size immediately; press again to exit. The selected deck's selector pulses while selecting. The mode survives deck switches, has no timeout, and clears when the bridge restarts.                               |
+| **Shift+MOVE turn**         | Jump one beat per step in either direction, even during size selection. Current source builds restore the last confirmed jump length afterward; install the matching mapping.                                                                                       |
+| **Shift+LOOP turn / press** | Move the loop region / reloop the stored loop range. Manual loop in/out isn't mapped. These replace Traktor's shifted key/quantize functions.                                                                                                                       |
+| **REV**                     | Reverse only while held. Release ends reverse. It doesn't automatically enable Slip as Traktor enables Flux; use FLUX to control Slip independently.                                                                                                                |
+| **Sync / Shift+Sync**       | Normal Sync is deck-specific. Shift+Sync on either side cycles Djay's tempo-fader range **globally for all decks**, rather than locking one deck's tempo fader as in Traktor. Djay determines the ranges and their order.                                           |
+| **Channel FX1 / FX2**       | Choose the deck controlled by the left / right FX strip. These are per-deck control targets, not Traktor's shared FX buses or audio-routing assignments.                                                                                                            |
+| **FX strips**               | Control three manual effects on the target deck. Current-source app + mapping: Shift + parameter knob browses previous/next effects; release Shift for parameter pickup. Shift + effect button retains next-effect selection. See the bank-enable limitation below. |
+| **Channel ON and mixer FX** | ON selects the Instant FX target. ON is white for normal EQ, cyan for Neural Mix EQ, and brighter on the target deck. An active Instant FX overrides that deck's ON with its effect-button color.                                                                   |
+| **Filter, then channel ON** | Filter flashes cyan awaiting a deck; the next ON toggles only that deck's Neural Mix EQ without changing the Instant FX target. Filter again cancels. Idle Filter is dim cyan; it no longer resets a filter.                                                        |
+| **STEMS / MUTE**            | Both select the same Neural Mix layer: four mute pads and four solo pads; Shift with pads 1-4 provides exclusive solo. MUTE isn't a held Traktor-style modifier.                                                                                                    |
+| **REC**                     | Assigned to Djay's Record Sample action, but its behavior remains unresolved. Don't rely on it as Traktor's Pattern Recorder.                                                                                                                                       |
+| **Shift+CUE**               | Jump to the beginning of the song, not the saved start cue. Normal CUE is unchanged.                                                                                                                                                                                |
+| **Playlist / Star buttons** | Playlist marks/unmarks selected songs. In current source builds, Star switches the library table (Note 11 / B-1); published beta.3 focuses the Queue.                                                                                                               |
+| **Preview**                 | Hold to preview; turn BROWSER while holding to scrub, then release to stop. Without Preview or Shift, BROWSER browses tracks. If preview gets out of sync with the hold, close it with the mouse.                                                                   |
+| **Shift+BROWSER turn**      | In current source builds, select the next/previous library source. Holding Preview still scrubs instead, including with Shift held.                                                                                                                                 |
 
 HOTCUE pads trigger eight hotcues; Shift clears them. SAMPLES pads play
 samples; Shift stops them. A/C share sampler bank 1, and B/D share bank 2.
@@ -238,8 +238,8 @@ four decks. The calibrated defaults are:
 
 | Action                   | Speed | Reaction |
 | ------------------------ | ----: | -------: |
-| Scratch while touching   |  2.7% |     150% |
-| Pitch bend without touch |  2.7% |      17% |
+| Scratch while touching   | 2.7%  | 150%     |
+| Pitch bend without touch | 2.7%  | 17%      |
 
 Save your preferences, then use **Install Djay mapping…** to export a new
 mapping and select it in Djay. Export uses the current editor values and can
@@ -266,8 +266,8 @@ backspin options, and upgrading preserves explicit saved choices. See the
 
 ![Jog settings showing Hardware tension, Backspin detection, scratch speed increase and motor assist controls, plus scratch and pitch-bend mapping settings](docs/images/jog-settings.png)
 
-_Jog settings with the Backspin controls, 5.6% speed increase and motor assistance
-enabled at 100%, alongside neutral tension and calibrated scratch/pitch-bend defaults._
+Jog settings with the Backspin controls, 5.6% speed increase and motor assistance
+enabled at 100%, alongside neutral tension and calibrated scratch/pitch-bend defaults.
 
 The menu-bar icon turns green while the bridge is running. In source builds,
 it turns red if requested screens are blocked or fail while the bridge keeps

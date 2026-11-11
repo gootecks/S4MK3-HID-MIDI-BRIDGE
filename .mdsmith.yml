@@ -9,7 +9,6 @@ ignore:
   - "plans/**"
   # BEGIN upstream files
   - "AGENTS.md"
-  - "README.md"
   - "docs/absolute-position-scratch-experiment.md"
   - "docs/app-screen-integration-validation.md"
   - "docs/backspin-assist-validation.md"
@@ -93,18 +92,9 @@ ignore:
   - "macos/README.md"
   - "src/screens/DESIGN.md"
   - "src/screens/text/README.md"
-  - "!docs/s8/README.md"
-  - "!docs/s8/captures/2026-11-09-input-capture/README.md"
-  - "!docs/s8/captures/djay-check-20261111T003350Z/README.md"
-  - "!docs/s8/captures/one-deck-view-20261111T000921Z/README.md"
-  - "!docs/s8/mappings/README.md"
-  - "!macos/DjayDecks/README.md"
-  - "!macos/DjayLibrary/README.md"
-  - "!macos/S8Host/README.md"
-  - "!macos/S8Views/README.md"
   # END upstream files
-# The notes under docs/s8 also keep to a line length, readable paragraphs and front
-# matter. READMEs next to the code do not.
+# The notes under docs/s8 also keep to a line length, readable paragraphs and table
+# cells, and front matter. READMEs next to the code and the root README.md do not.
 overrides:
   - glob: ["docs/s8/**/*.md"]
     rules:
@@ -115,12 +105,14 @@ overrides:
         fields: [summary, type]
       paragraph-readability: true
       paragraph-structure: true
+      table-readability: true
 rules:
   # oxfmt always leaves a blank line after front matter; MDS004 rejects it.
   first-line-heading: false
   line-length: false
   paragraph-readability: false
   paragraph-structure: false
+  table-readability: false
   code-block-style:
     style: consistent
   proper-names:
@@ -128,7 +120,6 @@ rules:
   list-indent: true
   table-format: true
   no-duplicate-headings: true
-  table-readability: true
   max-file-length:
     max: 500
   token-budget: true
