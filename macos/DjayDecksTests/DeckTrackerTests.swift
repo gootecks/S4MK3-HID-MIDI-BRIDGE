@@ -6,7 +6,7 @@ import XCTest
 private struct FakeCatalog: TrackCatalog {
     let entries: [String: CatalogEntry]
 
-    func entry(title: String, artist _: String?) -> CatalogEntry? {
+    func entry(title: String, artist _: String?, length _: TrackLengthHint?) -> CatalogEntry? {
         entries[title]
     }
 }
@@ -15,7 +15,7 @@ private final class MutableCatalog: TrackCatalog {
     var current: CatalogEntry?
     private(set) var lookups = 0
 
-    func entry(title _: String, artist _: String?) -> CatalogEntry? {
+    func entry(title _: String, artist _: String?, length _: TrackLengthHint?) -> CatalogEntry? {
         lookups += 1
         return current
     }

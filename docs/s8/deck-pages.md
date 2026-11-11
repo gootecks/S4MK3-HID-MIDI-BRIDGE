@@ -12,7 +12,7 @@ to a bitmap, a PNG or an `.s8frame` file through `S8Preview`.
 | Title, artist, BPM, key, elapsed, remaining, playing | djay window through Accessibility (`DjayDecks`, polled by `DeckMonitor`) | Needs Accessibility permission for the process. One poll walks the window once and splits the labels by deck number, so the cost does not grow with the number of decks (about 0.1 s measured with four decks). Title, artist, key and BPM are read from English and French labels (`Deck n` and `Platine n`); the time and play labels are matched in English only. |
 | Play state | `PlayStateDebouncer` (ported, extended) | The play button of a paused deck blinks at 1 Hz, lit for 0.5 s and unlit for 0.5 s; a playing deck stays lit. Playing is reported after the button has been lit for 0.7 s, counted only over samples at most 0.45 s apart, because the unlit half of a blink fits in a longer gap. It is reported at once when the time label moves one second in the play direction while the button is lit. Paused is reported on the first unlit sample. |
 | Time between AX updates | `TimeInterpolator` (rewritten for #83) | djay cuts the fraction off a time label, so a label names a whole second and not a moment. The page time always stays inside the second of the label last read. A paused label rests at the middle of its second. A remaining label equal to the track length cut to a whole second rests at the track start, so elapsed is 0. While the debounced state is playing the time counts on, scaled by the pitch percentage, and waits at the end of the label's second until the label moves. A label that moves one second in the play direction marks the boundary between the two seconds. Any other label change is taken as a jump and rests at the middle of the new second. On pause the counted time stays. When playing is confirmed, the time since the first lit sample is added. |
-| Duration, cue points | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`) | The track is matched by title and artist. Used to derive elapsed when only remaining is shown. |
+| Duration, cue points | Read-only `DjayLibrary` snapshot (copy of `MediaLibrary.db` with `-wal` and `-shm`) | The track is matched by title and artist; the track length read from the deck labels picks among entries with one title (see Limits). Used to derive elapsed when only remaining is shown. |
 | Overview waveform, 3-band samples, beats, bars | `~/Library/Group Containers/VJXTL73S8G.com.algoriddim.userdata/Library/Application Support/Algoriddim/Metadata/**/<trackID>.djayMetadata` | Binary plist. Amplitude: zlib bytes at `lowRateWaveFinalSampleRate`. Bands: zlib, bfloat16 triples at `lowRateSampleRate`, normalised by the global peak. Beats: zlib big-endian float32 seconds. Bars: every 4th beat counting from `firstDownBeatIndex` (see Limits for gaps). |
 
 djay's live database and cache are only read; the snapshot is a temporary copy.
@@ -111,6 +111,26 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   the current layout looks the same as an empty deck. In djay's One Deck
   view deck 1 was shown as empty on the S8 while deck 2 was still read
   (row 13 of the same record); that view was not looked into further.
+- Library entries are matched by title and artist. When no entry has the
+  deck's artist text, the entries with the title are used, and the deck's
+  length (#94) decides among them. With both time labels the length is
+  elapsed plus remaining, accepted within 2 s because each label is cut to a
+  whole second. With only the remaining label the track must be at least
+  remaining minus 1 s long. An entry without a stored duration is never
+  ruled out by length. Entries of the artist that matches are kept even if
+  their length disagrees with the labels. A title-only match gives no entry
+  when no entry fits the length, or when the entries that fit differ by
+  more than 2 s in stored duration; the same track twice in the library
+  (durations within 2 s) still gives the first entry that has an analysis,
+  else the first. A deck whose track cannot be told apart shows its djay
+  labels with "No analysis for this track" and no cue flags, instead of
+  another track's length, cues and waveform. The length cannot separate
+  entries with one title, different artist text on the deck and in the
+  library, and lengths within 2 s of each other; the page then takes the
+  first of them that has an analysis, which may be the wrong one. Unit
+  tests cover these cases through `DjayLibrarySnapshot` and
+  `LibraryCatalog` with synthetic libraries and through `DeckMonitor` with
+  fake labels; this was not seen in djay.
 
 ## Run the preview
 

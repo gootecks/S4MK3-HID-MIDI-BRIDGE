@@ -42,7 +42,7 @@ public final class DeckMonitor {
             let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
             let due = withLock { lastLook[deck].map { now.timeIntervalSince($0) >= lookInterval } ?? true }
             if reading.hasTrack, let title = reading.title, changed || due {
-                entry = catalog.entry(title: title, artist: reading.artist)
+                entry = catalog.entry(title: title, artist: reading.artist, length: TrackLengthHint(reading))
                 withLock { lastLook[deck] = now }
             }
             withLock { trackers[deck]?.ingest(reading, entry: entry, now: now) }

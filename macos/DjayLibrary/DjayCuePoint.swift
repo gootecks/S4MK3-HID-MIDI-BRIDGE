@@ -8,6 +8,11 @@ public struct DjayCuePoint: Equatable {
     public let number: Int?
 }
 
+public struct DjayTrackMatches: Equatable {
+    public let tracks: [DjayTrack]
+    public let artistMatched: Bool
+}
+
 public extension DjayLibrarySnapshot {
     internal static func makeCuePoints(_ user: DjayValue?) -> [DjayCuePoint] {
         let entries = user?["cuePoints"]?.listValue ?? []
@@ -26,10 +31,14 @@ public extension DjayLibrarySnapshot {
         cuePointsByID[trackID] ?? []
     }
 
-    func tracks(title: String, artist: String?) -> [DjayTrack] {
-        guard let wanted = TrackIdentity(title: title, artist: artist) else { return [] }
+    func tracks(title: String, artist: String?) -> DjayTrackMatches {
+        guard let wanted = TrackIdentity(title: title, artist: artist) else {
+            return DjayTrackMatches(tracks: [], artistMatched: false)
+        }
         let sameTitle = tracks.filter { TrackIdentity.normalize($0.title) == wanted.title }
         let exact = sameTitle.filter { TrackIdentity.normalize($0.artist) == wanted.artist }
-        return exact.isEmpty ? sameTitle : exact
+        return exact.isEmpty
+            ? DjayTrackMatches(tracks: sameTitle, artistMatched: false)
+            : DjayTrackMatches(tracks: exact, artistMatched: true)
     }
 }
