@@ -8,7 +8,6 @@ ignore:
   - "CHANGELOG.md"
   - "plans/**"
   # BEGIN upstream files
-  - "AGENTS.md"
   - "docs/absolute-position-scratch-experiment.md"
   - "docs/app-screen-integration-validation.md"
   - "docs/backspin-assist-validation.md"

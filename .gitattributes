@@ -1,6 +1,5 @@
 # BEGIN mdsmith merge-driver
 *.md merge=mdsmith
-/AGENTS.md !merge
 /docs/absolute-position-scratch-experiment.md !merge
 /docs/app-screen-integration-validation.md !merge
 /docs/backspin-assist-validation.md !merge

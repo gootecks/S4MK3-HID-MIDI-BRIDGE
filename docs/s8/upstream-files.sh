@@ -4,8 +4,8 @@
 # matching ignore block in .mdsmith.yml and the merge-driver block in .gitattributes.
 # With --check it writes nothing and fails when any of them is out of date.
 #
-# The root README.md is the fork's front page and is left off the list, so it is
-# gated like the fork's own files.
+# The root README.md and AGENTS.md are left off the list, so they are gated like
+# the fork's own files: the fork rewrites both.
 #
 # mdsmith matches an ignore pattern without a slash against the file name in every
 # folder. Should a root file on the list share its name with a fork-owned file, the
@@ -22,7 +22,7 @@ begin='  # BEGIN upstream files'
 end='  # END upstream files'
 attr_begin='# BEGIN mdsmith merge-driver'
 attr_end='# END mdsmith merge-driver'
-adopted='README.md'
+adopted=$'README.md\nAGENTS.md'
 
 if ! git rev-parse --quiet --verify "$ref^{commit}" > /dev/null; then
     echo "upstream-files: no $ref here; add the upstream remote and fetch it" >&2

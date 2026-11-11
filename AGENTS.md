@@ -8,10 +8,9 @@ The current product is an Apple Silicon menu-bar app bundling a Rust
 HID-to-MIDI bridge, generated Djay mapping, and LED preferences. The DJ
 laptop must not require Rust or Cargo.
 
-A standalone hardware bridge remains a longer-term goal. Current source
-includes optional screens and motor-assisted jog tension. Additional screen
-pages, playback-driven platter rotation and new haptics remain deferred unless
-explicitly requested.
+A standalone hardware bridge is a later goal. Current source has optional
+screens and motor-assisted jog tension. More screen pages, platter rotation
+that follows playback and new haptics wait until someone asks for them.
 
 ## Architecture
 
@@ -94,10 +93,11 @@ Outputs:
 - `dist/S4 MK3 Bridge-arm64.zip`
 - `dist/S4 MK3 Bridge-0.2.1-beta.1-arm64.dmg`
 
-Cargo package/executable: `s4mk3-hid-midi-bridge`, release `0.2.1-beta.1`.
-The bundle uses numeric version `0.2.1`, build `7`, and custom
-`S4BridgeReleaseVersion` for the complete prerelease identifier.
-`macos/Assets/AppIcon.png` generates the bundled `.icns` during packaging.
+The Cargo package and executable are `s4mk3-hid-midi-bridge`, release
+`0.2.1-beta.1`. The bundle has version `0.2.1` and build `7`. Its custom
+`S4BridgeReleaseVersion` key holds the full prerelease name.
+
+Packaging makes the bundled `.icns` from `macos/Assets/AppIcon.png`.
 
 The build script refuses to overwrite an existing app bundle. Preserve an
 owned previous build before rebuilding. Do not delete unrelated artifacts.
@@ -173,7 +173,7 @@ The working tree is shared and can contain user edits and unfinished work.
 - Read files before editing; preserve changes you did not make.
 - Use `apply_patch` for source and documentation edits.
 - Never rewrite history or discard changes unless requested. Commit and push
-  only as *Approvals* in the fork section allows.
+  only as _Approvals_ in the fork section allows.
 - Preserve user-edited Djay mappings under their existing names.
 - Keep generated bundles, local capture logs, and large packet captures out
   of commits.
@@ -201,7 +201,7 @@ This section is fork-only. Keep it out of upstream pull requests.
   `upstream:encdr`, `fork-only`, `hardware-write`.
 - Workflow: issue, then a `type/N-description` branch from `main`,
   conventional commits, PR into the fork with `Closes #N`, or `Refs #N`
-  while a check from *Verification* below is still to be recorded. Never
+  while a check from _Verification_ below is still to be recorded. Never
   commit on `main` directly.
 - After a merge: check that the issue closed and move its card to Done.
   Give each follow-up issue a card. Update status rows in
@@ -230,7 +230,7 @@ This section is fork-only. Keep it out of upstream pull requests.
   afterwards, uncommitted. A finding no fixer can repair blocks the commit.
 - Toolchains: `mise.toml` pins Rust (replacing upstream's
   `rust-toolchain.toml`), SwiftLint and SwiftFormat. Swift itself comes from
-  Xcode, not mise: the swift.org toolchain mise installs is separate from the
+  Xcode, not mise: the Swift.org toolchain mise installs is separate from the
   Xcode SDK and XCTest the app needs.
 - Fork-owned files: a file is the fork's own when it is not in
   `upstream/main`. `docs/s8/upstream-files.txt` lists upstream's Markdown,
@@ -240,11 +240,11 @@ This section is fork-only. Keep it out of upstream pull requests.
   therefore formatted, linted and merged without being added to a glob. Do
   not edit the list or those blocks by hand. After merging from upstream run
   `mise run upstream:files`; the hooks fail while any of them is out of date. The
-  root `README.md` is the fork's front page: the script leaves it off the
-  list, so it is gated like the fork's own files. mdsmith matches an ignore
-  pattern without a slash against the file name in every folder, so never
-  ignore a root `README.md` there; it would ignore every README. Swift and
-  shell steps do not use the list yet.
+  fork rewrites the root `README.md` and this file: the script leaves both off
+  the list, so they are gated like the fork's own files. mdsmith matches an
+  ignore pattern without a slash against the file name in every folder, so
+  never ignore a root `README.md` there; it would ignore every README. Swift
+  and shell steps do not use the list yet.
 - Swift style: SwiftLint grandfathers upstream violations in
   `.swiftlint-baseline.json`; new violations fail. SwiftFormat checks only
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
@@ -255,7 +255,8 @@ This section is fork-only. Keep it out of upstream pull requests.
   formatted only. Everywhere lines are up to 95 characters and paragraphs
   are checked for readability. Every file in a folder needs front matter
   with `summary` and `type`; the root `README.md` has none, because GitHub
-  would show it as a table on the front page. A README next to the code
+  would show it as a table on the front page, and this file has none either.
+  A README next to the code
   uses `type: readme`; a `title` field would clash with the H1
   (MDS051). mdsmith pads a right-aligned table
   column differently from oxfmt, so keep table columns left-aligned. The
@@ -385,7 +386,7 @@ Get the user's go-ahead first, then do it:
 
 - Merging a PR.
 - Closing an issue by hand, an epic or a milestone.
-- Sending anything to the S8 (see *S8 hardware* above).
+- Sending anything to the S8 (see _S8 hardware_ above).
 - Stopping NIHardwareAgent, which `mise run s8:midi` does. Djay then gets no
   MIDI from the Controller Editor setup until the agent is restored.
 - Overwriting, renaming or deleting a file in `~/Music/djay/MIDI Mappings/`.
@@ -432,5 +433,5 @@ Get the user's go-ahead first, then do it:
 - Keep the branch `pin/5d7a689-deviceid-default` in gootecks/Encdr.
   `Cargo.toml` pins a commit on it by revision, and the branch keeps that
   commit available.
-- `apply_patch` in *Workspace discipline* names upstream's edit tool. Use the
+- `apply_patch` in _Workspace discipline_ names upstream's edit tool. Use the
   edit tool of your own harness.
