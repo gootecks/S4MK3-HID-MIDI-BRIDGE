@@ -204,6 +204,9 @@ their detailed notes stay in `docs/release-*.md`.
   --stream` no longer refuses to start for a hidden deck. Covered by tests
   on labels captured from djay and seen once against djay; not yet on the
   S8 (#93).
+- The deck pages read djay's decks while djay's window is in another Space.
+  They said "Deck n is not shown in djay" for every deck before. Seen
+  against djay in another Space; not yet on the S8 (#100).
 - The deck page no longer crashes the app on a negative bar index from djay's
   analysis, and bar ticks keep their phase over gaps in the beat list (#94).
 - When djay does not answer an Accessibility read, the deck page shows
