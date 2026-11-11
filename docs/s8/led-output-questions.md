@@ -9,9 +9,8 @@ issues: [21, 22, 23]
 Answers are recorded where the plan ran, in
 [led-output-validation.md](led-output-validation.md). The two djay-driven LED
 checks of 2026-11-11 (run 1 with mapping r7, run 2 with mapping r8) are
-recorded in `led-feedback-validation.md` on branch `feat/22-s8-deck-leds`
-(PR #121). An answer from them names its source as "djay-driven LED check,
-run N, row Lx".
+recorded in [led-feedback-validation.md](led-feedback-validation.md). An
+answer from them names its source as "djay-driven LED check, run N, row Lx".
 The map and sources are in [led-output.md](led-output.md). Questions 19-33 and
 40-41 are in the [mixer note](led-output-mixer.md#open-questions-for-the-hardware-run).
 
@@ -110,8 +109,8 @@ not fully cover stays open and says what is missing.
   - L6: "pressing sync makes the sync button go from green to bright green".
   - L8: "it seems like there's only two settings, bright and dim".
   - Run 2, row L9: "hotcue is dim".
-  - The notes do not name the byte; `0x14` is `DIM` in `map.rs` on branch
-    `feat/22-s8-deck-leds`. Not tested: other levels.
+  - The notes do not name the byte; `0x14` is `DIM` in `src/s8/leds/map.rs`.
+    Not tested: other levels.
 - **Q37.** Why did T12 (`68-117=7f`) light only the top row of the left
   touchstrip, in purple, with the bottom row off? (cause) Open. Seen since,
   djay-driven LED check, only the top row ever lit:
@@ -123,8 +122,8 @@ not fully cover stays open and says what is missing.
     Rows L17-L20 show a blue progress bar and an orange finger dot, both on
     the top row.
   - Run 1 saw a purple dot, run 2 an orange one. Between the runs commit
-    `6225f68` on `feat/22-s8-deck-leds` made the bridge blank the blue LED under
-    the orange dot. From the code: in run 1 both LEDs of that cell were lit.
+    `6225f68` of PR #121 made the bridge blank the blue LED under the orange
+    dot. From the code: in run 1 both LEDs of that cell were lit.
   - The user's remark after run 2, a belief about the hardware and not a
     measurement:
 

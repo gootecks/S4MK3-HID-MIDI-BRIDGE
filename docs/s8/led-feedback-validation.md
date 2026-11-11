@@ -15,16 +15,18 @@ The answers of the run of 2026-11-11 are under [Answers](#answers).
 
 ## Status
 
-Run 1 on 2026-11-11 with the mapping `Kontrol S8 Bridge r7` and the debug build of this
-branch at commit `b2eafc2`. All 24 rows were answered. The run folder is
+Run 1 on 2026-11-11 with the mapping `Kontrol S8 Bridge r7` and the debug build of branch
+`feat/22-s8-deck-leds` at commit `b2eafc2`. The branch was squash-merged as `8f6eb3e`
+(PR #121); its commits stay readable through the pull request. All 24 rows were answered.
+The run folder is
 [led-feedback-20261111T101037Z](captures/led-feedback-20261111T101037Z/README.md).
 The bridge exited with status 0, with `S8_LEDS_DISABLED` 0 and
 `S8_LEDS_CLEAR_FAILED` 0. Its closing counts were `input_events=1249`,
 `led_writes=10886`, `midi_messages=1055` and `feedback_messages=30587`.
 
 Several rows did not match the expected result; see [Results](#results) and
-[Causes](led-feedback-causes.md#causes). Fixes for the causes are in the worktree
-(mapping r8 and the bridge). Run 2 on 2026-11-11 put them on the S8
+[Causes](led-feedback-causes.md#causes). The fixes for the causes are mapping r8 and
+changes in the bridge, merged with PR #121. Run 2 on 2026-11-11 put them on the S8
 ([Second run](#second-run)). The Run 2 column of the [Plan](#plan) table gives the
 latest state of each row.
 
@@ -40,7 +42,8 @@ the S8:
 
 What was found about them without the S8 is in
 [Findings after run 2](led-feedback-causes.md#findings-after-run-2). The open rows are
-collected in #125. Issues #22 and #23 stay open.
+collected in #125. Issues #22 and #23 were closed with PR #121, with the user's agreement
+to track the open rows in #125.
 
 An earlier attempt, `led-feedback-20261111T095724Z`, was ended with Ctrl-C at the
 mapping prompt, before any row; NIHardwareAgent was restored.
