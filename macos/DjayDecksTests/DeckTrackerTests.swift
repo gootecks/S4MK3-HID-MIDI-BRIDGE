@@ -1,5 +1,5 @@
 @testable import DjayDecks
-import DjayLibrary
+@testable import DjayLibrary
 import S8Views
 import XCTest
 
@@ -8,6 +8,16 @@ private struct FakeCatalog: TrackCatalog {
 
     func entry(title: String, artist _: String?) -> CatalogEntry? {
         entries[title]
+    }
+}
+
+private final class MutableCatalog: TrackCatalog {
+    var current: CatalogEntry?
+    private(set) var lookups = 0
+
+    func entry(title _: String, artist _: String?) -> CatalogEntry? {
+        lookups += 1
+        return current
     }
 }
 
@@ -74,6 +84,23 @@ final class DeckTrackerTests: XCTestCase {
         try tracker.ingest(reading(), entry: entry(), now: start.addingTimeInterval(1))
         XCTAssertNotNil(tracker.snapshot(now: start.addingTimeInterval(1)).analysis)
         XCTAssertFalse(tracker.needsEntry)
+    }
+
+    func testRefreshedEntryForTheSameTrackKeepsPlayStateAndPosition() throws {
+        func run(refreshing: Bool) throws -> DeckSnapshot {
+            var tracker = DeckTracker(deck: 1)
+            for step in 0 ... 4 {
+                tracker.ingest(reading(playing: true), entry: nil, now: start.addingTimeInterval(Double(step) * 0.25))
+            }
+            XCTAssertTrue(tracker.snapshot(now: start.addingTimeInterval(1.2)).playing)
+            let fresh = refreshing ? try entry() : nil
+            tracker.ingest(reading(playing: true), entry: fresh, now: start.addingTimeInterval(1.25))
+            return tracker.snapshot(now: start.addingTimeInterval(1.5))
+        }
+        let plain = try run(refreshing: false), refreshed = try run(refreshing: true)
+        XCTAssertTrue(refreshed.playing)
+        XCTAssertEqual(refreshed.elapsed, plain.elapsed)
+        XCTAssertNotNil(refreshed.analysis)
     }
 
     func testTrackChangeResetsEntry() throws {
@@ -178,6 +205,45 @@ final class DeckTrackerTests: XCTestCase {
         XCTAssertEqual(fourth.title, "Scut 2")
         XCTAssertEqual(fourth.remaining ?? 0, 178.5, accuracy: 0.001)
         XCTAssertEqual(monitor.snapshot(deck: 9, now: start).deck, 9)
+    }
+
+    private func loadedSource() -> FakeSource {
+        let source = FakeSource()
+        source.values = [
+            "Title, Deck 1": "Soma", "Artist, Deck 1": "Skrillex", "Elapsed time, Deck 1": "00:30",
+            "Remaining time, Deck 1": "-02:55"
+        ]
+        return source
+    }
+
+    func testMonitorPicksUpAnalysisThatAppearsLaterAfterTheLookInterval() throws {
+        let catalog = MutableCatalog()
+        catalog.current = CatalogEntry(trackID: DeckFixtures.trackID, duration: 204.904)
+        let monitor = DeckMonitor(source: loadedSource(), catalog: catalog, decks: [1], lookInterval: 5)
+        monitor.poll(now: start)
+        XCTAssertNil(monitor.snapshot(deck: 1, now: start).analysis)
+        catalog.current = try entry()
+        monitor.poll(now: start.addingTimeInterval(4.75))
+        XCTAssertNil(monitor.snapshot(deck: 1, now: start.addingTimeInterval(4.75)).analysis)
+        XCTAssertEqual(catalog.lookups, 1)
+        monitor.poll(now: start.addingTimeInterval(5))
+        XCTAssertNotNil(monitor.snapshot(deck: 1, now: start.addingTimeInterval(5)).analysis)
+        XCTAssertEqual(catalog.lookups, 2)
+    }
+
+    func testMonitorPicksUpChangedCuePoints() {
+        let catalog = MutableCatalog()
+        catalog.current = CatalogEntry(trackID: DeckFixtures.trackID, duration: 204.904)
+        let monitor = DeckMonitor(source: loadedSource(), catalog: catalog, decks: [1], lookInterval: 5)
+        monitor.poll(now: start)
+        XCTAssertTrue(monitor.snapshot(deck: 1, now: start).cues.isEmpty)
+        let cue = DjayCuePoint(time: 90, endTime: nil, name: nil, colorHex: nil, number: nil)
+        catalog.current = CatalogEntry(trackID: DeckFixtures.trackID, duration: 204.904, cues: [cue])
+        monitor.poll(now: start.addingTimeInterval(5))
+        XCTAssertEqual(monitor.snapshot(deck: 1, now: start.addingTimeInterval(5)).cues.map(\.time), [90])
+        catalog.current = CatalogEntry(trackID: DeckFixtures.trackID, duration: 204.904)
+        monitor.poll(now: start.addingTimeInterval(10))
+        XCTAssertTrue(monitor.snapshot(deck: 1, now: start.addingTimeInterval(10)).cues.isEmpty)
     }
 
     func testMonitorReportsPermissionAndMissingApp() {
