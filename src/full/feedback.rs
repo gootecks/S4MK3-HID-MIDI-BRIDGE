@@ -254,13 +254,19 @@ impl FeedbackInput {
     }
 
     pub fn drain(&self, state: &mut FeedbackState, now: Duration) -> anyhow::Result<usize> {
+        self.drain_messages(|message| {
+            state.apply(message, now);
+        })
+    }
+
+    pub fn drain_messages(&self, mut apply: impl FnMut(Message)) -> anyhow::Result<usize> {
         ensure!(
             !self.overflow.load(Ordering::Relaxed),
             "MIDI feedback queue overflow; restart to synchronize software state"
         );
         let mut count = 0;
         for message in self.receiver.try_iter().take(QUEUE_CAPACITY) {
-            state.apply(message, now);
+            apply(message);
             count += 1;
         }
         ensure!(

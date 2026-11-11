@@ -1,5 +1,5 @@
 //! Kontrol S8 HID input to the `Kontrol S8 MIDI Full` virtual source. The
-//! bridge reads the control interface and writes nothing to the controller.
+//! bridge reads the control interface; only `--s8-leds` writes deck LED reports.
 
 use std::time::{Duration, Instant};
 
@@ -13,11 +13,18 @@ use s4mk3_hid_midi_bridge::device::s8::ScreenEncoders;
 use tracing::{info, warn};
 
 use super::app_events;
+use super::feedback::FeedbackState;
+use super::led_output::LedOutput;
+use super::led_state::{Local, present};
+use super::leds::Side;
 use super::output;
 use super::translator::Translator;
+use crate::full::feedback::FeedbackInput;
 use crate::{Args, MidiProfile, ProbeCounts, record_event, report_probe_counts, stop_signal};
 
 const READ_TIMEOUT_MS: i32 = 100;
+/// With LEDs on, the loop wakes this often to apply Djay feedback while idle.
+const LED_READ_TIMEOUT_MS: i32 = 5;
 
 /// Refuse the minimal profile and the options that drive S4 MK3 outputs.
 pub fn check_args(args: &Args) -> anyhow::Result<()> {
@@ -37,6 +44,23 @@ pub fn check_args(args: &Args) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn announce_open(leds: bool) -> i32 {
+    if leds {
+        info!(
+            "S8_LEDS_ENABLED: reports 0x{:02x} and 0x{:02x} will be written to the controller",
+            Side::Left.report_id(),
+            Side::Right.report_id()
+        );
+        LED_READ_TIMEOUT_MS
+    } else {
+        info!(
+            "{}_HID_OPEN: native HID access; nothing is written to the controller",
+            S8.tag
+        );
+        READ_TIMEOUT_MS
+    }
+}
+
 pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::Result<()> {
     let (stop_tx, stop_rx) = stop_signal()?;
     let _screens = args
@@ -44,14 +68,21 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         .s8_stdin
         .then(|| super::screens::start(stop_tx.clone()))
         .transpose()?;
+    // Djay can return initial state as soon as the source appears.
+    let feedback_input = args
+        .s8_leds
+        .then(|| FeedbackInput::new(S8.full_endpoint))
+        .transpose()?;
     let mut midi = MidiOutput::new("Kontrol S8 full bridge")?
         .create_virtual(S8.full_endpoint)
         .map_err(|error| anyhow::anyhow!("create S8 MIDI source: {error}"))?;
     info!(port = S8.full_endpoint, "MIDI_FULL_READY");
-    info!(
-        "{}_HID_OPEN: native HID access; nothing is written to the controller",
-        S8.tag
-    );
+    let mut leds = feedback_input.map(|input| Leds {
+        input,
+        state: FeedbackState::default(),
+        output: LedOutput::new(hid),
+    });
+    let read_timeout = announce_open(leds.is_some());
     let mut translator = Translator::new();
     let mut counts = ProbeCounts::default();
     let mut screen_encoders = ScreenEncoders::default();
@@ -67,8 +98,11 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             Err(crossbeam_channel::TryRecvError::Empty) => {}
             Err(crossbeam_channel::TryRecvError::Disconnected) => bail!("stop channel closed"),
         }
+        if let Some(leds) = leds.as_mut() {
+            leds.update(&translator, started.elapsed())?;
+        }
         let length = hid
-            .read_timeout(&mut buffer, READ_TIMEOUT_MS)
+            .read_timeout(&mut buffer, read_timeout)
             .context("read S8 HID input")?;
         let Some((id, report)) = buffer
             .get(..length)
@@ -119,6 +153,9 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             break;
         }
     }
+    if let Some(mut leds) = leds {
+        leds.output.finish()?;
+    }
     report_probe_counts(args, &S8, &counts)
 }
 
@@ -130,5 +167,29 @@ fn emit_line(line: &str) -> bool {
             warn!(%error, "S8 control reader is gone, stopping");
             true
         }
+    }
+}
+
+/// The Djay feedback path and LED writer, present only with `--s8-leds`.
+struct Leds<'a> {
+    input: FeedbackInput,
+    state: FeedbackState,
+    output: LedOutput<'a, HidDevice>,
+}
+
+impl Leds<'_> {
+    fn update(&mut self, translator: &Translator, now: Duration) -> anyhow::Result<()> {
+        let Self {
+            input,
+            state,
+            output,
+        } = self;
+        input.drain_messages(|message| {
+            state.apply(message, now);
+        })?;
+        let leds =
+            Side::ALL.map(|side| present(side, state, &Local::from_translator(translator, side)));
+        output.tick(&leds, now)?;
+        Ok(())
     }
 }
