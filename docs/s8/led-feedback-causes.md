@@ -96,13 +96,13 @@ Nothing here was asked again on the S8.
   cue tokens), and djay was in its Two Decks view. Pads off and a CUE button that does
   not blink fit an empty deck. The capture is from after the run, not from the moment of
   the row. The answer does not give the DECK colour; run 1 did (L15).
-- Hot cue 8 (L3). Evidence: capture, not settled. At 11:08Z djay sent token 6 for cue 8 on
-  decks A, B and D, the same token as cue 6. At 11:39Z, after the user had changed the
-  colour to purple, it sent token 8 on decks A and B, and `djay-window.png` shows cue 8
-  purple on both. The colours djay showed then, cue 1 to 8: red, orange, blue, yellow,
-  green, magenta, cyan, purple. What colour djay showed for cue 8 before the change is
-  not recorded, so it is open whether the pad differed from djay or djay sent the token
-  of another colour.
+- Hot cue 8 (L3). Evidence: capture and the user's answer after run 2. At 11:08Z djay sent
+  token 6 for cue 8 on decks A, B and D, the same token as cue 6. At 11:39Z, after the
+  user had changed the colour to purple, it sent token 8 on decks A and B, and
+  `djay-window.png` shows cue 8 purple on both. The colours djay showed then, cue 1 to 8:
+  red, orange, blue, yellow, green, magenta, cyan, purple. The answer: "pad 8 was magenta
+  like pad 6 in both. but the tracks' hot cues were set that way." So the pad showed the
+  colour the cue had in djay, and the bridge needs no change.
 - LEDs dim after the stop (L22). Evidence: inference from the code. Both runs list the same
   controls. Snap, quantize, the mic buttons, the four channel CUE buttons and the four
   filter buttons are on the mixer; FX 1-2 would be too if the answer means the channels'

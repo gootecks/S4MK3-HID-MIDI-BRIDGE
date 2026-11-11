@@ -448,7 +448,8 @@ Results of the runs and of the checks after them:
 - Run 1, checked on the S8: a dim level is visible (L1, L8, L12); its value, 20 of 127,
   was not measured. CUE blinks while a deck is paused (L3, L6).
 - Run 2 (r8), checked on the S8: hot cue pads show the cue colours, follow a colour
-  change in Djay and go dark after a delete (L11, L3), except hot cue 8.
+  change in Djay and go dark after a delete (L11, L3). Pad 8 was magenta like pad 6
+  because the tracks' cue 8 was set that way (the user's answer after run 2).
 - Run 2, checked on the S8: the strip bar starts at the left end, is empty at progress
   0, about half lit at half the track and 24 of 25 LEDs near the end, grows with the
   playhead and goes out when the track ends (L3, L17-L19). So `songProgress` covers the
@@ -472,9 +473,7 @@ Still open:
   Djay's Looper view (L9), and the dim pads of those modes against the lit ones (L10).
 - LEDs dim after the stop (L22): FX 1-2, MIC 1-2, SNAP, QUANTIZE, the mixer CUE and
   FILTER buttons. The bridge writes no mixer report, so its clear cannot reach them (code).
-- The colour of hot cue 8 on the S8 before the change in Djay (L3, run 2; Djay sent the
-  token of cue 6 for it at 11:08Z), and the DECK colour in run 2 with why pads went off
-  and CUE stopped blinking on C (L15).
+- The DECK colour in run 2, with why pads went off and CUE stopped blinking on C (L15).
 - PLAY lighting while CUE is held (L5, run 1), why FLUX blinks (L7; the capture shows a
   steady 127), and whether the LEDs the bridge does not write change at start (L2).
 - The user's remark after run 1 on 5 of 7 hot cues for deck B, unanswered by run 2.

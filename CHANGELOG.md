@@ -20,8 +20,8 @@ their detailed notes stay in `docs/release-*.md`.
   addresses, the pad colours and the progress type, so install mapping
   revision r8 or later
   ([mapping.md](docs/s8/mapping.md#led-feedback), #22, #23). Checked on the
-  S8 in two runs; open: which mode button is full in some pad modes, hot
-  cue 8's colour, and LEDs that stay dim after the stop.
+  S8 in two runs; open: which mode button is full in some pad modes, and LEDs
+  that stay dim after the stop (#125).
 - Architecture overview in the README: the two controllers, the one Rust
   bridge binary with its two device profiles, the Swift S8 tools and djay Pro
   in one diagram, with links to the repositories the bridge builds on (#122).
