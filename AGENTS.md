@@ -211,8 +211,8 @@ This section is fork-only. Keep it out of upstream pull requests.
   comment once the user agrees. Close a milestone once it has no open
   issues.
 - Upstream friendliness: follow `docs/s8/upstream-workflow.md`. Never mix
-  fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`,
-  `hk.pkl`, `communique.toml`, `fnox.toml`, this section) with feature
+  fork-only files (`docs/s8/`, `CHANGELOG.md`, `mise.toml`, `hk.pkl`,
+  `.mdsmith.yml`, `communique.toml`, `fnox.toml`, this section) with feature
   changes in one commit. Do not reformat or rename upstream code or docs
   without need.
 - Record user-visible changes under `Unreleased` in `CHANGELOG.md` in a
@@ -233,6 +233,12 @@ This section is fork-only. Keep it out of upstream pull requests.
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
   not reformat upstream Swift. Regenerate the baseline only for deliberately
   accepted violations (`mise run lint:swift:baseline`).
+- Docs and script style: oxfmt formats and mdsmith lints Markdown under
+  `docs/s8/` (lines up to 95 characters, `.mdsmith.yml`); `hk fix` applies
+  the formatting. shfmt formats `docs/s8/*.sh` (`docs/s8/.editorconfig`);
+  shellcheck checks every script. oxfmt is the native binary from the oxc
+  GitHub release, so no npm download is needed. Upstream Markdown and
+  scripts keep upstream style.
 
 ### S8 code and commands
 

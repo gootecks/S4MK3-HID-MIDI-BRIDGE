@@ -1,5 +1,5 @@
-amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Builtins.pkl"
+amends "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Builtins.pkl"
 
 // Never pass build output, local captures, or secrets to checks.
 exclude = List(
@@ -41,6 +41,33 @@ steps {
                 argv = List("bash", "-n", "{{files}}")
             }
             effect = "read"
+        }
+    }
+    ["shellcheck"] = Builtins.shellcheck
+    // Fork-owned scripts only; upstream scripts keep upstream style. Style: docs/s8/.editorconfig.
+    ["shfmt"] = (Builtins.shfmt) {
+        match_any = null
+        glob = "docs/s8/*.sh"
+    }
+    // Fork-owned Markdown only. oxfmt formats; mdsmith lints (.mdsmith.yml).
+    ["oxfmt"] = (Builtins.oxfmt) {
+        glob = "docs/s8/**/*.md"
+    }
+    ["mdsmith"] {
+        glob = "docs/s8/**/*.md"
+        batch = true
+        depends = "oxfmt"
+        check = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "check", "--no-color", "{{files}}")
+            }
+            effect = "read"
+        }
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("mdsmith", "fix", "--no-color", "{{files}}")
+            }
+            effect = "write"
         }
     }
     // Upstream violations are grandfathered by the baseline; new violations fail.

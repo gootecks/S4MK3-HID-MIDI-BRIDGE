@@ -1,0 +1,18 @@
+files:
+  - "docs/s8/**/*.md"
+rules:
+  line-length:
+    max: 95
+    stern: true
+  code-block-style:
+    style: consistent
+  emphasis-style:
+    bold: asterisk
+    italic: underscore
+  list-indent: false
+  table-format: false
+  no-duplicate-headings: false
+  paragraph-readability: false
+  table-readability: false
+  max-file-length: false
+  token-budget: false
