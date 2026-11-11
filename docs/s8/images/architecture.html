@@ -71,7 +71,7 @@
     <h1>Two controllers, one bridge, djay Pro</h1>
 
     <div class="diagram-container">
-      <svg viewBox="0 0 960 656" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+      <svg viewBox="0 0 960 672" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
         <title id="architecture-title">Bridge architecture: Kontrol S8 and S4 MK3 to djay Pro</title>
         <desc id="architecture-desc">One Rust bridge binary serves both controllers: S8Host and the S4 Bridge app each run it with their device profile, and it turns HID input into virtual MIDI for djay Pro, while S8Host reads djay through Accessibility and sends panel frames back to the S8.</desc>
         <defs>
@@ -226,8 +226,9 @@
         <!-- Built on -->
         <text x="40" y="612" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">BUILT ON</text>
         <text x="40" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">jtoronto/S4MK3-HID-MIDI-BRIDGE</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Upstream bridge</tspan></text>
-        <text x="316" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">RufusIbiza/Encdr</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Controller descriptors, decoding</tspan></text>
-        <text x="588" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">kyleawayan/djay-pro-bridge</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Deck reading, via djay-phrase-tool</tspan></text>
+        <text x="480" y="630" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">RufusIbiza/Encdr</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">NI controller descriptors, decoding</tspan></text>
+        <text x="40" y="648" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">kyleawayan/djay-pro-bridge</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Deck reading, via djay-phrase-tool</tspan></text>
+        <text x="480" y="648" font-size="8.5"><tspan fill="#f5f5f5" font-family="'Geist Mono', monospace">djaykit</tspan><tspan dx="8" fill="#bfc0c0" font-family="'Geist', sans-serif">Library database decoding</tspan></text>
 
       </svg>
     </div>
