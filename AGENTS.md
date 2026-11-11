@@ -232,21 +232,37 @@ This section is fork-only. Keep it out of upstream pull requests.
   `rust-toolchain.toml`), SwiftLint and SwiftFormat. Swift itself comes from
   Xcode, not mise: the swift.org toolchain mise installs is separate from the
   Xcode SDK and XCTest the app needs.
+- Fork-owned files: a file is the fork's own when it is not in
+  `upstream/main`. `docs/s8/upstream-files.txt` lists upstream's Markdown,
+  Swift and shell files; `hk.pkl` reads it and `.mdsmith.yml` carries the
+  same Markdown paths in a generated `ignore:` block. A Markdown file created
+  anywhere is therefore formatted and linted without being added to a glob.
+  Do not edit the list or that block by hand. After merging from upstream run
+  `mise run upstream:files`; the hooks fail while either is out of date. A
+  commit that adds a note rewrites and stages the block itself, because it
+  also names every fork-owned `README.md`: mdsmith matches upstream's root
+  `README.md` pattern in every folder. A commit that only deletes notes is
+  blocked until `mise run upstream:files` has run and `.mdsmith.yml` is
+  staged. Swift and shell steps do not use the list yet.
 - Swift style: SwiftLint grandfathers upstream violations in
   `.swiftlint-baseline.json`; new violations fail. SwiftFormat checks only
   Swift files the fork adds; `hk.pkl` lists the upstream files it skips. Do
   not reformat upstream Swift. Regenerate the baseline only for deliberately
   accepted violations (`mise run lint:swift:baseline`).
-- Docs and script style: oxfmt formats and mdsmith lints Markdown under
-  `docs/s8/` (GitHub convention, lines up to 95 characters, `.mdsmith.yml`).
-  Every note there needs front matter with `summary` and `type`; the index in
-  `docs/s8/README.md` is generated from it by `<?catalog?>`, and notes over
+- Docs and script style: oxfmt formats and mdsmith lints every fork-owned
+  Markdown file (GitHub convention, `.mdsmith.yml`). `CHANGELOG.md` is
+  formatted only. Under `docs/s8/` lines are up to 95 characters, paragraphs
+  are checked for readability, and every note needs front matter with
+  `summary` and `type`; READMEs elsewhere are exempt from those three. The
+  index in `docs/s8/README.md` is generated from the front matter by
+  `<?catalog?>`, and notes over
   200 lines carry a `<?toc?>`. `mdsmith check` reports a stale index or table
   of contents and `mdsmith fix` regenerates it. A commit that touches a note
-  or `.mdsmith.yml` lints all of `docs/s8/`, not only the staged notes: a new
-  or renamed note changes the index and the links in other notes. It stages
-  the notes its fixer changed. A commit that only deletes notes is checked
-  and not fixed: run `mdsmith fix .` and stage `docs/s8/README.md` first.
+  or `.mdsmith.yml` lints every fork-owned note, not only the staged ones: a
+  new or renamed note changes the index and the links in other notes. It
+  stages the notes its fixer changed. A commit that only deletes notes is
+  checked and not fixed: run `mdsmith fix .` and stage `docs/s8/README.md`
+  first.
   Pushing runs the same check on the committed tree, which also covers
   merges, rebases and `--no-verify` commits. Untracked and unstaged notes
   are set aside for both. mdsmith output is coloured; `NO_COLOR=1` turns

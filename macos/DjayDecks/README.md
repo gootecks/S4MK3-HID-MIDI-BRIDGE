@@ -11,15 +11,15 @@ Ported from the MIT-licensed `djay-phrase-tool` prototype (`Sources/DjayBridge`)
 which builds on [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge).
 The copyright and permission notice is in [`NOTICE`](NOTICE).
 
-| File | Status |
-| ---- | ------ |
-| `DeckReading.swift` | Ported (`DeckParser`, label parsing incl. French labels); `DeckReading` fields renamed |
-| `DeckAccessibility.swift` | Ported (AX tree walk) behind the `DeckAccessibility` protocol, changed to one walk for all decks; `DeckReader` and `DeckAccessError` are new |
-| `TimeInterpolator.swift` | Rewritten (#83): keeps the time inside the second of djay's label; only the label and pitch parsing are ported |
-| `PlayStateDebouncer.swift` | Ported; clock is injectable; `activeSince`, the sample gap limit and confirmation by a moving time label added |
-| `TrackCatalog.swift` | Adapted from `DjayLibraryLookup` (title and artist lookup); `AnalysisStore` and `LibraryCatalog` are new and use `DjayLibrary` |
-| `TrackAnalysis.swift`, `Inflate.swift` | New (decoding of the `.djayMetadata` plist) |
-| `DeckTracker.swift`, `DeckMonitor.swift` | New (per-deck state, polling) |
+| File                                     | Status                                                                                                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DeckReading.swift`                      | Ported (`DeckParser`, label parsing incl. French labels); `DeckReading` fields renamed                                                       |
+| `DeckAccessibility.swift`                | Ported (AX tree walk) behind the `DeckAccessibility` protocol, changed to one walk for all decks; `DeckReader` and `DeckAccessError` are new |
+| `TimeInterpolator.swift`                 | Rewritten (#83): keeps the time inside the second of djay's label; only the label and pitch parsing are ported                               |
+| `PlayStateDebouncer.swift`               | Ported; clock is injectable; `activeSince`, the sample gap limit and confirmation by a moving time label added                               |
+| `TrackCatalog.swift`                     | Adapted from `DjayLibraryLookup` (title and artist lookup); `AnalysisStore` and `LibraryCatalog` are new and use `DjayLibrary`               |
+| `TrackAnalysis.swift`, `Inflate.swift`   | New (decoding of the `.djayMetadata` plist)                                                                                                  |
+| `DeckTracker.swift`, `DeckMonitor.swift` | New (per-deck state, polling)                                                                                                                |
 
 Not ported: phrase counting, downbeat stores, the prototype UI.
 

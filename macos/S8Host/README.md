@@ -16,23 +16,23 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
 - Stops the child on SIGINT, SIGTERM and when its own stdin closes. The session stops first: its timers are cancelled and no further record is written, without waiting for a read or write that is in progress. With `--screens` it then closes the bridge's stdin, so the bridge sends its black exit frames and exits by itself; SIGINT follows after 5 s and SIGTERM after 10 s if it has not. It does not stop or start `NIHardwareAgent`; stop it separately before a real session (see `docs/s8/translator-validation.md`).
 - Exit status: the bridge's; 2 for wrong arguments, 3 without Accessibility access or djay, 4 when the bridge cannot be started, 1 when a replay fails.
 
-| File | Role |
-| ---- | ---- |
-| `main.swift` | Argument check, start-up checks, signals, bridge output loop. |
-| `HostOptions.swift` | Command-line flags. |
-| `Bridge.swift` | The child process: arguments, stdin records, stop order. |
-| `LiveWiring.swift` | Connects `DjaySidebar`, `DeckMonitor` and the bridge to a `PanelSession`. |
-| `Replay.swift` | Snapshot files to record files. |
+| File                | Role                                                                      |
+| ------------------- | ------------------------------------------------------------------------- |
+| `main.swift`        | Argument check, start-up checks, signals, bridge output loop.             |
+| `HostOptions.swift` | Command-line flags.                                                       |
+| `Bridge.swift`      | The child process: arguments, stdin records, stop order.                  |
+| `LiveWiring.swift`  | Connects `DjaySidebar`, `DeckMonitor` and the bridge to a `PanelSession`. |
+| `Replay.swift`      | Snapshot files to record files.                                           |
 
 ## Queues
 
 `PanelSession` (target `S8Session`) runs a session on three serial queues, so that a slow part does not hold up the others:
 
-| Queue | Work | Blocks on |
-| ----- | ---- | --------- |
+| Queue   | Work                                                                                                       | Blocks on                            |
+| ------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | Sidebar | Applies control events to djay, reads the sidebar after the last waiting event and every `--poll` seconds. | Accessibility calls for the sidebar. |
-| Deck | `DeckMonitor.poll()` every 0.25 s. | Accessibility calls for the decks. |
-| Output | Renders both panels and writes the changed records to the bridge. | The bridge's stdin pipe. |
+| Deck    | `DeckMonitor.poll()` every 0.25 s.                                                                         | Accessibility calls for the decks.   |
+| Output  | Renders both panels and writes the changed records to the bridge.                                          | The bridge's stdin pipe.             |
 
 - The sidebar queue hands over one sidebar snapshot; a newer one replaces an unsent one. The deck queue only asks for a redraw; the output queue takes the deck state from `DeckMonitor.snapshot`, which reads no Accessibility.
 - At most one redraw runs and one waits. While a write is blocked, any number of updates become one redraw of the newest state.

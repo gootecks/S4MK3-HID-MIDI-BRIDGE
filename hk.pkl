@@ -13,7 +13,18 @@ exclude = List(
     "**/age.txt"
 )
 
-// mdsmith lints the whole docs/s8 tree (.mdsmith.yml), not only the changed notes:
+// Fork-owned means not in upstream/main. docs/s8/upstream-files.sh writes the list of
+// upstream's files; steps for fork-owned files take every file minus that list.
+local upstream_files = read("docs/s8/upstream-files.txt").text.split("\n").filter((it) -> !it.isEmpty)
+local upstream_markdown = upstream_files.filter((it) -> it.endsWith(".md"))
+local upstream_files_check = new CommandSpec {
+    command = new Command {
+        argv = List("docs/s8/upstream-files.sh", "--check")
+    }
+    effect = "read"
+}
+
+// mdsmith lints every fork-owned note (.mdsmith.yml), not only the changed ones:
 // a rename or a deletion breaks links and the index in notes the commit leaves alone.
 local mdsmith_check = new CommandSpec {
     command = new Command {
@@ -69,24 +80,43 @@ steps {
         match_any = null
         glob = "docs/s8/*.sh"
     }
+    // Also runs for a new or deleted note: the mdsmith block names the fork's READMEs.
+    ["upstream_files"] {
+        glob = List("**/*.md", ".mdsmith.yml", "docs/s8/upstream-files.*")
+        stage = List(".mdsmith.yml", "docs/s8/upstream-files.txt")
+        check = upstream_files_check
+        fix = new CommandSpec {
+            command = new Command {
+                argv = List("docs/s8/upstream-files.sh")
+            }
+            effect = "write"
+        }
+    }
     // Fork-owned Markdown only. oxfmt formats; mdsmith lints.
     // The pinned oxfmt 0.76 has no --stdin-filepath, which the builtin's check_diff needs.
     ["oxfmt"] = (Builtins.oxfmt) {
-        glob = "docs/s8/**/*.md"
+        glob = "**/*.md"
+        exclude = upstream_markdown
         check_diff = null
     }
     ["mdsmith"] {
-        glob = List("docs/s8/**/*.md", ".mdsmith.yml")
-        depends = "oxfmt"
-        stage = "docs/s8/*.md"
+        glob = List("**/*.md", ".mdsmith.yml")
+        exclude = upstream_markdown
+        depends = List("oxfmt", "upstream_files")
+        stage = "*.md"
         env = mdsmith_env
         check = mdsmith_check
         fix = mdsmith_fix
     }
-    // A deleted note matches no glob, so the step above is skipped for it. hk stages
-    // nothing for a step without files, so this one only checks.
+    // A deleted note matches no glob, so the steps above are skipped for it. hk stages
+    // nothing for a step without files, so these only check.
+    ["upstream_files_deleted"] {
+        step_condition = #"any(git.staged_deleted_files, {hasSuffix(#, ".md")})"#
+        depends = "upstream_files"
+        check = upstream_files_check
+    }
     ["mdsmith_deleted"] {
-        step_condition = #"any(git.staged_deleted_files, {hasPrefix(#, "docs/s8/") and hasSuffix(#, ".md")})"#
+        step_condition = #"any(git.staged_deleted_files, {hasSuffix(#, ".md")})"#
         depends = "mdsmith"
         env = mdsmith_env
         check = mdsmith_check
@@ -169,6 +199,9 @@ hooks {
     ["pre-push"] {
         stash = "git"
         steps {
+            ["upstream_files"] {
+                check = upstream_files_check
+            }
             ["mdsmith"] {
                 env = mdsmith_env
                 check = mdsmith_check

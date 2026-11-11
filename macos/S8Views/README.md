@@ -7,15 +7,15 @@ Nothing here talks to the S8 or to djay: it consumes sidebar snapshot JSON
 
 ## Pieces
 
-| File | Role |
-| ---- | ---- |
-| `SidebarSnapshot.swift` | Decodes snapshot JSON (schema 1). Unknown row kinds become `.unknown`; `bpm` may be a string or a number. |
-| `Layout.swift` | Panel metrics, display-button slot map, `ViewState` (selection and scroll). |
-| `SidebarNavigator.swift` | `FixtureLibrary` (file or directory of snapshots) and `SidebarNavigator` (button presses and encoder moves swap snapshots and selection). |
-| `PanelRenderer.swift` | Draws a panel with CoreGraphics and CoreText (no AppKit, no `ImageRenderer`; macOS 12). |
-| `Bitmap.swift` | RGBA bitmap, PNG writer, `S8Frame` (RGB565 big-endian frame builder) and the drawing canvas. |
-| `LivePanels.swift` | `LivePanels` (a live snapshot to a `ViewState`, keeping the scroll position per list) and `PanelFeed` (renders both panels and returns records for the changed ones). |
-| `S8Record.swift` | The `S8FR` stdin record of the bridge's `--s8-screens-stdin` channel. |
+| File                     | Role                                                                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SidebarSnapshot.swift`  | Decodes snapshot JSON (schema 1). Unknown row kinds become `.unknown`; `bpm` may be a string or a number.                                                             |
+| `Layout.swift`           | Panel metrics, display-button slot map, `ViewState` (selection and scroll).                                                                                           |
+| `SidebarNavigator.swift` | `FixtureLibrary` (file or directory of snapshots) and `SidebarNavigator` (button presses and encoder moves swap snapshots and selection).                             |
+| `PanelRenderer.swift`    | Draws a panel with CoreGraphics and CoreText (no AppKit, no `ImageRenderer`; macOS 12).                                                                               |
+| `Bitmap.swift`           | RGBA bitmap, PNG writer, `S8Frame` (RGB565 big-endian frame builder) and the drawing canvas.                                                                          |
+| `LivePanels.swift`       | `LivePanels` (a live snapshot to a `ViewState`, keeping the scroll position per list) and `PanelFeed` (renders both panels and returns records for the changed ones). |
+| `S8Record.swift`         | The `S8FR` stdin record of the bridge's `--s8-screens-stdin` channel.                                                                                                 |
 
 ## Panel content
 
@@ -83,13 +83,13 @@ An AppKit window shows both panels side by side at 1x (`--zoom 2` or `z` for
 2x). The argument is one snapshot file or a directory of `*.json` files (the
 first file sorted by name is shown first). Keys:
 
-| Key | Stands in for |
-| --- | ------------- |
-| `1`–`8` | Left display buttons 1–8 (switch tab; loads the fixture whose selected tab matches) |
-| `q w e r t y u i` | Right display buttons 1–8 (switch sub-tab) |
-| Up / Down | Screen encoder (move selection, skipping header rows) |
-| `z` | Toggle 1x / 2x |
-| `f` | Write the current state to the `--frames` / `--png` directories as `current-left` and `current-right` |
+| Key               | Stands in for                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `1`–`8`           | Left display buttons 1–8 (switch tab; loads the fixture whose selected tab matches)                   |
+| `q w e r t y u i` | Right display buttons 1–8 (switch sub-tab)                                                            |
+| Up / Down         | Screen encoder (move selection, skipping header rows)                                                 |
+| `z`               | Toggle 1x / 2x                                                                                        |
+| `f`               | Write the current state to the `--frames` / `--png` directories as `current-left` and `current-right` |
 
 `--frames DIR` writes `NN-left.s8frame` and `NN-right.s8frame` and `--png DIR`
 writes matching PNGs, for every snapshot in the library at startup.
