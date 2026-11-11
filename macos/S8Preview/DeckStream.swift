@@ -62,11 +62,9 @@ func runDeckStream(targets: [StreamTarget], seconds: Double?) -> Never {
     signal(SIGPIPE, SIG_IGN)
     let monitor = DeckMonitor.live(decks: Array(Set(targets.map(\.deck))).sorted())
     monitor.poll()
-    for target in targets {
-        if let notice = monitor.snapshot(deck: target.deck).notice {
-            logLine("DECKSTREAM refused: \(notice)")
-            exit(1)
-        }
+    if let failure = monitor.failure {
+        logLine("DECKSTREAM refused: \(failure)")
+        exit(1)
     }
 
     let pollQueue = DispatchQueue(label: "S8Preview.deck-stream-poll")

@@ -6,6 +6,7 @@ public final class DeckMonitor {
     private let catalog: TrackCatalog
     private let decks: [Int]
     private var trackers: [Int: DeckTracker]
+    private var lastFailure: String?
     private let lookInterval: TimeInterval
     private var lastLook: [Int: Date] = [:]
     private let lock = NSLock()
@@ -35,8 +36,12 @@ public final class DeckMonitor {
         } catch {
             return fail("djay is not running")
         }
+        withLock { lastFailure = nil }
         for deck in decks {
-            let reading = readings[deck] ?? DeckReading()
+            guard let reading = readings[deck] else {
+                withLock { trackers[deck]?.ingestPause("Deck \(deck) is not shown in djay") }
+                continue
+            }
             let current = withLock { trackers[deck] }
             var entry: CatalogEntry?
             let changed = TrackKey(reading) != current?.trackKey || current?.needsEntry == true
@@ -53,8 +58,13 @@ public final class DeckMonitor {
         withLock { trackers[deck]?.snapshot(now: now) } ?? DeckSnapshot(deck: deck)
     }
 
+    public var failure: String? {
+        withLock { lastFailure }
+    }
+
     private func fail(_ message: String) {
         withLock {
+            lastFailure = message
             for deck in decks {
                 trackers[deck]?.ingestFailure(message)
             }
@@ -63,6 +73,7 @@ public final class DeckMonitor {
 
     private func pause(_ message: String) {
         withLock {
+            lastFailure = message
             for deck in decks {
                 trackers[deck]?.ingestPause(message)
             }

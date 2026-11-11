@@ -118,8 +118,10 @@ Writing Djay's own Related links from the same index is djaykit work
 
 An earlier prototype, `djay-phrase-tool` (MIT, built on
 [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge)),
-reads Djay's decks and lays out two 480×272 surfaces in a window (#45). One
-use: decks 3 and 4 while Djay shows its two-deck layout.
+reads Djay's decks and lays out two 480×272 surfaces in a window (#45). It
+cannot show decks 3 and 4 while Djay shows its two-deck layout: Djay exposes
+only the decks of its current view
+([deck-pages.md](deck-pages.md#limits), #93).
 
 | Source | Data | Limits |
 | ------ | ---- | ------ |
@@ -351,4 +353,3 @@ Until then the bridge keeps its cap of 30 frames per second per panel.
 - The views on the panels through `S8Host --screens` are unchecked on the
   S8. A clean stop leaves both panels black until the agent is relaunched
   ([panel-views.md](panel-views.md#stop-and-panel-state), #27).
-- How Djay's four-deck layouts appear through Accessibility (#45).

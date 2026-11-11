@@ -25,10 +25,12 @@ it), `key` (string as djay shows it), `elapsed`, `remaining`, `duration`
 `bands` as three 0–255 channels, `bandRate`, `beats`, `bars`, `bpm`) and `cues`
 (`time`, `name`, `color`). Optional fields are omitted when unknown.
 
-Empty states: no track shows "No track on deck n" (or `notice`, for example
-"djay is not running" or "Accessibility permission needed"); a track without
-analysis shows its header and "No analysis for this track". Beat ticks are
-drawn only when beats are at least 5 px apart; bar ticks always are.
+Empty states: a deck that djay shows without a track says "No track on deck
+n"; a deck that djay's current view does not show says "Deck n is not shown
+in djay" (#93); other notices are, for example, "djay is not running" or
+"Accessibility permission needed"; a track without analysis shows its header
+and "No analysis for this track". Beat ticks are drawn only when beats are at
+least 5 px apart; bar ticks always are.
 
 ## Layout and dependencies
 
@@ -98,9 +100,15 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
   play state. From the write of a change to the page: up to 5 s until the
   files are checked, the reload (about 0.4 s measured for a 34.5 MB
   database), then up to 5 s until the next look, so about 10 s at most.
-  Not measured: when djay writes a new cue point or a finished analysis to
-  disk (an attended check is needed). A change djay keeps only in memory
-  cannot appear on the page.
+  Seen against djay once
+  ([captures](captures/djay-check-20261111T003350Z/README.md)): a removed
+  and a moved cue point reached the page 4.4 s and about 6 s after djay
+  wrote its library, and the analysis of a track djay analysed by itself
+  after the load 4.6 s after its file was written.
+  Not measured: how long after the action in djay the write to disk comes
+  (the observer gave no times for the cue points; the analysis was reported
+  as "1-2 seconds" and its file was written 0.7 s after the track was on
+  the page). A change djay keeps only in memory cannot appear on the page.
 - djay shows whole seconds, so the page knows the position exactly only at
   the moment a label moves. In the tests, with a poll every 0.25 s: a
   playing deck is 0 to 0.25 s behind djay once a poll has seen its label
@@ -112,10 +120,25 @@ Attribution for ported files is in `macos/DjayDecks/NOTICE` and
 - The track start is recognised only when the track length is known from the
   library. The remaining label is taken as the remaining time cut to a whole
   second, which matches capture C of the #80 record.
-- Decks 3 and 4 are read in djay's Four Decks layout. A deck that is not in
-  the current layout looks the same as an empty deck. In djay's One Deck
-  view deck 1 was shown as empty on the S8 while deck 2 was still read
-  (row 13 of the same record); that view was not looked into further.
+- djay exposes only the decks its current view shows
+  ([captures](captures/one-deck-view-20261111T000921Z/README.md), #93). Two
+  Decks exposes decks 1 and 2, Four Decks all four. One Deck exposes one
+  deck, and which one is not settled: in the captures a scripted cue click
+  on deck 2 was followed by deck 2 and a scripted press on a deck 1 control
+  by deck 1, while in the check against djay deck 1 was shown after cue
+  points set by mouse and a track load on deck 2
+  ([captures](captures/djay-check-20261111T003350Z/README.md)). Loading a
+  track or opening the Deck menu did not change it in the captures, and a
+  track dragged in while in One Deck went to the deck shown. A deck
+  that is not shown keeps its track in djay. Its page says "Deck n is not
+  shown in djay" and keeps the track, library entry and last reading, as for
+  "djay is not answering" above; the page returns with the first read that
+  has the deck again, without a new library lookup. The time of a hidden
+  deck is not known while it is hidden, also when it plays. Seen against
+  djay once, with deck 2 hidden and paused; not on the S8. Not looked at:
+  the shown deck changing while One Deck stays open, One Deck right after
+  djay starts, and the labels of a shown deck without a track (the "No
+  track" case is covered by fake labels only).
 - Library entries are matched by title and artist. When no entry has the
   deck's artist text, the entries with the title are used, and the deck's
   length (#94) decides among them. With both time labels the length is

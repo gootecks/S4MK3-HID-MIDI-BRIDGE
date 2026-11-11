@@ -74,14 +74,18 @@ public final class AXDeckSource: DeckAccessibility {
         return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
     }
 
+    static func record(_ label: String, _ value: String, into results: inout [String: String]) {
+        if !value.isEmpty || results[label] == nil {
+            results[label] = value
+        }
+    }
+
     static func collect(_ element: AXUIElement, depth: Int, into results: inout [String: String]) {
         let label = attribute(element, kAXDescriptionAttribute) as? String ?? ""
         if DeckParser.deckKeywords.contains(where: label.contains) {
             let value = attribute(element, kAXValueAttribute) as? String
                 ?? attribute(element, kAXTitleAttribute) as? String ?? ""
-            if !value.isEmpty {
-                results[label] = value
-            }
+            record(label, value, into: &results)
         }
         if depth < maximumDepth, let children = attribute(element, kAXChildrenAttribute) as? [AXUIElement] {
             for child in children {

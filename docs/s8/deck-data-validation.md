@@ -28,8 +28,10 @@ layout change while the stream runs, and `S8Host --deck 2`.
 
 ## Attended check
 
-This section is the plan. Run once, on 2026-11-10. Every run needs explicit
-approval because it stops NIHardwareAgent and sends screen frames to the S8.
+This section is the plan. Run once, on 2026-11-10, with the rows as they
+stood then; rows 11 to 13, 16 and 19 have changed since (see *After the
+run*). Every run needs explicit approval because it stops NIHardwareAgent
+and sends screen frames to the S8.
 
 `mise run s8:deck-data` (`deck-data-check.sh`), at the S8 with djay Pro and
 Controller Editor open, djay in its Two Decks layout, a track with cue
@@ -73,6 +75,12 @@ the pictures show the layout and the kind of content, not the text.
 | `01-decks-1-2`: part A at its start, both decks paused | ![01 left](images/deck-data/01-decks-1-2-left.png) | ![01 right](images/deck-data/01-decks-1-2-right.png) |
 | `02-decks-3-4-two-deck-layout`: part B while djay shows Two Decks | ![02 left](images/deck-data/02-decks-3-4-two-deck-layout-left.png) | ![02 right](images/deck-data/02-decks-3-4-two-deck-layout-right.png) |
 | `10-deck` of [panel-views.md](panel-views.md): part C, with deck 2 in place of deck 1 and a synthetic track | ![10 left](images/panel-views/10-deck-left.png) | ![10 right](images/panel-views/10-deck-right.png) |
+| `03-deck-not-shown`: `S8Host --screens --deck 1` while djay's One Deck view shows deck 2 (#93) | ![03 left](images/deck-data/03-deck-not-shown-left.png) | ![03 right](images/deck-data/03-deck-not-shown-right.png) |
+
+Picture `02` was made again the same way after #93 changed its text.
+Picture `03` comes from `S8Host --replay` with the snapshot of `10-deck` and
+a deck snapshot that holds only the notice, decoded by `s8-screen-png`; djay
+was not in One Deck view for it.
 
 ### Rows
 
@@ -92,15 +100,15 @@ play state and title of the last one.
 | 8 | Play deck 2 about 20 s at that tempo, pause, reset tempo | REMAINING stays the same as djay's |
 | 9 | Deck 1: 4-beat loop for about 10 s while playing | Reported; looping is not modelled |
 | 10 | Load another track on deck 1 | Left panel changes to its title, artist, BPM, key, waveform and cue flags, playhead at the start; delay reported |
-| 11 | Optional: set a new cue point on deck 2 | No new flag: the cue points are read when the track is loaded |
-| 12 | Optional: load a track without analysis, or with a title in a non-Latin script | Reported |
-| 13 | Optional: a djay view that hides the decks or their times, about 10 s, and back | Reported |
+| 11 | Optional: set a new cue point on deck 2, without reloading the track | A new flag on the right panel within about 10 s (#92) |
+| 12 | Optional: load on deck 2 a track djay has not analysed | "No analysis for this track", then waveform, beat ticks and cue flags within about 10 s of djay ending its analysis (#95) |
+| 13 | Optional: switch djay to One Deck view for about 10 s, and back | The panel of the deck djay does not show says "Deck N is not shown in djay", the other keeps its page; after the switch back both are as before (#93) |
 | 14 | Part A as a whole | No flicker, tearing, wrong colours or frozen panel |
 | 15 | Runner ends the stream | Both panels black, bridge exit status 0 |
-| 16 | Part B starts, djay in Two Decks | "No track on deck 3" and "No track on deck 4", as `02-decks-3-4-two-deck-layout` |
+| 16 | Part B starts, djay in Two Decks | "Deck 3 is not shown in djay" and "Deck 4 is not shown in djay", as `02-decks-3-4-two-deck-layout` |
 | 17 | Switch djay to Four Decks, load decks 3 and 4 | The panels fill with decks 3 and 4, content as in djay; delay reported |
 | 18 | Play decks 1 and 3 together about 10 s, pause both | Left panel moves with deck 3; right panel (deck 4) stands still |
-| 19 | Switch djay back to Two Decks | Both panels return to "No track on deck N" |
+| 19 | Switch djay back to Two Decks | Both panels return to "Deck N is not shown in djay" |
 | 20 | Runner ends the stream | Both panels black, bridge exit status 0 |
 | 21 | Part C starts | Right: deck 2 page, layout as `10-deck`; left: library list |
 | 22 | Play deck 2; turn a left screen encoder through some rows; pause | PLAYING with moving time and playhead; the left panel follows while the deck page keeps moving |
@@ -246,6 +254,66 @@ into the scrolling.
   that appears twice in the library and djay quitting during the stream
   were not tried.
 - No fault was provoked. One run, one S8.
+
+## After the run
+
+The observer's remarks on the record, 2026-11-10, and what followed:
+
+- Row 12: "there was no analysis". djay held no analysis for the track, so
+  the page was right at that moment. The observer expects djay to analyse
+  an unanalysed track once it is loaded. The page read the analysis once
+  per track and would have kept "No analysis for this track"; it now reads
+  it again every 5 s (#95, #92).
+- Row 13: "i had two tracks loaded and switched to One Deck view and it
+  loaded Deck 1". djay exposes only the one deck that One Deck view shows
+  ([captures](captures/one-deck-view-20261111T000921Z/README.md),
+  [deck-pages.md](deck-pages.md#limits)). It is not always deck 1: in this
+  run deck 2 went on being read, and in the captures a scripted cue click
+  on deck 2 was followed by deck 2. What decides the deck is not settled.
+  The page of a deck that is not shown now says "Deck n is not shown in
+  djay" (#93). Rows 16 and 19 above were asked and answered with the
+  earlier text, "No track on deck N"; the plan and the runner now name the
+  new text, and picture `02-decks-3-4-two-deck-layout` was made again. The
+  new text has not been on the S8. Rows 11 to 13 of the plan and the runner
+  now expect the behaviour after #92, #95 and #93; the record above keeps
+  the questions as they were asked.
+- Row 17: "maybe i answered it wrong but it looked right". The record keeps
+  the answer as given.
+- Row 22: the two slow reads started on time (gaps of 0.250 s and 0.249 s
+  before them) and then took 0.634 s and 0.775 s themselves. A read is one
+  pass over djay's window that djay answers, plus a library lookup when the
+  track changes, so the separate queues of S8Host (#89) cannot shorten it;
+  they kept the sidebar from delaying it: during the encoder turn no read
+  took longer than 0.273 s. One pass reads every deck djay shows, and
+  `--deck` takes 1 to 4, so the reads do not depend on which decks go
+  through S8Host. The log does not say what the two reads spent their time
+  on (#96).
+- A title in a non-Latin script, hour-long tracks and a djay in French are
+  not needed and stay untried.
+
+## Checked against djay, 2026-11-10
+
+After the fixes for #92, #95, #94 and #93, at `667c9dc` of PR #99 plus the
+notes (`3a51949` before its rebase), with
+`S8Preview --stream left=1,right=2` writing its records to a file. Nothing
+was sent to the S8. Logs, pictures and the observer's answers:
+[captures/djay-check-20261111T003350Z/](captures/djay-check-20261111T003350Z/README.md).
+
+| Step | The observer did and reported | Page |
+| ---- | ----------------------------- | ---- |
+| Cue points (#92) | Deck 2 paused; cue 5 at the playhead removed and cue 6 set at the playhead, with the mouse ("cue 6", then "yes" to that description) | The green flag left 4.4 s after djay wrote its library and the magenta flag moved to the playhead about 6 s after the next write. No reload of the track; time and play state unchanged. |
+| Unanalysed track (#95) | Loaded an unanalysed track on deck 2: "it starting analyzing by itself. took 1-2 seconds" | "No analysis for this track" when the track arrived; waveform, beat ticks and cue flags 4.6 s after djay wrote the analysis file. |
+| One Deck view (#93) | Switched to One Deck, which showed deck 1, and back to Two Decks | The deck 2 page said "Deck 2 is not shown in djay" and returned with its track and time after the switch back. The deck 1 page did not change. |
+
+| | Before | After |
+| --- | --- | --- |
+| Cue points | ![before](captures/djay-check-20261111T003350Z/a-cue-right-before.png) | ![after](captures/djay-check-20261111T003350Z/a-cue-right-after-2.png) |
+| Analysis | ![before](captures/djay-check-20261111T003350Z/b-unanalysed-right-before.png) | ![after](captures/djay-check-20261111T003350Z/b-unanalysed-right-after.png) |
+| One Deck | ![hidden](captures/djay-check-20261111T003350Z/c-one-deck-right-hidden.png) | ![back](captures/djay-check-20261111T003350Z/c-one-deck-right-back.png) |
+
+Limits: one track per step and one run. A cue point in a slot that was
+empty before, a deck that plays while hidden, a shown deck without a track
+and the findings of #94 were not part of it. None of it was on the S8.
 
 ## Checked without the S8
 

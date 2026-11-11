@@ -54,7 +54,7 @@ public enum DeckParser {
 
     public static func reading(from labeled: [String: String]) -> DeckReading {
         var reading = DeckReading()
-        for (label, value) in labeled {
+        for (label, value) in labeled where !value.isEmpty {
             let lower = label.lowercased()
             let property = labelPrefix(label)
             if lower.starts(with: "key,") || lower.starts(with: "clé,") {

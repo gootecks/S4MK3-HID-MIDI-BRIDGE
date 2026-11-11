@@ -1,0 +1,97 @@
+0	AXApplication	desc=	title=djay Pro	value=	id=
+1	AXWindow	desc=	title=djay Pro	value=	id=_NS:8
+2	AXGroup	desc=Decks	title=	value=	id=
+3	AXButton	desc=	title=	value=	id=
+3	AXButton	desc=	title=	value=	id=
+3	AXStaticText	desc=Title, Deck 1	title=	value=Duro	id=
+3	AXStaticText	desc=Artist, Deck 1	title=	value=Skrillex, Young Miko	id=
+3	AXButton	desc=150.0, Deck 1	title=	value=0%	id=
+3	AXButton	desc=--	title=	value=	id=
+3	AXButton	desc=Key, Deck 1	title=	value=5 B	id=
+3	AXButton	desc=Key, Deck 1	title=	value=5 B	id=
+3	AXButton	desc=Key, Deck 1	title=	value=5 B	id=
+3	AXButton	desc=Remaining time, Deck 1	title=	value=-03:04	id=
+3	AXUnknown	desc=Overview waveform, Deck 1	title=	value=	id=
+3	AXUnknown	desc=Waveform, Deck 1	title=	value=	id=
+3	AXButton	desc=	title=	value=	id=
+3	AXButton	desc=	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (3ch: Vocals), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (3ch: Harmonic), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (3ch: Drums), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (4ch: Vocals), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (4ch: Harmonic), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (4ch: Bass), Deck 1	title=	value=	id=
+3	AXButton	desc=Neural Mix Solo (4ch: Drums), Deck 1	title=	value=	id=
+3	AXButton	desc=Waveform options, Deck 1	title=	value=	id=
+3	AXButton	desc=Edit grid, Deck 1	title=	value=	id=
+3	AXButton	desc=	title=	value=	id=
+3	AXButton	desc=DVS, Deck 1	title=	value=	id=
+3	AXButton	desc=DVS, Deck 1	title=	value=INT	id=
+3	AXButton	desc=Load Previous Track, Deck 1	title=	value=	id=
+3	AXButton	desc=Play / Pause, Deck 1	title=	value=Active	id=
+3	AXButton	desc=Load Next Track, Deck 1	title=	value=	id=
+3	AXButton	desc=Set start point, Deck 1	title=	value=	id=
+3	AXButton	desc=Jump to start point, Deck 1	title=	value=	id=
+3	AXButton	desc=CUE, Deck 1	title=	value=	id=
+3	AXButton	desc=Loop In / Half, Deck 1	title=	value=	id=
+3	AXButton	desc=Loop Out / Half, Deck 1	title=	value=	id=
+3	AXButton	desc=Loop Half, Deck 1	title=	value=	id=
+3	AXButton	desc=Loop, Deck 1	title=4 Beats	value=	id=
+3	AXButton	desc=Loop Double, Deck 1	title=	value=	id=
+3	AXButton	desc=Skip Backward, Deck 1	title=	value=16 Beats	id=
+3	AXButton	desc=16 Beats, Deck 1	title=	value=	id=
+3	AXButton	desc=Skip Forward, Deck 1	title=	value=16 Beats	id=
+3	AXButton	desc=Cue Automix Start Point, Deck 1	title=	value=	id=
+3	AXButton	desc=Cue Automix End Point, Deck 1	title=	value=	id=
+3	AXButton	desc=Edit, Deck 1	title=	value=	id=
+2	AXSplitGroup	desc=	title=	value=	id=
+3	AXSplitGroup	desc=	title=	value=	id=
+5	AXSplitter	desc=	title=	value=-1	id=
+6	AXButton	desc=	title=Playlists	value=	id=
+6	AXButton	desc=	title=History	value=	id=
+6	AXScrollArea	desc=	title=Playlists	value=	id=_NS:87
+7	AXStaticText	desc=	title=	value=Playlists	id=_NS:12
+7	AXOutline	[skipped subtree]
+6	AXSplitter	desc=	title=	value=250	id=
+6	AXStaticText	desc=	title=	value=Music	id=_NS:16
+6	AXPopUpButton	desc=	title=13 Songs	value=	id=_NS:37
+6	AXStaticText	desc=	title=	value=42m	id=_NS:54
+6	AXButton	desc=FilterBarTitle	title=	value=	id=_NS:85
+6	AXButton	desc=Compact grid	title=	value=	id=_NS:103
+6	AXButton	desc=Collection	title=	value=	id=_NS:112
+6	AXTextField	desc=Search My Collection	title=	value=	id=_NS:10
+7	AXButton	desc=Search	title=	value=	id=
+7	AXTable	[skipped subtree]
+7	AXScrollBar	desc=	title=	value=0	id=_NS:72
+8	AXValueIndicator	desc=	title=	value=0	id=
+6	AXSplitter	desc=	title=	value=1307	id=
+4	AXSplitter	desc=	title=	value=1558	id=
+3	AXSplitter	desc=	title=	value=1558	id=
+3	AXButton	desc=Library	title=	value=	id=_NS:16
+3	AXButton	desc=Queue	title=	value=	id=_NS:34
+3	AXButton	desc=Match	title=	value=	id=_NS:42
+3	AXButton	desc=Session	title=	value=	id=_NS:49
+3	AXButton	desc=Info	title=	value=	id=_NS:56
+3	AXScrollArea	desc=	title=Playlist	value=	id=_NS:112
+4	AXButton	desc=Source	title=Music	value=	id=_NS:10
+4	AXTable	[skipped subtree]
+2	AXButton	desc=	title=My Collection	value=	id=_NS:41
+2	AXButton	desc=Split library	title=	value=	id=_NS:73
+2	AXScrollArea	desc=	title=	value=	id=_NS:80
+3	AXTable	[skipped subtree]
+2	AXButton	desc=Expand Library	title=	value=	id=_NS:26
+2	AXButton	desc=	title=	value=	id=_NS:45
+2	AXButton	desc=Show Automix panel	title=	value=Automix disabled	id=_NS:59
+2	AXButton	desc=Hide library inspector	title=	value=	id=_NS:69
+2	AXGroup	desc=	title=	value=	id=
+3	AXToolbar	desc=	title=	value=	id=
+5	AXButton	desc=	title=	value=Active	id=
+5	AXCheckBox	desc=	title=	value=0	id=
+5	AXCheckBox	desc=	title=	value=0	id=
+5	AXCheckBox	desc=	title=	value=0	id=
+5	AXCheckBox	desc=	title=	value=0	id=
+5	AXImage	desc=icon titlebar djay pro	title=	value=	id=
+5	AXStaticText	desc=	title=	value=4:15 PM	id=
+5	AXCheckBox	desc=	title=	value=1	id=
+4	AXButton	desc=One Deck	title=	value=One Deck	id=
+1	AXMenuBar	[skipped subtree]
