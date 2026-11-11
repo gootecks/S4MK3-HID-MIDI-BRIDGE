@@ -6,11 +6,13 @@ issues: [21, 22, 23]
 
 # Kontrol S8 LED output
 
-Status: only the HID report descriptor was read on this Mac, with `ioreg` and
-without opening the device. Everything else comes from other people's tests,
-tables and notes. Nothing here has been confirmed by a write to this S8. The
-attended results will be recorded in
-[led-output-validation.md](led-output-validation.md).
+Status: checked on this S8 on 2026-11-11 with one attended run (deck plan
+T0-T13), recorded in [led-output-validation.md](led-output-validation.md). The
+framing, the independence of `0x80` and `0x81`, whole-side replacement and
+most of the byte map below were written and watched. Rows keep `HW (this S8)`
+with the step id for what the run showed; the rest still comes from the
+descriptor, which was read with `ioreg` without opening the device, and from
+other people's tests, tables and notes.
 
 This note covers framing, the deck reports `0x80` and `0x81`, value encoding
 and state. The mixer report `0x82`, the feature reports, deck selectors, VU
@@ -26,6 +28,7 @@ Interface facts and input are in [hardware-notes.md](hardware-notes.md).
 
 - [Evidence levels](#evidence-levels)
 - [Framing](#framing)
+  - [Canonical framing for #21](#canonical-framing-for-21)
   - [How the three accounts fit together](#how-the-three-accounts-fit-together)
   - [What the host must be given](#what-the-host-must-be-given)
 - [Deck reports 0x80 and 0x81](#deck-reports-0x80-and-0x81)
@@ -41,16 +44,22 @@ Interface facts and input are in [hardware-notes.md](hardware-notes.md).
 
 Every table row carries one of these levels.
 
-| Level       | Meaning                                                          |
-| ----------- | ---------------------------------------------------------------- |
-| Observed    | Read on this Mac; the device was not opened                      |
-| HW          | A source documents a physical test; the platform is named        |
-| Table       | A descriptor or table; no physical test is documented            |
-| Unconfirmed | A claim in research notes or a decompile                         |
-| Inference   | A deduction made for this note, marked `[INFERENCE]` in the text |
+| Level          | Meaning                                                          |
+| -------------- | ---------------------------------------------------------------- |
+| Observed       | Read on this Mac; the device was not opened                      |
+| HW             | A source documents a physical test; the platform is named        |
+| Table          | A descriptor or table; no physical test is documented            |
+| Unconfirmed    | A claim in research notes or a decompile                         |
+| Not reproduced | A claim the attended run tested on this S8 and did not see       |
+| Inference      | A deduction made for this note, marked `[INFERENCE]` in the text |
 
 "Capture" next to Table means the byte appears in a frame captured from
 NI's own driver on Windows. It is not a write test.
+
+"HW (this S8)" means the attended run of 2026-11-11 on this unit and Mac,
+with NIHardwareAgent stopped. The step id names the answer in the validation
+record, which states what the user saw. Where the answer names a group of
+LEDs and not each offset, the row says "group".
 
 Source names used below:
 
@@ -98,13 +107,31 @@ Corroboration that does not depend on the descriptor:
   `0x84` IN and `0x03` OUT, both interrupt, max packet 64. The host stack
   splits a 119-byte report across transfers. That is normal for HID. Table.
 
+### Canonical framing for #21
+
+Chosen from the run of 2026-11-11 (steps T0-T13, M1-M17):
+
+- One HID output report write per side. The buffer is the report ID plus 118
+  payload bytes, 119 on the wire. `0x80` is the left deck and `0x81` the
+  right.
+- Each write replaces the whole side. A byte not set in the write is off:
+  T2 (`58=7f`) lit CUE and left PLAY dark, and T13 turned PLAY off and FLUX
+  on with a second `0x80` write.
+- `0x80` and `0x81` are independent: T4 wrote `0x81` and changed nothing on
+  the left.
+- Values go from 0 to `0x7F`. `0x00` is off, `0x7F` lit.
+- No handshake and no feature report came before the first write (T1).
+- Evidence: all 31 deck writes returned 119 from hidapi `write` on
+  interface 5, usage page `0xff01`, shared mode, with the agent stopped. All
+  21 `0x82` writes returned 74. The report ID is the first byte.
+
 ### How the three accounts fit together
 
-| Account                           | Verdict                                        |
-| --------------------------------- | ---------------------------------------------- |
-| Descriptor: 118 / 118 / 73 per ID | Correct; matches captures, Mixxx and Encdr     |
-| One 309 or 310-byte buffer        | Wrong as a wire format (framing note 1)        |
-| Strips need 119-byte reports      | Correct; this is the canonical format (note 2) |
+| Account                           | Verdict                                    |
+| --------------------------------- | ------------------------------------------ |
+| Descriptor: 118 / 118 / 73 per ID | Correct; matches captures, Mixxx and Encdr |
+| One 309 or 310-byte buffer        | Wrong as a wire format (framing note 1)    |
+| Strips need 119-byte reports      | Correct; canonical format (note 2; T10a)   |
 
 Framing notes:
 
@@ -129,11 +156,11 @@ Framing notes:
 
 ### What the host must be given
 
-| API                          | First byte            | Length              | Level     |
-| ---------------------------- | --------------------- | ------------------- | --------- |
-| hidapi `hid_write` (Encdr)   | report ID             | 119 deck, 74 mixer  | Table     |
-| IOKit `IOHIDDeviceSetReport` | same ID as `reportID` | 119 with ID (see 3) | Inference |
-| Mixxx `controller.send`      | ID is separate        | payload 118, no ID  | HW        |
+| API                          | First byte            | Length              | Level        |
+| ---------------------------- | --------------------- | ------------------- | ------------ |
+| hidapi `hid_write` (Encdr)   | report ID             | 119 deck, 74 mixer  | HW (this S8) |
+| IOKit `IOHIDDeviceSetReport` | same ID as `reportID` | 119 with ID (see 3) | Inference    |
+| Mixxx `controller.send`      | ID is separate        | payload 118, no ID  | HW           |
 
 1. Encdr main's `encdr/src/hid.rs` (via `uses_report_ids`) and
    `encdr/src/led_builder.rs` flush prefix + buffer, 1 + 118 = 119 for a deck.
@@ -180,40 +207,48 @@ on upstream v0.9.0 (`a541465`) and on the pin. The pin lacks only
 `protocol: linear_8bit` and the `ni_service` quirk. Protocol rows come from
 `data/ATLAS_OUTPUT_STATE_INDEX.csv` and `data/HID_OUTPUT_LEDS.csv`.
 
-| Offset  | LED                        | Colour | Level                | Note |
-| ------- | -------------------------- | ------ | -------------------- | ---- |
-| 0-23    | Pads 1-8, 3 bytes each     | RGB    | Conflict; HW (Encdr) | 1    |
-| 24      | FX select                  | single | Table, capture       | 2    |
-| 25-28   | FX 1-4 buttons             | single | Table; name conflict | 3    |
-| 29-32   | Display buttons, left 1-4  | single | Table                | 4    |
-| 33-36   | Display buttons, right 1-4 | single | Table                | 4    |
-| 37      | BACK                       | single | Table, capture       | 5    |
-| 38      | CAPTURE                    | single | Table, capture       | 5    |
-| 39      | EDIT                       | single | Table, capture       | 5    |
-| 40-43   | Slot / filter buttons 1-4  | single | Table                | 6    |
-| 44      | Hotcue, white companion    | white  | Table, capture       | 7    |
-| 45      | Hotcue mode button         | blue   | Table, capture       | 7    |
-| 46      | Loop, white companion      | white  | Table, capture       | 8    |
-| 47      | LOOP button                | blue   | Table                | 8    |
-| 48      | FREEZE, white companion    | white  | Table, capture       | 9    |
-| 49      | FREEZE                     | blue   | Table, capture       | 9    |
-| 50      | REMIX, white companion     | white  | Table, capture       | 10   |
-| 51      | REMIX                      | blue   | Table, capture       | 10   |
-| 52      | FLUX                       | single | HW (Protocol, Win)   | 11   |
-| 53      | Deck indicator, white      | white  | Table, capture       | 12   |
-| 54      | Deck indicator, blue       | blue   | Table, capture       | 12   |
-| 55      | SHIFT                      | single | Table, capture       | 13   |
-| 56      | SYNC, green (Encdr only)   | green  | Unconfirmed          | 14   |
-| 57      | SYNC                       | red?   | Conflict (name only) | 15   |
-| 58      | CUE                        | single | HW (Protocol, Win)   | 16   |
-| 59      | PLAY                       | single | HW (Protocol, Win)   | 16   |
-| 60-63   | Loop ring, white 1-4       | white  | Table, capture       | 17   |
-| 64-67   | Loop ring, blue 1-4        | blue   | Table                | 18   |
-| 68-92   | Touchstrip, 25 LEDs        | blue   | HW (Encdr; Mixxx)    | 19   |
-| 93-117  | Touchstrip, 25 LEDs        | orange | HW (Encdr)           | 20   |
-| 118-121 | Deck selectors (rejected)  |        | Unconfirmed          | 22   |
+| Offset | LED                        | Colour | Level                                   | Note |
+| ------ | -------------------------- | ------ | --------------------------------------- | ---- |
+| 0-2    | Pad 1, 3 bytes             | RGB    | HW (this S8): T8a-T8c, T9a              | 1    |
+| 3-23   | Pads 2-8, 3 bytes each     | RGB    | Conflict; HW (Encdr)                    | 1    |
+| 24     | FX select                  | single | HW (this S8): T7a, group                | 2    |
+| 25-28  | FX 1-4 buttons             | single | HW (this S8): T7a, group; name conflict | 3    |
+| 29-32  | Display buttons, left 1-4  | single | HW (this S8): T7b, group                | 4    |
+| 33-36  | Display buttons, right 1-4 | single | HW (this S8): T7b, group                | 4    |
+| 37     | BACK                       | single | HW (this S8): T7c, group                | 5    |
+| 38     | CAPTURE                    | single | HW (this S8): T7c, group                | 5    |
+| 39     | EDIT                       | single | HW (this S8): T7c, group                | 5    |
+| 40-43  | Slot / filter buttons 1-4  | single | HW (this S8): T7d, group                | 6    |
 
-Strip direction: no source states a left-to-right order (note 21).
+Offsets 44-121:
+
+| Offset  | LED                       | Colour | Level                                    | Note |
+| ------- | ------------------------- | ------ | ---------------------------------------- | ---- |
+| 44      | Hotcue, white companion   | white  | HW (this S8): T7e, group; colour open    | 7    |
+| 45      | Hotcue mode button        | blue   | Table, capture                           | 7    |
+| 46      | Loop, white companion     | white  | HW (this S8): T7e, group; colour open    | 8    |
+| 47      | LOOP button               | blue   | Table                                    | 8    |
+| 48      | FREEZE, white companion   | white  | HW (this S8): T7e, group; colour open    | 9    |
+| 49      | FREEZE                    | blue   | Table, capture                           | 9    |
+| 50      | REMIX, white companion    | white  | HW (this S8): T7e, group; colour open    | 10   |
+| 51      | REMIX                     | blue   | Table, capture                           | 10   |
+| 52      | FLUX                      | single | HW (this S8): T3                         | 11   |
+| 53      | Deck indicator, white     | white  | HW (this S8): T7f, group; colour open    | 12   |
+| 54      | Deck indicator, blue      | blue   | Table, capture                           | 12   |
+| 55      | SHIFT                     | single | HW (this S8): T7f, group                 | 13   |
+| 56      | SYNC, green (Encdr only)  | green  | HW (this S8): T6, left deck              | 14   |
+| 57      | SYNC                      | red    | HW (this S8): T5, left deck              | 15   |
+| 58      | CUE                       | single | HW (this S8): T2                         | 16   |
+| 59      | PLAY                      | single | HW (this S8): T1                         | 16   |
+| 60-63   | Loop ring, white 1-4      | white  | HW (this S8): T7g, group                 | 17   |
+| 64-67   | Loop ring, blue 1-4       | blue   | HW (this S8): T7h, group                 | 18   |
+| 68-92   | Touchstrip, 25 LEDs       | blue   | HW (this S8): T10a-T10c, ends and middle | 19   |
+| 93-117  | Touchstrip, 25 LEDs       | orange | HW (this S8): T11a, T11b, ends           | 20   |
+| 118-121 | Deck selectors (rejected) |        | Unconfirmed                              | 22   |
+
+Strip direction: offset 68 is the left end, 80 the middle and 92 the right end
+(T10a-T10c). Offset 93 is left and 117 right for the orange bank (T11a,
+T11b). The LEDs between were not written one by one (note 21).
 
 Deck map notes:
 
@@ -226,6 +261,9 @@ Deck map notes:
    (`docs/hardware/attempts/ni_kontrol_s8_touchstrip_leds.md:73`). The Mixxx
    README calls per-pad hotcue colours "planned", so its order is not a
    physical result. HW (Encdr, platform unstated) favours R, G, B.
+   Run: T8a, T8b and T8c lit pad 1 red, green and blue for bytes 0, 1 and 2,
+   so the order is R, G, B and Mixxx's B, G, R is wrong for pad 1. Pads 2-8
+   were not written.
 2. Encdr `fx_select`. Protocol `FX_SELECT_CAPTURED_PAIR`: "individual light
    response not independently established". Mixxx `FX_SELECT`, 0x7F/0x14.
    Colour is white with a question mark in the research.
@@ -265,12 +303,15 @@ Deck map notes:
 14. Encdr `sync_green`. Not listed in Protocol. Mixxx leaves it untouched; its
     base frames have 0x14 on the left and 0x00 on the right. Evidence is
     Encdr only.
+    Run: T6 lit the left SYNC in green with `56=7f`; T5 lit SYNC red with
+    57 and no green SYNC. Encdr's `sync_green` is confirmed on the left deck.
 15. Encdr `sync_red`. Protocol `SYNC` 57: off 0x14, on 0x7F
     (`data/HID_OUTPUT_LEDS.csv`; `docs/hid-output-leds.md:10`: "Android/Windows
     policy differs; physical scope pending"). Mixxx `SYNC` 57, 0x7F/0x14. All
     three agree that 57 is the byte Traktor and Mixxx drive. Only the colour
     naming conflicts. `[INFERENCE]` 57 is red if Encdr is right. Byte 56 has
     no documented physical test.
+    Run: 57 is red (T5), as Encdr names it, and 56 is green (T6).
 16. Encdr `cue`, `play`. Protocol `CUE` 58 (off 0x00, on 0x7F) and `PLAY` 59.
     Mixxx `CUE`, `PLAY`. Same physical pass as note 11.
 17. Encdr `loop_circle_1..4`, white. Protocol: multi-LED group 60-63 (0x00 to
@@ -283,6 +324,8 @@ Deck map notes:
     clears 68-92 and 93, then lights 68..92 around centre 80. HW (Encdr,
     platform unstated) lit the strip. HW (Mixxx, Windows) uses it as a phase
     meter.
+    Run: T10a, T10b and T10c lit offsets 68, 80 and 92 blue at the left,
+    middle and right.
 20. Encdr `touchstrip_orange`, offset 93, count 25. Protocol indexes only the
     blue bank 68-92. Mixxx clears only 93 ("orange center fallback"). Encdr's
     orange-only test is "confirmed working"
@@ -290,9 +333,12 @@ Deck map notes:
     together look purple
     (`docs/hardware/attempts/ni_kontrol_s8_touchstrip_leds.md:198-205`, from an
     earlier read).
+    Run: T11a and T11b lit 93 and 117 orange at the left and the right. T12
+    wrote 68-117 together and lit only the top row of the left touchstrip, in
+    purple, with the bottom row off. That is not explained (Q37).
 21. `[INFERENCE]` Mixxx's phase-meter centre at 80 (68 + 12) implies offset 68
-    is one end, 92 the other and 80 the middle LED. Which end is physically
-    left is unknown.
+    is one end, 92 the other and 80 the middle LED. Run: T10a-T10c show 68
+    left, 80 middle, 92 right.
 22. Not in Encdr's JSON, Protocol or Mixxx. Encdr prose only
     (`s8_discovery/LED_MAPPING_STATUS.md:19-34`,
     `docs/hardware/attempts/ni_kontrol_s8_touchstrip_leds.md:163-169`). The
@@ -303,15 +349,15 @@ Deck map notes:
 
 Every output byte has a logical range of 0..127 (Observed, descriptor).
 
-| Item          | Fact                                             | Level       | Note |
-| ------------- | ------------------------------------------------ | ----------- | ---- |
-| ON            | `0x7F`                                           | HW (Win)    | 1    |
-| OFF           | `0x00` for the single-state class                | HW (Win)    | 2    |
-| DIM ("off")   | `0x14` for the dim class                         | HW, Table   | 3    |
-| Intensity     | One linear byte; buttons only seen at 0x14, 0x7F | Table       | 4    |
-| Pad colour    | Three bytes; Traktor values never exceed `0x1F`  | Table       | 5    |
-| Above `0x7F`  | Encdr sends 255; conflicts with maximum 127      | Unconfirmed | 6    |
-| `linear_8bit` | Encdr main tags dim 76 and bright 255            | Table       | 7    |
+| Item          | Fact                                             | Level                           | Note |
+| ------------- | ------------------------------------------------ | ------------------------------- | ---- |
+| ON            | `0x7F`                                           | HW (Win); HW (this S8): T1, T9a | 1    |
+| OFF           | `0x00` for the single-state class                | HW (Win); HW (this S8): T2      | 2    |
+| DIM ("off")   | `0x14` for the dim class                         | HW, Table                       | 3    |
+| Intensity     | One linear byte; buttons only seen at 0x14, 0x7F | Table                           | 4    |
+| Pad colour    | Three bytes; Traktor values never exceed `0x1F`  | Table                           | 5    |
+| Above `0x7F`  | Encdr sends 255; conflicts with maximum 127      | HW (this S8): T9b, pad 1 only   | 6    |
+| `linear_8bit` | Encdr main tags dim 76 and bright 255            | Table                           | 7    |
 
 Notes:
 
@@ -353,11 +399,14 @@ Notes:
   [118 zeros]` report with one offset set lights only that LED, and a
   following all-zero report clears it (`touchstrip_blue_test.rs:40-45`,
   `clear`). Each report acts as a full snapshot of its own bytes. HW (Encdr).
+  Run: T2 and T13 confirm it for `0x80` (PLAY off after a write without it).
 - Reports are independent. Encdr records that "hardware latches state; an
   all-zero buffer does not reset LEDs not included"
   (`docs/hardware/attempts/ni_kontrol_s8_touchstrip_leds.md:201-203`, from an
   earlier read). `[INFERENCE]` A write to `0x80` leaves `0x81` and `0x82`
   alone, and a short report leaves the tail unchanged. Unconfirmed on macOS.
+  Run: T4 confirms it for `0x81` against `0x80`. `0x80` against `0x81` and
+  the mixer was not asked.
 - All offsets of a report share one buffer. Writing one offset in a snapshot
   does not change the others in the device. Offsets omitted from the next
   snapshot are expected to clear (the full-snapshot rule).
@@ -372,6 +421,7 @@ Notes:
   (`docs/hardware/attempts/ni_kontrol_s8_mixer_leds.md:21`;
   [hardware-notes.md](hardware-notes.md) says it "lights the bank as a group
   only").
+  Run: T1 lit PLAY with no handshake or feature report before it.
 - NIHardwareAgent stopped. [agent-stop-validation.md](agent-stop-validation.md)
   (lines 67-69) records that panels keep their last labels. LED state during
   that run was not recorded: nothing was sent and no LED observation is
@@ -384,6 +434,10 @@ Notes:
   restarts. Nothing documents it restoring a bridge-written LED pattern.
   Whoever restarts the agent restores whatever the agent holds, so the bridge
   must write zeros before handing back.
+- Run: after the final all-zero `0x80` and `0x81` write and the agent restart
+  the user reported the panel labels and LEDs back, in both runs. After the
+  all-zero writes of T0 some LEDs stayed lit: CUE and filter of each deck,
+  the arrows at the top of each deck, mic 1, mic 2, SNAP and QUANT (Q38).
 - `[INFERENCE]` The agent also writes `0x80`, `0x81` and `0x82`. Concurrent
   writers fight. The bridge design, with the agent stopped, avoids that.
 
@@ -393,21 +447,21 @@ Rows 11, 14-19 and 21-24 are in the [mixer
 note](led-output-mixer.md#contradictions-between-sources). "Settled by" names the check or
 rule.
 
-| #   | Conflict                              | Verdict    | Settled by                |
-| --- | ------------------------------------- | ---------- | ------------------------- |
-| 1   | One 309/310-byte buffer vs 118/118/73 | Resolved   | Descriptor, captures      |
-| 2   | Offsets with or without report ID     | Resolved   | Payload offsets; wire +1  |
-| 3   | Pad byte order: Encdr RGB, Mixxx BGR  | Unresolved | Pad 1 byte test (Q7)      |
-| 4   | SYNC 56 and 57 (Encdr) vs 57 only     | Unresolved | SYNC test (Q5, Q6)        |
-| 5   | Offset 25: `fx_1` vs "FX unit on"     | Unresolved | Button test (Q14)         |
-| 6   | Offsets 29-36 names vs D1-D8          | Unresolved | Group test (Q12, Q13)     |
-| 7   | Brightness 0-255 vs descriptor 0..127 | Unresolved | 0xFF test (Q8)            |
-| 8   | Dim 0x14 vs 0x00 as "off"             | Unresolved | Off test (Q17, Q21)       |
-| 9   | Orange strip not in Protocol index    | Resolved   | Encdr test accepted       |
-| 10  | Deck selectors at 118-121             | Resolved   | Outside payload; rejected |
-| 12  | Pad palette max 0x10 vs 255           | Unresolved | 0xFF test (Q8)            |
-| 13  | Strip direction, no source            | Unresolved | Strip test (Q9, Q10)      |
-| 20  | Encdr dim/bright 76/255 or 228/158    | Resolved   | Out of range; Q8 clamp    |
+| #   | Conflict                              | Verdict    | Settled by                              |
+| --- | ------------------------------------- | ---------- | --------------------------------------- |
+| 1   | One 309/310-byte buffer vs 118/118/73 | Resolved   | Descriptor, captures                    |
+| 2   | Offsets with or without report ID     | Resolved   | Payload offsets; wire +1                |
+| 3   | Pad byte order: Encdr RGB, Mixxx BGR  | Resolved   | Encdr right: RGB (T8a-T8c)              |
+| 4   | SYNC 56 and 57 (Encdr) vs 57 only     | Resolved   | Encdr right: 56 green, 57 red (T5, T6)  |
+| 5   | Offset 25: `fx_1` vs "FX unit on"     | Unresolved | Button test (Q14)                       |
+| 6   | Offsets 29-36 names vs D1-D8          | Unresolved | Group test (Q12, Q13)                   |
+| 7   | Brightness 0-255 vs descriptor 0..127 | Resolved   | Descriptor; `0xFF` same as `0x7F` (T9b) |
+| 8   | Dim 0x14 vs 0x00 as "off"             | Unresolved | Deck untested (Q17, Q36); mixer: M9     |
+| 9   | Orange strip not in Protocol index    | Resolved   | Encdr test accepted                     |
+| 10  | Deck selectors at 118-121             | Resolved   | Outside payload; rejected               |
+| 12  | Pad palette max 0x10 vs 255           | Unresolved | T9b: 0xFF looks like 0x7F (Q8)          |
+| 13  | Strip direction, no source            | Resolved   | 68 left, 92 right (T10a, T10c)          |
+| 20  | Encdr dim/bright 76/255 or 228/158    | Resolved   | Out of range; T9b: 255 = 0x7F           |
 
 Notes:
 
@@ -417,34 +471,17 @@ Notes:
    (Mixxx:15508-15509) refuses to generalise.
 2. Row 20 is resolved as an Encdr defect, pending a hardware check of
    clamping.
+3. Row 7: only pad 1 byte 0 was compared, so 255 was not shown to be harmful
+   there; it shows no brighter than `0x7F`. Strips were not tested. Row 4:
+   Protocol and Mixxx name only 57, so Encdr alone had 56. Row 3: Mixxx's
+   order was read from code that its README calls planned, and the run
+   disagrees with it.
 
 ## Open questions for the hardware run
 
-Only a write on this S8 can answer these. Each is yes/no or one word. Questions 19-33 are in
-the [mixer note](led-output-mixer.md#open-questions-for-the-hardware-run).
-
-- **Q1.** Does `[80]` plus 118 zeros return 119 from a hidapi write? (yes/no)
-- **Q2.** Does that write change any LED? (yes/no)
-- **Q3.** After PLAY-only then CUE-only reports, is PLAY dark? (yes/no)
-- **Q4.** Does a write to `0x80` change anything on the right deck or mixer? (yes/no)
-- **Q5.** Is offset 57 SYNC lit red or green? (red/green)
-- **Q6.** Is offset 56 a different LED from 57? (yes/no)
-- **Q7.** For pad 1, which colour does byte 0, byte 1 and byte 2 give? (red/green/blue)
-- **Q8.** Does `0xFF` on a pad or strip LED look different from `0x7F`? (yes/no)
-- **Q9.** Which end of the strip does offset 68 light? (left/right)
-- **Q10.** Is offset 80 the middle strip LED? (yes/no)
-- **Q11.** What colour is the 68-92 bank, and what colour is 93-117? (one word each)
-- **Q12.** Do offsets 29-36 each light a different display-side button? (yes/no)
-- **Q13.** Is 29-32 the left cluster? (yes/no)
-- **Q14.** Is offset 25 the FX-unit on button or the first FX slot? (on/slot)
-- **Q15.** Do offsets 44, 46, 48 and 50 (white) and 45, 47, 49 and 51 (blue) light
-  separate LEDs? (yes/no)
-- **Q16.** Do `0x80` and `0x81` offsets 53 and 54 light the deck selector LEDs, white
-  and blue, for the outer decks A/B and C/D? (yes/no)
-- **Q17.** Does `0x00` extinguish a 0x14-class LED (FREEZE, REMIX, LOOP, SYNC)?
-  (yes/no)
-- **Q18.** After zeros and an agent restart, do all LEDs return without further
-  action? (yes/no)
+The questions are in [led-output-questions.md](led-output-questions.md): Q1-18
+and Q34-39 for the deck, with the answers the run gave. Questions 19-33 and
+40-41 are in the [mixer note](led-output-mixer.md#open-questions-for-the-hardware-run).
 
 ## What the bridge will send
 

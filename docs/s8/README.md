@@ -24,16 +24,16 @@ max-level: 2
 
 ## Status
 
-| Area               | State                                                                                                 | Details                                      |
-| ------------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| S4 MK3             | Unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5).                              | [s4-coupling-audit.md](s4-coupling-audit.md) |
-| S8 detection       | `--device s8 --raw` reads interface 5 and never writes (#12).                                         | [hardware-notes.md](hardware-notes.md)       |
-| S8 input           | All 191 controls captured and decoded (#10, #12).                                                     | [S8 input](#s8-input)                        |
-| S8 Djay mapping    | Generated, translated and checked in Djay (#14, #15).                                                 | [S8 Djay mapping](#s8-djay-mapping)          |
-| S8 LEDs            | Byte maps from the descriptor and three sources; attended check planned, nothing sent yet (#21, #24). | [led-output.md](led-output.md)               |
-| S8 screens         | Library views and deck pages checked on the S8; the rest is in #105.                                  | [S8 screens](#s8-screens)                    |
-| Motor, jog tension | Not applicable: the S8 has touchstrips, not platters.                                                 |                                              |
-| Clippy gate        | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28).                        |                                              |
+| Area               | State                                                                                                                                      | Details                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| S4 MK3             | Unchanged from upstream `v0.2.1-beta.1`; device-profile seam added (#5).                                                                   | [s4-coupling-audit.md](s4-coupling-audit.md) |
+| S8 detection       | `--device s8 --raw` reads interface 5 and never writes (#12).                                                                              | [hardware-notes.md](hardware-notes.md)       |
+| S8 input           | All 191 controls captured and decoded (#10, #12).                                                                                          | [S8 input](#s8-input)                        |
+| S8 Djay mapping    | Generated, translated and checked in Djay (#14, #15).                                                                                      | [S8 Djay mapping](#s8-djay-mapping)          |
+| S8 LEDs            | Deck framing and byte map checked on the S8 on 2026-11-11; mixer FX assign, SNAP and QUANT checked; VU, `0xF3` and `0xF4` open (#21, #24). | [led-output.md](led-output.md)               |
+| S8 screens         | Library views and deck pages checked on the S8; the rest is in #105.                                                                       | [S8 screens](#s8-screens)                    |
+| Motor, jog tension | Not applicable: the S8 has touchstrips, not platters.                                                                                      |                                              |
+| Clippy gate        | Upstream `main` fails `-D warnings` on Rust 1.99.1 (pinned); tests pass (#28).                                                             |                                              |
 
 ### S8 input
 

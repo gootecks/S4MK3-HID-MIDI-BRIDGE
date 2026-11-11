@@ -6,9 +6,11 @@ issues: [24]
 
 # Kontrol S8 mixer LED output
 
-Status: unconfirmed. Nothing here has been confirmed by a write to this S8; the
-descriptor facts are Observed. The attended results will be recorded in
-[led-output-validation.md](led-output-validation.md).
+Status: FX assign, SNAP and QUANT (`0x82` 44-53) checked on this S8 on
+2026-11-11 (mixer plan M1-M17, recorded in
+[led-output-validation.md](led-output-validation.md)). The VU claim for
+`0x82` 0-43 was not reproduced, nothing was seen at 54-71, and byte 72 is
+not settled. `0xF3` and `0xF4` were not sent. Descriptor facts are Observed.
 
 This note covers the mixer report `0x82`, the feature reports `0xF3` and
 `0xF4`, the never-write list, deck selectors and VU meters. Evidence levels,
@@ -39,24 +41,24 @@ the report ID (`docs/overview.md:11`), so its numbers are converted down by 1.
 Mixxx and the Encdr descriptors already exclude the ID (Mixxx:15496-15509,
 15516-15530).
 
-| Offset | Name                | Level                      | Note |
-| ------ | ------------------- | -------------------------- | ---- |
-| 0-10   | VU ch3, 11 segments | Unconfirmed                | 1    |
-| 11-21  | VU ch1, 11 segments | Unconfirmed                | 1, 2 |
-| 22-32  | VU ch2, 11 segments | Unconfirmed                | 1    |
-| 33-43  | VU ch4, 11 segments | Unconfirmed                | 1    |
-| 44     | FX assign C-1       | Table; HW (Mixxx, Windows) | 3    |
-| 45     | FX assign C-2       | Table; HW (Mixxx, Windows) | 3    |
-| 46     | FX assign A-1       | Table; HW (Mixxx, Windows) | 4    |
-| 47     | FX assign A-2       | Table; HW (Mixxx, Windows) | 4    |
-| 48     | SNAP                | Table                      | 5    |
-| 49     | QUANT               | Table; HW (Mixxx, Windows) | 5    |
-| 50     | FX assign B-1       | Table; HW (Mixxx, Windows) | 6    |
-| 51     | FX assign B-2       | Table; HW (Mixxx, Windows) | 6    |
-| 52     | FX assign D-1       | Table; HW (Mixxx, Windows) | 7    |
-| 53     | FX assign D-2       | Table; HW (Mixxx, Windows) | 7    |
-| 54-71  | Unknown             | Unconfirmed for 62 and 63  | 8    |
-| 72     | Unknown             | Unknown                    | 9    |
+| Offset | Name                | Level                                                   | Note |
+| ------ | ------------------- | ------------------------------------------------------- | ---- |
+| 0-10   | VU ch3, 11 segments | Not reproduced (M12)                                    | 1    |
+| 11-21  | VU ch1, 11 segments | Not reproduced (M11a-c)                                 | 1, 2 |
+| 22-32  | VU ch2, 11 segments | Not reproduced (M13)                                    | 1    |
+| 33-43  | VU ch4, 11 segments | Not reproduced (M14)                                    | 1    |
+| 44     | FX assign C-1       | Table; HW (Mixxx, Windows); HW (this S8): M2, M5, M6    | 3    |
+| 45     | FX assign C-2       | Table; HW (Mixxx, Windows); HW (this S8): M2            | 3    |
+| 46     | FX assign A-1       | Table; HW (Mixxx, Windows); HW (this S8): M2, M6, M9    | 4    |
+| 47     | FX assign A-2       | Table; HW (Mixxx, Windows); HW (this S8): M2            | 4    |
+| 48     | SNAP                | Table; HW (this S8): M2, M3                             | 5    |
+| 49     | QUANT               | Table; HW (Mixxx, Windows); HW (this S8): M2, M4        | 5    |
+| 50     | FX assign B-1       | Table; HW (Mixxx, Windows); HW (this S8): M2, M7        | 6    |
+| 51     | FX assign B-2       | Table; HW (Mixxx, Windows); HW (this S8): M2            | 6    |
+| 52     | FX assign D-1       | Table; HW (Mixxx, Windows); HW (this S8): M2, M8        | 7    |
+| 53     | FX assign D-2       | Table; HW (Mixxx, Windows); HW (this S8): M2, M8        | 7    |
+| 54-71  | Unknown             | Not reproduced for 62 and 63; nothing seen (M15a, M15b) | 8    |
+| 72     | Unknown             | Unknown; not settled (M10a, M10b)                       | 9    |
 
 Mixer map notes:
 
@@ -64,6 +66,8 @@ Mixer map notes:
    (`docs/hardware/attempts/ni_kontrol_s8_mixer_leds.md:50-57`). It has not
    been verified physically. Sweeps showed zero response (same file,
    lines 154-162).
+   Run: M11a to M14 lit no VU segment in any claimed range, with the
+   74-byte report and the agent stopped.
 2. The Mixxx seed has offset 11 = 0x7F and offset 12 = 0x7F, with offsets
    0-10 and 13-43 zero. `[INFERENCE]` These are the two lowest segments of ch1
    lit in a captured frame. That fits the claim but does not prove it.
@@ -72,6 +76,11 @@ Mixer map notes:
    44 (Mixxx:15575-15592); seed 0x7F at 44 and 0x14 at 45. The Mixxx README
    lists "PFL, Mixer FX, per-deck FX 1/2 assignment LED feedback". That claim
    is owner-reported only.
+   Run: M2 answered yes, as one answer, for FX C-1, FX D-2, SNAP and QUANT
+   lit and the other six FX assign LEDs dim. M5 dimmed FX C-1 (44) with
+   `14`, M6 lit FX A-1 (46), M7 FX B-1 (50) and M8 FX D-1 (52) with FX D-2.
+   M3 dimmed SNAP (48) and M4 QUANT (49). M9 with `00` turned FX A-1 fully
+   off against the dim `14`.
 4. Encdr `ni_kontrol_s8.json`. Protocol `data/HID_OUTPUT_LEDS.csv:13,56,
    106-111`: `FX_ASSIGN1_A` and `FX_ASSIGN2_A`, with-ID index 47. Protocol:
    "Physical light response not reported". Mixxx seed 0x14 at both.
@@ -85,8 +94,11 @@ Mixer map notes:
    for 44, 45, 52 and 53.
 8. No named source. The decompile claims MIC at 62 and 63; the seed has them
    at 0.
+   Run: M15a and M15b wrote 54-62 and 63-71 and lit nothing, offsets 62 and
+   63 included. The optional single-byte steps M16 were not run.
 9. The Mixxx seed has 0x7F here, with no documented meaning. `[INFERENCE]` It
    could be a clip, aux or booth indicator.
+   Run: M10a and M10b did not settle it; only FX A-1 was named (Q23).
 
 More facts about this map:
 
@@ -94,9 +106,14 @@ More facts about this map:
   QUANT, C-1 and D-2 at 0x7F. Mixxx's comment says 0x00 is "not generalized"
   (Mixxx:15516-15530). `[INFERENCE]` The `*_inactive` suffix in Encdr's names
   is misleading: 0x14 looks like a dim idle level, not off.
+  Run: confirmed. `0x14` is a visible dim level and `00` is off (M2-M9).
+  Encdr's `*_inactive` suffix is misleading, as inferred.
 - The Mixxx seed is a "captured physical S8 IF5 frame" (Mixxx:15496-15509)
   from Windows. It is a live NI-driver frame, not a minimal write.
   `[INFERENCE]` Writing the seed whole is the safest baseline.
+- Run: M17 wrote the seed again. The user answered that FX 1-2 of decks 1-4,
+  SNAP and QUANT came on, with FX C-1 and FX D-2 brighter. It does not say
+  that the other FX assign LEDs were dim (Q40).
 - Encdr keeps the mixer LED map unconfirmed
   (`s8_discovery/LED_MAPPING_STATUS.md:32-40`;
   `docs/hardware/ni_kontrol_s8.md:111,113-120,149`). `mixer_led_results.json`
@@ -277,24 +294,44 @@ and 12 in the seed. `[INFERENCE]` In that mode a `0x82` write of VU bytes may
 be overridden or ignored, which could explain the zero-response sweeps. Offset
 72 (seed 0x7F) is also unexplained.
 
+Run: the claim was not reproduced. M11a (`11-21=7f`), M11b (`11=7f`), M11c
+(`21=7f`), M12 (`0-10=7f`), M13 (`22-32=7f`) and M14 (`33-43=7f`) lit no VU
+segment, with the agent stopped and 74-byte writes that moved the FX assign
+LEDs. The user, after the run: "none of the VU meters worked." The
+"do the meters still move with audio by themselves" part was not answered, so
+the inference above is neither confirmed nor excluded. The earlier
+inference that Encdr's sweeps used the wrong framing does not explain the
+result: these writes had the right framing.
+
+Hypotheses, not findings, each resting on the sources above:
+
+- The firmware drives the meters from the audio and ignores or overrides
+  `0x82` VU bytes in standalone-mixer operation (the Mixxx README line and
+  the lack of host VU writes in Mixxx).
+- A mode set through a feature report gates the meters. `0xF3` is a
+  candidate: its meaning is unknown, "mixer mode" is named as one
+  possibility, and `s8_standalone.json` has `mixer_mixer_mode_global`. It
+  was not sent.
+- The decompile's offsets 0..43 are not VU segments.
+
 ## Contradictions between sources
 
 Rows 1-10, 12, 13 and 20 are in the [deck
 note](led-output.md#contradictions-between-sources). "Settled by" names the check or rule.
 
-| #   | Conflict                                 | Verdict    | Settled by                |
-| --- | ---------------------------------------- | ---------- | ------------------------- |
-| 11  | Mixer on `0x81` 28-57 or abs index       | Resolved   | `0x82` 44-53 (note 1)     |
-| 14  | FX assign/SNAP/QUANT on `0x81` 212/213   | Resolved   | `0x82` 44-53; stale json  |
-| 15  | FX assign on `0x80` 78-81, collision     | Resolved   | No such outputs; stale    |
-| 16  | S8 snap 48, quant 49 vs S5 order         | Resolved   | Different device (note 2) |
-| 17  | CUE slots abs 119/118/127/126            | Resolved   | CUE is `0xF4` 0x26        |
-| 18  | `0xF3` as 309-byte interrupt OUT         | Resolved   | Descriptor wins           |
-| 19  | `0xF4` "33 bytes" vs 32                  | Resolved   | No conflict: ID + 32      |
-| 21  | `s8_full.json` interface 0, `0x01/0x81`  | Resolved   | Stale; interface 5        |
-| 22  | VU `0x82` 0..43 vs zero response         | Unresolved | VU test (Q24, Q25)        |
-| 23  | Mixxx `*_inactive` as off vs 0x14 dim    | Unresolved | Off test (Q17, Q21)       |
-| 24  | `0xF3` group light vs no `0xF3` in Mixxx | Unresolved | `0xF3` test (Q28, Q29)    |
+| #   | Conflict                                 | Verdict    | Settled by                                    |
+| --- | ---------------------------------------- | ---------- | --------------------------------------------- |
+| 11  | Mixer on `0x81` 28-57 or abs index       | Resolved   | `0x82` 44-53 (note 1)                         |
+| 14  | FX assign/SNAP/QUANT on `0x81` 212/213   | Resolved   | `0x82` 44-53; stale json                      |
+| 15  | FX assign on `0x80` 78-81, collision     | Resolved   | No such outputs; stale                        |
+| 16  | S8 snap 48, quant 49 vs S5 order         | Resolved   | Different device (note 2)                     |
+| 17  | CUE slots abs 119/118/127/126            | Resolved   | CUE is `0xF4` 0x26                            |
+| 18  | `0xF3` as 309-byte interrupt OUT         | Resolved   | Descriptor wins                               |
+| 19  | `0xF4` "33 bytes" vs 32                  | Resolved   | No conflict: ID + 32                          |
+| 21  | `s8_full.json` interface 0, `0x01/0x81`  | Resolved   | Stale; interface 5                            |
+| 22  | VU `0x82` 0..43 vs zero response         | Unresolved | Zero response reproduced (M11a-M14; Q24, Q25) |
+| 23  | Mixxx `*_inactive` as off vs 0x14 dim    | Resolved   | `14` dim, `00` off (M2-M9); Mixxx right       |
+| 24  | `0xF3` group light vs no `0xF3` in Mixxx | Unresolved | `0xF3` test (Q28, Q29)                        |
 
 Notes:
 
@@ -304,34 +341,58 @@ Notes:
    is confirmed by the Mixxx seed and field map.
 3. Row 14 also appears as `0x81` 212 and 213 for snap and quant, and `0x80`
    78-81 colliding with `deck_assign` 80-83, in `s8_full.json`.
+4. Row 22: for plain `0x82` writes with the agent stopped, the Encdr sweeps
+   (zero response) were right and the decompile claim of VU at 0..43 was not
+   reproduced. Why is open (Q26, Q41). Row 23: Encdr's name `*_inactive` is
+   the one that misleads. For the deck, row 8 of the deck note stays open.
 
 ## Open questions for the hardware run
 
-Only a write on this S8 can answer these. Each is yes/no or one word. Questions 1-18 are in
-the [deck note](led-output.md#open-questions-for-the-hardware-run).
+Answers are recorded where the plan ran. Questions 1-18 and 34-39 are in
+the [deck questions note](led-output-questions.md).
+Answered questions keep their text and carry the step id and the observation.
 
 - **Q19.** Does `82` plus 73 zeros (74 bytes) turn off every LED a `0x82` byte
-  controls? (yes/no)
+  controls? (yes/no) Open. M1 was answered `no` to "Did any mixer LED
+  change?", and FX assign LEDs lit in later steps; the answer does not say
+  whether they were already off.
 - **Q20.** With the Mixxx seed written (B0), are FX C-1, FX D-2, SNAP and QUANT lit
-  while FX A-1, A-2, B-1, B-2, C-2 and D-1 are dim? (yes/no for each)
+  while FX A-1, A-2, B-1, B-2, C-2 and D-1 are dim? (yes/no for each) Answered,
+  M2: yes, one answer for all.
 - **Q21.** Does `0x00` at `0x82` offset 46 turn FX A-1 fully off, not just 0x14?
-  (yes/no)
+  (yes/no) Answered, M9: yes.
 - **Q22.** Does `0x82` offset 48 control SNAP, and offset 49 QUANT? (yes/no each)
-- **Q23.** Which LED, if any, does `0x82` offset 72 control? (name or none)
+  Answered, M3 and M4: yes, SNAP dimmed and QUANT dimmed.
+- **Q23.** Which LED, if any, does `0x82` offset 72 control? (name or none) Open.
+  M10a and M10b named FX A-1 only (back on, then dim), which the plan bytes do
+  not explain.
 - **Q24.** Do `0x82` offsets 11..21 light VU ch1 segments from the bottom up? (yes/no)
-  Which offset is the lowest segment? (offset)
+  Which offset is the lowest segment? (offset) Answered, M11a-M11c: no, no
+  segment lit (M11a named FX buttons only; M11b and M11c: none).
 - **Q25.** Do offsets 0..10, 22..32 and 33..43 light the ch3, ch2 and ch4 meters?
-  (yes/no each)
+  (yes/no each) Answered, M12, M13, M14: no for each, none lit.
 - **Q26.** With the agent stopped, does the device still drive the VU meters itself?
-  (yes/no)
+  (yes/no) Open: the "move with audio" part was not answered.
 - **Q27.** Which LED, if any, does any of offsets 54..71 control, including 62 and 63
-  for MIC? (name or none)
+  for MIC? (name or none) Answered for the two ranges, M15a and M15b: none.
+  The optional single-byte steps were not run.
 - **Q28.** Does `F3 01 00` light all mixer LEDs as a group on this unit? (yes/no)
+  Open: not sent.
 - **Q29.** Does that group light persist after a `0x82` all-zero write? (yes/no)
+  Open: not sent.
 - **Q30.** Does `F4 26 01` light CUE A, and `F4 26 0F` all four? (yes/no each)
+  Open: not sent.
 - **Q31.** Does `F4 25 01` light FILTER A, and `F4 25 0F` all four? (yes/no each)
-- **Q32.** Are `0xF4` LED states retained after the sender exits? (yes/no)
+  Open: not sent.
+- **Q32.** Are `0xF4` LED states retained after the sender exits? (yes/no) Open:
+  not sent.
 - **Q33.** Which byte, if any, lights the mixer deck-assign A..D LEDs? (offset or none)
+  Open. No tested byte lit one (M15a, M15b); byte 72 is not settled.
+- **Q40.** After the M2 to M10b sequence, does writing the seed again (M17) return
+  all FX assign LEDs to the M2 state? (yes/no) Open: the answer names FX C-1
+  and FX D-2 as brighter and does not describe the dim ones.
+- **Q41.** Do the VU bytes light segments after a mode is set, for example by
+  `0xF3`? (yes/no) Open: no mode was set.
 
 ## Proposed Encdr descriptor corrections
 
@@ -361,17 +422,24 @@ Supported by the observed descriptor now:
    note: `0xF0` (82), `0xD0` and `0xD1` (256), `0xD8` and `0xD9` (32), `0xF2`
    (6), `0xF8` and `0xF9` (10) and input `0x03` (96 bytes).
 
+Supported by the run of 2026-11-11:
+
+1. Rename `mixer_fx_*_inactive` (`0x82` 44-53): the idle level is 0x14 dim,
+   not off (M2-M9; Q20, Q21).
+2. Confirm the SNAP physical LED (M3, Q22).
+
+Unconfirmed: this proposal rests on the VU claim, which was not reproduced:
+
+1. Add VU groups (`0x82` 0..43 per the claim). Do not add them: Q24 and Q25
+   were answered no. Segment order, clip and master are unknown.
+
 Needs the hardware test first:
 
-1. Rename `mixer_fx_*_inactive` (`0x82` 44-53): the seed suggests the idle
-   level is 0x14 dim, not off (Q20, Q21).
-2. Confirm the SNAP physical LED (Q22).
-3. Add VU groups (`0x82` 0..43 per the claim) only after Q24 and Q25. Segment
-   order, clip and master are unknown.
-4. Name `0x82` offset 72 and 54..71 only after Q23 and Q27.
-5. Add mixer deck-assign A..D LEDs once a byte is found (Q33).
-6. Name `0xF3` and document the `0xF4` THRU effect only after Q28-Q32 and a
+1. Name `0x82` offset 72 and 54..71 only after Q23 and Q27. Q27 was answered
+   none for the two ranges and Q23 is open.
+2. Add mixer deck-assign A..D LEDs once a byte is found (Q33).
+3. Name `0xF3` and document the `0xF4` THRU effect only after Q28-Q32 and a
    THRU test.
-7. Check the S5 JSON mixer `0x82` group (cue 0-3, filter 4-7) against the
+4. Check the S5 JSON mixer `0x82` group (cue 0-3, filter 4-7) against the
    S8: confirm the S8 sends cue and filter through `0xF4` only. Do not copy
    S5 offsets.

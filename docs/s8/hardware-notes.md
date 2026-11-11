@@ -100,16 +100,16 @@ bytes and `0x82` with 73. On the wire they are 119, 119 and 74 bytes,
 report ID first. Byte maps, values, feature reports and open questions are in
 [led-output.md](led-output.md).
 
-| Group                        | Location                    | Level                   |
-| ---------------------------- | --------------------------- | ----------------------- |
-| Pads, RGB                    | `0x80`/`0x81` 0–23          | Hardware-tested (Encdr) |
-| Deck single buttons          | `0x80`/`0x81` 24–67         | Hardware-tested (Encdr) |
-| Touchstrip blue, orange      | `0x80`/`0x81` 68–92, 93–117 | Hardware-tested (Encdr) |
-| Mixer FX assign, SNAP, QUANT | `0x82` 44–53                | Descriptor; conflicts   |
-| Mixer CUE/FILTER/THRU        | `0xF4` feature, 32 bytes    | Unconfirmed             |
-| Mixer bank                   | `0xF3` `[0xF3, 0x01]`       | Hardware-tested (Encdr) |
-| VU meters                    | `0x82` 0–43 (candidate)     | Unconfirmed             |
-| Deck selectors               | `0x80`/`0x81` 53, 54        | Descriptor              |
+| Group                        | Location                    | Level                              |
+| ---------------------------- | --------------------------- | ---------------------------------- |
+| Pads, RGB                    | `0x80`/`0x81` 0–23          | Pad 1 checked on this S8 (R, G, B) |
+| Deck single buttons          | `0x80`/`0x81` 24–67         | Checked on this S8, by group       |
+| Touchstrip blue, orange      | `0x80`/`0x81` 68–92, 93–117 | Checked on this S8: ends, middle   |
+| Mixer FX assign, SNAP, QUANT | `0x82` 44–53                | Checked on this S8                 |
+| Mixer CUE/FILTER/THRU        | `0xF4` feature, 32 bytes    | Unconfirmed                        |
+| Mixer bank                   | `0xF3` `[0xF3, 0x01]`       | Hardware-tested (Encdr)            |
+| VU meters                    | `0x82` 0–43 (candidate)     | Not reproduced on this S8          |
+| Deck selectors               | `0x80`/`0x81` 53, 54        | Descriptor                         |
 
 Framing is settled by the descriptor: 118/118/73 bytes per report ID. The
 309- or 310-byte buffer in several Encdr docs is the three payloads added
@@ -123,7 +123,9 @@ while Encdr documents `[0xF3, 0x01]` as an interrupt-OUT write.
 Offsets 118–121 are not report offsets. The deck buttons are at offsets 53 and
 54, and no source gives a byte for the mixer deck-assign LEDs.
 `mixer_led_results.json` and `probe_0x82.json` in `../Encdr` are empty.
-Nothing has been written to this S8 yet.
+The deck framing and byte map were written and watched on this S8 on
+2026-11-11, as were mixer FX assign, SNAP and QUANT; VU and `0xF3`/`0xF4`
+stay open ([led-output-validation.md](led-output-validation.md)).
 
 ## Screens (interface 6)
 
