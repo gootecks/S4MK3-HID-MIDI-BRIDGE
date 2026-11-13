@@ -32,7 +32,7 @@ local mdsmith_check = new CommandSpec {
     }
     effect = "read"
 }
-// mdsmith fix, then the repo-mdsmith-fixer agent on what it cannot fix.
+// mdsmith fix, then the repo-markdown-fixer agent on what it cannot fix.
 local mdsmith_fix = new CommandSpec {
     command = new Command {
         argv = List("docs/s8/mdsmith-fix.sh", ".")
