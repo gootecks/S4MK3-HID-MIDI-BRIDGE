@@ -287,8 +287,8 @@ This section is fork-only. Keep it out of upstream pull requests.
   oxfmt is the native binary from the oxc GitHub release, so no npm download
   is needed. Upstream Markdown and scripts keep upstream style.
 - What `mdsmith fix` cannot repair (missing `summary`, long lines, link text,
-  broken links) goes to the `repo-mdsmith-fixer` omp agent
-  (`~/.omp/agent/agents/repo-mdsmith-fixer.md`, Sonnet) through
+  broken links) goes to the `repo-markdown-fixer` omp agent
+  (`~/.omp/agent/agents/repo-markdown-fixer.md`, Sonnet) through
   `docs/s8/mdsmith-fix.sh`, the mdsmith step's fixer. It edits only the
   notes with findings, and its edits are staged into the commit; hk prints its
   report. Review them with `git show`. Without omp or the agent file, or with
