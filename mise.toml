@@ -190,6 +190,10 @@ arg "[rows]" var=#true help="row to start from (default L1), or: only ROW... to 
 run = 'bash docs/s8/led-feedback-check.sh ${usage_rows:-}'
 raw = true
 
+[tasks."s8:kit"]
+description = "Build the S8 kit for a second Mac in dist/: release bridge and S8Host, launcher, mapping and README (#131); sends nothing"
+run = "bash docs/s8/kit-build.sh"
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks and the mdsmith merge driver"
 run = [
