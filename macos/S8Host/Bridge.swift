@@ -8,8 +8,11 @@ final class Bridge {
     private var inputOpen: Bool
     private var stopping = false
 
-    init(path: String, screens: Bool) {
+    init(path: String, screens: Bool, leds: Bool) {
         var arguments = ["--device", "s8", "--midi", "full", "--until-stopped", "--app-events"]
+        if leds {
+            arguments.append("--s8-leds")
+        }
         if screens {
             arguments.append("--s8-screens-stdin")
         }

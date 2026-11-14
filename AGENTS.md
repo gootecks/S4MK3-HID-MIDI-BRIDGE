@@ -376,6 +376,7 @@ footer: "\n"
 - [`docs/s8/djay-sidebar-access.md`](docs/s8/djay-sidebar-access.md): Reading and switching djay Pro's sidebar tabs through Accessibility, with a probe and fixtures.
 - [`docs/s8/driverkit-evaluation.md`](docs/s8/driverkit-evaluation.md): DriverKit, USB, HID, audio and MIDI driver extensions for a more native S8 setup: verdicts, entitlement cost and driverless polish.
 - [`docs/s8/hardware-notes.md`](docs/s8/hardware-notes.md): S8 USB identity, interfaces, input and output evidence, and open questions.
+- [`docs/s8/kit.md`](docs/s8/kit.md): The S8 kit: prebuilt bridge, S8Host, launcher and mapping for a second Apple Silicon Mac without the repository; build, transfer, run and limits.
 - [`docs/s8/led-output-mixer.md`](docs/s8/led-output-mixer.md): S8 mixer LED output: report 0x82, VU meters, deck selectors, feature reports and Encdr corrections.
 - [`docs/s8/led-output-questions.md`](docs/s8/led-output-questions.md): S8 deck LED open questions Q1-18 and Q34-39 with the answers the 2026-11-11 probe run and two djay-driven LED checks gave.
 - [`docs/s8/led-output.md`](docs/s8/led-output.md): S8 LED output for decks: report framing, write API, the 0x80 and 0x81 byte map, values and state.
