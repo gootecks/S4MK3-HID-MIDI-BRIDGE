@@ -58,8 +58,9 @@ public struct LiveRoot: AXRoot {
 
     public init() {}
 
-    public static func isTrusted() -> Bool {
-        AXIsProcessTrusted()
+    public static func isTrusted(prompt: Bool = false) -> Bool {
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        return AXIsProcessTrustedWithOptions([key: prompt] as CFDictionary)
     }
 
     public static func djayIsRunning() -> Bool {

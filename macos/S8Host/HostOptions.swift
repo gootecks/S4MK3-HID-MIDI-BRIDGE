@@ -3,6 +3,8 @@ import Foundation
 struct HostOptions {
     var bridge: String?
     var screens = false
+    var leds = false
+    var check = false
     var deck: Int?
     var logDeckPolls = false
     var poll: TimeInterval = 1
@@ -10,7 +12,9 @@ struct HostOptions {
     var records: String?
 
     static let usage = """
-    usage: S8Host --bridge <path to s4mk3-hid-midi-bridge> [--screens [--deck N [--log-deck-polls]] [--poll SECONDS]]
+    usage: S8Host --bridge <path to s4mk3-hid-midi-bridge> [--leds]
+                  [--screens [--deck N [--log-deck-polls]] [--poll SECONDS]]
+           S8Host --check
            S8Host --replay <snapshot dir> --records <output dir>
     """
 
@@ -21,6 +25,10 @@ struct HostOptions {
             switch argument {
             case "--screens":
                 options.screens = true
+            case "--leds":
+                options.leds = true
+            case "--check":
+                options.check = true
             case "--log-deck-polls":
                 options.logDeckPolls = true
             default:
@@ -51,8 +59,12 @@ struct HostOptions {
     }
 
     private var isValid: Bool {
+        let live = screens || leds || deck != nil || logDeckPolls
+        if check {
+            return bridge == nil && replay == nil && records == nil && !live
+        }
         if replay != nil {
-            return records != nil && bridge == nil && !screens && deck == nil && !logDeckPolls
+            return records != nil && bridge == nil && !live
         }
         return bridge != nil && records == nil && (screens || deck == nil) && (deck != nil || !logDeckPolls)
     }

@@ -11,12 +11,13 @@ display buttons and screen encoders. With `--screens` it shows the sidebar on th
 
 ```sh
 swift run --package-path macos S8Host --bridge target/release/s4mk3-hid-midi-bridge
-swift run --package-path macos S8Host --bridge target/release/s4mk3-hid-midi-bridge --screens [--deck N [--log-deck-polls]] [--poll SECONDS]
+swift run --package-path macos S8Host --bridge target/release/s4mk3-hid-midi-bridge --screens [--leds] [--deck N [--log-deck-polls]] [--poll SECONDS]
+swift run --package-path macos S8Host --check
 swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --records /tmp/records
 ```
 
 - Starts the bridge with `--device s8 --midi full --until-stopped --app-events`, plus
-  `--s8-screens-stdin` with `--screens`.
+  `--s8-screens-stdin` with `--screens` and `--s8-leds` with `--leds`.
 - Applies the bridge's `S8_CONTROL` stdout lines through `DjaySidebar` (Accessibility).
   Every other bridge line is passed through to stdout. Bridge stderr is inherited.
 - `--screens` sends screen frames to the S8. After each control event and every `--poll`
@@ -25,11 +26,15 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
   right panel, read every 0.25 s through `DjayDecks`. `--log-deck-polls` writes one stderr
   line per deck read,
   `S8Host: deck poll gap=<s since the previous read started> read=<s the read took>`.
+- `--leds` sends deck LED reports to the S8: the bridge shows djay's state on the deck
+  buttons, pads and touchstrips (`docs/s8/mapping.md`).
 - `--replay DIR --records OUT` needs neither djay nor the S8. It runs the snapshot files of
   `DIR` in name order through the same panel code. It writes the records of each as
   `OUT/<name>.s8fr`. `DIR/decks/<name>.json` is the deck snapshot for that state.
 - Needs Accessibility access for the terminal or app that runs it and a running djay Pro.
-  It checks both at start and exits with a message if either is missing.
+  It checks both at start and exits with a message if either is missing. `--check` does
+  only that: it shows the macOS prompt for Accessibility access when it is missing, starts
+  no bridge and sends nothing. `docs/s8/kit.md` uses it before it stops `NIHardwareAgent`.
 - Stops the child on SIGINT, SIGTERM and when its own stdin closes. The session stops
   first: its timers are cancelled and no further record is written, without waiting for a
   read or write that is in progress. With `--screens` it then closes the bridge's stdin, so

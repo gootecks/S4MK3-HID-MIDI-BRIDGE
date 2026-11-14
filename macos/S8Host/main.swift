@@ -22,11 +22,7 @@ if let snapshots = options.replay, let records = options.records {
     }
 }
 
-guard let path = options.bridge else {
-    exit(2)
-}
-
-guard LiveRoot.isTrusted() else {
+guard LiveRoot.isTrusted(prompt: options.check) else {
     report(
         "Accessibility access is missing. Allow this terminal or app in "
             + "System Settings > Privacy & Security > Accessibility, then start again."
@@ -39,8 +35,12 @@ guard LiveRoot.djayIsRunning() else {
     exit(3)
 }
 
+guard let path = options.bridge else {
+    exit(options.check ? 0 : 2)
+}
+
 signal(SIGPIPE, SIG_IGN)
-let bridge = Bridge(path: path, screens: options.screens)
+let bridge = Bridge(path: path, screens: options.screens, leds: options.leds)
 
 do {
     try bridge.start()
