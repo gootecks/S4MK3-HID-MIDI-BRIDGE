@@ -12,6 +12,13 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- `mise run s8:kit` builds the S8 kit: the release bridge, `S8Host`, a
+  launcher, the checked mapping and a README in one folder and zip, for an
+  Apple Silicon Mac without the repository
+  ([kit.md](docs/s8/kit.md), #131). The launcher stops NIHardwareAgent, runs
+  MIDI, deck LEDs and both panels, and restores the agent on Ctrl-C.
+  `S8Host` gains `--leds` and `--check`. Deck LEDs and panels in one run, and
+  the kit on a second Mac: not yet on the S8.
 - `--s8-leds` (Kontrol S8 only, with `--midi full`) lets the S8 deck buttons,
   pads and touchstrips show Djay state: PLAY, CUE, SYNC, FLUX, the loop ring,
   the FX and stem buttons, hot cue pads in the cue point's colour, sampler
