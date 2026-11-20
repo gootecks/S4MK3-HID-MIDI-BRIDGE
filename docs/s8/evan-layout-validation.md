@@ -73,3 +73,17 @@ The agent stopped the bridge, so the exit LED state was not observed. The log ha
 
 Requested change: the FX 4 button turns the lit slots off when any of FX 1-3 is on, and
 turns all three on otherwise. The FX 4 dial stays dry/wet.
+
+## Third attended run, 2026-11-20
+
+The bridge at commit `6e7b453` ran with mapping Evan r4 and `--s8-leds`. The log is
+`docs/s8/captures/evan-layout-attended-20261120T142401Z/bridge.log.gz`. Only the FX 4
+button was checked, on both sides.
+
+| Row  | Check                                                           | Answer                       |
+| ---- | --------------------------------------------------------------- | ---------------------------- |
+| E11  | FX 4: none on turns all on, all on turns all off, FX 1 only off | Yes                          |
+| Exit | LEDs after SIGINT, the signal Ctrl-C sends                      | Default state, deck LEDs dim |
+
+The log has 20 `fx_4` lines and no `S8_LEDS_DISABLED` or `S8_LEDS_CLEAR_FAILED`.
+NIHardwareAgent was restored.

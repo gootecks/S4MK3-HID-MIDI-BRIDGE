@@ -8,9 +8,8 @@ issues: [65]
 
 The Evan layout follows Evan's Hotcues and Slicer Controller Editor templates and his
 `1.1 DynColor` Djay mapping. The bridge uses its own MIDI addresses and the virtual device
-`Kontrol S8 MIDI Full`, not Controller Editor's `Traktor Kontrol S8` port. An
-[earlier revision was checked on the S8](evan-layout-validation.md); the changes below
-to Shift + FREEZE, FX and stem ON 1 / 2 have not yet been checked on the S8.
+`Kontrol S8 MIDI Full`, not Controller Editor's `Traktor Kontrol S8` port. The layout as
+described here was [checked on the S8](evan-layout-validation.md) as mapping Evan r4.
 
 ## Choose the layout
 

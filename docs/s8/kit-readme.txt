@@ -54,7 +54,7 @@ IF SOMETHING IS WRONG
 KNOWN LIMITS
 
 - Both layouts use the bridge, not Controller Editor's MIDI addresses.
-- Evan is a new layout, not yet checked on the S8. Default is the checked
+- Evan was checked on the S8 as mapping Evan r4. Default is the checked
   mapping above.
 - No VU meters and no mixer LEDs yet.
 - Display buttons 1 and 4 do nothing while the kit runs.

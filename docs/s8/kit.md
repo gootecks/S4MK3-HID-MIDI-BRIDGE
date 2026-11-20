@@ -16,14 +16,14 @@ also sends LED reports. Both need the user's go-ahead on this Mac (see _Approval
 
 ## Contents
 
-| File                                     | Source                                                 |
-| ---------------------------------------- | ------------------------------------------------------ |
-| `s4mk3-hid-midi-bridge`                  | Release build of the Rust bridge.                      |
-| `S8Host`                                 | Release build of `macos/S8Host`.                       |
-| `Start S8.command`                       | `docs/s8/kit-start.sh`.                                |
-| `Kontrol S8 Bridge rN.djayMidiMapping`   | Checked default mapping.                               |
-| `Kontrol S8 Bridge Evan.djayMidiMapping` | Generated Evan mapping, not yet checked on the S8.     |
-| `README.txt`                             | `docs/s8/kit-readme.txt` with commit and names filled. |
+| File                                     | Source                                                  |
+| ---------------------------------------- | ------------------------------------------------------- |
+| `s4mk3-hid-midi-bridge`                  | Release build of the Rust bridge.                       |
+| `S8Host`                                 | Release build of `macos/S8Host`.                        |
+| `Start S8.command`                       | `docs/s8/kit-start.sh`.                                 |
+| `Kontrol S8 Bridge rN.djayMidiMapping`   | Checked default mapping.                                |
+| `Kontrol S8 Bridge Evan.djayMidiMapping` | Checked Evan mapping, the newest `Evan rN` frozen copy. |
+| `README.txt`                             | `docs/s8/kit-readme.txt` with commit and names filled.  |
 
 Both programs are signed ad hoc, not with a Developer ID, and are not notarized.
 

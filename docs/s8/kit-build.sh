@@ -43,10 +43,11 @@ cmp -s "$stage/Kontrol S8 Bridge.djayMidiMapping" "$frozen" ||
     fail "the generated mapping differs from $frozen; check it on the S8 and freeze a new revision first"
 mv "$stage/Kontrol S8 Bridge.djayMidiMapping" "$stage/$revision.djayMidiMapping"
 
-# Evan has no attended revision yet. Ship the generated mapping under its
-# own name and check its plist, without claiming hardware validation.
+# Evan ships under its own name; it must match its newest frozen revision too.
+frozen_evan="$(find docs/s8/mappings -name 'Kontrol S8 Bridge Evan r*.djayMidiMapping' | sort -V | tail -1)"
 "$stage/s4mk3-hid-midi-bridge" --device s8 --s8-layout evan --generate-mapping "$stage"
-plutil -lint "$stage/Kontrol S8 Bridge Evan.djayMidiMapping"
+cmp -s "$stage/Kontrol S8 Bridge Evan.djayMidiMapping" "$frozen_evan" ||
+    fail "the generated Evan mapping differs from $frozen_evan; check it on the S8 and freeze a new revision first"
 
 sed -e "s/@COMMIT@/$commit/" -e "s/@KIT@/$(basename "$kit")/" -e "s/@MAPPING@/$revision/" \
     docs/s8/kit-readme.txt > "$stage/README.txt"

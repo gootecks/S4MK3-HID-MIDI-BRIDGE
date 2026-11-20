@@ -30,7 +30,7 @@ if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
     fail "Quit Traktor, Maschine and Komplete Kontrol first."
 fi
 
-read -r -p "Controller layout: Return for Default, e for Evan (not yet checked on the S8): " answer
+read -r -p "Controller layout: Return for Default, e for Evan: " answer
 case "$answer" in
     "")
         layout=default
