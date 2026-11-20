@@ -71,6 +71,7 @@ footer: "\n"
 - [`docs/s8/capture-checklist.md`](docs/s8/capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
 - [`docs/s8/capture-recorder.md`](docs/s8/capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture. [#10](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/10)
 - [`docs/s8/deck-pages-attended-check.md`](docs/s8/deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8. [#85](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/85)
+- [`docs/s8/kit.md`](docs/s8/kit.md): The S8 kit: prebuilt bridge, S8Host, launcher and mapping for a second Apple Silicon Mac without the repository; build, transfer, run and limits. [#131](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/131) [#16](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/16)
 - [`docs/s8/upstream-workflow.md`](docs/s8/upstream-workflow.md): Remotes, branches, commit separation and the upstream pull-request procedure.
 
 <?/catalog?>
