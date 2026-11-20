@@ -31,8 +31,14 @@ func parseStreamTargets(_ text: String) -> [StreamTarget]? {
 struct StreamRequest {
     let targets: [StreamTarget]
     let seconds: Double?
+    let logDeckPolls: Bool
 
     init?(arguments: [String]) {
+        var arguments = arguments
+        logDeckPolls = arguments.last == "--log-deck-polls"
+        if logDeckPolls {
+            arguments.removeLast()
+        }
         guard arguments.count == 2 || arguments.count == 4, arguments[0] == "--stream",
               let targets = parseStreamTargets(arguments[1])
         else { return nil }
@@ -58,9 +64,13 @@ private func describe(_ snapshot: DeckSnapshot) -> String {
         + " playing=\(snapshot.playing) title=\(snapshot.title ?? "-")"
 }
 
-func runDeckStream(targets: [StreamTarget], seconds: Double?) -> Never {
+func runDeckStream(_ request: StreamRequest) -> Never {
     signal(SIGPIPE, SIG_IGN)
-    let monitor = DeckMonitor.live(decks: Array(Set(targets.map(\.deck))).sorted())
+    let targets = request.targets
+    let monitor = DeckMonitor.live(
+        decks: Array(Set(targets.map(\.deck))).sorted(),
+        log: request.logDeckPolls ? { logLine("S8Preview: \($0)") } : nil
+    )
     monitor.poll()
     if let failure = monitor.failure {
         logLine("DECKSTREAM refused: \(failure)")
@@ -78,7 +88,7 @@ func runDeckStream(targets: [StreamTarget], seconds: Double?) -> Never {
     var sent: [UInt8: Bitmap] = [:]
     var records = 0
     logLine(String(format: "DECKSTREAM start unix=%.3f", start.timeIntervalSince1970))
-    while seconds.map({ Date().timeIntervalSince(start) < $0 }) ?? true {
+    while request.seconds.map({ Date().timeIntervalSince(start) < $0 }) ?? true {
         for target in targets {
             let snapshot = monitor.snapshot(deck: target.deck)
             let bitmap = DeckPanelRenderer.render(snapshot)

@@ -24,8 +24,7 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
   seconds (default 1) it reads the sidebar, renders both panels with `S8Views` and writes
   the changed ones to the bridge's stdin as `S8FR` records. `--deck N` puts deck N on the
   right panel, read every 0.25 s through `DjayDecks`. `--log-deck-polls` writes one stderr
-  line per deck read,
-  `S8Host: deck poll gap=<s since the previous read started> read=<s the read took>`.
+  line per deck read. See [Deck poll log](#deck-poll-log).
 - `--leds` sends deck LED reports to the S8: the bridge shows djay's state on the deck
   buttons, pads and touchstrips (`docs/s8/mapping.md`).
 - `--replay DIR --records OUT` needs neither djay nor the S8. It runs the snapshot files of
@@ -51,6 +50,31 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
 | `Bridge.swift`      | The child process: arguments, stdin records, stop order.                  |
 | `LiveWiring.swift`  | Connects `DjaySidebar`, `DeckMonitor` and the bridge to a `PanelSession`. |
 | `Replay.swift`      | Snapshot files to record files.                                           |
+
+## Deck poll log
+
+```text
+S8Host: deck poll gap=- read=0.090 ax=0.060 library=0.025 lookup=yes state=paused deck=2
+```
+
+- `gap`: seconds since the previous poll started, or `-` for the first poll.
+- `read`: total read time, including the Accessibility pass, any lookup and deck
+  bookkeeping. In a multi-deck preview, it excludes work specific to other decks.
+- `ax`: time to read and parse the deck labels through Accessibility. When previewing two
+  decks, they share this pass.
+- `library`: time spent in the library lookup, or `-` when skipped. `lookup=yes` means the
+  lookup ran, even if it found no match; `lookup=no` means it did not run.
+- `state`: `playing` or `paused` as reported by Accessibility, `empty` if no track is
+  loaded, or `unavailable` if the deck could not be read.
+- `deck`: djay's deck number. Times are elapsed seconds to three decimal places.
+
+To log without the S8, redirect the preview stream to a file. It opens no device and
+writes the same fields to stderr with the `S8Preview:` prefix.
+
+```sh
+swift run --package-path macos S8Preview --stream right=2 --seconds 3 --log-deck-polls \
+  > /tmp/deck.s8fr
+```
 
 ## Queues
 
