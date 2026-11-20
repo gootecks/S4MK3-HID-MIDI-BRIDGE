@@ -1,0 +1,2 @@
+device: interface 5, usage page 0xff01, usage 0x0000
+sent F4 26 0F + 30 zero bytes

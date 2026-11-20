@@ -1,9 +1,9 @@
-//! Writes the deck LED reports: changed reports only, paced, cleared at exit.
+//! Writes changed deck and mixer CUE LED reports and clears them at exit.
 
 use std::time::Duration;
 
 use anyhow::{Result, ensure};
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::leds::{self, DECK_REPORT_LEN, Side, SideLeds};
 
@@ -14,11 +14,18 @@ const MIN_INTERVAL: Duration = Duration::from_millis(10);
 pub trait ReportSink {
     /// Writes one report (ID first) and returns the number of bytes accepted.
     fn write_report(&self, report: &[u8]) -> Result<usize>;
+
+    /// Sends a feature report (ID first).
+    fn write_feature(&self, report: &[u8]) -> Result<()>;
 }
 
 impl ReportSink for hidapi::HidDevice {
     fn write_report(&self, report: &[u8]) -> Result<usize> {
         Ok(self.write(report)?)
+    }
+
+    fn write_feature(&self, report: &[u8]) -> Result<()> {
+        Ok(self.send_feature_report(report)?)
     }
 }
 
@@ -26,6 +33,7 @@ pub struct LedOutput<'a, S: ReportSink> {
     sink: &'a S,
     last: [Option<[u8; DECK_REPORT_LEN]>; 2],
     sent_at: [Option<Duration>; 2],
+    last_cue_mask: Option<u8>,
     finished: bool,
 }
 
@@ -35,6 +43,7 @@ impl<'a, S: ReportSink> LedOutput<'a, S> {
             sink,
             last: [None; 2],
             sent_at: [None; 2],
+            last_cue_mask: None,
             finished: false,
         }
     }
@@ -50,9 +59,24 @@ impl<'a, S: ReportSink> LedOutput<'a, S> {
         Ok(())
     }
 
-    /// Writes each side's report if it changed and its pacing interval has
-    /// passed; returns how many reports were written.
-    pub fn tick(&mut self, leds: &[SideLeds; 2], now: Duration) -> Result<usize> {
+    fn write_cue_mask(&self, mask: u8) -> Result<()> {
+        let mut report = [0; 33];
+        report[0] = 0xf4;
+        report[1] = 0x26;
+        report[2] = mask;
+        self.sink.write_feature(&report)?;
+        info!(mask = format_args!("{mask:#04x}"), "S8_CUE_LEDS");
+        Ok(())
+    }
+
+    /// Writes changed deck reports when pacing permits and the mixer CUE
+    /// report when Djay supplies a new mask. Returns the number written.
+    pub fn tick(
+        &mut self,
+        leds: &[SideLeds; 2],
+        mixer_cue_mask: Option<u8>,
+        now: Duration,
+    ) -> Result<usize> {
         let mut written = 0;
         for side in Side::ALL {
             let index = side.index();
@@ -70,16 +94,29 @@ impl<'a, S: ReportSink> LedOutput<'a, S> {
             self.sent_at[index] = Some(now);
             written += 1;
         }
+        if let Some(mask) = mixer_cue_mask
+            && self.last_cue_mask != Some(mask)
+        {
+            self.write_cue_mask(mask)?;
+            self.last_cue_mask = Some(mask);
+            written += 1;
+        }
         Ok(written)
     }
 
-    /// Switches every LED off. Both sides are attempted; the first error is returned.
+    /// Clears both decks and, if written, the mixer CUE latch. Returns the first error.
     pub fn finish(&mut self) -> Result<()> {
         self.finished = true;
         let mut first = Ok(());
         for side in Side::ALL {
             let result = self.write(&leds::clear(side));
             self.last[side.index()] = None;
+            if first.is_ok() {
+                first = result;
+            }
+        }
+        if self.last_cue_mask.take().is_some() {
+            let result = self.write_cue_mask(0);
             if first.is_ok() {
                 first = result;
             }
@@ -109,6 +146,7 @@ mod tests {
     #[derive(Default)]
     struct Recorder {
         reports: RefCell<Vec<Vec<u8>>>,
+        features: RefCell<Vec<Vec<u8>>>,
         short_by: Cell<usize>,
     }
 
@@ -116,6 +154,11 @@ mod tests {
         fn write_report(&self, report: &[u8]) -> Result<usize> {
             self.reports.borrow_mut().push(report.to_vec());
             Ok(report.len() - self.short_by.get())
+        }
+
+        fn write_feature(&self, report: &[u8]) -> Result<()> {
+            self.features.borrow_mut().push(report.to_vec());
+            Ok(())
         }
     }
 
@@ -138,7 +181,7 @@ mod tests {
     fn the_first_tick_writes_both_sides() -> Result<()> {
         let recorder = Recorder::default();
         let mut output = LedOutput::new(&recorder);
-        assert_eq!(output.tick(&lit(), at(0))?, 2);
+        assert_eq!(output.tick(&lit(), None, at(0))?, 2);
         assert_eq!(ids(&recorder), [0x80, 0x81]);
         assert!(
             recorder
@@ -155,9 +198,9 @@ mod tests {
     fn unchanged_reports_are_not_written_again() -> Result<()> {
         let recorder = Recorder::default();
         let mut output = LedOutput::new(&recorder);
-        output.tick(&lit(), at(0))?;
-        assert_eq!(output.tick(&lit(), at(50))?, 0);
-        assert_eq!(output.tick(&lit(), at(500))?, 0);
+        output.tick(&lit(), None, at(0))?;
+        assert_eq!(output.tick(&lit(), None, at(50))?, 0);
+        assert_eq!(output.tick(&lit(), None, at(500))?, 0);
         assert_eq!(recorder.reports.borrow().len(), 2);
         output.finish()?;
         Ok(())
@@ -167,10 +210,10 @@ mod tests {
     fn only_the_changed_side_is_written() -> Result<()> {
         let recorder = Recorder::default();
         let mut output = LedOutput::new(&recorder);
-        output.tick(&lit(), at(0))?;
+        output.tick(&lit(), None, at(0))?;
         let mut next = lit();
         next[1].shift = Level::On;
-        assert_eq!(output.tick(&next, at(20))?, 1);
+        assert_eq!(output.tick(&next, None, at(20))?, 1);
         assert_eq!(ids(&recorder), [0x80, 0x81, 0x81]);
         output.finish()?;
         Ok(())
@@ -180,11 +223,11 @@ mod tests {
     fn a_changed_report_waits_for_the_pacing_interval_and_is_not_lost() -> Result<()> {
         let recorder = Recorder::default();
         let mut output = LedOutput::new(&recorder);
-        output.tick(&lit(), at(0))?;
+        output.tick(&lit(), None, at(0))?;
         let mut next = lit();
         next[0].play = Level::Off;
-        assert_eq!(output.tick(&next, at(9))?, 0);
-        assert_eq!(output.tick(&next, at(10))?, 1);
+        assert_eq!(output.tick(&next, None, at(9))?, 0);
+        assert_eq!(output.tick(&next, None, at(10))?, 1);
         assert_eq!(ids(&recorder), [0x80, 0x81, 0x80]);
         output.finish()?;
         Ok(())
@@ -194,9 +237,10 @@ mod tests {
     fn finish_writes_zeros_for_both_sides_once() -> Result<()> {
         let recorder = Recorder::default();
         let mut output = LedOutput::new(&recorder);
-        output.tick(&lit(), at(0))?;
+        output.tick(&lit(), None, at(0))?;
         output.finish()?;
         drop(output);
+        assert!(recorder.features.borrow().is_empty());
         let reports = recorder.reports.borrow();
         assert_eq!(reports.len(), 4);
         for (report, side) in reports[2..].iter().zip(Side::ALL) {
@@ -210,7 +254,7 @@ mod tests {
         let recorder = Recorder::default();
         {
             let mut output = LedOutput::new(&recorder);
-            output.tick(&lit(), at(0))?;
+            output.tick(&lit(), None, at(0))?;
         }
         let reports = recorder.reports.borrow();
         assert_eq!(reports.len(), 4);
@@ -224,12 +268,34 @@ mod tests {
         let recorder = Recorder::default();
         recorder.short_by.set(1);
         let mut output = LedOutput::new(&recorder);
-        let Err(error) = output.tick(&lit(), at(0)) else {
+        let Err(error) = output.tick(&lit(), None, at(0)) else {
             anyhow::bail!("short write was accepted");
         };
         assert!(error.to_string().contains("short LED report write"));
         recorder.short_by.set(0);
         output.finish()?;
+        Ok(())
+    }
+
+    #[test]
+    fn mixer_cue_report_is_written_only_on_first_feedback_change_and_exit() -> Result<()> {
+        let recorder = Recorder::default();
+        let mut output = LedOutput::new(&recorder);
+        assert_eq!(output.tick(&lit(), None, at(0))?, 2);
+        assert!(recorder.features.borrow().is_empty());
+        assert_eq!(output.tick(&lit(), Some(0), at(1))?, 1);
+        assert_eq!(output.tick(&lit(), Some(0), at(2))?, 0);
+        assert_eq!(output.tick(&lit(), Some(0x0d), at(3))?, 1);
+        assert_eq!(output.tick(&lit(), Some(0x0d), at(4))?, 0);
+        output.finish()?;
+        drop(output);
+        let features = recorder.features.borrow();
+        assert_eq!(features.len(), 3);
+        for (report, mask) in features.iter().zip([0, 0x0d, 0]) {
+            let mut expected = [0; 33];
+            expected[..3].copy_from_slice(&[0xf4, 0x26, mask]);
+            assert_eq!(report.as_slice(), expected);
+        }
         Ok(())
     }
 

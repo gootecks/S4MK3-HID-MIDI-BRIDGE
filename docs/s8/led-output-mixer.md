@@ -10,7 +10,7 @@ Status: FX assign, SNAP and QUANT (`0x82` 44-53) checked on this S8 on
 2026-11-11 (mixer plan M1-M17, recorded in
 [led-output-validation.md](led-output-validation.md)). The VU claim for
 `0x82` 0-43 was not reproduced, nothing was seen at 54-71, and byte 72 is
-not settled. `0xF3` and `0xF4` were not sent. Descriptor facts are Observed.
+not settled. `0xF3` and `0xF4` were not sent in that run. Descriptor facts are Observed.
 
 This note covers the mixer report `0x82`, the feature reports `0xF3` and
 `0xF4`, the never-write list, deck selectors and VU meters. Evidence levels,
@@ -191,8 +191,21 @@ Risks:
   THRU on exit. If a channel was in THRU, which is a physical mixer function
   that bypasses the signal path, Encdr's shutdown takes it out. The bridge
   must not call that path on exit unless intended.
-- Never send `0xF4` with a command byte other than `0x24`, `0x25` or `0x26`.
-  The other 29 values are undocumented.
+- The bridge never sends `0x24`, `0x25` or any other command in `0xF4` except `0x26`.
+
+The CUE command `0x26` was checked on this S8 on 2026-11-20: it sets the S8's
+own CUE latch, which the LEDs show. Plan and results are in
+[cue-led-check.md](cue-led-check.md).
+
+With `--s8-leds`, the bridge uses Djay's mixer CUE feedback (channel 5, notes 0-3)
+to set the latch on interface 5 with `send_feature_report`. The 33-byte report
+starts with `F4 26` and the four-bit mask, followed by 30 zero bytes.
+
+The bridge sends the first mask after receiving mixer CUE feedback, and then
+sends it only when it changes. Decks that have not yet reported are treated as off.
+The bridge clears the latch on stop only if it wrote the latch during that run.
+It does not use the input latch to infer Djay's state or change what button presses
+send to Djay. The bridge integration is not yet checked on the S8.
 
 ### 0xF3
 
@@ -381,11 +394,11 @@ Answered questions keep their text and carry the step id and the observation.
 - **Q29.** Does that group light persist after a `0x82` all-zero write? (yes/no)
   Open: not sent.
 - **Q30.** Does `F4 26 01` light CUE A, and `F4 26 0F` all four? (yes/no each)
-  Open: not sent.
+  Answered, C1 and C2 (2026-11-20): yes and yes.
 - **Q31.** Does `F4 25 01` light FILTER A, and `F4 25 0F` all four? (yes/no each)
   Open: not sent.
-- **Q32.** Are `0xF4` LED states retained after the sender exits? (yes/no) Open:
-  not sent.
+- **Q32.** Are `0xF4` LED states retained after the sender exits? (yes/no) Answered,
+  C1 and C2: yes. Both writes exited at once and the user saw the LEDs lit afterwards.
 - **Q33.** Which byte, if any, lights the mixer deck-assign A..D LEDs? (offset or none)
   Open. No tested byte lit one (M15a, M15b); byte 72 is not settled.
 - **Q40.** After the M2 to M10b sequence, does writing the seed again (M17) return

@@ -4,6 +4,7 @@
 //! write, and only `0x80` and `0x81` output reports, plus `0x82` with
 //! `--allow-mixer`. There is no feature report path.
 
+mod hid;
 mod plan;
 
 use std::path::PathBuf;
@@ -12,12 +13,9 @@ use std::time::Duration;
 
 use anyhow::{Context as _, bail};
 use clap::Parser;
-use hidapi::{HidApi, HidDevice};
-use s4mk3_hid_midi_bridge::device::S8;
+use hidapi::HidDevice;
 
 use plan::{Plan, allowed_reports, clear_wires, dump};
-
-const HID_INTERFACE: i32 = 5;
 
 #[derive(clap::Args)]
 #[group(required = true, multiple = false)]
@@ -78,43 +76,18 @@ fn main() -> anyhow::Result<()> {
             .iter()
             .map(|write| write.wire.as_slice())
             .collect();
-        send(&open()?, &wires, Duration::from_millis(args.pause_ms), true)?;
+        send(
+            &hid::open()?,
+            &wires,
+            Duration::from_millis(args.pause_ms),
+            true,
+        )?;
     } else {
         let wires = clear_wires(reports);
         let slices: Vec<&[u8]> = wires.iter().map(Vec::as_slice).collect();
-        send(&open()?, &slices, Duration::ZERO, false)?;
+        send(&hid::open()?, &slices, Duration::ZERO, false)?;
     }
     Ok(())
-}
-
-/// The S8 HID collection on interface 5, opened in shared mode like the recorder.
-fn open() -> anyhow::Result<HidDevice> {
-    let api = HidApi::new().context("initialize macOS-native HID access")?;
-    let found: Vec<_> = api
-        .device_list()
-        .filter(|info| S8.matches(info.vendor_id(), info.product_id()))
-        .collect();
-    let chosen = match found
-        .iter()
-        .find(|info| info.interface_number() == HID_INTERFACE)
-    {
-        Some(info) => info,
-        None => match found.as_slice() {
-            [only] if only.interface_number() < 0 => only,
-            _ => bail!(
-                "no S8 HID collection on interface {HID_INTERFACE} ({} S8 collections seen)",
-                found.len()
-            ),
-        },
-    };
-    println!(
-        "device: interface {}, usage page 0x{:04x}, usage 0x{:04x}",
-        chosen.interface_number(),
-        chosen.usage_page(),
-        chosen.usage()
-    );
-    api.open_path(chosen.path())
-        .context("open S8 HID collection in shared mode")
 }
 
 fn send(

@@ -1,9 +1,11 @@
-//! What Djay reports back for the four decks, decoded from the feedback
-//! addresses of `catalog::outputs`.
+//! What Djay reports back for the four decks and mixer CUE buttons,
+//! decoded from the feedback addresses of `catalog::outputs`.
 
 use std::time::Duration;
 
-use super::catalog::{FEEDBACK_CHANNEL, ROOT_OUTPUTS, RootFamily, embedded_number};
+use super::catalog::{
+    FEEDBACK_CHANNEL, MIXER_CHANNEL, ROOT_OUTPUTS, RootFamily, embedded_number, mixer_cue_bit,
+};
 use crate::full::feedback::Message;
 
 const DECK_COUNT: usize = 4;
@@ -19,6 +21,7 @@ pub struct FeedbackState {
     playing: [Option<bool>; DECK_COUNT],
     loaded: [Option<bool>; DECK_COUNT],
     progress: [Option<u8>; DECK_COUNT],
+    mixer_cue_mask: Option<u8>,
 }
 
 impl Default for FeedbackState {
@@ -28,6 +31,7 @@ impl Default for FeedbackState {
             playing: [None; DECK_COUNT],
             loaded: [None; DECK_COUNT],
             progress: [None; DECK_COUNT],
+            mixer_cue_mask: None,
         }
     }
 }
@@ -50,13 +54,27 @@ impl FeedbackState {
         if channel == FEEDBACK_CHANNEL {
             return self.apply_root(kind, message);
         }
-        if !matches!(kind, NOTE_OFF | NOTE_ON)
-            || usize::from(channel) >= DECK_COUNT
-            || !embedded_number(message.number)
-        {
+        if !matches!(kind, NOTE_OFF | NOTE_ON) {
             return false;
         }
         let value = if kind == NOTE_OFF { 0 } else { message.value };
+        if channel == MIXER_CHANNEL {
+            let Some(bit) = mixer_cue_bit(message.number) else {
+                return false;
+            };
+            let previous = self.mixer_cue_mask.unwrap_or(0);
+            let mask = Some(if value == 0 {
+                previous & !bit
+            } else {
+                previous | bit
+            });
+            let changed = self.mixer_cue_mask != mask;
+            self.mixer_cue_mask = mask;
+            return changed;
+        }
+        if usize::from(channel) >= DECK_COUNT || !embedded_number(message.number) {
+            return false;
+        }
         let deck = usize::from(channel);
         let changed = self.notes[deck][usize::from(message.number)] != Some(value);
         self.notes[deck][usize::from(message.number)] = Some(value);
@@ -65,6 +83,11 @@ impl FeedbackState {
             self.notes[deck ^ 2][usize::from(message.number)] = Some(value);
         }
         changed
+    }
+
+    /// The mask from Djay, or `None` before any mixer CUE feedback.
+    pub const fn mixer_cue_mask(&self) -> Option<u8> {
+        self.mixer_cue_mask
     }
 
     fn apply_root(&mut self, kind: u8, message: Message) -> bool {
@@ -223,12 +246,32 @@ mod tests {
     }
 
     #[test]
+    fn mixer_cue_notes_follow_djay_for_all_four_decks() {
+        let mut state = FeedbackState::default();
+        assert_eq!(state.mixer_cue_mask(), None);
+        assert!(state.apply(message(0x84, 0, 64), NOW));
+        assert_eq!(state.mixer_cue_mask(), Some(0));
+        for number in 0..4 {
+            assert!(state.apply(message(0x94, number, 127), NOW));
+            assert_eq!(state.mixer_cue_mask(), Some((2 << number) - 1));
+            assert!(!state.apply(message(0x94, number, 64), NOW));
+        }
+        assert!(state.apply(message(0x84, 1, 63), NOW));
+        assert_eq!(state.mixer_cue_mask(), Some(0x0d));
+        assert!(state.apply(message(0x94, 2, 0), NOW));
+        assert_eq!(state.mixer_cue_mask(), Some(0x09));
+        assert!(!state.apply(message(0x94, 2, 0), NOW));
+        assert_eq!(state.note(0, 0), None);
+    }
+
+    #[test]
     fn unknown_messages_are_ignored() {
         let mut state = FeedbackState::default();
         for ignored in [
             message(0x90, 9, 127),
             message(0x90, 64, 127),
-            message(0x94, 0, 127),
+            message(0x94, 4, 127),
+            message(0xb4, 0, 127),
             message(0xb0, 1, 127),
             message(0xb6, 0, 127),
             message(0xb6, 12, 127),
@@ -241,6 +284,7 @@ mod tests {
         assert!(!state.is_playing(0));
         assert_eq!(state.note(0, 9), None);
         assert_eq!(state.note(9, 0), None);
+        assert_eq!(state.mixer_cue_mask(), None);
     }
 
     #[test]

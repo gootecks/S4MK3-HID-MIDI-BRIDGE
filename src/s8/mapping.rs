@@ -447,6 +447,27 @@ mod tests {
     }
 
     #[test]
+    fn mixer_cues_report_monitor_state_on_mixer_notes_zero_to_three() -> Result<()> {
+        let root = reparsed()?;
+        let map = by_address(&controls_of(&root)?)?;
+        for number in 0..4 {
+            let key_path = format!("mixer.monitorActive{}", number + 1);
+            let rows = map.get(&(4, 1, number)).context("mixer CUE address")?;
+            let control = rows
+                .iter()
+                .find(|control| key_path_of(control) == Some(key_path.as_str()))
+                .with_context(|| format!("{key_path} generated"))?;
+            let output = control
+                .get("output")
+                .and_then(Value::as_dictionary)
+                .with_context(|| format!("{key_path} has an output"))?;
+            assert_eq!(uint(output, "midiMinValue")?, 0);
+            assert_eq!(uint(output, "midiMaxValue")?, 127);
+        }
+        Ok(())
+    }
+
+    #[test]
     fn embedded_outputs_sit_on_exactly_the_evidenced_base_rows() -> Result<()> {
         let root = reparsed()?;
         let controls = controls_of(&root)?;
@@ -472,7 +493,7 @@ mod tests {
                     assert_eq!(uint(output, "midiMinValue")?, 0);
                     assert_eq!(uint(output, "midiMaxValue")?, 127);
                 }
-                assert!(channel < 4 && entry.binding.kind == Kind::Note);
+                assert!(channel <= catalog::MIXER_CHANNEL && entry.binding.kind == Kind::Note);
             } else {
                 assert!(output.is_none(), "{key_path} has no evidenced output");
             }
