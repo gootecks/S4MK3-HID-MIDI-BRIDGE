@@ -25,8 +25,8 @@ The S8 gets its own bundle; the S4 MK3 app stays as upstream builds it
 - The S8 app is fork-owned: `macos/S8App/`, `macos/S8AppTests/` and
   `docs/s8/app-build.sh`. It reuses `S8Host` and the same Rust bridge binary.
 - Names: bundle `Kontrol S8 Bridge.app`, bundle ID `com.gootecks.kontrol-s8-bridge`,
-  executable `S8App`. The version follows the bridge (`0.2.1`); the build number is the
-  commit count and `S8BridgeCommit` names the commit.
+  executable `S8App`. The app has its own version, `0.1.0` in `macos/S8App/Info.plist`.
+  The build number is the commit count and `S8BridgeCommit` names the commit.
 
 So the S4 parts of [#17](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/17)
 (profile switch and hidden S4 settings in the S4 app) are not needed: each app runs one
