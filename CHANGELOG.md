@@ -12,6 +12,12 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- The S8 deck-data and panel-views checks accept row subsets and offer a
+  hardware-free `plan` mode. Answers record UTC time, stream elapsed time,
+  djay's layout, and whether its window is on the visible Space. Two-row
+  recovery check: not yet on the S8
+  ([#108](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/108)).
+
 - An opt-in Kontrol S8 layout follows Evan's controls. Select `--s8-layout evan` when
   generating the mapping or running the bridge, or choose Evan in the kit. The default
   mapping is unchanged. After the S8 runs, Shift + FREEZE toggles Hotcues and Slicer, FX
