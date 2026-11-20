@@ -368,6 +368,7 @@ row: "- [`{filename}`]({filename}): {summary}"
 footer: "\n"
 ?>
 
+- [`docs/s8/app.md`](docs/s8/app.md): Kontrol S8 Bridge.app, the S8 menu-bar app: packaging decision, build, signing, transfer, first start and limits.
 - [`docs/s8/capture-checklist.md`](docs/s8/capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture.
 - [`docs/s8/capture-recorder.md`](docs/s8/capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture.
 - [`docs/s8/cue-led-check.md`](docs/s8/cue-led-check.md): Attended probe of the S8 mixer CUE LEDs through feature report 0xF4 0x26: plan C0-C5, recovery and the 2026-11-20 run.
@@ -390,6 +391,7 @@ footer: "\n"
 - [`docs/s8/screen-transport.md`](docs/s8/screen-transport.md): The app-to-bridge channel for screen frames and status: record layout, status lines and worker policy.
 - [`docs/s8/screens.md`](docs/s8/screens.md): Display protocol summary, source conflicts, macOS ownership and the phased first-frame test plan.
 - [`docs/s8/upstream-workflow.md`](docs/s8/upstream-workflow.md): Remotes, branches, commit separation and the upstream pull-request procedure.
+- [`docs/s8/user-guide.md`](docs/s8/user-guide.md): Playing a set with the Kontrol S8 and djay Pro through Kontrol S8 Bridge.app: setup, controls, screens, LEDs and limits, without MIDI knowledge.
 
 <?/catalog?>
 

@@ -60,10 +60,11 @@ The checked mapping is kept in [mappings/](mappings/README.md).
 
 Open Controller Editor before `mise run s8:midi`. Started without it, the S8
 was once dark and unusable
-([translator-validation.md](translator-validation.md#s8-dark-at-start)). The
-menu-bar app does not run the S8 (#16). A Mac without the repository runs it
-from the kit that `mise run s8:kit` builds ([kit.md](kit.md), #131). A working
-Controller Editor setup exists ([below](#existing-s8-setup-with-djay)).
+([translator-validation.md](translator-validation.md#s8-dark-at-start)). A Mac
+without the repository runs the S8 from `Kontrol S8 Bridge.app`, which
+`mise run s8:app` builds ([app.md](app.md), #16), or from the kit that
+`mise run s8:kit` builds ([kit.md](kit.md), #131). A working Controller Editor
+setup exists ([below](#existing-s8-setup-with-djay)).
 
 ### S8 screens
 
