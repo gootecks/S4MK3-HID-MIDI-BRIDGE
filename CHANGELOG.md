@@ -14,9 +14,10 @@ their detailed notes stay in `docs/release-*.md`.
 
 - An opt-in Kontrol S8 layout follows Evan's controls. Select `--s8-layout evan` when
   generating the mapping or running the bridge, or choose Evan in the kit. The default
-  mapping is unchanged. After the first S8 run, Shift + FREEZE toggles Hotcues and Slicer,
-  FX buttons and dials 1-3 work on single slots with 4 for Master FX and dry/wet, and stem
-  ON 1 / 2 change key. These changes are not yet on the S8
+  mapping is unchanged. After the S8 runs, Shift + FREEZE toggles Hotcues and Slicer, FX
+  buttons and dials 1-3 work on single slots, the FX 4 dial sets dry/wet, and stem ON 1 / 2
+  change key (checked on the S8 on 2026-11-20). The FX 4 button now turns the lit FX slots
+  off, or all three on when none is lit; this is not yet on the S8
   ([mapping-evan.md](docs/s8/mapping-evan.md),
   [evan-layout-validation.md](docs/s8/evan-layout-validation.md),
   [#65](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/65)).
