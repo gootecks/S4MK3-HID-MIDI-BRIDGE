@@ -370,6 +370,7 @@ footer: "\n"
 
 - [`docs/s8/capture-checklist.md`](docs/s8/capture-checklist.md): Recorder usage and the ordered control-by-control checklist for the agent-stopped input capture.
 - [`docs/s8/capture-recorder.md`](docs/s8/capture-recorder.md): Usage and verification status of the read-only S8 input recorder used for the agent-stopped capture.
+- [`docs/s8/cue-led-check.md`](docs/s8/cue-led-check.md): Attended probe of the S8 mixer CUE LEDs through feature report 0xF4 0x26: plan C0-C5, recovery and the 2026-11-20 run.
 - [`docs/s8/deck-pages-attended-check.md`](docs/s8/deck-pages-attended-check.md): Preview and stream commands for deck pages, and the plan for the attended check on the S8.
 - [`docs/s8/deck-pages.md`](docs/s8/deck-pages.md): Deck page data from Accessibility and the analysis cache, snapshot fields, limits, preview commands and live validation.
 - [`docs/s8/display-buttons.md`](docs/s8/display-buttons.md): Display buttons and screen encoders switching djay's sidebar tabs and moving the selection (S8Host).

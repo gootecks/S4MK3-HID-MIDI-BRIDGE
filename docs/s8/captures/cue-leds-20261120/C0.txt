@@ -1,0 +1,4 @@
+device: interface 5, usage page 0xff01, usage 0x0000
+sent F4 26 00 + 30 zero bytes
+Reading the CUE latch for 10 seconds (A=1, B=2, C=4, D=8)
+Error: no S8 button report with a CUE latch received
