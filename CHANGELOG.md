@@ -12,10 +12,10 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
-- S8 mixer CUE LEDs follow djay's headphone cue state with `--s8-leds` and a
-  newly generated mapping: the bridge sets the S8's CUE latch through feature
-  report `0xF4 0x26` ([cue-led-check.md](docs/s8/cue-led-check.md), #134). Not
-  yet on the S8.
+- S8 mixer CUE LEDs follow djay's headphone cue state with `--s8-leds` and
+  mapping r9: the bridge sets the S8's CUE latch through feature report
+  `0xF4 0x26` ([cue-led-check.md](docs/s8/cue-led-check.md), #134). Checked on
+  the S8 on 2026-11-20.
 
 - `mise run s8:kit` builds the S8 kit: the release bridge, `S8Host`, a
   launcher, the checked mapping and a README in one folder and zip, for an
