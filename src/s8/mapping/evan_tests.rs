@@ -26,12 +26,12 @@ fn layouts_keep_distinct_mapping_names_and_the_same_bridge_endpoint() -> Result<
 }
 
 #[test]
-fn default_mapping_is_byte_identical_to_the_frozen_r8() -> Result<()> {
+fn default_mapping_is_byte_identical_to_the_frozen_r9() -> Result<()> {
     let mut actual = Vec::new();
     generate(Layout::Default)?.to_writer_xml(&mut actual)?;
     assert_eq!(
         actual.as_slice(),
-        include_bytes!("../../../docs/s8/mappings/Kontrol S8 Bridge r8 2026-11-11.djayMidiMapping")
+        include_bytes!("../../../docs/s8/mappings/Kontrol S8 Bridge r9 2026-11-20.djayMidiMapping")
     );
     Ok(())
 }
