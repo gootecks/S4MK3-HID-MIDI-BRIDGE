@@ -12,6 +12,10 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- `--log-deck-polls` separates Accessibility and library lookup time, shows when a lookup
+  ran, and reports the deck's play state
+  ([#96](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/96)).
+
 - An opt-in Kontrol S8 layout follows Evan's controls. Select `--s8-layout evan` when
   generating the mapping or running the bridge, or choose Evan in the kit. The default
   mapping is unchanged. After the S8 runs, Shift + FREEZE toggles Hotcues and Slicer, FX
