@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use anyhow::{Result, ensure};
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::leds::{self, DECK_REPORT_LEN, Side, SideLeds};
 
@@ -64,7 +64,9 @@ impl<'a, S: ReportSink> LedOutput<'a, S> {
         report[0] = 0xf4;
         report[1] = 0x26;
         report[2] = mask;
-        self.sink.write_feature(&report)
+        self.sink.write_feature(&report)?;
+        info!(mask = format_args!("{mask:#04x}"), "S8_CUE_LEDS");
+        Ok(())
     }
 
     /// Writes changed deck reports when pacing permits and the mixer CUE
