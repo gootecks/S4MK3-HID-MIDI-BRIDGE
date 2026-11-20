@@ -17,6 +17,11 @@
 bundle="/Library/Application Support/Native Instruments/Hardware/NIHardwareAgent.app"
 exe="$bundle/Contents/MacOS/NIHardwareAgent"
 answer=""
+screen_mode=run
+screen_only=""
+screen_stream=""
+screen_started=""
+screen_context=""
 # shellcheck disable=SC2034 # the runners that source this file use the styles
 {
     bold="" dim="" red="" green="" yellow="" cyan="" reset=""
@@ -24,6 +29,88 @@ answer=""
         bold=$'\033[1m' dim=$'\033[2m' reset=$'\033[0m'
         red=$'\033[1;31m' green=$'\033[1;32m' yellow=$'\033[1;33m' cyan=$'\033[1;36m'
     fi
+}
+
+# Use the LED runner's space-delimited membership check for row identifiers.
+has_row() {
+    case " $1 " in
+        *" $2 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+require_row() {
+    case "$2" in
+        '' | *[!A-Za-z0-9]*) ;;
+        *) has_row "$1" "$2" && return 0 ;;
+    esac
+    printf 'Unknown row %q. Selectable rows: %s\n' "$2" "$1" >&2
+    exit 1
+}
+
+# screen_selection LIVE_ROWS [plan] [only] [ROW...]
+screen_selection() {
+    local live="$1" row_id
+    shift
+    if [ "${1:-}" = plan ]; then
+        screen_mode=plan
+        shift
+    fi
+    if [ "${1:-}" = only ]; then
+        shift
+        [ "$#" -gt 0 ] || {
+            echo "Specify at least one row after 'only'." >&2
+            exit 1
+        }
+    fi
+    for row_id in "$@"; do
+        require_row "$live" "$row_id"
+    done
+    screen_only="$*"
+}
+
+screen_selected() { [ -z "$screen_only" ] || has_row "$screen_only" "$1"; }
+
+# Return true when this part has live rows. In plan mode print those rows
+# and the mandatory stop row, using the same selection as the live runner.
+screen_part() {
+    local name="$1" rows="$2" stop="$3" row_id selected=""
+    for row_id in $rows; do
+        if screen_selected "$row_id"; then
+            selected="${selected:+$selected }$row_id"
+        fi
+    done
+    [ -n "$selected" ] || return 1
+    if [ "$screen_mode" = plan ]; then
+        printf '%s: rows %s; stop row %s\n' "$name" "$selected" "$stop"
+    fi
+}
+
+screen_build_context() {
+    mkdir -p macos/.build
+    screen_context="macos/.build/attended-djay-context"
+    swiftc docs/s8/attended-djay-context.swift -o "$screen_context"
+}
+
+screen_clock() { perl -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC -e 'printf "%.3f", clock_gettime(CLOCK_MONOTONIC)'; }
+
+screen_stream_start() {
+    screen_started="$(screen_clock)"
+    screen_stream="$1"
+}
+
+screen_stream_stop() { screen_stream=""; }
+
+screen_answer_context() {
+    local utc elapsed=n/a context
+    utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    if [ -n "$screen_stream" ]; then
+        elapsed="$(awk -v now="$(screen_clock)" -v start="$screen_started" 'BEGIN { printf "%.3f", now - start }')"
+    fi
+    # Keep any partial result, even if the Accessibility window was unavailable.
+    context="$("$screen_context" 2> /dev/null)" || true
+    context="${context:-layout=\"unknown\" visible_space=unknown}"
+    printf '  utc=%s stream=%s elapsed_s=%s %s\n' "${utc}" "${screen_stream:-none}" "$elapsed" "$context" >> "$run/notes.txt"
 }
 
 now_ms() { echo $(($(date +%s) * 1000)); }
@@ -36,6 +123,9 @@ ask() {
     printf '\n%s%s%s\n' "$bold" "$1" "$reset"
     read -r -p "$green> $reset" answer
     printf '%s: %s\n' "$1" "$answer" >> "$run/notes.txt"
+    if [ -n "$screen_context" ]; then
+        screen_answer_context
+    fi
 }
 agent_pid() { pgrep -f "$exe" || true; }
 snap() {
@@ -142,6 +232,21 @@ row() {
     [ "$answer" != stop ]
 }
 
+screen_row() {
+    screen_selected "${1%%.*}" || return 0
+    row "$1"
+}
+
+# Always record the stop answer for a started part; a prior stop request
+# still skips all later parts.
+screen_stop_row() {
+    local prior="$answer"
+    ask "$1"
+    if [ "$prior" = stop ]; then
+        answer=stop
+    fi
+}
+
 start_host() {
     local name="$1"
     shift
@@ -152,6 +257,9 @@ start_host() {
     "$host" --bridge "$bridge" --screens "$@" < "$fifo" \
         > >(perl -MTime::HiRes=time -ne 'BEGIN { $| = 1 } printf "%.3f %s", time, $_' > "$log") 2>&1 &
     host_pid=$!
+    if [ -n "$screen_context" ]; then
+        screen_stream_start "$name"
+    fi
     exec 9> "$fifo"
     mark "$name-started"
     for _ in $(seq 1 20); do
@@ -184,6 +292,7 @@ stop_host() {
         kill -TERM "$host_pid"
     fi
     wait "$host_pid" || status=$?
+    screen_stream_stop
     host_pid=""
     exec 9>&- || true
     rm -f "$fifo"

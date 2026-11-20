@@ -27,20 +27,15 @@ only=""
 if [ "${1:-}" = only ]; then
     shift
     [ "$#" -ge 1 ] || usage
-    only=" $* "
+    for row in "$@"; do
+        require_row "$live_rows" "$row"
+    done
+    only="$*"
 else
     [ "$#" -le 1 ] || usage
     from="${1:-}"
+    require_row "$live_rows" "${from:-L1}"
 fi
-for row in ${only:-${from:-L1}}; do
-    case " $live_rows " in
-        *" $row "*) ;;
-        *)
-            echo "Unknown row $row. Rows: $live_rows"
-            exit 1
-            ;;
-    esac
-done
 
 bridge="target/debug/s4mk3-hid-midi-bridge"
 mappings="$HOME/Music/djay/MIDI Mappings"
@@ -191,10 +186,7 @@ show_row() {
 step() {
     [ -z "$stopped" ] || return 0
     if [ -n "$only" ]; then
-        case "$only" in
-            *" $1 "*) ;;
-            *) return 0 ;;
-        esac
+        has_row "$only" "$1" || return 0
     elif [ -n "$skip" ]; then
         [ "$1" = "$from" ] || return 0
         skip=""
