@@ -189,20 +189,32 @@ to the S8.
 djay Pro and Controller Editor open, a track loaded on deck 1, and the
 sidebar on Library with no sidebar row selected.
 
+For a short run, pass row numbers: `mise run s8:panel-views 13 14`, or use
+`mise run s8:panel-views only 13 14` as in the LED runner. With no numbers,
+the runner asks all rows. It asks selected rows in plan order, runs only
+their parts, and always asks each started part's stop row and recovery rows
+23–25. Use `mise run s8:panel-views plan 13 14` to print the planned parts
+and rows without accessing djay, the S8 or NIHardwareAgent.
+
 What is sent: full-panel literal frames (261,148 bytes) to interface 6. At
 most 30 per second per panel go out, through the transport checked on the
 S8 in #44 ([screen-transport-validation.md](screen-transport-validation.md)).
 The black exit frames are sent too. Nothing else is written: no LED
 reports, no feature reports, no control transfers, nothing on interface 4.
 
-The runner stops the agent with SIGKILL, runs S8Host twice, asks one
-question per row and relaunches the agent on every exit path. Answering
-`stop` to any row goes straight to recovery. Stop on any of these: a panel
-that stays frozen or garbled, an S8 that goes dark, controls that stop
+The runner stops the agent with SIGKILL, runs S8Host for each selected part,
+asks one question per row and relaunches the agent on every exit path. Type
+`stop` to end the current part, record its stop row and skip to recovery.
+Stop if a panel stays frozen or garbled, the S8 goes dark, or controls stop
 reaching djay.
 
-The second run uses `--log-deck-polls`. After each of rows 18 to 21 the
-runner notes these figures for the deck reads since the previous row:
+`notes.txt` records each answer's UTC time, stream name, seconds since that
+part started, djay's layout and whether its window is on the visible Space.
+It samples layout and window state after Enter. An unavailable reading is
+`unknown`; when no stream is running, elapsed time is `n/a`.
+
+The deck part uses `--log-deck-polls`. After each selected row from 18 to 21
+the runner notes these figures for the deck reads since the previous row:
 
 - how many reads
 - the longest gap between two reads

@@ -13,6 +13,18 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 # shellcheck source=docs/s8/screen-lib.sh
 source docs/s8/screen-lib.sh
 
+rows_a="1 2 3 4 5 6 7 8 9 10 11 12 13 14"
+rows_b="16 17 18 19"
+rows_c="21 22"
+screen_selection "$rows_a $rows_b $rows_c" "$@"
+if [ "$screen_mode" = plan ]; then
+    screen_part "A (decks-1-2)" "$rows_a" 15 || true
+    screen_part "B (decks-3-4)" "$rows_b" 20 || true
+    screen_part "C (host-deck-2)" "$rows_c" 23 || true
+    echo "Recovery: rows 24 25 26"
+    exit 0
+fi
+
 bridge="target/release/s4mk3-hid-midi-bridge"
 stream="macos/.build/release/S8Preview"
 host=""
@@ -58,6 +70,7 @@ start_stream() {
     bridge_pid=$!
     "$stream" --stream "$targets" > "$pipe" 2> >(stamp > "$log") &
     stream_pid=$!
+    screen_stream_start "$name"
     mark "$name-started"
     for _ in $(seq 1 20); do
         grep -Eq 'S8_SCREEN_STATUS (active|failed)' "$run/$name.bridge.log" 2> /dev/null && break
@@ -87,6 +100,7 @@ stop_stream() {
         kill -INT "$bridge_pid"
     fi
     wait "$bridge_pid" || status=$?
+    screen_stream_stop
     bridge_pid=""
     rm -f "$pipe"
     pipe=""
@@ -119,6 +133,7 @@ sent() {
 
 # srow NUMBER QUESTION: a row asked while a stream runs.
 srow() {
+    screen_selected "$1" || return 0
     row "$1. $2" || return 1
     sent "$1"
     if ! kill -0 "$bridge_pid" 2> /dev/null; then
@@ -137,13 +152,20 @@ pgrep -f 'Controller Editor.app/Contents/MacOS/Controller Editor' > /dev/null ||
     echo "Warning: Controller Editor is not running. Started like this, the S8 was once dark and unusable; see docs/s8/translator-validation.md."
 
 cargo build --locked --release --quiet --bin s4mk3-hid-midi-bridge
-swift build --package-path macos -c release --product S8Preview
-swift build --package-path macos --product S8Host
-host="$(swift build --package-path macos --show-bin-path)/S8Host"
+screen_build_context
+if screen_part A "$rows_a" 15 || screen_part B "$rows_b" 20; then
+    swift build --package-path macos -c release --product S8Preview
+fi
+if screen_part C "$rows_c" 23; then
+    swift build --package-path macos --product S8Host
+    host="$(swift build --package-path macos --show-bin-path)/S8Host"
+fi
 
 screen_init deck-data
 # Refuse before anything is stopped or sent when djay cannot be read.
-if ! "$stream" --stream left=1 --seconds 1 > /dev/null 2> "$run/precheck.txt"; then
+if ! "$screen_context" > "$run/precheck.txt" 2>&1 ||
+    { { screen_part A "$rows_a" 15 || screen_part B "$rows_b" 20; } &&
+        ! "$stream" --stream left=1 --seconds 1 > /dev/null 2>> "$run/precheck.txt"; }; then
     cat "$run/precheck.txt"
     echo "Open djay and give this terminal Accessibility permission, then run again."
     exit 1
@@ -155,7 +177,9 @@ snap pre
 note "Deck data (#45). Stream: $stream, host: $host, bridge: $bridge."
 note "Start, stop and load decks in djay's window."
 ask "Before the stop: what do the two S8 panels show?"
+[ "$answer" != stop ] || exit 0
 ask "In djay: Two Decks layout, a track with cue points loaded and paused on decks 1 and 2, sidebar open on Library. Done?"
+[ "$answer" != stop ] || exit 0
 
 mark stop
 kill -9 "$pid"
@@ -170,7 +194,7 @@ part_a() {
     srow 5 "Deck 1 paused: move it to another position (click in djay's overview waveform, or jump to a cue point). Do the time and the playhead on the left panel follow within about 1 s? y/n, or describe" || return 0
     srow 6 "Play deck 1 and jump again while it plays. Does the left panel follow the jump and go on moving with djay's time? Then pause deck 1. y/n, or describe" || return 0
     srow 7 "Move deck 2's tempo to about +8 %. Does BPM on the right panel change to the BPM djay shows? y/n, or describe" || return 0
-    srow 8 "Play deck 2 for about 20 s at that tempo. Does REMAINING on the right panel stay the same as djay's? Then pause deck 2 and reset its tempo. y/n, or describe" || return 0
+    srow 8 "Set deck 2's tempo to about +8 % if needed. Play deck 2 for about 20 s. Does REMAINING on the right panel stay the same as djay's? Then pause deck 2 and reset its tempo. y/n, or describe" || return 0
     srow 9 "Play deck 1, set a 4-beat loop for about 10 s, release it, pause. What did the left panel's time and playhead do during the loop? (looping is not modelled) Describe, or 'skip'." || return 0
     srow 10 "Load another track on deck 1. Does the left panel change to its title, artist, BPM, key, waveform and cue flags, with the playhead at the start? How long did it take? Describe." || return 0
     srow 11 "Optional: set a new cue point on deck 2 without reloading the track. Does a new flag appear on the right panel within about 10 s? y/n and how long, or 'skip'" || return 0
@@ -182,35 +206,37 @@ part_a() {
 part_b() {
     srow 16 "djay in Two Decks: do the panels say 'Deck 3 is not shown in djay' and 'Deck 4 is not shown in djay' (as 02-decks-3-4-two-deck-layout)? y/n, or describe" || return 0
     srow 17 "Switch djay to Four Decks and load a track on decks 3 and 4 if they are empty. Do the panels fill with decks 3 and 4, with title, artist, BPM, key and remaining time as in djay? How long after the switch? Describe." || return 0
-    srow 18 "Play deck 1 and deck 3 together for about 10 s, then pause both. Did the left panel move with deck 3's time, and did the right panel (deck 4) stand still? y/n, or describe" || return 0
-    srow 19 "Switch djay back to Two Decks. Do the panels return to 'Deck 3 is not shown in djay' and 'Deck 4 is not shown in djay'? y/n, or describe" || return 0
+    srow 18 "If needed, switch to Four Decks and load tracks on decks 3 and 4. Play deck 1 and deck 3 together for about 10 s, then pause both. Did the left panel move with deck 3's time, and did the right panel (deck 4) stand still? y/n, or describe" || return 0
+    srow 19 "If needed, switch to Four Decks and wait for decks 3 and 4 to appear on the panels. Switch djay back to Two Decks. Do the panels return to 'Deck 3 is not shown in djay' and 'Deck 4 is not shown in djay'? y/n, or describe" || return 0
 }
 
 part_c() {
-    row "21. Right panel: the deck 2 page. Left panel: the library list (layout as 10-deck)? y/n, or describe" || return 0
-    row "22. Play deck 2. PLAYING with a moving time and playhead on the right panel? Turn a left screen encoder through some rows: does the left panel follow while the deck page keeps moving? Then pause deck 2. y/n, or describe" || return 0
+    screen_row "21. Right panel: the deck 2 page. Left panel: the library list (layout as 10-deck)? y/n, or describe" || return 0
+    screen_row "22. Play deck 2. PLAYING with a moving time and playhead on the right panel? Turn a left screen encoder through some rows: does the left panel follow while the deck page keeps moving? Then pause deck 2. y/n, or describe" || return 0
 }
 
-start_stream decks-1-2 left=1,right=2
-note "Part A: decks 1 and 2 are on the panels."
-part_a
-stop_stream decks-1-2
-[ "$answer" = stop ] || ask "15. After the stream ended, agent still stopped: what do the panels show? (expected: both black)"
+if screen_part A "$rows_a" 15; then
+    start_stream decks-1-2 left=1,right=2
+    note "Part A: decks 1 and 2 are on the panels."
+    part_a
+    stop_stream decks-1-2
+    screen_stop_row "15. After the stream ended, agent still stopped: what do the panels show? (expected: both black)"
+fi
 
-if [ "$answer" != stop ]; then
+if [ "$answer" != stop ] && screen_part B "$rows_b" 20; then
     start_stream decks-3-4 left=3,right=4
     note "Part B: decks 3 and 4 are on the panels."
     part_b
     stop_stream decks-3-4
-    [ "$answer" = stop ] || ask "20. After the stream ended: what do the panels show? (expected: both black)"
+    screen_stop_row "20. After the stream ended: what do the panels show? (expected: both black)"
 fi
 
-if [ "$answer" != stop ]; then
+if [ "$answer" != stop ] && screen_part C "$rows_c" 23; then
     start_host host-deck-2 --deck 2 --log-deck-polls
     note "Part C: S8Host with the deck 2 page."
     part_c
     stop_host host-deck-2 eof
-    [ "$answer" = stop ] || ask "23. After S8Host's stdin closed: what do the panels show? (expected: both black)"
+    screen_stop_row "23. After S8Host's stdin closed: what do the panels show? (expected: both black)"
 fi
 
 mark recover

@@ -59,18 +59,20 @@ Not looked at on the S8 before, and the subject of this check:
 
 ## Attended check
 
-This section is the plan. Run once, on 2026-11-10, with the rows as they
-stood then; rows 11 to 13, 16 and 19 have changed since (see _After the
-run_). Every run needs explicit approval because it stops NIHardwareAgent
-and sends screen frames to the S8.
+Rows 11–13, 16 and 19 changed after the run on 2026-11-10 (see _After the
+run_). Get explicit approval before stopping NIHardwareAgent or sending frames.
 
-`mise run s8:deck-data` (`deck-data-check.sh`) runs at the S8. These need to
-be in place:
+Before running `mise run s8:deck-data`:
 
 - djay Pro and Controller Editor open.
 - djay in its Two Decks layout.
 - A track with cue points loaded and paused on decks 1 and 2.
 - The sidebar on Library.
+
+Use `mise run s8:deck-data 11 13` for a subset, or add `plan` before the
+numbers to print what would run without touching hardware. Each started
+part's stop row and recovery rows 24–26 still run. See the
+[panel check](panel-views.md#attended-check) for the shared syntax and notes.
 
 What is sent: full-panel frames to interface 6, at most 30 per second per
 panel, through the bridge's `--s8-screens-stdin` transport checked on the
@@ -79,13 +81,10 @@ and the black exit frames. Nothing else is written: no LED reports, no
 feature reports, no control transfers, nothing on interface 4. djay is only
 read, through Accessibility and a copy of its library.
 
-The runner reads djay once before it stops anything and refuses when that
-fails. It then stops the agent with SIGKILL, runs three parts, asks one
-question per row and relaunches the agent on every exit path. Unlike
-`s8:deck-page` the stream is not timed: each part runs until its rows are
-answered. Answering `stop` to any row goes straight to recovery. Stop on any
-of these: a panel that stays frozen or garbled, an S8 that goes dark, a
-status line `failed`.
+Before stopping the agent, the runner checks it can read djay. Selected
+parts stream until their rows are answered. Type `stop` to end the current
+part, record its stop row and skip to recovery if a panel stays frozen or
+garbled, the S8 goes dark, or the status line says `failed`.
 
 | Part | Command                                                                                                            | Panels                          |
 | ---- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
