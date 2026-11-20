@@ -111,7 +111,9 @@ repository and are in regular use for sets.
   (`Kontrol S8 MIDI Full`) and mapping file name
   (`Kontrol S8 Bridge.djayMidiMapping`) differ from it; a unit test enforces
   this.
-- That mapping is the reference for a second S8 layout (#65); the generated
+- The bridge's Evan layout follows that mapping, with its own addresses
+  ([mapping-evan.md](mapping-evan.md),
+  [#65](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/65)). The generated
   default layout follows the stock S8 functions instead ([mapping.md](mapping.md)).
 
 ## Upstream projects
