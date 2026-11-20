@@ -57,7 +57,7 @@ func visibleSpace(pid: pid_t, window: AXUIElement?) -> String {
     return match[kCGWindowIsOnscreen as String] as? Bool == true ? "yes" : "no"
 }
 
-// Query after an answer without activating djay or moving its window.
+/// Probe after an answer without activating djay or moving its window.
 let djayBundleIDs: Set = ["com.algoriddim.djay-iphone-free", "com.algoriddim.djay-iphone-pro"]
 guard let djay = NSWorkspace.shared.runningApplications.first(where: {
     $0.bundleIdentifier.map(djayBundleIDs.contains) == true
