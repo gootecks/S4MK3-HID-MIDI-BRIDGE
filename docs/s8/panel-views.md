@@ -101,11 +101,11 @@ switch starts at the top.
 
 ## Updates
 
-- A display button or screen encoder event is applied to djay first; the
-  panels are drawn again from a fresh sidebar reading once no further event
-  is waiting. A fast encoder turn therefore draws once, at its end: on the
-  S8 the panel jumps to the last row instead of passing through the rows as
-  djay does (#90).
+- Display controls act on djay first. While encoder events are waiting,
+  S8Host rereads the sidebar after at least 125 ms since the last full
+  reading finished. The left panel can show intermediate rows without
+  reading the whole list for every event. A fresh reading as soon as the
+  queue drains shows the row djay actually selected.
 - Changes made in djay itself (mouse, keyboard, a track ending) are picked
   up by the poll, by default within 1 s.
 - With `--deck N` the deck is read every 0.25 s. The sidebar is not read
@@ -225,7 +225,7 @@ runner notes these figures for the deck reads since the previous row:
 | 11  | Select another sidebar row with the mouse                  | Panels follow within about 1 s                                                      |
 | 12  | Hide djay's sidebar, then show it                          | "Open the djay sidebar" as `09-sidebar-closed`, then the list                       |
 | 13  | Encoder turn to panel change                               | Reported: instant, short lag or seconds                                             |
-| 14  | Spin an encoder fast through a long list                   | Panels end on the row djay selected                                                 |
+| 14  | Spin an encoder fast through a long list                   | Left panel shows intermediate rows and ends on the row djay selected                |
 | 15  | Left PLAY                                                  | djay reacts while the screens run                                                   |
 | 16  | Whole run                                                  | No flicker, tearing, wrong colours or frozen panel                                  |
 | 17  | Runner sends SIGINT to S8Host                              | Both panels black, exit status 0                                                    |
@@ -264,7 +264,9 @@ and the bridge:
   state and then only the newest
 - a stop returns while a write is blocked, and no record or sidebar
   reading follows it
-- the sidebar is read once after the last waiting control event
+- queued button events cause one sidebar read after the last button
+- a fast turn publishes intermediate rows at a bounded rate, then shows
+  the final row djay reports
 
 Checked without the S8: the replay and decode above, for the ten states.
 

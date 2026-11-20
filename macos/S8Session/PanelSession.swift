@@ -29,6 +29,7 @@ public final class PanelSession {
     }
 
     public static let deckInterval: TimeInterval = 0.25
+    private static let scrollReadInterval: UInt64 = 125_000_000
 
     let sidebarQueue = DispatchQueue(label: "S8Session.sidebar")
     let deckQueue = DispatchQueue(label: "S8Session.deck")
@@ -38,6 +39,7 @@ public final class PanelSession {
     private let screens: Bool
     private let sidebarInterval: TimeInterval
     private let deckInterval: TimeInterval
+    private let now: () -> UInt64
 
     private let lock = NSLock()
     private var waitingEvents = 0
@@ -46,22 +48,36 @@ public final class PanelSession {
     private var stopped = false
     private var timers: [DispatchSourceTimer] = []
 
+    // Only the sidebar queue reads or writes this timestamp.
+    private var lastSidebarRead: UInt64?
     private var lastDeckPoll: DispatchTime?
 
     private var panels = LivePanels()
     private var feed = PanelFeed()
     private var state: ViewState?
 
-    public init(
+    public convenience init(
         sources: Sources,
         screens: Bool,
         sidebarInterval: TimeInterval,
         deckInterval: TimeInterval = PanelSession.deckInterval
     ) {
+        self.init(
+            sources: sources, screens: screens, sidebarInterval: sidebarInterval,
+            deckInterval: deckInterval, now: { DispatchTime.now().uptimeNanoseconds }
+        )
+    }
+
+    init(
+        sources: Sources, screens: Bool, sidebarInterval: TimeInterval,
+        deckInterval: TimeInterval = PanelSession.deckInterval,
+        now: @escaping () -> UInt64
+    ) {
         self.sources = sources
         self.screens = screens
         self.sidebarInterval = sidebarInterval
         self.deckInterval = deckInterval
+        self.now = now
     }
 
     public func start() {
@@ -91,7 +107,9 @@ public final class PanelSession {
                 waitingEvents -= 1
                 return waitingEvents
             }
-            if waiting == 0, screens {
+            guard screens else { return }
+            // While events wait, leave time between full AX reads for routing and deck AX.
+            if waiting == 0 || shouldReadDuringScroll(event) {
                 publishSidebar()
             }
         }
@@ -125,9 +143,16 @@ public final class PanelSession {
         return timer
     }
 
+    private func shouldReadDuringScroll(_ event: ControlEvent) -> Bool {
+        guard case .screenEncoder = event else { return false }
+        return lastSidebarRead.map { now() - $0 >= Self.scrollReadInterval } ?? true
+    }
+
     private func publishSidebar() {
         guard !isStopped else { return }
-        requestRender(sources.readSidebar())
+        let snapshot = sources.readSidebar()
+        lastSidebarRead = now()
+        requestRender(snapshot)
     }
 
     private func pollDecks(_ poll: () -> Void) {

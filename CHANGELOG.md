@@ -56,8 +56,10 @@ their detailed notes stay in `docs/release-*.md`.
   run on separate queues, so a slow one does not delay the deck page, and
   `--log-deck-polls` logs the time between deck readings (#89). Checked
   once on the S8
-  ([panel-views-validation.md](docs/s8/panel-views-validation.md)); during a
-  fast encoder turn the panel jumps to the last row (#90).
+  ([panel-views-validation.md](docs/s8/panel-views-validation.md)).
+  During a fast encoder turn the left panel now shows intermediate rows
+  and settles on djay's final selection. Not yet on the S8
+  ([#90](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/90)).
 - `mise run s8:panel-views-images` makes the expected pictures of those
   views from recorded snapshots, and `mise run s8:panel-views` runs the
   attended check on the S8 (#27); the check sends screen frames to the S8.
