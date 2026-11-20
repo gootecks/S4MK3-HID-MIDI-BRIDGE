@@ -393,8 +393,8 @@ the dot is orange, not purple (checked on the S8: run 2 L20 orange, run 1 L20 pu
 - Deck reports are written only when they change, at most once every 10 ms per side.
 - On a normal stop or Ctrl-C (SIGINT), the bridge clears both deck reports.
   It also clears the mixer CUE latch if it wrote that latch during the run.
-- Frozen mapping r8 and older lack mixer CUE feedback. Generate and install a new
-  mapping revision. Give it a new name or folder; the generator will not overwrite a file.
+- Frozen mapping r8 and older lack mixer CUE feedback; r9 has it
+  ([mappings/README.md](mappings/README.md)).
 - A mapping older than r8 also lacks the `userInfo` pad colours and the `control` type
   on `songProgress`: hot cue pads stay dark and the strip bar is full at any progress.
 

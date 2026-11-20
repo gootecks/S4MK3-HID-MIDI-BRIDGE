@@ -86,3 +86,22 @@ Run with the agent stopped and no bridge running. Probe output is in
 Finding: `F4 26` writes the S8's own CUE latch, not only the LEDs. The LEDs show
 the latch, and a press toggles the written state. A host can therefore set the
 latch to djay's cue state, and each press then keeps both in step.
+
+## Bridge run 2026-11-20
+
+The bridge ran at commit `92a035a`, plus the `S8_CUE_LEDS` log line. It used
+`--device s8 --midi full --s8-leds`. NIHardwareAgent was stopped. Djay was set
+to mapping r9 on `Kontrol S8 MIDI Full`.
+Log: `docs/s8/captures/cue-leds-bridge-20261120T122645Z/bridge.log.gz`.
+User answers:
+
+- On selecting r9, the CUE LEDs matched djay's headphone buttons, some on and
+  some off. The first write was `mask=0x07`.
+- Each CUE press turned its LED and djay's button on and off together.
+- Clicking deck 1's headphone button in djay's window, without the S8, turned
+  CUE A on and off on the S8.
+- After Ctrl-C the bridge wrote `mask=0x00`: all CUE LEDs off, deck LEDs dim,
+  as with the default state. NIHardwareAgent was restored.
+
+The log has 26 `S8_CUE_LEDS` writes, no `S8_LEDS_DISABLED` and no
+`S8_LEDS_CLEAR_FAILED`.
