@@ -12,6 +12,11 @@ their detailed notes stay in `docs/release-*.md`.
 
 ### Added
 
+- An opt-in Kontrol S8 layout follows Evan's controls. Select `--s8-layout evan` when
+  generating the mapping or running the bridge, or choose Evan in the kit. The default
+  mapping is unchanged. Not yet on the S8 ([mapping-evan.md](docs/s8/mapping-evan.md),
+  [#65](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/65)).
+
 - S8 mixer CUE LEDs follow djay's headphone cue state with `--s8-leds` and
   mapping r9: the bridge sets the S8's CUE latch through feature report
   `0xF4 0x26` ([cue-led-check.md](docs/s8/cue-led-check.md), #134). Checked on
