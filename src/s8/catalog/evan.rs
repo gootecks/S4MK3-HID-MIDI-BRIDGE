@@ -100,10 +100,8 @@ const DECK_OVERRIDES: &[Binding] = &[
     note("remix", 28, "turntable{deck}.bounceLoop0125BeatInterval"),
     note("hotcue", 25, "turntable{deck}.padModeHotCue").shift(),
     note("freeze", 27, "turntable{deck}.padModeSlicer").shift(),
-    note("on_1", 56, "mixer.monitorActive{deck}").on_decks(A | B | C),
-    note("on_1", 56, "mixer.monitorActive2").on_decks(D),
-    note("on_2", 57, "mixer.monitorActive1").on_decks(A | C),
-    note("on_2", 57, "mixer.monitorActive4").on_decks(B | D),
+    note("on_1", 56, "turntable{deck}.pitchPlus").without_feedback(),
+    note("on_2", 57, "turntable{deck}.pitchMinus").without_feedback(),
     note("on_3", 58, "turntable{deck}.resetPitch")
         .on_decks(A | C | D)
         .without_feedback(),
@@ -237,74 +235,70 @@ const PITCH_PLAY: &[Binding] = &[
 macro_rules! fx {
     ($mask:ident, $other:literal, $btn:literal, $dial:literal) => {
         &[
-            note("fx_1", $btn, "turntable{deck}.fxActive").on_decks($mask),
-            note("fx_2", $btn + 1, "turntable{deck}.fx1Enabled").on_decks($mask),
-            note("fx_3", $btn + 2, "turntable{deck}.fx2Enabled").on_decks($mask),
-            note("fx_4", $btn + 3, "turntable{deck}.fx3Enabled").on_decks($mask),
-            note("fx_1", $btn, concat!("turntable", $other, ".fxActive"))
+            note("fx_1", $btn, "turntable{deck}.fx1Enabled").on_decks($mask),
+            note("fx_2", $btn + 1, "turntable{deck}.fx2Enabled").on_decks($mask),
+            note("fx_3", $btn + 2, "turntable{deck}.fx3Enabled").on_decks($mask),
+            note("fx_4", $btn + 3, "turntable{deck}.fxActive").on_decks($mask),
+            note("fx_1", $btn, concat!("turntable", $other, ".fx1Enabled"))
                 .on_decks($mask)
                 .without_feedback(),
             note(
                 "fx_2",
                 $btn + 1,
-                concat!("turntable", $other, ".fx1Enabled"),
+                concat!("turntable", $other, ".fx2Enabled"),
             )
             .on_decks($mask)
             .without_feedback(),
             note(
                 "fx_3",
                 $btn + 2,
-                concat!("turntable", $other, ".fx2Enabled"),
-            )
-            .on_decks($mask)
-            .without_feedback(),
-            note(
-                "fx_4",
-                $btn + 3,
                 concat!("turntable", $other, ".fx3Enabled"),
             )
             .on_decks($mask)
             .without_feedback(),
-            cc("fx_dial_1", $dial, "turntable{deck}.fx1WetDryValue").on_decks($mask),
-            cc("fx_dial_1", $dial, "turntable{deck}.fx2WetDryValue").on_decks($mask),
-            cc("fx_dial_1", $dial, "turntable{deck}.fx3WetDryValue").on_decks($mask),
+            note("fx_4", $btn + 3, concat!("turntable", $other, ".fxActive"))
+                .on_decks($mask)
+                .without_feedback(),
+            cc("fx_dial_1", $dial, "turntable{deck}.fx1ParameterValue").on_decks($mask),
+            cc("fx_dial_2", $dial + 1, "turntable{deck}.fx2ParameterValue").on_decks($mask),
+            cc("fx_dial_3", $dial + 2, "turntable{deck}.fx3ParameterValue").on_decks($mask),
             cc(
                 "fx_dial_1",
                 $dial,
-                concat!("turntable", $other, ".fx1WetDryValue"),
+                concat!("turntable", $other, ".fx1ParameterValue"),
             )
             .on_decks($mask),
-            cc(
-                "fx_dial_1",
-                $dial,
-                concat!("turntable", $other, ".fx2WetDryValue"),
-            )
-            .on_decks($mask),
-            cc(
-                "fx_dial_1",
-                $dial,
-                concat!("turntable", $other, ".fx3WetDryValue"),
-            )
-            .on_decks($mask),
-            cc("fx_dial_2", $dial + 1, "turntable{deck}.fx1ParameterValue").on_decks($mask),
-            cc("fx_dial_3", $dial + 2, "turntable{deck}.fx2ParameterValue").on_decks($mask),
-            cc("fx_dial_4", $dial + 3, "turntable{deck}.fx3ParameterValue").on_decks($mask),
             cc(
                 "fx_dial_2",
                 $dial + 1,
-                concat!("turntable", $other, ".fx1ParameterValue"),
+                concat!("turntable", $other, ".fx2ParameterValue"),
             )
             .on_decks($mask),
             cc(
                 "fx_dial_3",
                 $dial + 2,
-                concat!("turntable", $other, ".fx2ParameterValue"),
+                concat!("turntable", $other, ".fx3ParameterValue"),
+            )
+            .on_decks($mask),
+            cc("fx_dial_4", $dial + 3, "turntable{deck}.fx1WetDryValue").on_decks($mask),
+            cc("fx_dial_4", $dial + 3, "turntable{deck}.fx2WetDryValue").on_decks($mask),
+            cc("fx_dial_4", $dial + 3, "turntable{deck}.fx3WetDryValue").on_decks($mask),
+            cc(
+                "fx_dial_4",
+                $dial + 3,
+                concat!("turntable", $other, ".fx1WetDryValue"),
             )
             .on_decks($mask),
             cc(
                 "fx_dial_4",
                 $dial + 3,
-                concat!("turntable", $other, ".fx3ParameterValue"),
+                concat!("turntable", $other, ".fx2WetDryValue"),
+            )
+            .on_decks($mask),
+            cc(
+                "fx_dial_4",
+                $dial + 3,
+                concat!("turntable", $other, ".fx3WetDryValue"),
             )
             .on_decks($mask),
         ]

@@ -263,14 +263,26 @@ impl Translator {
     }
 
     fn press(&mut self, name: &'static str, out: &mut Vec<[u8; 3]>) {
-        if let Some((side, suffix)) = lookup::side(name) {
+        let row = if let Some((side, suffix)) = lookup::side(name) {
             if suffix == "deck" {
                 self.press_deck(name, side, out);
                 return;
             }
+            // Returning from Evan's Slicer uses the Hotcues selector's address
+            // but FREEZE still owns the note until the physical button is released.
+            let suffix = if self.layout == Layout::Evan
+                && suffix == "freeze"
+                && self.shift[side]
+                && self.pad_mode[side] == PadMode::Freeze
+            {
+                "hotcue"
+            } else {
+                suffix
+            };
             if let Some(mode) = lookup::pad_mode(self.layout, suffix, self.shift[side]) {
                 self.pad_mode[side] = mode;
             }
+            self.side_row(side, suffix, Kind::Note)
         } else if let (Layout::Default, Some((unit, channel))) =
             (self.layout, lookup::fx_assign(name))
         {
@@ -279,8 +291,10 @@ impl Translator {
         } else if let Some(channel) = lookup::filter_on(name) {
             self.toggle_filter(channel, out);
             return;
-        }
-        if let Some((row, deck)) = self.row(name, Kind::Note) {
+        } else {
+            self.row(name, Kind::Note)
+        };
+        if let Some((row, deck)) = row {
             self.hold(name, row.channel(deck), row.number, out);
         }
     }

@@ -3,6 +3,85 @@ use std::io::Cursor;
 
 use super::*;
 
+type Address = (u64, u64, u64);
+
+fn assert_actions(
+    rows: &BTreeMap<(Address, String), bool>,
+    address: Address,
+    expected: impl IntoIterator<Item = (String, bool)>,
+) {
+    let actual: BTreeMap<_, _> = rows
+        .iter()
+        .filter_map(|((at, key), &output)| (*at == address).then_some((key.as_str(), output)))
+        .collect();
+    let expected: BTreeMap<_, _> = expected.into_iter().collect();
+    assert_eq!(
+        actual,
+        expected
+            .iter()
+            .map(|(key, &output)| (key.as_str(), output))
+            .collect(),
+        "MIDI address {address:?}"
+    );
+}
+
+fn assert_evan_bindings(rows: &BTreeMap<(Address, String), bool>) {
+    for channel in 0..4 {
+        let deck = channel + 1;
+        for (note, action) in [(56, "pitchPlus"), (57, "pitchMinus")] {
+            assert_actions(
+                rows,
+                (channel, 1, note),
+                [(format!("turntable{deck}.{action}"), false)],
+            );
+        }
+        for (note, mode) in [(25, "padModeHotCue"), (27, "padModeSlicer")] {
+            assert_actions(
+                rows,
+                (channel + 8, 1, note),
+                [(format!("turntable{deck}.{mode}"), false)],
+            );
+        }
+        assert_actions(
+            rows,
+            (channel, 1, 1),
+            [(
+                format!("turntable{deck}.cuePositionOrJumpConsideringPlayState1"),
+                true,
+            )],
+        );
+    }
+
+    for (channel, note, cc) in [(0, 32, 32), (1, 36, 40)] {
+        let primary = channel + 1;
+        let other = channel + 3;
+        let pair = |action: &str, output| {
+            [
+                (format!("turntable{primary}.{action}"), output),
+                (format!("turntable{other}.{action}"), false),
+            ]
+        };
+        for slot in 1..=3 {
+            assert_actions(
+                rows,
+                (channel, 1, note + slot - 1),
+                pair(&format!("fx{slot}Enabled"), true),
+            );
+            assert_actions(
+                rows,
+                (channel, 3, cc + slot - 1),
+                pair(&format!("fx{slot}ParameterValue"), false),
+            );
+        }
+        assert_actions(rows, (channel, 1, note + 3), pair("fxActive", true));
+        assert_actions(
+            rows,
+            (channel, 3, cc + 3),
+            (1..=3).flat_map(|slot| pair(&format!("fx{slot}WetDryValue"), false)),
+        );
+    }
+}
+
 #[test]
 fn layouts_keep_distinct_mapping_names_and_the_same_bridge_endpoint() -> Result<()> {
     let evan_name = Layout::Evan.mapping_file_name();
@@ -38,7 +117,6 @@ fn default_mapping_is_byte_identical_to_the_frozen_r9() -> Result<()> {
 
 #[test]
 fn evan_mapping_round_trips_every_action_address_and_feedback() -> Result<()> {
-    type Address = (u64, u64, u64);
     let mut xml = Vec::new();
     generate(Layout::Evan)?.to_writer_xml(&mut xml)?;
     let root: Dictionary = plist::from_reader(Cursor::new(xml))?;
@@ -82,6 +160,7 @@ fn evan_mapping_round_trips_every_action_address_and_feedback() -> Result<()> {
                 .is_none()
         );
     }
+    assert_evan_bindings(&rows);
     for entry in catalog::entries(Layout::Evan) {
         let address = (
             entry.channel().into(),
