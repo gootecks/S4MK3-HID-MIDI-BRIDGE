@@ -1,6 +1,6 @@
 //! Name parsing and catalog row lookup. Nothing here allocates.
 
-use crate::s8::catalog::{Binding, Kind, Layer, PadMode};
+use crate::s8::catalog::{Binding, Kind, Layer, Layout, PadMode};
 
 pub(super) const LEFT: usize = 0;
 pub(super) const RIGHT: usize = 1;
@@ -12,13 +12,15 @@ pub(super) fn side(name: &str) -> Option<(usize, &str)> {
         .or_else(|| name.strip_prefix("right_").map(|rest| (RIGHT, rest)))
 }
 
-/// The pad layer a pad-mode button selects. LOOP selects none.
-pub(super) fn pad_mode(button: &str, shifted: bool) -> Option<PadMode> {
-    match (button, shifted) {
-        ("hotcue", false) => Some(PadMode::Hotcue),
-        ("hotcue", true) => Some(PadMode::Loop),
-        ("freeze", _) => Some(PadMode::Freeze),
-        ("remix", _) => Some(PadMode::Remix),
+/// Evan's normal pad-mode buttons are bounce loops; Shift selects a pad bank instead.
+pub(super) fn pad_mode(layout: Layout, button: &str, shifted: bool) -> Option<PadMode> {
+    match (layout, button, shifted) {
+        (Layout::Default, "hotcue", true) => Some(PadMode::Loop),
+        (Layout::Default, "hotcue", false) | (Layout::Evan, "hotcue", true) => {
+            Some(PadMode::Hotcue)
+        }
+        (Layout::Default, "freeze", _) | (Layout::Evan, "freeze", true) => Some(PadMode::Freeze),
+        (Layout::Default, "remix", _) => Some(PadMode::Remix),
         _ => None,
     }
 }
@@ -79,11 +81,17 @@ pub(super) fn find(
     kind: Kind,
     shifted: bool,
 ) -> Option<&'static Binding> {
+    find_rows(table.iter(), input, kind, shifted)
+}
+
+pub(super) fn find_rows(
+    rows: impl Iterator<Item = &'static Binding>,
+    input: &str,
+    kind: Kind,
+    shifted: bool,
+) -> Option<&'static Binding> {
     let mut base = None;
-    for row in table
-        .iter()
-        .filter(|row| row.kind == kind && row.input == input)
-    {
+    for row in rows.filter(|row| row.kind == kind && row.input == input) {
         match row.layer {
             Layer::Shift if shifted => return Some(row),
             Layer::Base => base = Some(row),

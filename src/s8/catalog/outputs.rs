@@ -4,7 +4,7 @@
 //! outputs cover state no control carries and live on one channel of their
 //! own. The mapping generator and the feedback decoder both read this file.
 
-use super::{Binding, Kind, Layer, PadMode, Scope, pads};
+use super::{Binding, Kind, Layer, Layout, PadMode, Scope};
 
 /// Zero-based channel of the root outputs (channel 7 in Djay's list).
 pub const FEEDBACK_CHANNEL: u8 = 6;
@@ -107,7 +107,8 @@ pub const fn mixer_cue_bit(number: u8) -> Option<u8> {
 
 /// Whether Djay reports the state of `binding` on its own address.
 pub const fn has_embedded_output(binding: &Binding) -> bool {
-    matches!(binding.layer, Layer::Base)
+    binding.feedback
+        && matches!(binding.layer, Layer::Base)
         && matches!(binding.kind, Kind::Note)
         && match binding.scope {
             Scope::Deck => embedded_number(binding.number),
@@ -125,8 +126,8 @@ pub fn feedback_number(table: &'static [Binding], input: &str) -> Option<u8> {
 }
 
 /// The feedback note of pad `index` (0-7) in `mode`.
-pub fn pad_feedback(mode: PadMode, index: usize) -> Option<u8> {
-    feedback_number(pads(mode), PAD_INPUTS.get(index)?)
+pub fn pad_feedback(layout: Layout, mode: PadMode, index: usize) -> Option<u8> {
+    feedback_number(layout.pad_rows(mode), PAD_INPUTS.get(index)?)
 }
 
 #[cfg(test)]
@@ -153,12 +154,14 @@ mod tests {
         assert_eq!(feedback_number(FX_LEFT, "fx_4"), Some(35));
         assert_eq!(feedback_number(FX_RIGHT, "fx_1"), Some(36));
         assert_eq!(feedback_number(FX_RIGHT, "fx_4"), Some(39));
-        assert_eq!(pad_feedback(PadMode::Hotcue, 0), Some(40));
-        assert_eq!(pad_feedback(PadMode::Hotcue, 7), Some(47));
-        assert_eq!(pad_feedback(PadMode::Remix, 0), Some(48));
-        assert_eq!(pad_feedback(PadMode::Loop, 0), None);
-        assert_eq!(pad_feedback(PadMode::Freeze, 0), None);
-        assert_eq!(pad_feedback(PadMode::Hotcue, 8), None);
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Hotcue, 0), Some(40));
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Hotcue, 7), Some(47));
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Remix, 0), Some(48));
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Loop, 0), None);
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Freeze, 0), None);
+        assert_eq!(pad_feedback(Layout::Default, PadMode::Hotcue, 8), None);
+        assert_eq!(pad_feedback(Layout::Evan, PadMode::Hotcue, 0), Some(40));
+        assert_eq!(pad_feedback(Layout::Evan, PadMode::Freeze, 0), None);
     }
 
     #[test]

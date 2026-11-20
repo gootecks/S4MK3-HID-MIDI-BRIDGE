@@ -37,7 +37,7 @@ pub(super) fn slider(name: &'static str, value: f32) -> Event {
 pub(super) fn report(translator: &mut Translator, resting: bool, events: &[Event]) -> Vec<[u8; 3]> {
     let mut out = Vec::new();
     for event in events {
-        translator.handle(event, resting, &mut out);
+        translator.handle(event, resting, None, &mut out);
     }
     translator.end_report(&mut out);
     out

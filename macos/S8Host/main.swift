@@ -40,7 +40,7 @@ guard let path = options.bridge else {
 }
 
 signal(SIGPIPE, SIG_IGN)
-let bridge = Bridge(path: path, screens: options.screens, leds: options.leds)
+let bridge = Bridge(path: path, options: options)
 
 do {
     try bridge.start()

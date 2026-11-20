@@ -97,6 +97,10 @@ struct Args {
     /// Kontrol S8 only: write the deck LED reports 0x80 and 0x81 from Djay feedback.
     #[arg(long = "s8-leds", requires = "midi", conflicts_with_all = ["list", "generate_mapping"])]
     s8_leds: bool,
+
+    /// Kontrol S8 only: select the control layout for MIDI or mapping export.
+    #[arg(long, value_enum, requires = "jog_context", conflicts_with = "list")]
+    s8_layout: Option<s8::catalog::Layout>,
 }
 
 #[derive(Debug, clap::Args)]
@@ -128,6 +132,13 @@ struct ProbeCounts {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    ensure!(
+        args.s8_layout.is_none()
+            || (args.device != Some(Device::S4Mk3)
+                && (args.device == Some(Device::S8) && args.generate_mapping.is_some()
+                    || matches!(args.midi, Some(MidiProfile::Full)))),
+        "--s8-layout requires Kontrol S8 mapping export (--device s8) or --midi full on an S8"
+    );
     ensure!(
         args.jog_config.is_none()
             || args.generate_mapping.is_some()
@@ -165,13 +176,18 @@ fn main() -> anyhow::Result<()> {
 
     if let Some(path) = &args.generate_mapping {
         let profile = args.device.unwrap_or(Device::S4Mk3).profile();
-        let path = &mapping_path(path, profile);
+        let file_name = if profile.device == Device::S8 {
+            args.s8_layout.unwrap_or_default().mapping_file_name()
+        } else {
+            profile.mapping_file_name
+        };
+        let path = &mapping_path(path, file_name);
         if profile.device == Device::S8 {
             ensure!(
                 args.jog_config.is_none(),
                 "--jog-config applies to the S4 MK3 mapping only"
             );
-            return s8::export_mapping(path);
+            return s8::export_mapping(path, args.s8_layout.unwrap_or_default());
         }
         full::mapping::write(path, args.jog_config.as_deref())?;
         for control in full::catalog::LOCAL_CONTROLS {
@@ -232,6 +248,10 @@ fn open_and_run(
         return Ok(());
     }
     let (profile, device) = select_device(args.device, &scanned)?;
+    ensure!(
+        args.s8_layout.is_none() || profile.device == Device::S8,
+        "--s8-layout applies to the Kontrol S8 only"
+    );
     s8::screens::check_device(args, profile.device)?;
     if args.midi.is_some() && profile.device == Device::S8 {
         s8::bridge::check_args(args)?;
@@ -347,9 +367,9 @@ fn select_device(
     Ok((profile, device))
 }
 
-fn mapping_path(path: &std::path::Path, profile: &DeviceProfile) -> PathBuf {
+fn mapping_path(path: &std::path::Path, file_name: &str) -> PathBuf {
     if path.is_dir() {
-        path.join(profile.mapping_file_name)
+        path.join(file_name)
     } else {
         path.to_path_buf()
     }

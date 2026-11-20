@@ -1,0 +1,35 @@
+Evan layout, scripted djay check (tier 2), 2026-11-20. No S8, no bridge.
+
+Setup
+- Generated mapping installed as "Kontrol S8 Bridge Evan r1.djayMidiMapping" (392 controls).
+- s8inject.swift publishes a virtual source "Kontrol S8 MIDI Full" and sends the bridge's
+  Evan-layout addresses (channels one-based below).
+- djay: MIDI > Configure Kontrol S8 MIDI Full, selected "Kontrol S8 Bridge Evan r1".
+  djay listed 384 rows for the 392 controls; the 8 missing rows were not identified.
+  Selection restored to "Kontrol S8 Bridge r8" afterwards.
+
+Results (deck 1, test track "Anybody")
+- ch1 CC3 x2 then note 12 (browse, press): track loaded on deck 1, library expanded. PASS.
+  Scroll direction not confirmed (selection stayed on the first row).
+- ch1 note 40 (Hotcues pad 1): jumped to cue 1. PASS.            01-load-cue-play-loop.png
+- ch1 note 0 (PLAY): play, then pause. PASS.
+- ch1 note 25 held 1.5 s (bounce loop 1 beat): inconclusive from pictures.
+- ch9 note 27 then ch1 note 76 (Slicer, slice 5): inconclusive (deck paused).
+- ch9 note 25 then ch9 note 40 (Hotcues, Shift pad 1): cue 1 marker removed. PASS.
+                                                                02-slicer-clear-cue.png
+- ch5 note 93 / 92 (mixer FX 2 / 1, deck A): 150.0 -> 150.1 -> 150.2 -> 150.1. PASS.
+                                                                03-mixer-fx-tempo.png
+- ch1 note 58 (stem ON 3, reset pitch): no visible tempo change (expected).
+- ch1 note 59 (stem ON 4, reset tempo): back to 150.0 / 0.0 %. PASS. 04-reset-tempo.png
+
+Rerun in fullscreen Four Decks view, deck 1 playing:      05-fullscreen-bounce-loop.png
+- ch1 note 25 held 2 s: loop size shows 1 and time holds at -01:57; after release the
+  deck continues at -01:54 (slip). Bounce loop 1 beat PASS.
+                                                          06-fullscreen-slicer-pitchplay.png
+- ch9 note 27 (Shift + FREEZE): deck switched to the slicer view. PASS.
+- ch1 note 72 held (slice 1): playhead jumped back. PASS.
+- ch9 note 25 (Shift + HOTCUE): normal waveform back. PASS.
+- ch9 note 64 (FLUX/EDIT + pad 1, Pitch Play 1): djay reacted (red cue 1 marker appeared
+  at the playhead after cue 1 was cleared). Whether it pitched is not confirmed.
+
+Not checked: FX buttons/dials, touchstrip, decks B-D, LED feedback, anything on the S8.

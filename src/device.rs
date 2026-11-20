@@ -115,6 +115,8 @@ pub const S8: DeviceProfile = DeviceProfile {
     mapping_file_name: "Kontrol S8 Bridge.djayMidiMapping",
 };
 
+pub const S8_EVAN_MAPPING_FILE_NAME: &str = "Kontrol S8 Bridge Evan.djayMidiMapping";
+
 pub const PROFILES: [&DeviceProfile; 2] = [&S4_MK3, &S8];
 
 impl DeviceProfile {
@@ -282,9 +284,20 @@ mod tests {
         assert_eq!((S8.vendor_id, S8.product_id), S8_ID);
         assert_eq!(S8.full_endpoint, "Kontrol S8 MIDI Full");
         assert_eq!(S8.mapping_file_name, "Kontrol S8 Bridge.djayMidiMapping");
+        assert_eq!(
+            S8_EVAN_MAPPING_FILE_NAME,
+            "Kontrol S8 Bridge Evan.djayMidiMapping"
+        );
+        assert_ne!(S8_EVAN_MAPPING_FILE_NAME, S8.mapping_file_name);
+        assert_ne!(S8_EVAN_MAPPING_FILE_NAME, S4_MK3.mapping_file_name);
+        assert_ne!(
+            S8_EVAN_MAPPING_FILE_NAME,
+            "Evan's Traktor Kontrol S8 1.1 DynColor.djayMidiMapping"
+        );
         // The S8 endpoint must not collide with the S8's own native MIDI port,
         // which existing Controller Editor-based Djay mappings bind to.
         assert_ne!(S8.full_endpoint, "Traktor Kontrol S8");
+        assert_ne!(S8.full_endpoint, "Traktor Kontrol S8 Input");
         for (index, profile) in PROFILES.iter().enumerate() {
             assert_eq!(profile.device.profile().device, profile.device);
             for other in PROFILES.iter().skip(index + 1) {

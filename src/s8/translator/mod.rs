@@ -3,6 +3,8 @@
 mod lookup;
 
 #[cfg(test)]
+mod evan_tests;
+#[cfg(test)]
 mod led_tests;
 #[cfg(test)]
 mod mixer_tests;
@@ -12,12 +14,13 @@ mod replay_tests;
 mod tests;
 
 use encdr::Event;
-use lookup::{AssignBit, LEFT, find};
+use lookup::{AssignBit, find};
 
 use super::catalog::{
-    Binding, CROSSFADER_ASSIGN, DECK, DECK_SELECT, DECKS, FX_LEFT, FX_RIGHT, Kind, Layer, MIXER,
-    PadMode, Scope, UNBOUND, pads,
+    Binding, CROSSFADER_ASSIGN, DECK_SELECT, DECKS, FX_SLOT_INPUTS, Kind, Layer, Layout, MIXER,
+    PadMode, Scope, UNBOUND, feedback_number,
 };
+use super::feedback::FeedbackState;
 use super::strip::{self, Owner, Strip};
 
 const FILTER_KNOBS: [&str; 4] = [
@@ -80,13 +83,22 @@ const fn controller(channel: u8, number: u8, value: u8) -> [u8; 3] {
     [0xb0 | channel, number, value]
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Modifiers {
+    pub flux: bool,
+    pub edit: bool,
+}
+
 /// Turns S8 events into MIDI. Each side tracks its own deck, Shift and pad
 /// layer; a note is released where it was pressed.
 pub struct Translator {
+    layout: Layout,
+    modifiers: [Modifiers; 2],
     decks: [u8; 2],
     shift: [bool; 2],
     pad_mode: [PadMode; 2],
     fx_target: [u8; 2],
+    fx_all_held: [bool; 2],
     held: Vec<Held>,
     sent: [[Option<u8>; 128]; 16],
     filter_on: [bool; 4],
@@ -106,11 +118,18 @@ impl Default for Translator {
 
 impl Translator {
     pub fn new() -> Self {
+        Self::with_layout(Layout::Default)
+    }
+
+    pub fn with_layout(layout: Layout) -> Self {
         Self {
+            layout,
+            modifiers: [Modifiers::default(); 2],
             decks: [DECKS[0], DECKS[1]],
             shift: [false; 2],
             pad_mode: [PadMode::Hotcue; 2],
             fx_target: [DECKS[0], DECKS[1]],
+            fx_all_held: [false; 2],
             held: Vec::with_capacity(16),
             sent: [[None; 128]; 16],
             filter_on: [true; 4],
@@ -123,10 +142,40 @@ impl Translator {
         }
     }
 
+    pub const fn layout(&self) -> Layout {
+        self.layout
+    }
+
+    pub const fn modifiers(&self, side: usize) -> Modifiers {
+        self.modifiers[side]
+    }
+
+    fn modifier_held(&self) -> bool {
+        self.modifiers.iter().any(|side| side.flux || side.edit)
+    }
+
+    fn deck_row(
+        &self,
+        deck: u8,
+        input: &str,
+        kind: Kind,
+        shifted: bool,
+    ) -> Option<&'static Binding> {
+        lookup::find_rows(self.layout.deck_rows(deck), input, kind, shifted)
+    }
+
     /// Translates one event. `resting` marks the first report of each report ID.
-    pub fn handle(&mut self, event: &Event, resting: bool, out: &mut Vec<[u8; 3]>) {
+    pub fn handle(
+        &mut self,
+        event: &Event,
+        resting: bool,
+        feedback: Option<&FeedbackState>,
+        out: &mut Vec<[u8; 3]>,
+    ) {
         match *event {
-            Event::Button { name, pressed, .. } => self.button(name, pressed, resting, out),
+            Event::Button { name, pressed, .. } => {
+                self.button(name, pressed, resting, feedback, out);
+            }
             Event::Touch { name, touched, .. } => self.touch(name, touched, resting, out),
             Event::Encoder { name, delta, .. } => self.encoder(name, delta, resting, out),
             Event::Slider { name, value, .. } => self.slider(name, value, resting, out),
@@ -159,7 +208,7 @@ impl Translator {
 
     /// True while the side's unshifted CUE note is held on the deck it shows.
     pub fn cue_held(&self, side: usize) -> bool {
-        let Some(row) = find(DECK, "cue", Kind::Note, false) else {
+        let Some(row) = self.deck_row(self.decks[side], "cue", Kind::Note, false) else {
             return false;
         };
         let channel = row.channel(self.decks[side]);
@@ -192,7 +241,14 @@ impl Translator {
         }
     }
 
-    fn button(&mut self, name: &'static str, pressed: bool, resting: bool, out: &mut Vec<[u8; 3]>) {
+    fn button(
+        &mut self,
+        name: &'static str,
+        pressed: bool,
+        resting: bool,
+        feedback: Option<&FeedbackState>,
+        out: &mut Vec<[u8; 3]>,
+    ) {
         if let Some((channel, bit)) = lookup::assign_position(name) {
             let switch = &mut self.assign[channel];
             match bit {
@@ -206,6 +262,26 @@ impl Translator {
             self.shift[side] = pressed;
             return;
         }
+        if self.layout == Layout::Evan
+            && let Some((side, "fx_4")) = lookup::side(name)
+        {
+            let was_held = std::mem::replace(&mut self.fx_all_held[side], pressed);
+            if pressed && !was_held && !resting {
+                self.toggle_all_fx(side, feedback, out);
+            }
+            return;
+        }
+        if self.layout == Layout::Evan
+            && let Some((side, control @ ("flux" | "edit"))) = lookup::side(name)
+        {
+            let modifiers = &mut self.modifiers[side];
+            if control == "edit" {
+                modifiers.edit = pressed;
+            } else {
+                modifiers.flux = pressed;
+            }
+            return;
+        }
         if !pressed {
             self.release(name, out);
         } else if !resting && !self.held.iter().any(|held| held.name == name) {
@@ -213,23 +289,58 @@ impl Translator {
         }
     }
 
+    fn toggle_all_fx(&self, side: usize, feedback: Option<&FeedbackState>, out: &mut Vec<[u8; 3]>) {
+        // Evan's embedded outputs use the same channel and notes as the slot buttons.
+        let channel = self.fx_target[side] - 1;
+        let table = self.layout.fx(side);
+        let slots = FX_SLOT_INPUTS.map(|input| {
+            feedback_number(table, input).map(|number| {
+                let on = feedback.is_some_and(|state| state.note_on(usize::from(channel), number));
+                (number, on)
+            })
+        });
+        let any_on = slots.iter().flatten().any(|&(_, on)| on);
+        for (number, on) in slots.into_iter().flatten() {
+            if on == any_on {
+                out.push(note_on(channel, number));
+                out.push(note_off(channel, number));
+            }
+        }
+    }
+
     fn press(&mut self, name: &'static str, out: &mut Vec<[u8; 3]>) {
-        if let Some((side, suffix)) = lookup::side(name) {
+        let row = if let Some((side, suffix)) = lookup::side(name) {
             if suffix == "deck" {
                 self.press_deck(name, side, out);
                 return;
             }
-            if let Some(mode) = lookup::pad_mode(suffix, self.shift[side]) {
+            // Returning from Evan's Slicer uses the Hotcues selector's address
+            // but FREEZE still owns the note until the physical button is released.
+            let suffix = if self.layout == Layout::Evan
+                && suffix == "freeze"
+                && self.shift[side]
+                && self.pad_mode[side] == PadMode::Freeze
+            {
+                "hotcue"
+            } else {
+                suffix
+            };
+            if let Some(mode) = lookup::pad_mode(self.layout, suffix, self.shift[side]) {
                 self.pad_mode[side] = mode;
             }
-        } else if let Some((unit, channel)) = lookup::fx_assign(name) {
+            self.side_row(side, suffix, Kind::Note)
+        } else if let (Layout::Default, Some((unit, channel))) =
+            (self.layout, lookup::fx_assign(name))
+        {
             self.fx_target[unit] = DECKS[channel];
             return;
         } else if let Some(channel) = lookup::filter_on(name) {
             self.toggle_filter(channel, out);
             return;
-        }
-        if let Some((row, deck)) = self.row(name, Kind::Note) {
+        } else {
+            self.row(name, Kind::Note)
+        };
+        if let Some((row, deck)) = row {
             self.hold(name, row.channel(deck), row.number, out);
         }
     }
@@ -279,7 +390,7 @@ impl Translator {
             self.strip_position[side] = None;
             if let Some(owner) = self.strips[side].release() {
                 let shifted = owner.layer == Layer::Shift;
-                if let Some(row) = find(DECK, STRIP_TOUCH, Kind::Note, shifted) {
+                if let Some(row) = self.deck_row(owner.deck, STRIP_TOUCH, Kind::Note, shifted) {
                     out.push(note_off(row.channel(owner.deck), row.number));
                 }
             }
@@ -290,7 +401,7 @@ impl Translator {
                 deck: self.decks[side],
                 layer: layer(shifted),
             });
-            if let Some(row) = find(DECK, STRIP_TOUCH, Kind::Note, shifted) {
+            if let Some(row) = self.deck_row(self.decks[side], STRIP_TOUCH, Kind::Note, shifted) {
                 out.push(note_on(row.channel(self.decks[side]), row.number));
             }
         }
@@ -331,7 +442,7 @@ impl Translator {
         };
         self.strip_position[side] = Some(value);
         let shifted = owner.layer == Layer::Shift;
-        if let Some(row) = find(DECK, STRIP, Kind::RotaryAbsolute, shifted) {
+        if let Some(row) = self.deck_row(owner.deck, STRIP, Kind::RotaryAbsolute, shifted) {
             out.push(controller(row.channel(owner.deck), row.number, value));
         }
     }
@@ -368,7 +479,7 @@ impl Translator {
         if let Some((side, suffix)) = lookup::side(name) {
             return self.side_row(side, suffix, kind);
         }
-        find(MIXER, name, kind, false)
+        lookup::find_rows(self.layout.mixer_rows(), name, kind, false)
             .or_else(|| find(UNBOUND, name, kind, false))
             .map(|row| (row, 0))
     }
@@ -376,13 +487,29 @@ impl Translator {
     fn side_row(&self, side: usize, suffix: &str, kind: Kind) -> Option<(&'static Binding, u8)> {
         let shifted = self.shift[side];
         let deck = self.decks[side];
-        if let Some(row) = find(pads(self.pad_mode[side]), suffix, kind, shifted) {
+        if !shifted
+            && self.modifier_held()
+            && let Some(row) = find(self.layout.pitch_rows(), suffix, kind, true)
+        {
             return Some((row, deck));
         }
-        let fx = if side == LEFT { FX_LEFT } else { FX_RIGHT };
-        if let Some(row) = find(fx, suffix, kind, shifted) {
+        if let Some(row) = find(
+            self.layout.pad_rows(self.pad_mode[side]),
+            suffix,
+            kind,
+            shifted,
+        ) {
+            return Some((row, deck));
+        }
+        if let Some(row) = find(self.layout.fx(side), suffix, kind, shifted) {
             return Some((row, self.fx_target[side]));
         }
-        find(DECK, suffix, kind, shifted).map(|row| (row, deck))
+        let shifted = if self.layout == Layout::Evan && suffix.starts_with("on_") {
+            self.modifier_held()
+        } else {
+            shifted
+        };
+        self.deck_row(deck, suffix, kind, shifted)
+            .map(|row| (row, deck))
     }
 }

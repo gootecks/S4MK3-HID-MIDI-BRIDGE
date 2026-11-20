@@ -31,10 +31,12 @@ mod tests {
 
     use super::super::generate;
     use super::{PAD_COLOR_TOKENS, PAD_WHITE_TOKEN};
-    use crate::s8::catalog::{ROOT_OUTPUTS, RootFamily};
+    use crate::s8::catalog::{Layout, ROOT_OUTPUTS, RootFamily};
 
     fn root() -> Result<Dictionary> {
-        generate()?.into_dictionary().context("root dictionary")
+        generate(Layout::Default)?
+            .into_dictionary()
+            .context("root dictionary")
     }
 
     #[test]

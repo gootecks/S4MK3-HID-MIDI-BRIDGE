@@ -1,7 +1,7 @@
 ---
-summary: "The S8 kit: prebuilt bridge, S8Host, launcher and mapping for a second Apple Silicon Mac without the repository; build, transfer, run and limits."
+summary: "The prebuilt S8 bridge, S8Host, launcher and two mappings: build, transfer, run and limits."
 type: procedure
-issues: [131, 16]
+issues: [131, 16, 65]
 ---
 
 # S8 kit
@@ -16,13 +16,14 @@ also sends LED reports. Both need the user's go-ahead on this Mac (see _Approval
 
 ## Contents
 
-| File                                   | Source                                                 |
-| -------------------------------------- | ------------------------------------------------------ |
-| `s4mk3-hid-midi-bridge`                | Release build of the Rust bridge.                      |
-| `S8Host`                               | Release build of `macos/S8Host`.                       |
-| `Start S8.command`                     | `docs/s8/kit-start.sh`.                                |
-| `Kontrol S8 Bridge rN.djayMidiMapping` | The mapping the bridge generates.                      |
-| `README.txt`                           | `docs/s8/kit-readme.txt` with commit and names filled. |
+| File                                     | Source                                                  |
+| ---------------------------------------- | ------------------------------------------------------- |
+| `s4mk3-hid-midi-bridge`                  | Release build of the Rust bridge.                       |
+| `S8Host`                                 | Release build of `macos/S8Host`.                        |
+| `Start S8.command`                       | `docs/s8/kit-start.sh`.                                 |
+| `Kontrol S8 Bridge rN.djayMidiMapping`   | Checked default mapping.                                |
+| `Kontrol S8 Bridge Evan.djayMidiMapping` | Checked Evan mapping, the newest `Evan rN` frozen copy. |
+| `README.txt`                             | `docs/s8/kit-readme.txt` with commit and names filled.  |
 
 Both programs are signed ad hoc, not with a Developer ID, and are not notarized.
 
@@ -39,9 +40,10 @@ The build stops when:
 
 - a kit of that name exists. Move it away first.
 - a program links a library outside `/System/Library` and `/usr/lib`.
-- the generated mapping differs from the newest frozen revision in
-  [mappings/](mappings/README.md). Check the new mapping on the S8 and freeze it first. The
-  kit then never carries a mapping that was not checked.
+- the generated default mapping differs from the newest frozen default revision in
+  [mappings](mappings/README.md). Check the new default on the S8 and freeze it first.
+- the generated Evan mapping is not a valid plist. The kit offers it as an opt-in layout;
+  it has no frozen revision or attended S8 check.
 
 ## Transfer and first start
 
@@ -62,18 +64,17 @@ In this order. Up to step 5 nothing is stopped and nothing is sent.
 
 1. Checks: a terminal, Apple Silicon, both programs, NIHardwareAgent installed, exactly one
    S8, and no Traktor, Maschine or Komplete Kontrol running.
-2. Copies the mapping into `~/Music/djay/MIDI Mappings/` when no file of that name is
-   there. It never overwrites one. With djay Pro running it then stops: djay reads the
-   folder at start.
+2. Asks for Default (Return) or Evan (`e`). It copies only the chosen mapping into
+   `~/Music/djay/MIDI Mappings/` and never overwrites an existing file. If it copies a
+   mapping while djay Pro is running, it asks you to restart djay Pro and the launcher.
 3. `S8Host --check`: Accessibility access for Terminal, with the macOS prompt, and a running
    djay Pro.
 4. Asks for Controller Editor when it is closed
    ([S8 dark at start](translator-validation.md#s8-dark-at-start)).
-5. Asks two questions: deck LEDs (`--leds`), and which deck the right panel shows
-   (`--deck N`).
-6. Stops NIHardwareAgent and runs
-   `S8Host --bridge ./s4mk3-hid-midi-bridge --screens [--leds] [--deck N]`. The output also
-   goes to `logs/s8-<UTC>.log` in the kit folder.
+5. Asks about deck LEDs and which deck the right panel shows.
+6. Stops NIHardwareAgent and runs `S8Host` with `--screens` and `--layout`, plus `--leds`
+   or `--deck N` if selected. It prints which matching mapping to pick in djay's MIDI
+   settings on `Kontrol S8 MIDI Full`. The output also goes to `logs/s8-<UTC>.log`.
 7. On Ctrl-C, and on every other way out, it starts NIHardwareAgent again.
 
 ## Limits
@@ -81,8 +82,8 @@ In this order. Up to step 5 nothing is stopped and nothing is sent.
 - Deck LEDs and panels in one run are not yet checked on the S8. Each was checked alone
   ([led-feedback-validation.md](led-feedback-validation.md),
   [panel-views.md](panel-views.md)).
-- The layout is the generated mapping's ([mapping.md](mapping.md)), not the Controller
-  Editor template's.
+- [Default](mapping.md) and [Evan](mapping-evan.md) are bridge layouts, not Controller
+  Editor templates. Use the mapping that matches the launcher choice.
 - No VU meters and no mixer LEDs
   ([#123](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/123)).
 - Display buttons 1 and 4 belong to Native Instruments' agent and do nothing while it is

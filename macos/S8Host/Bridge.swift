@@ -8,16 +8,19 @@ final class Bridge {
     private var inputOpen: Bool
     private var stopping = false
 
-    init(path: String, screens: Bool, leds: Bool) {
+    init(path: String, options: HostOptions) {
         var arguments = ["--device", "s8", "--midi", "full", "--until-stopped", "--app-events"]
-        if leds {
+        if let layout = options.layout {
+            arguments += ["--s8-layout", layout.rawValue]
+        }
+        if options.leds {
             arguments.append("--s8-leds")
         }
-        if screens {
+        if options.screens {
             arguments.append("--s8-screens-stdin")
         }
-        input = screens ? Pipe() : nil
-        inputOpen = screens
+        input = options.screens ? Pipe() : nil
+        inputOpen = options.screens
         process.executableURL = URL(fileURLWithPath: path)
         process.arguments = arguments
         process.standardOutput = output

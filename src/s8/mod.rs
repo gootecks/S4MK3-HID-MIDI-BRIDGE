@@ -18,8 +18,16 @@ use std::path::Path;
 
 use tracing::info;
 
-pub fn export_mapping(path: &Path) -> anyhow::Result<()> {
-    mapping::write(path)?;
+pub fn export_mapping(path: &Path, layout: catalog::Layout) -> anyhow::Result<()> {
+    mapping::write(path, layout)?;
+    if layout == catalog::Layout::Default {
+        explain_default_mapping();
+    }
+    info!(path = %path.display(), ?layout, "DJAY_MAPPING_EXPORTED");
+    Ok(())
+}
+
+fn explain_default_mapping() {
     for control in catalog::LOCAL_CONTROLS {
         info!(
             input = control.name,
@@ -34,6 +42,4 @@ pub fn export_mapping(path: &Path) -> anyhow::Result<()> {
             "UNASSIGNED_CONTROL"
         );
     }
-    info!(path = %path.display(), "DJAY_MAPPING_EXPORTED");
-    Ok(())
 }
