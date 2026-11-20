@@ -20,10 +20,11 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
   `--s8-screens-stdin` with `--screens` and `--s8-leds` with `--leds`.
 - Applies the bridge's `S8_CONTROL` stdout lines through `DjaySidebar` (Accessibility).
   Every other bridge line is passed through to stdout. Bridge stderr is inherited.
-- `--screens` sends screen frames to the S8. After each control event and every `--poll`
-  seconds (default 1) it reads the sidebar, renders both panels with `S8Views` and writes
-  the changed ones to the bridge's stdin as `S8FR` records. `--deck N` puts deck N on the
-  right panel, read every 0.25 s through `DjayDecks`. `--log-deck-polls` writes one stderr
+- `--screens` sends screen frames to the S8. S8Host reads the sidebar after waiting controls
+  are applied, during a fast encoder turn, and every `--poll` seconds (default 1). It renders
+  both panels with `S8Views` and writes changed panels to the bridge's stdin as `S8FR` records.
+  `--deck N` puts deck N on the right panel, read every 0.25 s through `DjayDecks`.
+  `--log-deck-polls` writes one stderr
   line per deck read,
   `S8Host: deck poll gap=<s since the previous read started> read=<s the read took>`.
 - `--leds` sends deck LED reports to the S8: the bridge shows djay's state on the deck
@@ -57,11 +58,11 @@ swift run --package-path macos S8Host --replay docs/s8/fixtures/panel-views --re
 `PanelSession` (target `S8Session`) runs a session on three serial queues, so that a slow
 part does not hold up the others:
 
-| Queue   | Work                                                                                                       | Blocks on                            |
-| ------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Sidebar | Applies control events to djay, reads the sidebar after the last waiting event and every `--poll` seconds. | Accessibility calls for the sidebar. |
-| Deck    | `DeckMonitor.poll()` every 0.25 s.                                                                         | Accessibility calls for the decks.   |
-| Output  | Renders both panels and writes the changed records to the bridge.                                          | The bridge's stdin pipe.             |
+| Queue   | Work                                                                                               | Blocks on                            |
+| ------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Sidebar | Applies controls, reads the sidebar during turns, after the last event and every `--poll` seconds. | Accessibility calls for the sidebar. |
+| Deck    | `DeckMonitor.poll()` every 0.25 s.                                                                 | Accessibility calls for the decks.   |
+| Output  | Renders both panels and writes the changed records to the bridge.                                  | The bridge's stdin pipe.             |
 
 - The sidebar queue hands over one sidebar snapshot; a newer one replaces an unsent one.
   The deck queue only asks for a redraw. The output queue takes the deck state from
