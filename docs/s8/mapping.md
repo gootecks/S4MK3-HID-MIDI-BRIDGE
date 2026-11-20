@@ -11,10 +11,9 @@ endpoint `Kontrol S8 MIDI Full`. Every address comes from
 `src/s8/catalog.rs`; this page lists the default layout that catalog produces.
 
 This is the working default layout. It assumes the S8 is the only controller
-Djay uses. A second layout based on Evan's mapping is tracked in
-gootecks/S4MK3-HID-MIDI-BRIDGE issue #65. The mapping has no screen feedback;
-its LED feedback is in [LED feedback](#led-feedback). What was checked on the S8 is in
-[translator-validation.md](translator-validation.md) and the LED record linked below.
+Djay uses. See the [Evan layout](mapping-evan.md) for the alternate mapping.
+Neither mapping has screen feedback. See [LED feedback](#led-feedback) for the
+default and [translator validation](translator-validation.md) for the attended checks.
 
 <?toc?>
 

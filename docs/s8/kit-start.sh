@@ -30,7 +30,21 @@ if pgrep -i -f 'Traktor.app|Maschine|Komplete Kontrol' > /dev/null; then
     fail "Quit Traktor, Maschine and Komplete Kontrol first."
 fi
 
-mapping="$(ls ./*.djayMidiMapping)"
+read -r -p "Controller layout: Return for Default, e for Evan (not yet checked on the S8): " answer
+case "$answer" in
+    "")
+        layout=default
+        defaults=(./"Kontrol S8 Bridge r"*.djayMidiMapping)
+        [ "${#defaults[@]}" -eq 1 ] || fail "Expected exactly one frozen default mapping."
+        mapping="${defaults[0]}"
+        ;;
+    e | evan)
+        layout=evan
+        mapping="./Kontrol S8 Bridge Evan.djayMidiMapping"
+        ;;
+    *) fail "Choose Default (Return) or Evan (e)." ;;
+esac
+[ -f "$mapping" ] || fail "Mapping is missing: $mapping"
 name="$(basename "$mapping" .djayMidiMapping)"
 [ -d "$mappings" ] || fail "djay's mapping folder is missing: $mappings. Start djay Pro once, then start again."
 if [ ! -e "$mappings/$name.djayMidiMapping" ]; then
@@ -56,7 +70,7 @@ if ! pgrep -f 'Controller Editor.app/Contents/MacOS/Controller Editor' > /dev/nu
         fail "Controller Editor is still not running."
 fi
 
-arguments=(--bridge "$bridge" --screens)
+arguments=(--bridge "$bridge" --screens --layout "$layout")
 read -r -p "Deck LEDs from djay? Return for yes, n for no: " answer
 [ "$answer" = n ] || arguments+=(--leds)
 read -r -p "Deck page on the right panel: 1-4, or Return for the selected track: " answer

@@ -24,16 +24,18 @@ FIRST TIME
 
        ~/"@KIT@"/"Start S8.command"
 
-   - The first start copies the mapping "@MAPPING@" into djay's mapping
-     folder and asks you to restart djay Pro. It never overwrites a mapping.
+   - Choose Default (Return) or Evan (e). The first start with that layout
+     copies its mapping into djay's mapping folder and asks you to restart
+     djay Pro. It never overwrites a mapping.
    - macOS asks for Accessibility access for Terminal. Allow it in System
      Settings > Privacy & Security > Accessibility, then start again.
    - If macOS asks whether Terminal may access data from other apps, allow
      it: the deck page reads djay's track analysis.
 
-4. Answer the two questions (deck LEDs, deck page). When the bridge runs,
-   choose in djay Pro: Settings > MIDI, device "Kontrol S8 MIDI Full",
-   mapping "@MAPPING@".
+4. Answer the questions about deck LEDs and the deck page. When the bridge
+   runs, choose Settings > MIDI in djay Pro, then device "Kontrol S8 MIDI
+   Full" and the matching mapping: "@MAPPING@" for Default or
+   "Kontrol S8 Bridge Evan" for Evan. Match the launcher choice every time.
 
 EVERY TIME
 
@@ -51,7 +53,9 @@ IF SOMETHING IS WRONG
 
 KNOWN LIMITS
 
-- The layout is the bridge's own, not the Controller Editor template.
+- Both layouts use the bridge, not Controller Editor's MIDI addresses.
+- Evan is a new layout, not yet checked on the S8. Default is the checked
+  mapping above.
 - No VU meters and no mixer LEDs yet.
 - Display buttons 1 and 4 do nothing while the kit runs.
 - Deck LEDs and panels in one run were not yet checked on the S8 when this
