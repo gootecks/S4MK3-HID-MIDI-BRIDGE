@@ -13,7 +13,6 @@ const CUE_NOTE: u8 = 1;
 const SYNC_NOTE: u8 = 2;
 const FLUX_NOTE: u8 = 4;
 const LOOP_NOTE: u8 = 6;
-const FX_INPUTS: [&str; 4] = ["fx_1", "fx_2", "fx_3", "fx_4"];
 const SLOT_INPUTS: [&str; 4] = ["on_1", "on_2", "on_3", "on_4"];
 /// Decks A and B (0, 1) light the blue LED of a `Dual`, decks C and D the white one.
 const FIRST_WHITE_DECK: usize = 2;
@@ -102,14 +101,19 @@ fn pad(local: &Local, index: usize, feedback: &FeedbackState) -> Rgb {
     }
 }
 
-fn fx_level(side: Side, index: usize, local: &Local, feedback: &FeedbackState) -> Level {
+fn fx_levels(side: Side, local: &Local, feedback: &FeedbackState) -> [Level; 4] {
     let table = local.layout.fx(side.index());
-    let number = FX_INPUTS
-        .get(index)
-        .and_then(|input| catalog::feedback_number(table, input));
-    number.map_or(Level::Off, |number| {
-        level(feedback.note_on(local.fx_target, number))
-    })
+    let for_input = |input| {
+        catalog::feedback_number(table, input).map_or(Level::Off, |number| {
+            level(feedback.note_on(local.fx_target, number))
+        })
+    };
+    let slots = catalog::FX_SLOT_INPUTS.map(for_input);
+    let master = match local.layout {
+        Layout::Default => for_input("fx_4"),
+        Layout::Evan => level(slots.contains(&Level::On)),
+    };
+    [slots[0], slots[1], slots[2], master]
 }
 
 fn slot_level(index: usize, local: &Local, feedback: &FeedbackState) -> Level {
@@ -162,7 +166,7 @@ pub fn present(side: Side, feedback: &FeedbackState, local: &Local) -> SideLeds 
     SideLeds {
         pads: std::array::from_fn(|index| pad(local, index, feedback)),
         fx_select: Level::Dim,
-        fx: std::array::from_fn(|index| fx_level(side, index, local, feedback)),
+        fx: fx_levels(side, local, feedback),
         display: [Level::Off; 8],
         back: Level::Dim,
         capture: Level::Dim,

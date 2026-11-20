@@ -17,9 +17,10 @@ use encdr::Event;
 use lookup::{AssignBit, find};
 
 use super::catalog::{
-    Binding, CROSSFADER_ASSIGN, DECK_SELECT, DECKS, Kind, Layer, Layout, MIXER, PadMode, Scope,
-    UNBOUND,
+    Binding, CROSSFADER_ASSIGN, DECK_SELECT, DECKS, FX_SLOT_INPUTS, Kind, Layer, Layout, MIXER,
+    PadMode, Scope, UNBOUND, feedback_number,
 };
+use super::feedback::FeedbackState;
 use super::strip::{self, Owner, Strip};
 
 const FILTER_KNOBS: [&str; 4] = [
@@ -97,6 +98,7 @@ pub struct Translator {
     shift: [bool; 2],
     pad_mode: [PadMode; 2],
     fx_target: [u8; 2],
+    fx_all_held: [bool; 2],
     held: Vec<Held>,
     sent: [[Option<u8>; 128]; 16],
     filter_on: [bool; 4],
@@ -127,6 +129,7 @@ impl Translator {
             shift: [false; 2],
             pad_mode: [PadMode::Hotcue; 2],
             fx_target: [DECKS[0], DECKS[1]],
+            fx_all_held: [false; 2],
             held: Vec::with_capacity(16),
             sent: [[None; 128]; 16],
             filter_on: [true; 4],
@@ -162,9 +165,17 @@ impl Translator {
     }
 
     /// Translates one event. `resting` marks the first report of each report ID.
-    pub fn handle(&mut self, event: &Event, resting: bool, out: &mut Vec<[u8; 3]>) {
+    pub fn handle(
+        &mut self,
+        event: &Event,
+        resting: bool,
+        feedback: Option<&FeedbackState>,
+        out: &mut Vec<[u8; 3]>,
+    ) {
         match *event {
-            Event::Button { name, pressed, .. } => self.button(name, pressed, resting, out),
+            Event::Button { name, pressed, .. } => {
+                self.button(name, pressed, resting, feedback, out);
+            }
             Event::Touch { name, touched, .. } => self.touch(name, touched, resting, out),
             Event::Encoder { name, delta, .. } => self.encoder(name, delta, resting, out),
             Event::Slider { name, value, .. } => self.slider(name, value, resting, out),
@@ -230,7 +241,14 @@ impl Translator {
         }
     }
 
-    fn button(&mut self, name: &'static str, pressed: bool, resting: bool, out: &mut Vec<[u8; 3]>) {
+    fn button(
+        &mut self,
+        name: &'static str,
+        pressed: bool,
+        resting: bool,
+        feedback: Option<&FeedbackState>,
+        out: &mut Vec<[u8; 3]>,
+    ) {
         if let Some((channel, bit)) = lookup::assign_position(name) {
             let switch = &mut self.assign[channel];
             match bit {
@@ -242,6 +260,15 @@ impl Translator {
         }
         if let Some((side, "shift")) = lookup::side(name) {
             self.shift[side] = pressed;
+            return;
+        }
+        if self.layout == Layout::Evan
+            && let Some((side, "fx_4")) = lookup::side(name)
+        {
+            let was_held = std::mem::replace(&mut self.fx_all_held[side], pressed);
+            if pressed && !was_held && !resting {
+                self.toggle_all_fx(side, feedback, out);
+            }
             return;
         }
         if self.layout == Layout::Evan
@@ -259,6 +286,25 @@ impl Translator {
             self.release(name, out);
         } else if !resting && !self.held.iter().any(|held| held.name == name) {
             self.press(name, out);
+        }
+    }
+
+    fn toggle_all_fx(&self, side: usize, feedback: Option<&FeedbackState>, out: &mut Vec<[u8; 3]>) {
+        // Evan's embedded outputs use the same channel and notes as the slot buttons.
+        let channel = self.fx_target[side] - 1;
+        let table = self.layout.fx(side);
+        let slots = FX_SLOT_INPUTS.map(|input| {
+            feedback_number(table, input).map(|number| {
+                let on = feedback.is_some_and(|state| state.note_on(usize::from(channel), number));
+                (number, on)
+            })
+        });
+        let any_on = slots.iter().flatten().any(|&(_, on)| on);
+        for (number, on) in slots.into_iter().flatten() {
+            if on == any_on {
+                out.push(note_on(channel, number));
+                out.push(note_off(channel, number));
+            }
         }
     }
 

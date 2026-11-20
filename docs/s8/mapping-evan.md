@@ -56,12 +56,19 @@ change decks, layers or pad modes before letting go.
 
 ## FX and mixer
 
-| Physical control            | Evan action                                                              | Bridge address                                        |
-| --------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------- |
-| FX buttons 1–4              | Slots 1–3, then Master FX; A/C on the left, B/D on the right             | Channel 1 notes 32–35; channel 2 notes 36–39          |
-| FX dials 1–4                | Slot parameters 1–3, then dry/wet for all slots; paired with the buttons | Channel 1 CCs 32–35; channel 2 CCs 40–43              |
-| Mixer FX 1 / 2 per deck     | Tempo minus / plus on that mixer channel's deck                          | Channel 5 notes 92–99, A through D                    |
-| Other mapped mixer controls | Levels, EQ, filters, PFL, crossfader and assign, mic, quantize           | [Default mixer addresses](mapping.md#mixer-channel-5) |
+| Control              | Action                    | Bridge address                        |
+| -------------------- | ------------------------- | ------------------------------------- |
+| FX buttons 1–3       | Toggle slots 1–3          | Ch. 1 notes 32–34; ch. 2 notes 36–38  |
+| FX button 4          | All off / all on          | Sends the slot notes above as needed  |
+| FX dials 1–3         | Slot parameters 1–3       | Ch. 1 CCs 32–34; ch. 2 CCs 40–42      |
+| FX dial 4            | Dry/wet for all slots     | Ch. 1 CC 35; ch. 2 CC 43              |
+| Mixer FX 1 / 2       | Tempo minus / plus        | Ch. 5 notes 92–99, A through D        |
+| Other mixer controls | Levels, EQ, filters, etc. | [Default](mapping.md#mixer-channel-5) |
+
+FX 4 turns off the enabled slots if any are on; otherwise it turns on all three. Its LED
+is bright when at least one slot is on and dim otherwise. The bridge uses the latest Djay
+feedback, treating slots with no feedback as off. Give Djay time to report the new state
+before pressing FX 4 again.
 
 ## Differences from the Controller Editor setup
 
@@ -76,17 +83,18 @@ change decks, layers or pad modes before letting go.
 - Touch and position use separate MIDI messages. The bridge normalizes the seek target
   to the active deck and uses its seek tuning for C/D where the source did not supply a
   usable per-deck assignment. Scratch tuning follows the source by deck.
-- FX buttons and dials address fixed deck pairs. FX feedback comes from A (left) or B
-  (right), not both decks in the pair. Mixer FX buttons change tempo rather than
-  reassigning either FX unit.
+- FX controls apply to A/C on the left and B/D on the right, regardless of deck selection.
+  The LEDs and FX 4 follow A or B only. If you change a slot on just one deck in Djay,
+  the two decks can differ: toggling that slot flips it on both decks.
+  Mixer FX buttons change tempo rather than reassigning either FX unit.
 - S8Host reserves the display encoders for the panel views. The original two monitor-level
   controls, continuous pitch and tempo on display knobs 3 and 4, and duplicate pitch-play
   and slicer triggers on the display encoders are not mapped there. Mixer headphone mix
   remains available; it is not the display-encoder monitor-level control.
 - Source rows with only a bare application, mixer or deck target (e.g. on FX 1, A's
   CAPTURE, shifted B PLAY, modified A FX+, quantize/snap and the touchstrips) do not name
-  actions and were not copied. FX 4 uses the bridge's concrete Master FX action; CAPTURE
-  has no action on A/C/D. Mic 2 and Snap remain unassigned.
+  actions and were not copied. CAPTURE has no action on A/C/D. Mic 2 and Snap remain
+  unassigned.
 - The bridge retains mixer PFL, crossfader assign, mic, quantize, headphone mix and booth/
   master mappings; these are not extra Controller Editor assignments.
 
@@ -94,4 +102,3 @@ LEDs use the bridge's [feedback catalog](mapping.md#led-feedback), including dec
 transport, hotcue colors and strip progress. As with Default, deck CUE is fully lit
 when pressed or when Djay's CUE feedback is on; it cannot get brighter if already lit.
 Slicer has local bank lighting, and Pitch Play and Key + / Key − have no LED feedback.
-FX feedback describes the primary deck on each side.

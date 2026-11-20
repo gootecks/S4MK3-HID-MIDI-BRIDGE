@@ -55,3 +55,21 @@ Requested changes for the next revision:
 - FX buttons 1-3 select slots 1-3, and FX 4 takes the Master FX action.
 - Stem ON 1 / 2 become Key + / Key -.
 - The CUE LED gets brighter while pressed.
+
+## Second attended run, 2026-11-20
+
+The bridge at commit `cdb4b3b` ran with mapping Evan r3 and `--s8-leds`. The log is
+`docs/s8/captures/evan-layout-attended-20261120T141211Z/bridge.log.gz`. Only the changed
+rows were checked. The user's answer was that everything works as expected except FX 4.
+
+| Row | Check                                     | Answer                                        |
+| --- | ----------------------------------------- | --------------------------------------------- |
+| E6  | Shift + FREEZE toggles Hotcues and Slicer | Yes                                           |
+| E9  | Stem ON 1 / 2 change the key              | Yes                                           |
+| E11 | FX buttons and dials 1-4, both sides      | Yes, except the FX 4 button only toggles FX 1 |
+
+The agent stopped the bridge, so the exit LED state was not observed. The log has no
+`S8_LEDS_DISABLED` or `S8_LEDS_CLEAR_FAILED`. NIHardwareAgent was restored.
+
+Requested change: the FX 4 button turns the lit slots off when any of FX 1-3 is on, and
+turns all three on otherwise. The FX 4 dial stays dry/wet.

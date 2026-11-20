@@ -13,6 +13,7 @@ use s4mk3_hid_midi_bridge::device::s8::ScreenEncoders;
 use tracing::{info, warn};
 
 use super::app_events;
+use super::catalog::Layout;
 use super::feedback::FeedbackState;
 use super::led_output::{LedOutput, ReportSink};
 use super::led_state::{Local, present};
@@ -23,8 +24,8 @@ use crate::full::feedback::FeedbackInput;
 use crate::{Args, MidiProfile, ProbeCounts, record_event, report_probe_counts, stop_signal};
 
 const READ_TIMEOUT_MS: i32 = 100;
-/// With LEDs on, the loop wakes this often to apply Djay feedback while idle.
-const LED_READ_TIMEOUT_MS: i32 = 5;
+/// Apply Djay feedback and update LEDs even when the controller is idle.
+const FEEDBACK_READ_TIMEOUT_MS: i32 = 5;
 
 /// Refuse the minimal profile and the options that drive S4 MK3 outputs.
 pub fn check_args(args: &Args) -> anyhow::Result<()> {
@@ -44,20 +45,18 @@ pub fn check_args(args: &Args) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn announce_open(leds: bool) -> i32 {
+fn announce_open(leds: bool) {
     if leds {
         info!(
             "S8_LEDS_ENABLED: deck reports 0x{:02x} and 0x{:02x} and mixer CUE feedback are enabled",
             Side::Left.report_id(),
             Side::Right.report_id()
         );
-        LED_READ_TIMEOUT_MS
     } else {
         info!(
             "{}_HID_OPEN: native HID access; nothing is written to the controller",
             S8.tag
         );
-        READ_TIMEOUT_MS
     }
 }
 
@@ -68,22 +67,15 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         .s8_stdin
         .then(|| super::screens::start(stop_tx.clone()))
         .transpose()?;
-    // Djay can return initial state as soon as the source appears.
-    let feedback_input = args
-        .s8_leds
-        .then(|| FeedbackInput::new(S8.full_endpoint))
-        .transpose()?;
+    let layout = args.s8_layout.unwrap_or_default();
+    let evan = layout == Layout::Evan;
+    let mut feedback = DjayFeedback::open(hid, args.s8_leds, evan)?;
     let mut midi = MidiOutput::new("Kontrol S8 full bridge")?
         .create_virtual(S8.full_endpoint)
         .map_err(|error| anyhow::anyhow!("create S8 MIDI source: {error}"))?;
     info!(port = S8.full_endpoint, "MIDI_FULL_READY");
-    let mut leds = feedback_input.map(|input| Leds {
-        input,
-        state: FeedbackState::default(),
-        output: Some(LedOutput::new(hid)),
-    });
-    let mut read_timeout = announce_open(leds.is_some());
-    let mut translator = Translator::with_layout(args.s8_layout.unwrap_or_default());
+    announce_open(args.s8_leds);
+    let mut translator = Translator::with_layout(layout);
     let mut counts = ProbeCounts::default();
     let mut screen_encoders = ScreenEncoders::default();
     let mut seen = Vec::with_capacity(S8.input_reports.len());
@@ -98,16 +90,21 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             Err(crossbeam_channel::TryRecvError::Empty) => {}
             Err(crossbeam_channel::TryRecvError::Disconnected) => bail!("stop channel closed"),
         }
-        if let Some(active) = leds.as_mut() {
-            active.update(&translator, started.elapsed(), &mut counts);
-            if !active.active() {
-                read_timeout = READ_TIMEOUT_MS;
-                leds = None;
-            }
-        }
+        let read_timeout = if feedback.is_some() {
+            FEEDBACK_READ_TIMEOUT_MS
+        } else {
+            READ_TIMEOUT_MS
+        };
         let length = hid
             .read_timeout(&mut buffer, read_timeout)
             .context("read S8 HID input")?;
+        // Drain after the HID read so FX 4 uses feedback queued while it waited.
+        if let Some(active) = feedback.as_mut()
+            && (!active.update(&translator, started.elapsed(), &mut counts)
+                || (!evan && active.output.is_none()))
+        {
+            feedback = None;
+        }
         let Some((id, report)) = buffer
             .get(..length)
             .and_then(|report| Some((*report.first()?, report)))
@@ -136,9 +133,10 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
                 }
             }
         }
+        let state = feedback.as_ref().map(|active| &active.state);
         for event in &events {
             record_event(event, None, &mut counts, false)?;
-            translator.handle(event, resting, &mut messages);
+            translator.handle(event, resting, state, &mut messages);
             if args.app_events
                 && let Some(line) = app_events::display_button(event, resting)
             {
@@ -157,8 +155,8 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
             break;
         }
     }
-    if let Some(mut leds) = leds
-        && let Some(output) = leds.output.as_mut()
+    if let Some(mut feedback) = feedback
+        && let Some(output) = feedback.output.as_mut()
         && let Err(error) = output.finish()
     {
         warn!(%error, "S8_LEDS_CLEAR_FAILED");
@@ -177,22 +175,29 @@ fn emit_line(line: &str) -> bool {
     }
 }
 
-/// The Djay feedback path and LED writer, present only with `--s8-leds`. The
-/// writer is dropped for the rest of the run after its first failure.
-struct Leds<'a> {
+/// Djay feedback serves both Evan's FX 4 and the optional LED writer. A HID
+/// write failure drops the writer, not the feedback Evan still needs.
+struct DjayFeedback<'a> {
     input: FeedbackInput,
     state: FeedbackState,
     output: Option<LedOutput<'a, HidDevice>>,
 }
 
-impl Leds<'_> {
-    /// False once the LED path has been disabled.
-    const fn active(&self) -> bool {
-        self.output.is_some()
+impl<'a> DjayFeedback<'a> {
+    fn open(hid: &'a HidDevice, leds: bool, evan: bool) -> anyhow::Result<Option<Self>> {
+        if !leds && !evan {
+            return Ok(None);
+        }
+        // Djay can return initial state as soon as the source appears.
+        Ok(Some(Self {
+            input: FeedbackInput::new(S8.full_endpoint)?,
+            state: FeedbackState::default(),
+            output: leds.then(|| LedOutput::new(hid)),
+        }))
     }
 
-    /// Adds the feedback messages applied and the reports written to `counts`.
-    fn update(&mut self, translator: &Translator, now: Duration, counts: &mut ProbeCounts) {
+    /// Adds the messages and writes to `counts`. False if feedback is no longer reliable.
+    fn update(&mut self, translator: &Translator, now: Duration, counts: &mut ProbeCounts) -> bool {
         let Self {
             input,
             state,
@@ -203,15 +208,22 @@ impl Leds<'_> {
         }) {
             Ok(received) => received,
             Err(error) => {
-                disable(output, &error);
-                return;
+                if output.is_some() {
+                    disable(output, &error);
+                } else {
+                    warn!("S8_FEEDBACK_DISABLED: {error:#}");
+                }
+                return false;
             }
         };
-        let leds =
-            Side::ALL.map(|side| present(side, state, &Local::from_translator(translator, side)));
-        let written = tick_or_disable(output, &leds, state.mixer_cue_mask(), now);
+        if output.is_some() {
+            let leds = Side::ALL
+                .map(|side| present(side, state, &Local::from_translator(translator, side)));
+            let written = tick_or_disable(output, &leds, state.mixer_cue_mask(), now);
+            counts.led_writes = counts.led_writes.saturating_add(count(written));
+        }
         counts.feedback_messages = counts.feedback_messages.saturating_add(count(received));
-        counts.led_writes = counts.led_writes.saturating_add(count(written));
+        true
     }
 }
 

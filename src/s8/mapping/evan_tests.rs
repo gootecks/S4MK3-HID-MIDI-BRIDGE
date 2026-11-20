@@ -73,7 +73,7 @@ fn assert_evan_bindings(rows: &BTreeMap<(Address, String), bool>) {
                 pair(&format!("fx{slot}ParameterValue"), false),
             );
         }
-        assert_actions(rows, (channel, 1, note + 3), pair("fxActive", true));
+        assert_actions(rows, (channel, 1, note + 3), []);
         assert_actions(
             rows,
             (channel, 3, cc + 3),

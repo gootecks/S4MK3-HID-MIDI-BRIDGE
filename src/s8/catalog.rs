@@ -19,6 +19,8 @@ pub const SHIFT_CHANNEL_OFFSET: u8 = 8;
 
 pub const DECKS: [u8; 4] = [1, 2, 3, 4];
 
+pub const FX_SLOT_INPUTS: [&str; 3] = ["fx_1", "fx_2", "fx_3"];
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
 pub enum Layout {
     #[default]

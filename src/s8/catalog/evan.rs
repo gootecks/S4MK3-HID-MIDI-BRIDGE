@@ -238,7 +238,6 @@ macro_rules! fx {
             note("fx_1", $btn, "turntable{deck}.fx1Enabled").on_decks($mask),
             note("fx_2", $btn + 1, "turntable{deck}.fx2Enabled").on_decks($mask),
             note("fx_3", $btn + 2, "turntable{deck}.fx3Enabled").on_decks($mask),
-            note("fx_4", $btn + 3, "turntable{deck}.fxActive").on_decks($mask),
             note("fx_1", $btn, concat!("turntable", $other, ".fx1Enabled"))
                 .on_decks($mask)
                 .without_feedback(),
@@ -256,9 +255,6 @@ macro_rules! fx {
             )
             .on_decks($mask)
             .without_feedback(),
-            note("fx_4", $btn + 3, concat!("turntable", $other, ".fxActive"))
-                .on_decks($mask)
-                .without_feedback(),
             cc("fx_dial_1", $dial, "turntable{deck}.fx1ParameterValue").on_decks($mask),
             cc("fx_dial_2", $dial + 1, "turntable{deck}.fx2ParameterValue").on_decks($mask),
             cc("fx_dial_3", $dial + 2, "turntable{deck}.fx3ParameterValue").on_decks($mask),

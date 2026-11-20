@@ -62,7 +62,7 @@ fn replay(step: &str) -> anyhow::Result<Vec<[u8; 3]>> {
         parser.parse_from("control", payload, &mut events);
         let mut sent = Vec::new();
         for event in &events {
-            translator.handle(event, resting, &mut sent);
+            translator.handle(event, resting, None, &mut sent);
         }
         translator.end_report(&mut sent);
         if !resting {

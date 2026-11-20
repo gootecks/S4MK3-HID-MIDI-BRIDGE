@@ -1,5 +1,8 @@
+use std::time::Duration;
+
 use super::tests::{button, run, slider, tap};
 use super::{Layout, PadMode, Translator};
+use crate::full::feedback::Message;
 use crate::s8::feedback::FeedbackState;
 use crate::s8::led_state::{Local, present};
 use crate::s8::leds::{Level, Side};
@@ -125,4 +128,103 @@ fn evan_tempo_notes_do_not_reassign_fx_when_changing_decks() {
         run(&mut t, &[slider("left_fx_dial_1", 1.0)]),
         [[0xb0, 32, 127]]
     );
+}
+
+fn fx_feedback(state: &mut FeedbackState, status: u8, number: u8, value: u8) {
+    state.apply(
+        Message {
+            status,
+            number,
+            value,
+        },
+        Duration::ZERO,
+    );
+}
+
+fn tap_fx4(t: &mut Translator, state: &FeedbackState, name: &'static str) -> Vec<[u8; 3]> {
+    let mut out = Vec::new();
+    t.handle(&button(name, true), false, Some(state), &mut out);
+    t.handle(&button(name, false), false, Some(state), &mut out);
+    out
+}
+
+#[test]
+fn evan_fx4_turns_only_enabled_slots_off_on_its_own_side() {
+    let mut t = Translator::with_layout(Layout::Evan);
+    let mut feedback = FeedbackState::default();
+    fx_feedback(&mut feedback, 0x90, 32, 127);
+    fx_feedback(&mut feedback, 0x91, 38, 127);
+    fx_feedback(&mut feedback, 0x92, 33, 127);
+    tap(&mut t, "left_deck");
+    run(&mut t, &[button("left_shift", true)]);
+    assert_eq!(
+        tap_fx4(&mut t, &feedback, "left_fx_4"),
+        [[0x90, 32, 127], [0x80, 32, 0]]
+    );
+    assert_eq!(
+        tap_fx4(&mut t, &feedback, "right_fx_4"),
+        [[0x91, 38, 127], [0x81, 38, 0]]
+    );
+    let leds = |side| present(side, &feedback, &Local::from_translator(&t, side)).fx;
+    assert_eq!(
+        leds(Side::Left),
+        [Level::On, Level::Dim, Level::Dim, Level::On]
+    );
+    assert_eq!(
+        leds(Side::Right),
+        [Level::Dim, Level::Dim, Level::On, Level::On]
+    );
+}
+
+#[test]
+fn evan_fx4_flips_all_three_slots_when_feedback_says_all_off_or_all_on() {
+    let mut t = Translator::with_layout(Layout::Evan);
+    let mut feedback = FeedbackState::default();
+    let all_three = [
+        [0x90, 32, 127],
+        [0x80, 32, 0],
+        [0x90, 33, 127],
+        [0x80, 33, 0],
+        [0x90, 34, 127],
+        [0x80, 34, 0],
+    ];
+    for number in 32..=34 {
+        fx_feedback(&mut feedback, 0x90, number, 127);
+    }
+    assert_eq!(tap_fx4(&mut t, &feedback, "left_fx_4"), all_three);
+
+    for number in 32..=34 {
+        fx_feedback(&mut feedback, 0x80, number, 64);
+    }
+    let local = Local::from_translator(&t, Side::Left);
+    assert_eq!(present(Side::Left, &feedback, &local).fx, [Level::Dim; 4]);
+    assert_eq!(tap_fx4(&mut t, &feedback, "left_fx_4"), all_three);
+}
+
+#[test]
+fn evan_fx4_without_feedback_taps_all_slots_once_per_press() {
+    let mut t = Translator::with_layout(Layout::Evan);
+    let mut out = Vec::new();
+    let press = button("right_fx_4", true);
+    let release = button("right_fx_4", false);
+    t.handle(&press, true, None, &mut out);
+    t.handle(&release, false, None, &mut out);
+    assert!(out.is_empty());
+
+    t.handle(&press, false, None, &mut out);
+    assert_eq!(
+        out,
+        [
+            [0x91, 36, 127],
+            [0x81, 36, 0],
+            [0x91, 37, 127],
+            [0x81, 37, 0],
+            [0x91, 38, 127],
+            [0x81, 38, 0],
+        ]
+    );
+    out.clear();
+    t.handle(&press, false, None, &mut out);
+    t.handle(&release, false, None, &mut out);
+    assert!(out.is_empty());
 }

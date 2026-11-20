@@ -261,7 +261,7 @@ fn press_deck(translator: &mut Translator) {
             name: "left_deck",
             pressed,
         };
-        translator.handle(&event, false, &mut out);
+        translator.handle(&event, false, None, &mut out);
     }
 }
 
