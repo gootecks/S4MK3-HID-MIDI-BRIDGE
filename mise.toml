@@ -194,6 +194,10 @@ raw = true
 description = "Build the S8 kit for a second Mac in dist/: release bridge and S8Host, launcher, mapping and README (#131); sends nothing"
 run = "bash docs/s8/kit-build.sh"
 
+[tasks."s8:app"]
+description = "Build Kontrol S8 Bridge.app in dist/: menu-bar app with the release bridge, S8Host and the frozen mappings, signed (#16); sends nothing"
+run = "bash docs/s8/app-build.sh"
+
 [tasks."hooks:install"]
 description = "Install hk Git hooks and the mdsmith merge driver"
 run = [
