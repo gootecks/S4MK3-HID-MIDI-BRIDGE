@@ -1,9 +1,8 @@
 //! Kontrol S8 feedback addresses: where Djay reports the state the LEDs show.
 //!
-//! A control's embedded output reuses that control's own address, on the base
-//! layer of its deck. Root outputs cover state no control carries and live on
-//! one channel of their own. The mapping generator and the feedback decoder
-//! both read this file.
+//! A control's embedded output reuses that control's own address. Root
+//! outputs cover state no control carries and live on one channel of their
+//! own. The mapping generator and the feedback decoder both read this file.
 
 use super::{Binding, Kind, Layer, PadMode, Scope, pads};
 
@@ -101,12 +100,20 @@ pub const fn embedded_number(number: u8) -> bool {
     matches!(number, 0..=4 | 6 | 8 | 15..=19 | 32..=63)
 }
 
+/// The mixer CUE latch bit for a channel 5 note number.
+pub const fn mixer_cue_bit(number: u8) -> Option<u8> {
+    if number < 4 { Some(1 << number) } else { None }
+}
+
 /// Whether Djay reports the state of `binding` on its own address.
 pub const fn has_embedded_output(binding: &Binding) -> bool {
     matches!(binding.layer, Layer::Base)
-        && matches!(binding.scope, Scope::Deck)
         && matches!(binding.kind, Kind::Note)
-        && embedded_number(binding.number)
+        && match binding.scope {
+            Scope::Deck => embedded_number(binding.number),
+            Scope::Mixer => mixer_cue_bit(binding.number).is_some(),
+            Scope::DeckSelect => false,
+        }
 }
 
 /// The note on which `input` of `table` receives feedback, if it has any.

@@ -196,14 +196,14 @@ Mixer CCs do not use pickup.
 
 ### Mixer notes
 
-| Control       | No. | Action                         |
-| ------------- | --- | ------------------------------ |
-| CUE (PFL) A-D | 0-3 | `mixer.monitorActive{1-4}`     |
-| MIC           | 4   | `microphone.active`            |
-| MIC 2         | 5   | none; assign it in Djay        |
-| SNAP          | 6   | none; assign it in Djay        |
-| QUANTIZE      | 7   | `application.quantizeToggle`   |
-| TEMPO button  | 26  | `turntableSelected.resetSpeed` |
+| Control       | No. | Action                                         |
+| ------------- | --- | ---------------------------------------------- |
+| CUE (PFL) A-D | 0-3 | `mixer.monitorActive{1-4}` (with LED feedback) |
+| MIC           | 4   | `microphone.active`                            |
+| MIC 2         | 5   | none; assign it in Djay                        |
+| SNAP          | 6   | none; assign it in Djay                        |
+| QUANTIZE      | 7   | `application.quantizeToggle`                   |
+| TEMPO button  | 26  | `turntableSelected.resetSpeed`                 |
 
 MIC 2 and SNAP send their notes so that Djay's MIDI configuration can learn
 them; the generated mapping has no entry for either. Djay names
@@ -248,8 +248,8 @@ Sent by a DECK button for the deck its side switches to.
 
 ## LED feedback
 
-The bridge can light the deck LEDs from what Djay reports back. It is off by
-default, and without the flag nothing is written to the controller:
+With `--s8-leds`, the deck and mixer CUE LEDs can follow Djay feedback.
+Without the flag, the bridge sends no LED reports:
 
        cargo run --locked -- --device s8 --midi full --s8-leds
 
@@ -291,8 +291,10 @@ Rows 40-47 carry a cue colour token in the velocity, so their `output`
 dictionary has no value range. The mapping carries `userInfo` with `padColorOff` 0,
 `padColorWhiteActive` 9 and `padColorsActive` 1-8. Without it Djay sends 127 for a
 set cue point instead of a colour token, and no pad lights. The other rows have
-`midiMinValue` 0 and `midiMaxValue` 127. Shift rows, other notes and every CC have
-no embedded output. No LED reads PLAY's note; PLAY uses the root output below.
+`midiMinValue` 0 and `midiMaxValue` 127. PLAY uses the root output below.
+
+Mixer CUE uses the same 0-127 range: `mixer.monitorActive1` to `mixer.monitorActive4`
+on channel 5, notes 0-3. Shift rows, other notes and all CCs have no embedded output.
 
 Three root outputs cover state no control carries. There is one per deck, on
 channel 7, in the mapping's root `outputs` array. Type is 3 for CCs and 1
@@ -388,12 +390,11 @@ the dot is orange, not purple (checked on the S8: run 2 L20 orange, run 1 L20 pu
 
 ### Clearing and old mappings
 
-- The bridge writes a report only when it changed, at most once every 10 ms
-  per side.
-- On a normal stop or Ctrl-C (SIGINT) every LED on both sides is written off.
-- A mapping generated before this change has no `outputs`, so Djay sends
-  nothing back. Install a new revision of the mapping. The generator does not
-  overwrite a file; give it a new name or folder.
+- Deck reports are written only when they change, at most once every 10 ms per side.
+- On a normal stop or Ctrl-C (SIGINT), the bridge clears both deck reports.
+  It also clears the mixer CUE latch if it wrote that latch during the run.
+- Frozen mapping r8 and older lack mixer CUE feedback. Generate and install a new
+  mapping revision. Give it a new name or folder; the generator will not overwrite a file.
 - A mapping older than r8 also lacks the `userInfo` pad colours and the `control` type
   on `songProgress`: hot cue pads stay dark and the strip bar is full at any progress.
 
@@ -401,14 +402,14 @@ the dot is orange, not purple (checked on the S8: run 2 L20 orange, run 1 L20 pu
 
 - A failed or short LED report write, or an overflow of the feedback queue,
   turns the LEDs off for the rest of the run. The bridge logs one line that
-  starts with `S8_LEDS_DISABLED:` and the error, tries to clear both sides,
-  and returns the HID read timeout to its normal value. The controls keep
-  sending MIDI. A clear that fails is logged as `S8_LEDS_CLEAR_FAILED`. Start
-  the bridge again to get the LEDs back.
+  starts with `S8_LEDS_DISABLED:` and the error, tries to clear both sides and
+  the mixer CUE latch if written, and returns to the normal HID read timeout.
+  The controls keep sending MIDI. A clear that fails is logged as
+  `S8_LEDS_CLEAR_FAILED`. Start the bridge again to get the LEDs back.
 - SIGTERM and closing the terminal skip the clear: only Ctrl-C (SIGINT) and
-  a normal stop write the LEDs off. After those the LEDs keep their last
+  a normal stop write the LEDs off. Without the clear, the LEDs keep their last
   state until something else writes them.
-- CUE lights from the local hold only while the unshifted CUE button is held
+- The deck CUE light comes on locally while the unshifted deck CUE button is held
   and its side shows the deck it was pressed on. Shift + CUE sends
   `gotoZero` and does not light it. Switching the deck while CUE is held
   turns the LED off until Djay's own CUE state or the original deck returns.

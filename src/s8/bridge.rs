@@ -1,5 +1,5 @@
 //! Kontrol S8 HID input to the `Kontrol S8 MIDI Full` virtual source. The
-//! bridge reads the control interface; only `--s8-leds` writes deck LED reports.
+//! bridge reads the control interface; only `--s8-leds` writes LED reports.
 
 use std::time::{Duration, Instant};
 
@@ -47,7 +47,7 @@ pub fn check_args(args: &Args) -> anyhow::Result<()> {
 fn announce_open(leds: bool) -> i32 {
     if leds {
         info!(
-            "S8_LEDS_ENABLED: reports 0x{:02x} and 0x{:02x} will be written to the controller",
+            "S8_LEDS_ENABLED: deck reports 0x{:02x} and 0x{:02x} and mixer CUE feedback are enabled",
             Side::Left.report_id(),
             Side::Right.report_id()
         );
@@ -209,7 +209,7 @@ impl Leds<'_> {
         };
         let leds =
             Side::ALL.map(|side| present(side, state, &Local::from_translator(translator, side)));
-        let written = tick_or_disable(output, &leds, now);
+        let written = tick_or_disable(output, &leds, state.mixer_cue_mask(), now);
         counts.feedback_messages = counts.feedback_messages.saturating_add(count(received));
         counts.led_writes = counts.led_writes.saturating_add(count(written));
     }
@@ -225,12 +225,13 @@ fn count(messages: usize) -> u64 {
 fn tick_or_disable<S: ReportSink>(
     output: &mut Option<LedOutput<'_, S>>,
     leds: &[SideLeds; 2],
+    mixer_cue_mask: Option<u8>,
     now: Duration,
 ) -> usize {
     let Some(writer) = output.as_mut() else {
         return 0;
     };
-    match writer.tick(leds, now) {
+    match writer.tick(leds, mixer_cue_mask, now) {
         Ok(written) => written,
         Err(error) => {
             disable(output, &error);
@@ -261,6 +262,7 @@ mod tests {
     struct Sink {
         writes: RefCell<Vec<u8>>,
         failing: Cell<bool>,
+        feature_failing: Cell<bool>,
     }
 
     impl ReportSink for Sink {
@@ -270,6 +272,14 @@ mod tests {
                 anyhow::bail!("device gone");
             }
             Ok(report.len())
+        }
+
+        fn write_feature(&self, report: &[u8]) -> Result<()> {
+            self.writes.borrow_mut().push(report[0]);
+            if self.feature_failing.get() {
+                anyhow::bail!("feature write failed");
+            }
+            Ok(())
         }
     }
 
@@ -283,13 +293,18 @@ mod tests {
     fn a_write_error_disables_the_led_path_and_no_more_writes_follow() {
         let sink = Sink::default();
         let mut output = Some(LedOutput::new(&sink));
-        let written = tick_or_disable(&mut output, &lit(Level::On), Duration::ZERO);
+        let written = tick_or_disable(&mut output, &lit(Level::On), None, Duration::ZERO);
         assert!(output.is_some());
         let before = sink.writes.borrow().len();
         assert_eq!(written, before);
 
         sink.failing.set(true);
-        let written = tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(50));
+        let written = tick_or_disable(
+            &mut output,
+            &lit(Level::Off),
+            None,
+            Duration::from_millis(50),
+        );
         assert_eq!(written, 0);
         assert!(output.is_none());
         let after = sink.writes.borrow().len();
@@ -299,9 +314,40 @@ mod tests {
         );
 
         sink.failing.set(false);
-        let written = tick_or_disable(&mut output, &lit(Level::On), Duration::from_millis(100));
+        let written = tick_or_disable(
+            &mut output,
+            &lit(Level::On),
+            None,
+            Duration::from_millis(100),
+        );
         assert_eq!(written, 0);
-        tick_or_disable(&mut output, &lit(Level::Off), Duration::from_millis(200));
+        tick_or_disable(
+            &mut output,
+            &lit(Level::Off),
+            None,
+            Duration::from_millis(200),
+        );
         assert_eq!(sink.writes.borrow().len(), after);
+    }
+
+    #[test]
+    fn a_feature_error_disables_led_output_and_attempts_to_clear_a_written_cue_latch() {
+        let sink = Sink::default();
+        let mut output = Some(LedOutput::new(&sink));
+        let leds = lit(Level::On);
+        assert_eq!(
+            tick_or_disable(&mut output, &leds, Some(1), Duration::ZERO),
+            3
+        );
+        sink.feature_failing.set(true);
+        assert_eq!(
+            tick_or_disable(&mut output, &leds, Some(3), Duration::ZERO),
+            0
+        );
+        assert!(output.is_none());
+        assert_eq!(
+            *sink.writes.borrow(),
+            [0x80, 0x81, 0xf4, 0xf4, 0x80, 0x81, 0xf4]
+        );
     }
 }
