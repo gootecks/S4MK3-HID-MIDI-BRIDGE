@@ -1,10 +1,10 @@
 //! Pure mapping from Djay feedback and local controller state to the LEDs of one deck side.
 
-use super::catalog::{self, DECK, FX_LEFT, FX_RIGHT, PadMode};
+use super::catalog::{self, Layout, PadMode};
 use super::feedback::FeedbackState;
 use super::led_palette::{cue_colour, dimmed};
 use super::leds::{self, Dual, Level, MAX_VALUE, Rgb, Side, SideLeds, Strip};
-use super::translator::Translator;
+use super::translator::{Modifiers, Translator};
 
 #[cfg(test)]
 mod feedback_tests;
@@ -40,6 +40,7 @@ const fn mode_colours(mode: PadMode) -> (Rgb, Rgb) {
 /// The translator state one side's LEDs depend on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Local {
+    pub layout: Layout,
     /// Selected deck, 0-3.
     pub deck: usize,
     pub shifted: bool,
@@ -48,18 +49,21 @@ pub struct Local {
     pub fx_target: usize,
     pub strip_touch: Option<u8>,
     pub cue_held: bool,
+    pub modifiers: Modifiers,
 }
 
 impl Local {
     pub fn from_translator(translator: &Translator, side: Side) -> Self {
         let index = side.index();
         Self {
+            layout: translator.layout(),
             deck: usize::from(translator.deck(index).saturating_sub(1)),
             shifted: translator.shift_held(index),
             pad_mode: translator.pad_mode(index),
             fx_target: usize::from(translator.fx_target(index).saturating_sub(1)),
             strip_touch: translator.strip_position(index),
             cue_held: translator.cue_held(index),
+            modifiers: translator.modifiers(index),
         }
     }
 }
@@ -82,26 +86,24 @@ const fn dual(deck: usize, level: Level) -> Dual {
     }
 }
 
-fn pad(mode: PadMode, index: usize, deck: usize, feedback: &FeedbackState) -> Rgb {
+fn pad(local: &Local, index: usize, feedback: &FeedbackState) -> Rgb {
+    let mode = local.pad_mode;
     let (active, inactive) = mode_colours(mode);
-    let Some(number) = catalog::pad_feedback(mode, index) else {
+    let Some(number) = catalog::pad_feedback(local.layout, mode, index) else {
         return inactive;
     };
     match mode {
         PadMode::Hotcue => feedback
-            .note(deck, number)
+            .note(local.deck, number)
             .and_then(cue_colour)
             .unwrap_or(Rgb::OFF),
-        PadMode::Remix if feedback.note_on(deck, number) => active,
+        PadMode::Remix if feedback.note_on(local.deck, number) => active,
         _ => inactive,
     }
 }
 
 fn fx_level(side: Side, index: usize, local: &Local, feedback: &FeedbackState) -> Level {
-    let table = match side {
-        Side::Left => FX_LEFT,
-        Side::Right => FX_RIGHT,
-    };
+    let table = local.layout.fx(side.index());
     let number = FX_INPUTS
         .get(index)
         .and_then(|input| catalog::feedback_number(table, input));
@@ -110,11 +112,19 @@ fn fx_level(side: Side, index: usize, local: &Local, feedback: &FeedbackState) -
     })
 }
 
-fn slot_level(index: usize, deck: usize, feedback: &FeedbackState) -> Level {
+fn slot_level(index: usize, local: &Local, feedback: &FeedbackState) -> Level {
     SLOT_INPUTS
         .get(index)
-        .and_then(|input| catalog::feedback_number(DECK, input))
-        .map_or(Level::Off, |number| level(feedback.note_on(deck, number)))
+        .and_then(|input| {
+            let deck = u8::try_from(local.deck + 1).unwrap_or_default();
+            local
+                .layout
+                .deck_rows(deck)
+                .find(|row| row.input == *input && catalog::has_embedded_output(row))
+        })
+        .map_or(Level::Off, |row| {
+            level(feedback.note_on(local.deck, row.number))
+        })
 }
 
 /// Both banks light the same physical row, so the bar skips the LED under the finger dot.
@@ -150,19 +160,23 @@ pub fn present(side: Side, feedback: &FeedbackState, local: &Local) -> SideLeds 
     let on = |number: u8| feedback.note_on(deck, number);
     let ring = dual(deck, if on(LOOP_NOTE) { Level::On } else { Level::Dim });
     SideLeds {
-        pads: std::array::from_fn(|index| pad(local.pad_mode, index, deck, feedback)),
+        pads: std::array::from_fn(|index| pad(local, index, feedback)),
         fx_select: Level::Dim,
         fx: std::array::from_fn(|index| fx_level(side, index, local, feedback)),
         display: [Level::Off; 8],
         back: Level::Dim,
         capture: Level::Dim,
-        edit: Level::Dim,
-        slots: std::array::from_fn(|index| slot_level(index, deck, feedback)),
+        edit: level(local.modifiers.edit),
+        slots: std::array::from_fn(|index| slot_level(index, local, feedback)),
         hotcue: mode_button(PadMode::Hotcue),
         loop_mode: mode_button(PadMode::Loop),
         freeze: mode_button(PadMode::Freeze),
         remix: mode_button(PadMode::Remix),
-        flux: if on(FLUX_NOTE) { Level::On } else { Level::Off },
+        flux: if on(FLUX_NOTE) || local.modifiers.flux {
+            Level::On
+        } else {
+            Level::Off
+        },
         deck: dual(deck, Level::On),
         shift: level(local.shifted),
         sync: level(on(SYNC_NOTE)),
@@ -191,6 +205,8 @@ mod tests {
 
     fn local(deck: usize) -> Local {
         Local {
+            layout: Layout::Default,
+            modifiers: Modifiers::default(),
             deck,
             shifted: false,
             pad_mode: PadMode::Hotcue,

@@ -11,15 +11,17 @@ use plist::{Dictionary, Value};
 
 use s4mk3_hid_midi_bridge::device::S8;
 
-use super::catalog::{self, Entry, Kind};
+use super::catalog::{self, Entry, Kind, Layout};
 
+#[cfg(test)]
+mod evan_tests;
 mod feedback_config;
 
 /// The control that owns each address, and the actions already bound to it.
 type Addresses = BTreeMap<(u8, u8, u8), (&'static str, Vec<String>)>;
 
-pub fn write(path: &Path) -> Result<()> {
-    let mapping = generate()?;
+pub fn write(path: &Path, layout: Layout) -> Result<()> {
+    let mapping = generate(layout)?;
     let mut output = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -32,10 +34,10 @@ pub fn write(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn generate() -> Result<Value> {
+fn generate(layout: Layout) -> Result<Value> {
     let mut controls = Vec::new();
     let mut addresses = Addresses::new();
-    for entry in catalog::entries() {
+    for entry in catalog::entries(layout) {
         push_control(&mut controls, &mut addresses, &entry)?;
     }
 
@@ -190,7 +192,7 @@ mod tests {
 
     fn reparsed() -> Result<Dictionary> {
         let mut bytes = Vec::new();
-        generate()?
+        generate(Layout::Default)?
             .to_writer_xml(&mut bytes)
             .context("serialize generated mapping")?;
         let value: Value = plist::from_reader(Cursor::new(bytes)).context("parse mapping")?;
@@ -249,7 +251,7 @@ mod tests {
         let controls = controls_of(&root)?;
         let map = by_address(&controls)?;
         let mut count = 0;
-        for entry in catalog::entries() {
+        for entry in catalog::entries(Layout::Default) {
             count += 1;
             let address = (
                 entry.channel(),
@@ -309,7 +311,7 @@ mod tests {
         let root = reparsed()?;
         let map = by_address(&controls_of(&root)?)?;
         let mut relative = 0;
-        for entry in catalog::entries() {
+        for entry in catalog::entries(Layout::Default) {
             let binding = entry.binding;
             let address = (entry.channel(), message_type(binding.kind), binding.number);
             for control in map.get(&address).context("entry generated")? {
@@ -365,7 +367,7 @@ mod tests {
         let controls = controls_of(&root)?;
         let mut mixer = 0;
         let mut select = 0;
-        for entry in catalog::entries() {
+        for entry in catalog::entries(Layout::Default) {
             let channel = match entry.binding.scope {
                 Scope::Mixer => {
                     mixer += 1;
@@ -472,7 +474,7 @@ mod tests {
         let root = reparsed()?;
         let controls = controls_of(&root)?;
         let mut embedded = 0;
-        for entry in catalog::entries() {
+        for entry in catalog::entries(Layout::Default) {
             let key_path = entry.key_path();
             let channel = entry.channel();
             let control = controls
@@ -508,11 +510,11 @@ mod tests {
             "s8-mapping-test-{}.djayMidiMapping",
             std::process::id()
         ));
-        write(&path)?;
-        assert!(write(&path).is_err());
+        write(&path, Layout::Default)?;
+        assert!(write(&path, Layout::Default).is_err());
         let read = Value::from_file(&path).context("read written mapping");
         std::fs::remove_file(&path).context("remove temp mapping")?;
-        assert_eq!(read?, generate()?);
+        assert_eq!(read?, generate(Layout::Default)?);
         Ok(())
     }
 }

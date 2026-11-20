@@ -5,8 +5,8 @@ use encdr::{DeviceId, Event};
 use super::*;
 use crate::full::feedback::Message;
 use crate::s8::catalog::{
-    Binding, CUE_COLOUR_NOTES, DECKS, NOTE_TYPE, ROOT_OUTPUTS, RootFamily, feedback_number,
-    has_embedded_output, pad_feedback, pads,
+    Binding, CUE_COLOUR_NOTES, DECK, DECKS, FX_LEFT, FX_RIGHT, NOTE_TYPE, ROOT_OUTPUTS, RootFamily,
+    feedback_number, has_embedded_output, pad_feedback, pads,
 };
 
 const NOTE_ON: u8 = 0x90;
@@ -15,6 +15,8 @@ const CONTROLLER: u8 = 0xb0;
 
 fn local(deck: usize, pad_mode: PadMode) -> Local {
     Local {
+        layout: Layout::Default,
+        modifiers: Modifiers::default(),
         deck,
         shifted: false,
         pad_mode,
@@ -195,7 +197,7 @@ fn every_root_output_of_the_catalog_reaches_its_led_on_its_own_deck_only() -> Re
 
 #[test]
 fn sampler_pads_of_decks_b_and_d_read_the_mirrored_bank() -> Result<(), String> {
-    let number = pad_feedback(PadMode::Remix, 2).ok_or("sampler pad 3")?;
+    let number = pad_feedback(Layout::Default, PadMode::Remix, 2).ok_or("sampler pad 3")?;
     let (active, inactive) = mode_colours(PadMode::Remix);
     for source in 0..4_u8 {
         let mut state = FeedbackState::default();
@@ -238,7 +240,7 @@ fn feed_deck_a(state: &mut FeedbackState) -> Result<(), String> {
     apply(
         state,
         NOTE_ON,
-        pad_feedback(PadMode::Hotcue, 0).ok_or("hotcue pad")?,
+        pad_feedback(Layout::Default, PadMode::Hotcue, 0).ok_or("hotcue pad")?,
         1,
     );
     root_apply(state, RootFamily::Playing, 1, 127)?;

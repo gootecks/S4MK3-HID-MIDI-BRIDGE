@@ -2,6 +2,7 @@ import Foundation
 
 struct HostOptions {
     var bridge: String?
+    var layout: Layout?
     var screens = false
     var leds = false
     var check = false
@@ -11,8 +12,12 @@ struct HostOptions {
     var replay: String?
     var records: String?
 
+    enum Layout: String {
+        case `default`, evan
+    }
+
     static let usage = """
-    usage: S8Host --bridge <path to s4mk3-hid-midi-bridge> [--leds]
+    usage: S8Host --bridge <path to s4mk3-hid-midi-bridge> [--leds] [--layout default|evan]
                   [--screens [--deck N [--log-deck-polls]] [--poll SECONDS]]
            S8Host --check
            S8Host --replay <snapshot dir> --records <output dir>
@@ -42,6 +47,9 @@ struct HostOptions {
         switch flag {
         case "--bridge":
             bridge = value
+        case "--layout":
+            guard let chosen = Layout(rawValue: value) else { return false }
+            layout = chosen
         case "--replay":
             replay = value
         case "--records":
@@ -59,7 +67,7 @@ struct HostOptions {
     }
 
     private var isValid: Bool {
-        let live = screens || leds || deck != nil || logDeckPolls
+        let live = screens || leds || deck != nil || logDeckPolls || layout != nil
         if check {
             return bridge == nil && replay == nil && records == nil && !live
         }

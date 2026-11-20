@@ -83,7 +83,7 @@ pub fn run(args: &Args, hid: &HidDevice, parser: &mut PacketParser) -> anyhow::R
         output: Some(LedOutput::new(hid)),
     });
     let mut read_timeout = announce_open(leds.is_some());
-    let mut translator = Translator::new();
+    let mut translator = Translator::with_layout(args.s8_layout.unwrap_or_default());
     let mut counts = ProbeCounts::default();
     let mut screen_encoders = ScreenEncoders::default();
     let mut seen = Vec::with_capacity(S8.input_reports.len());
