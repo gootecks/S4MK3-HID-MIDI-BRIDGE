@@ -218,7 +218,7 @@ final class PanelSessionTests: XCTestCase {
         XCTAssertEqual(reads.values.count, readsAtShutdown)
     }
 
-    func testSidebarIsReadOnceAfterTheLastWaitingEvent() {
+    func testSidebarIsReadOnceAfterTheLastWaitingButtonEvent() {
         let gate = Gate()
         let routing = started("first event is being routed")
         let routed = Recorder<ControlEvent>()
@@ -238,12 +238,73 @@ final class PanelSessionTests: XCTestCase {
             ),
             screens: true, sidebarInterval: 3600
         )
-        let events = (1 ... 5).map { ControlEvent.screenEncoder(side: .left, encoder: 1, delta: $0) }
+        let events = [2, 3, 5, 6, 7].map { ControlEvent.displayButton(side: .left, slot: $0, down: true) }
         events.forEach(session.handle)
         wait(for: [routing], timeout: 5)
         gate.open()
         session.sidebarQueue.sync {}
         XCTAssertEqual(routed.values, events)
         XCTAssertEqual(reads.values.count, 1)
+    }
+
+    func testFastTurnPublishesIntermediateRowsAndRereadsTheFinalSelection() {
+        let gate = Gate()
+        let sent = Recorder<Data>()
+        let reads = Recorder<Int>()
+        let intermediate = [2, 5, 8]
+        let reached = intermediate.map { started("routing event \($0)") }
+        let resume = intermediate.map { _ in Gate() }
+        let expectedRows = [1, 4, 7, 9]
+        var routed = 0
+        var clock: UInt64 = 0
+        let session = PanelSession(
+            sources: .init(
+                route: { _ in
+                    routed += 1
+                    if let index = intermediate.firstIndex(of: routed) {
+                        reached[index].fulfill()
+                        resume[index].pass()
+                    }
+                    clock += 50_000_000
+                },
+                readSidebar: {
+                    clock += 30_000_000
+                    // The last AX snapshot, not the count of turns, decides the final highlight.
+                    let selected = routed == 8 ? 9 : routed
+                    reads.append(selected)
+                    return Self.tracks(selected: selected)
+                },
+                send: { record in
+                    sent.append(record)
+                    return true
+                }
+            ),
+            screens: true, sidebarInterval: 3600, now: { clock }
+        )
+        session.sidebarQueue.async { gate.pass() }
+        let turn = ControlEvent.screenEncoder(side: .left, encoder: 1, delta: 50)
+        (0 ..< 8).forEach { _ in session.handle(turn) }
+        gate.open()
+        for (index, arrival) in reached.enumerated() {
+            wait(for: [arrival], timeout: 5)
+            session.outputQueue.sync {}
+            resume[index].open()
+        }
+        session.sidebarQueue.sync {}
+        session.outputQueue.sync {}
+        session.shutdown()
+
+        var panels = LivePanels()
+        var feed = PanelFeed()
+        let expected = expectedRows.flatMap { feed.records(state: panels.state(for: Self.tracks(selected: $0))) }
+        XCTAssertEqual(reads.values, expectedRows)
+        XCTAssertEqual(sent.values, expected)
+    }
+
+    private static func tracks(selected: Int) -> SidebarSnapshot {
+        SidebarSnapshot(
+            tabs: [.init(id: "library", label: "Library", selected: true)],
+            rows: (0 ..< 12).map { .init(kind: .track, title: "Track \($0)", selected: $0 == selected) }
+        )
     }
 }
