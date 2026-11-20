@@ -9,22 +9,19 @@ public final class PanelSession {
         public var pollDecks: (() -> Void)?
         public var deckSnapshot: () -> DeckSnapshot?
         public var send: (Data) -> Bool
-        public var log: ((String) -> Void)?
 
         public init(
             route: @escaping (ControlEvent) -> Void,
             readSidebar: @escaping () -> SidebarSnapshot,
             pollDecks: (() -> Void)? = nil,
             deckSnapshot: @escaping () -> DeckSnapshot? = { nil },
-            send: @escaping (Data) -> Bool,
-            log: ((String) -> Void)? = nil
+            send: @escaping (Data) -> Bool
         ) {
             self.route = route
             self.readSidebar = readSidebar
             self.pollDecks = pollDecks
             self.deckSnapshot = deckSnapshot
             self.send = send
-            self.log = log
         }
     }
 
@@ -45,8 +42,6 @@ public final class PanelSession {
     private var renderQueued = false
     private var stopped = false
     private var timers: [DispatchSourceTimer] = []
-
-    private var lastDeckPoll: DispatchTime?
 
     private var panels = LivePanels()
     private var feed = PanelFeed()
@@ -132,19 +127,8 @@ public final class PanelSession {
 
     private func pollDecks(_ poll: () -> Void) {
         guard !isStopped else { return }
-        let started = DispatchTime.now()
         poll()
-        if let log = sources.log {
-            let read = Self.seconds(from: started, to: .now())
-            let gap = lastDeckPoll.map { String(format: "%.3f", Self.seconds(from: $0, to: started)) } ?? "-"
-            log("deck poll gap=\(gap) read=\(String(format: "%.3f", read))")
-        }
-        lastDeckPoll = started
         requestRender(nil)
-    }
-
-    private static func seconds(from start: DispatchTime, to end: DispatchTime) -> Double {
-        Double(end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
     }
 
     private func requestRender(_ snapshot: SidebarSnapshot?) {
