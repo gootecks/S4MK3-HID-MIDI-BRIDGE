@@ -17,8 +17,8 @@ their detailed notes stay in `docs/release-*.md`.
   NIHardwareAgent, runs `S8Host` with the bridge, deck LEDs and panels, and restarts the
   agent on Stop, Quit or the next launch after a crash. A separate bundle from the S4 MK3
   app ([app.md](docs/s8/app.md), [user guide](docs/s8/user-guide.md),
-  [#16](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/16)). Started from
-  Terminal on this Mac only; not yet from Finder, on a second Mac or attended on the S8.
+  [#16](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/16)). Used for a set on
+  the DJ MacBook, transferred as the zip; the user reported that it worked.
 
 - An opt-in Kontrol S8 layout follows Evan's controls. Select `--s8-layout evan` when
   generating the mapping or running the bridge, or choose Evan in the kit. The default
