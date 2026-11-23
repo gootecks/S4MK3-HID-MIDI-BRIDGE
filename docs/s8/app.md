@@ -137,8 +137,8 @@ Settings change only while stopped. Each run writes
   S8: a run reached `MIDI_FULL_READY` with panels and deck LEDs on. `SIGTERM` stopped
   `S8Host` and the bridge and restarted NIHardwareAgent within 0.3 s. After `kill -9` of the
   app both children exited within a second, and the next launch restarted the agent.
-- Not yet checked: a run started from Finder with the app's own Accessibility grant, the
-  app on a second Mac, and the controls, LEDs and panels during an app run on the S8.
+- Used for a set on the DJ MacBook (2026-11-21), copied there as the zip. The user's
+  report: "it worked!". Individual controls and fault paths were not checked one by one.
 
 ## Limits
 
