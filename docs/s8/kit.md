@@ -7,8 +7,8 @@ issues: [131, 16, 65]
 # S8 kit
 
 The kit runs the S8 with djay Pro on a Mac that has neither the repository nor a
-toolchain. It is a folder, not an app. The menu-bar app does not run the S8 yet
-([#16](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE/issues/16)).
+toolchain. It is a folder with a Terminal launcher. The [menu-bar app](app.md) does the
+same from the menu bar.
 
 The launcher stops NIHardwareAgent and sends screen frames to the S8. With deck LEDs on it
 also sends LED reports. Both need the user's go-ahead on this Mac (see _Approvals_ in

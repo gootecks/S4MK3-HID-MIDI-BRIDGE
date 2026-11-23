@@ -1,10 +1,139 @@
-# S4 MK3 HID-MIDI Bridge
+# Kontrol S8 and S4 MK3 HID-MIDI Bridge for djay Pro
 
-> **gootecks fork:** this fork exists to get the Traktor Kontrol S8 working
-> with Djay Pro. The S8 runs from source today; see
-> [Kontrol S8 with Djay](#kontrol-s8-with-djay). The S4 MK3 behaviour
-> described in the rest of this README matches upstream. See also the
-> [S8 notes](docs/s8/README.md) and the [changelog](CHANGELOG.md).
+Use the Native Instruments **Traktor Kontrol S8** with djay Pro on macOS, with every
+control, the deck LEDs and both screens driven from djay. This is the
+[gootecks fork](https://github.com/gootecks/S4MK3-HID-MIDI-BRIDGE) of
+[jtoronto/S4MK3-HID-MIDI-BRIDGE](https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE), which
+does the same for the Traktor Kontrol S4 MK3. The S4 MK3 support from upstream is kept
+unchanged and described [further down](#kontrol-s4-mk3).
+
+- **[S8 user guide](docs/s8/user-guide.md):** setup, controls, screens and LEDs for a set.
+- **[The S8 app](docs/s8/app.md):** build, signing, transfer to another Mac and limits.
+- **[S8 notes](docs/s8/README.md)**, the [changelog](CHANGELOG.md) and the
+  [index of every document](INDEX.md).
+
+## Kontrol S8 with djay
+
+The S8 runs from its own menu-bar app, `Kontrol S8 Bridge.app`, built from source. No
+published download exists yet.
+
+- **Controls:** the bridge reads the S8 over USB and translates its buttons, pads,
+  encoders, faders, knobs and touchstrips to MIDI on the virtual port
+  `Kontrol S8 MIDI Full`. A generated djay mapping assigns them: transport, loops, hot
+  cues, Slicer, sampler, FX units, browsing and the mixer.
+  [The S8 mapping](docs/s8/mapping.md) lists every control.
+- **Two layouts:** the default layout, and an opt-in layout that follows Evan's
+  Controller Editor mapping ([Evan's layout](docs/s8/mapping-evan.md)). The app installs
+  both and the menu chooses one.
+- **Screen buttons and encoders:** the buttons and encoders beside the two screens switch
+  djay's sidebar tabs and move its selection
+  ([display buttons](docs/s8/display-buttons.md)).
+- **Screens:** the left screen shows the list of djay's open sidebar tab. The right
+  screen shows the selected track or one deck: title, artist, BPM, key, time, waveform
+  and cue points in their djay colours ([panel views](docs/s8/panel-views.md),
+  [deck pages](docs/s8/deck-pages.md)).
+- **LEDs:** the deck buttons, pads, touchstrips and the mixer CUE buttons follow djay.
+  VU meters and the other mixer LEDs do not yet
+  ([LED feedback](docs/s8/mapping.md#led-feedback)).
+- **Known limits:** the touchstrips register broad scrubbing only, CAPTURE has no visible
+  result in djay, and the booth output is not checked
+  ([validation record](docs/s8/translator-validation.md)).
+
+### What you need
+
+- An Apple Silicon Mac with macOS 12 or later.
+- The S8 connected by USB, Native Instruments Controller Editor installed.
+- djay Pro with PRO access, which custom MIDI mappings need.
+- To build: this repository, Xcode and [mise](https://mise.jdx.dev) for the pinned Rust
+  toolchain.
+
+### Build and run
+
+1. Run `mise run s8:app`. It writes `Kontrol S8 Bridge.app` and a zip under `dist/`,
+   signed with the best certificate found (Developer ID, then Apple Development, then ad
+   hoc). Copy the zip to the Mac you play on if that is another one.
+2. Without a Developer ID signature, clear the quarantine once on that Mac:
+   `xattr -dr com.apple.quarantine "/Applications/Kontrol S8 Bridge.app"`, or use Open
+   Anyway in Privacy & Security.
+3. Open djay Pro and Controller Editor, open the app and choose Start in its menu. The
+   first start asks for Accessibility access. The app installs its mappings without
+   overwriting, stops Native Instruments' NIHardwareAgent while it runs and restores it
+   on Stop, Quit or the next launch after a crash.
+4. In djay's MIDI settings, choose `Kontrol S8 MIDI Full` and the mapping the app's menu
+   names.
+
+The first control you move after start only synchronises positions. Master, booth and
+headphone audio stay on the S8's own hardware. Developers can run the bridge from
+Terminal with `mise run s8:midi`, and the [S8 kit](docs/s8/kit.md) runs it on a Mac
+without the repository.
+
+### How it works
+
+![Architecture of the bridge and the S8 tools](docs/s8/images/architecture.png)
+
+Both controllers use one Rust bridge binary: the S8 app (through `S8Host`) and the S4 MK3
+app each start it with their own device profile. The S8 profile and the Swift S8 tools
+are this fork's work; the rest comes from upstream. The picture is exported from
+[architecture.html](docs/s8/images/architecture.html).
+
+The Swift tools reach djay through three modules, "djay access" in the picture:
+
+- `DjayDecks` reads the decks through Accessibility: title, artist, BPM, key, time and
+  play state, with each track's waveform, beats and cue points. It is ported from the
+  djay-phrase-tool prototype, which builds on djay-pro-bridge.
+- `DjaySidebar` reads djay's sidebar through Accessibility, switches its tabs and moves
+  the selection. It was written for this fork.
+- `DjayLibrary` reads a copy of djay's library database and never writes the live one.
+  Its decoder is a port of djaykit's.
+
+### What this fork adds
+
+Built on top of upstream, issue by issue, each change checked against djay and then on
+the S8 itself:
+
+- **Device profiles:** a seam in the bridge so one binary serves the S4 MK3 and the S8,
+  with S4 MK3 behaviour unchanged.
+- **S8 input:** read-only HID decoding of every S8 control, with corrections to the Encdr
+  descriptor taken from captured reports ([hardware notes](docs/s8/hardware-notes.md),
+  [input capture](docs/s8/input-capture.md)).
+- **Control catalog and mapping:** one catalog of every S8 MIDI address, read by both the
+  translator and the generated djay mapping, including touchstrip ownership and pad modes.
+- **Screens:** the S8's two screens driven over USB without Native Instruments software,
+  from the first frame to live library and deck pages with waveforms, beats and cue
+  colours ([screens](docs/s8/screens.md),
+  [screen transport](docs/s8/screen-transport.md)).
+- **djay integration:** Accessibility readers for the decks and sidebar, a read-only copy
+  of djay's library, deck time kept inside djay's displayed second, and decks hidden by
+  djay's layout or in another Space handled.
+- **LEDs:** deck, pad and touchstrip LEDs and the mixer CUE LEDs from djay's MIDI
+  feedback, with the LED byte maps worked out by probes ([LED output](docs/s8/led-output.md),
+  [mixer LEDs](docs/s8/led-output-mixer.md)).
+- **Evan's layout:** a second generated mapping that follows Evan's Controller Editor
+  layout.
+- **Running it:** the S8 kit for a Mac without the repository, and the
+  `Kontrol S8 Bridge.app` menu-bar app with setup checks, mapping install and agent
+  restore.
+- **Tooling:** attended-check runners that record every answer, capture logs kept in the
+  repository, and lint and format gates for the fork's own files.
+
+### Credits
+
+- [jtoronto/S4MK3-HID-MIDI-BRIDGE](https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE):
+  the S4 MK3 bridge and menu-bar app this fork extends.
+- [RufusIbiza/Encdr](https://github.com/RufusIbiza/Encdr): NI controller descriptors and
+  HID decoding. The fork pins a commit on
+  [gootecks/Encdr](https://github.com/gootecks/Encdr).
+- [gusgustavodj/kontrol-s8-protocol](https://github.com/gusgustavodj/kontrol-s8-protocol):
+  S8 protocol documentation, used as an attributed reference; no code is copied
+  ([research sources](docs/s8/research-sources.md)).
+- [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge): reading
+  djay's decks through Accessibility.
+- djaykit, a private repository: decoding djay's library database.
+- Evan, for the S8 djay layout the second mapping follows.
+
+## Kontrol S4 MK3
+
+The rest of this README is upstream's documentation for the S4 MK3 and matches upstream.
 
 Use the Native Instruments Traktor Kontrol S4 MK3 with Djay Pro on macOS
 through a menu-bar app. The bridge translates controls and drives LED feedback;
@@ -19,79 +148,14 @@ current full-controller build. It covers setup, everyday workflows and mapping
 choices. It explains browsing/preview, loops and jumps, FX pickup, pads, jog
 feel and screens without requiring MIDI or development knowledge.
 
-## Kontrol S8 with Djay
-
-The S8 is supported from a source build only. No published download and no
-version of the menu-bar app runs it.
-
-- **Works:** the bridge translates the S8's buttons, pads, encoders, faders,
-  knobs and touchstrips to MIDI on the virtual port `Kontrol S8 MIDI Full`.
-  A generated Djay mapping assigns them: transport, loops, hot cues, Slicer,
-  sampler, FX units, browsing and the mixer.
-  [The S8 mapping](docs/s8/mapping.md) lists every control.
-- **Known limits:** the touchstrips register broad scrubbing only, CAPTURE has
-  no visible result in Djay, and the booth output is not checked. See the
-  [validation record](docs/s8/translator-validation.md).
-- **Screen buttons and encoders:** the buttons and encoders beside the two
-  screens switch Djay's sidebar tabs and move its selection when the bridge
-  runs under the `S8Host` tool. See
-  [display buttons and screen encoders](docs/s8/display-buttons.md).
-- **Screens:** under `S8Host --screens` the left screen shows the list of
-  Djay's open sidebar tab, and the right screen the selected track or, with
-  `--deck N`, one deck: title, artist, BPM, key, time, waveform and cue
-  points. See [views on the S8 panels](docs/s8/panel-views.md) for how to
-  run it and its limits.
-- **Missing:** LED feedback. The S8's LEDs do not follow Djay.
-
-![Architecture of the bridge and the S8 tools](docs/s8/images/architecture.png)
-
-How the parts fit together. Both controllers use one Rust bridge binary:
-`S8Host` and the S4 MK3 menu-bar app each start it with their own device
-profile. The S8 profile and the Swift S8 tools are this fork's work; the rest
-comes from upstream. The picture is exported from
-[architecture.html](docs/s8/images/architecture.html).
-
-The Swift tools reach Djay through three modules, "djay access" in the picture:
-
-- `DjayDecks` reads the decks through Accessibility: title, artist, BPM, key,
-  time and play state, with each track's waveform, beats and cue points. It
-  is ported from the djay-phrase-tool prototype, which builds on
-  djay-pro-bridge.
-- `DjaySidebar` reads Djay's sidebar through Accessibility, switches its tabs
-  and moves the selection. It was written for this fork.
-- `DjayLibrary` reads a copy of Djay's library database and never writes the
-  live one. Its decoder is a port of djaykit's.
-
-The bridge builds on these repositories:
-
-- [jtoronto/S4MK3-HID-MIDI-BRIDGE](https://github.com/jtoronto/S4MK3-HID-MIDI-BRIDGE):
-  the S4 MK3 bridge this fork extends.
-- [RufusIbiza/Encdr](https://github.com/RufusIbiza/Encdr): NI controller
-  descriptors and HID decoding.
-- [kyleawayan/djay-pro-bridge](https://github.com/kyleawayan/djay-pro-bridge):
-  reading Djay's decks through Accessibility.
-- djaykit, a private repository: decoding Djay's library database.
-
-To use it you need this repository, [mise](https://mise.jdx.dev) for the
-pinned Rust toolchain, the S8 connected by USB, and Djay Pro with PRO access.
-
-1. Install the mapping that was checked on the S8, as described in
-   [docs/s8/mappings](docs/s8/mappings/README.md).
-2. Run `mise run s8:midi`. It stops Native Instruments' NIHardwareAgent, runs
-   the bridge until you press Ctrl-C, and then restores the agent.
-3. In Djay's MIDI settings, choose `Kontrol S8 MIDI Full` and the mapping.
-
-The first control you move after start only synchronises positions. Master,
-booth and headphone audio stay on the S8's own hardware.
-
-## Requirements
+### Requirements
 
 - An Apple Silicon Mac running macOS 12 or later, plus a macOS version supported
   by your installed Djay Pro. (Windows Support is planned!!)
 - Djay Pro with **PRO access**, which is required for custom MIDI mappings.
 - A Traktor Kontrol S4 MK3, its power adapter, and a USB connection to the Mac.
 
-## Download and install
+### Download and install
 
 1. Open [GitHub Releases](../../releases) and choose the latest published release.
 2. Download its **`S4 MK3 Bridge-<version>-arm64.dmg`**.
@@ -113,7 +177,7 @@ then confirm **Open**. On macOS 12, use **System Preferences > Security & Privac
 General** instead. Approve it only if you trust the download; there's no need
 to disable Gatekeeper.
 
-## First start, mapping, and audio
+### First start, mapping, and audio
 
 1. Connect and power on the S4. Run only one bridge instance.
 2. Open the app's Settings from its menu-bar icon. Settings opens automatically
@@ -158,7 +222,7 @@ to stop control translation, or **Quit S4 MK3 Bridge** to quit.
 
 Bridge controls and mapping installation.
 
-## Controls and differences from Traktor
+### Controls and differences from Traktor
 
 This section and the [user guide](docs/user-guide.md) describe the current
 0.2.1-beta.1 build. Backspin continuation, Shift + FX knob browsing and the latest
@@ -214,7 +278,7 @@ The full-controller profile does add motor-assisted wheel tension, described
 below. The jog-ring animation is decorative. It does not track the song
 position or the physical platter.
 
-### Startup positions and FX pickup
+#### Startup positions and FX pickup
 
 Current source builds apply all four channel-volume faders and high/mid/low EQ
 positions once Djay's mapping is ready. Gain, filter, crossfader position and
@@ -229,9 +293,9 @@ knobs 1-3 and `W` for dry/wet. A `?` means feedback is unavailable.
 These changes are not in the published beta.3 download. See
 [setup and operation](docs/controls-state-sync.md).
 
-## App settings
+### App settings
 
-### LEDs and palette
+#### LEDs and palette
 
 Settings includes deck, stem, and hotcue colors; lamp brightness; loop and
 tempo-center indicators; decorative jog-ring animation; and channel-meter
@@ -243,7 +307,7 @@ The eight selectable Djay hotcue colors are supported: red, orange, blue, yellow
 green, azalea, cyan, and purple. White isn't offered in Djay's hotcue picker;
 its separate fallback hasn't been verified.
 
-### Jog wheels
+#### Jog wheels
 
 The **Jog > Hardware** section has a shared **Jog Wheel Tension** slider:
 
@@ -265,7 +329,7 @@ wheel movement; Stop/Start is not required. The 50 ms cutoff and touch rules
 remain in place. Physical timeout-recovery testing is still pending; see
 [timeout recovery](docs/tension-timeout-recovery.md).
 
-#### Djay scratch and pitch-bend response
+##### Djay scratch and pitch-bend response
 
 The separate scratch and pitch-bend sections set Speed and Reaction for all
 four decks. The calibrated defaults are:
@@ -282,7 +346,7 @@ jog mapping changes.** Keep existing custom mappings under their original names.
 
 Speed and Reaction adjust Djay's response, independently of hardware tension.
 
-#### Backspins
+##### Backspins
 
 A sharp backward flick in Turntable mode can continue scratching after you
 release the platter, following its remaining real movement. Catching or stopping
@@ -309,7 +373,7 @@ it turns red if requested screens are blocked or fail while the bridge keeps
 running. **Diagnostics** shows the app release and build number alongside the
 bridge log.
 
-## Known issues and limitations
+### Known issues and limitations
 
 See the [current issue checklist](docs/issues.md) for detailed limitations
 and remaining checks.
@@ -336,7 +400,7 @@ Open bugs and unresolved behavior:
 Independent loop/jump sizes, global Shift+Sync, per-deck FX targeting, and REV
 without automatic Slip are design choices, not outstanding fixes.
 
-## Roadmap
+### Roadmap
 
 - Broaden backspin validation and refine jog feel, and resolve the open FX, recording,
   pad, and external-input questions.
@@ -346,7 +410,7 @@ without automatic Slip are design choices, not outstanding fixes.
 - Explore a standalone hardware bridge longer term, along with other DJ
   applications and simpler guest setup. These aren't features of this beta.
 
-## Beta feedback
+### Beta feedback
 
 Report problems through the repository's Issues tab. Include the app version,
 macOS and Djay versions, selected mapping name, deck and modifier/pad mode,
@@ -354,14 +418,17 @@ steps to reproduce, and expected versus actual behavior. For jog or LED
 problems, a short video helps. Include relevant app **Diagnostics** output,
 checking it for private information before sharing.
 
-## Thanks
+### Thanks
 
 Thanks to RufusIbiza, maintainer of [Encdr](https://github.com/RufusIbiza/Encdr),
 for the S4 MK3 protocol documentation and controller support this bridge builds on.
 
 ## Developer and reference documentation
 
-- [User guide and everyday workflows](docs/user-guide.md)
+- [Kontrol S8 user guide](docs/s8/user-guide.md)
+- [Kontrol S8 app: build, signing and transfer](docs/s8/app.md)
+- [Kontrol S8 support (fork notes)](docs/s8/README.md)
+- [S4 MK3 user guide and everyday workflows](docs/user-guide.md)
 - [macOS app, packaging, and developer checks](macos/README.md)
 - [Full mapping layout and test records](docs/full-midi-test.md)
 - [Settings and control tuning](docs/configurable-controls.md)
@@ -372,5 +439,4 @@ for the S4 MK3 protocol documentation and controller support this bridge builds 
 - [LED feedback](docs/led-feedback.md)
 - [Standalone hardware research and board shortlist](docs/hardware-bridge-research.md)
 - [Design history](docs/design.md)
-- [Kontrol S8 support (fork notes)](docs/s8/README.md)
 - [Index of every document](INDEX.md)

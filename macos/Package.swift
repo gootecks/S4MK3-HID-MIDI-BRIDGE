@@ -12,7 +12,7 @@ let package = Package(
             exclude: [
                 "build-app.sh", "Info.plist", "README.md", "DESIGN.md", "Tests", "S8Views", "S8Preview",
                 "S8ViewsTests", "DjaySidebar", "DjaySidebarTests", "S8Control", "S8ControlTests", "S8Host",
-                "DjayDecks", "DjayDecksTests", "S8Session", "S8SessionTests"
+                "DjayDecks", "DjayDecksTests", "S8Session", "S8SessionTests", "S8App", "S8AppTests"
             ],
             sources: [
                 "S4BridgeApp.swift", "ScreenPreferences.swift", "ScreenSupport.swift",
@@ -53,6 +53,8 @@ let package = Package(
             path: "S8Host",
             exclude: ["README.md"]
         ),
+        .executableTarget(name: "S8App", dependencies: ["DjaySidebar"], path: "S8App", exclude: ["Info.plist"]),
+        .testTarget(name: "S8AppTests", dependencies: ["S8App"], path: "S8AppTests"),
         .target(
             name: "DjayDecks",
             dependencies: ["DjayLibrary", "S8Views"],
